@@ -1,0 +1,1 @@
+export const container = (val: string): string => `<div style="margin: 10px">${val}</div>`

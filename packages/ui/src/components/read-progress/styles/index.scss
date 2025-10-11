@@ -1,0 +1,48 @@
+.u-read-progress {
+  --read-progressBar-delay: var(--uc-animation-delay);
+  --read-progressBar-animation: var(--uc-animation-ease);
+  
+  --read-progressBar-primary: var(--uc-primary-0);
+  --read-progressBar-success: var(--uc-success-1);
+  --read-progressBar-warning: var(--uc-warning-3);
+  --read-progressBar-danger: var(--uc-danger-1);
+  --read-progressBar-info: var(--uc-info-1);
+}
+
+.u-read-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 9999;
+
+  .u-read-progress__bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+     
+    &.u-read-progress__bar--primary {
+      background-color: var(--read-progressBar-primary);
+    }
+    &.u-read-progress__bar--success {
+      background-color: var(--read-progressBar-success);
+    }
+    &.u-read-progress__bar--warning {
+      background-color: var(--read-progressBar-warning);
+    }
+    &.u-read-progress__bar--danger {
+      background-color: var(--read-progressBar-danger);
+    }
+    &.u-read-progress__bar--info {
+      background-color: var(--read-progressBar-info);
+    }
+  }
+
+  .u-read-progress__text {
+    position: absolute;
+    right: 0;
+    top: 0;
+    transform: translate(-50%, 50%);
+  }
+}

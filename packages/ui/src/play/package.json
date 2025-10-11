@@ -1,0 +1,29 @@
+{
+  "name": "play",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview",
+    "story": "storybook dev -p 6006",
+    "build-story": "storybook build"
+  },
+  "devDependencies": {
+    "@chromatic-com/storybook": "1.6.1",
+    "@storybook/addon-docs": "^8.2.9",
+    "@storybook/addon-essentials": "^8.2.8",
+    "@storybook/addon-interactions": "^8.2.8",
+    "@storybook/addon-knobs": "^8.0.1",
+    "@storybook/addon-links": "^8.2.8",
+    "@storybook/addon-onboarding": "^8.2.8",
+    "@storybook/blocks": "^8.2.8",
+    "@storybook/test": "^8.2.8",
+    "@storybook/vue3": "^8.2.8",
+    "@storybook/vue3-vite": "^8.2.8",
+    "@vitejs/plugin-vue": "^5.1.2",
+    "element-plus": "^2.11.4",
+    "storybook": "^8.2.8"
+  }
+}

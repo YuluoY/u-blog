@@ -1,0 +1,30 @@
+{
+  "name": "@u-blog/model",
+  "version": "0.0.1",
+  "description": "业务模型模块 - 类型 + 常量 + 模拟数据",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.13.1",
+  "devDependencies": {
+    "@faker-js/faker": "^8.4.1",
+    "tsup": "^8.5.0",
+    "@types/node": "^20.19.19"
+  }
+}

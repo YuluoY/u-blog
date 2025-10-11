@@ -1,0 +1,70 @@
+{
+  "name": "@u-blog/ui",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm run build:es && pnpm run build:umd && pnpm run copy-package && pnpm run generate-components-dts",
+    "build:es": "vite build --config vite.es.config.ts",
+    "build:es:watch": "vite build --config vite.es.config.ts --watch",
+    "build:umd": "vite build --config vite.umd.config.ts",
+    "copy-package": "copy package.json dist\\package.json",
+    "generate-components-dts": "node scripts/generate-components-dts.js",
+    "dev": "pnpm run build:es:watch",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/types/core/index.d.ts",
+      "import": "./dist/es/index.js",
+      "require": "./dist/umd/index.umd.cjs"
+    },
+    "./dist/": {
+      "import": "./dist/",
+      "require": "./dist/"
+    }
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.13.1",
+  "peerDependencies": {
+    "@u-blog/composables": "workspace:*",
+    "@u-blog/helper": "workspace:*",
+    "@u-blog/utils": "workspace:*",
+    "vue": "^3.5.22"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^6.5.1",
+    "@fortawesome/free-brands-svg-icons": "^6.6.0",
+    "@fortawesome/free-regular-svg-icons": "^6.6.0",
+    "@fortawesome/free-solid-svg-icons": "^6.5.1",
+    "@fortawesome/vue-fontawesome": "^3.0.6",
+    "@popperjs/core": "^2.11.8",
+    "@vueuse/core": "^13.9.0",
+    "async-validator": "^4.2.5",
+    "lodash-es": "^4.17.21",
+    "monaco-editor": "^0.53.0",
+    "normalize.css": "^8.0.1",
+    "sass": "^1.68.0",
+    "vue3-i18n": "^1.1.5"
+  },
+  "devDependencies": {
+    "@types/lodash-es": "^4.17.12",
+    "@types/node": "^20.11.20",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "@vitejs/plugin-vue-jsx": "^4.1.0",
+    "@vitest/coverage-v8": "^1.6.0",
+    "@vue/test-utils": "^2.4.6",
+    "fast-glob": "^3.3.2",
+    "jsdom": "^24.1.1",
+    "terser": "^5.44.0",
+    "vite": "^5.1.4",
+    "vite-plugin-dts": "^4.0.3",
+    "vitest": "^1.4.0"
+  }
+}

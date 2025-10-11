@@ -1,0 +1,47 @@
+.u-text {
+  vertical-align: middle;
+  font-size: var(--uc-font-size-base);
+  font-weight: var(--uc-font-weight-regular);
+  color: var(--uc-text-1);
+  /* white-space: nowrap; */
+  height: fit-content;
+  box-sizing: border-box;
+  line-height: 1.5;
+  
+  &.is-ellipsis {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  &.u-text--default {
+    color: var(--uc-text-1);
+  }
+  &.u-text--primary {
+    color: var(--uc-primary-0);
+  }
+  &.u-text--success {
+    color: var(--uc-success-1);
+  }
+  &.u-text--warning {
+    color: var(--uc-warning-3);
+  }
+  &.u-text--danger {
+    color: var(--uc-danger-1);
+  }
+  &.u-text--info {
+    color: var(--uc-info-1);
+  }
+
+  &.u-text--small {
+    font-size: var(--uc-font-size-xs);
+  }
+  &.u-text--default {
+    font-size: var(--uc-font-size-base);
+  }
+  &.u-text--large {
+    font-size: var(--uc-font-size-lg);
+  }
+}

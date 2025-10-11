@@ -1,0 +1,43 @@
+{
+  "name": "@u-blog/utils",
+  "version": "0.0.1",
+  "description": "",
+  "main": "./dist/index.browser.cjs",
+  "type": "module",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.browser.d.ts",
+      "import": "./dist/index.browser.mjs",
+      "require": "./dist/index.node.cjs"
+    },
+    "./browser": {
+      "types": "./dist/index.browser.d.ts",
+      "import": "./dist/index.browser.mjs",
+      "require": "./dist/index.browser.cjs"
+    },
+    "./node": {
+      "types": "./dist/index.node.d.ts",
+      "import": "./dist/index.node.mjs",
+      "require": "./dist/index.node.cjs"
+    }
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.13.1",
+  "dependencies": {
+    "axios": "^1.12.2",
+    "lodash-es": "^4.17.21"
+  },
+  "devDependencies": {
+    "@types/lodash-es": "^4.17.12",
+    "@types/node": "^20.19.19",
+    "tsup": "^8.5.0",
+    "@faker-js/faker": "^8.4.1"
+  }
+}

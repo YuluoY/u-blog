@@ -1,0 +1,143 @@
+.u-input {
+  width: 100%;
+  display: inline-flex;
+  vertical-align: middle;
+  position: relative;
+  height: var(--uc-height-base);
+  box-sizing: border-box;
+
+  * {
+    box-sizing: border-box;
+  }
+
+  /* 禁用 */
+  &.is-disabled {
+    cursor: not-allowed;
+    user-select: none;
+
+    .u-input__wapper {
+      background-color: var(--uc-background-2);
+      border-color: var(--uc-border-1);
+      pointer-events: none;
+    }
+  }
+
+  /* 处理input size */
+  &.u-input--large:not(.u-textarea) {
+    height: var(--uc-height-26);
+  }
+  &.u-input--default:not(.u-textarea) {
+    height: var(--uc-height-base);
+  }
+  &.u-input--small:not(.u-textarea) {
+    height: var(--uc-height-14);
+
+    .u-input__wapper {
+      .u-input__inner {
+        font-size: var(--uc-font-size-sm);
+      }
+      .u-icon {
+        font-size: var(--uc-font-size-sm);
+      }
+    }
+  }
+
+  &:has(.u-textarea) {
+    height: fit-content !important;
+  }
+
+  /* input wapper */
+  .u-input__wapper {
+    width: inherit;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.02rem 0.4rem;
+    border-radius: var(--uc-border-radius-2);
+    color: var(--uc-text-1);
+    font-size: var(--uc-font-size-base);
+    border: var(--uc-border-width-base) solid var(--uc-border-2);
+    transition: border var(--uc-animation-delay-3) var(--uc-animation-ease),
+                color var(--uc-animation-delay-3) var(--uc-animation-ease-in-out);
+    overflow: hidden;
+
+    &:hover {
+      border-color: var(--uc-border-4);
+    }
+
+    &:focus-within {
+      border-color: var(--uc-primary);
+    }
+
+    &:has(.u-textarea) {
+      height: fit-content;
+    }
+
+    /* 前后icon */
+    .u-input__prefix-wrapper:not(:empty),
+    .u-input__suffix-wrapper:not(:empty) {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin: 0.4rem;
+    }
+    .u-input__prefix,
+    .u-input__suffix {
+      display: inline-flex;
+      align-items: center;
+      margin-top: -0.1rem;
+    }
+
+    /* password类型 */
+    .u-input__password {
+      cursor: pointer;
+    }
+
+    /* 清除clear icon功能 */
+    .u-input__clear {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: inherit;
+      color: inherit;
+      transition: transform var(--uc-animation-delay-3) var(--uc-animation-ease);
+      cursor: pointer;
+      &:hover {
+        transform: rotate(360deg);
+        transform-origin: center;
+      }
+    }
+    
+    /* input */
+    .u-input__inner {
+      width: inherit;
+      color: inherit;
+      font-size: inherit;
+      line-height: 1;
+      padding: 0 0.4rem;
+      font-weight: var(--uc-font-weight-regular);
+      outline: none;
+      border: none;
+
+      &:not(.u-textarea) {
+        line-height: var(--uc-height-26);
+      }
+    }
+
+    /* textarea类型、count */
+    .u-textarea {
+      padding: 0.4rem;
+      resize: vertical;
+      min-height: var(--uc-height-18);
+    }
+    .u-textarea__count {
+      font-size: var(--uc-font-size-sm);
+      color: var(--uc-text-3);
+      position: absolute;
+      bottom: 0.3rem;
+      right: 1.2rem;
+      z-index: 0;
+      background-color: var(--uc-white);
+      pointer-events: none;
+    }
+  }
+}

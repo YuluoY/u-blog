@@ -1,0 +1,18 @@
+html,
+body,
+#app {
+  box-sizing: border-box;
+  min-width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+a {
+  font-size: 1.4rem;
+  color: #333;
+  text-decoration: none
+}
+
+.md-editor-preview .md-editor-code .md-editor-code-head {
+  z-index: 9999 !important;
+}

@@ -1,0 +1,142 @@
+.u-layout,
+.u-region {
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.u-layout {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+
+  .u-layout__body {
+    display: flex;
+    flex: 1;
+    min-height: 0; /* 重要：允许flex子项小于内容高度 */
+    width: 100%;
+  }
+
+  .u-region {
+    display: inline-flex;
+  }
+
+  .u-region__top {
+    width: 100%;
+    flex-shrink: 0;
+  }
+
+  .u-region__bottom {
+    width: 100%;
+    flex-shrink: 0;
+  }
+
+  .u-region__left,
+  .u-region__right {
+    height: 100%;
+    flex-shrink: 0;
+  }
+
+  .u-region__center {
+    flex: 1;
+    width: 100%;
+  }
+
+  // mode = default
+  .u-layout-mode {
+    display: flex;
+  }
+
+  // 延伸模式
+  .u-layout-mode__extend {
+    height: 100%;
+    display: flex;
+
+    // 主体
+    .u-layout__body {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+
+      .u-layout__body-center {
+        display: flex;
+        flex: 1;
+        flex-shrink: 0;
+        flex-direction: column;
+
+        .u-layout__body-center-content {
+          display: flex;
+          flex: 1;
+          flex-shrink: 0;
+        }
+      }
+    }
+    
+    // 左上延伸 右上延伸
+    &.left-top,
+    &.right-top {
+      flex-direction: row;
+      .u-layout__body {
+        flex-direction: column;
+        .u-layout__body-center {
+          flex-direction: row;
+        }
+      }
+    }
+
+    // 左下延伸 右下延伸
+    &.left-bottom,
+    &.right-bottom {
+      flex-direction: column;
+      .u-layout__body {
+        flex-direction: row;
+      }
+    }
+
+    // 左边延伸 右边延伸
+    &.left,
+    &.right {
+      flex-direction: row;
+      .u-layout__body {
+        flex-direction: column;
+      }
+    }
+
+    // 两边延伸
+    &.both {
+      flex-direction: row;
+      .u-layout__body {
+        flex-direction: column;
+      }
+    }
+  }
+
+}
+
+// .u-layout__row,
+// .u-layout__column {
+//   .u-region__top,
+//   .u-region__bottom,
+//   .u-region__left,
+//   .u-region__right,
+//   .u-region__center {
+//     width: unset;
+//     height: unset;
+//   }
+// }
+
+// 行模式 mode = row
+.u-layout__row {
+  flex-direction: row;
+  flex-wrap: wrap;
+  .u-region {
+    flex: 0 0 calc((100% / var(--u-layout-max-span)) * var(--u-layout-flex-size, 1));
+  }
+}
+
+// 列模式 mode = column
+.u-layout__column {
+  flex-direction: column;
+}

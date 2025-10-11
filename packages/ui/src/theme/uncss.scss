@@ -1,0 +1,90 @@
+@use './variable.scss' as *;
+
+// flex
+@each $key, $value in $flexWrapMap {
+  .#{$key} {
+    flex-wrap: #{$value};
+  }
+}
+
+// flex、grid、inline、block layout mode
+@each $key, $value in $layoutModeMap {
+  .#{$key} {
+    display: #{$value};
+  }
+}
+
+// align-items、justify-content
+@each $key, $value in $directionMap {
+  .ai-#{$key} {
+    align-items: #{$value};
+  }
+
+  .jc-#{$key} {
+    justify-content: #{$value};
+  }
+} 
+
+// margin、padding、width、height
+@for $i from 0 through 20 {
+  $gap2: $i * 2;
+  $gap4: $i * 4;
+
+  $gap2-calcul: calc($gap2 / 10);
+
+  .flex-#{$i} {
+    flex: $i;
+  }
+
+  .gap-#{$gap2} {
+    gap: $gap2-calcul * 1rem;
+  }
+
+  .grid-cols-#{$i} {
+    grid-template-columns: repeat($i, 1fr);
+  }
+
+  @each $key, $value in $directionBaseMap {
+    .m#{$key}-#{$gap2} {
+      margin-#{$value}: $gap2-calcul * 1rem;
+    }
+
+    .p#{$key}-#{$gap2} {
+      padding-#{$value}: $gap2-calcul * 1rem;
+    }
+  }
+
+  .m-#{$gap2} {
+    margin: $gap2-calcul * 1rem;
+  }
+
+  .p-#{$gap2} {
+    padding: $gap2-calcul * 1rem;
+  }
+
+  @if $i <= 10 {
+    $percent: $i * 10;
+
+    .w-p-#{$percent} {
+      width: $percent * 1%;
+    }
+
+    .h-p-#{$percent} {
+      height: $percent * 1%;
+    }
+  }
+}
+
+@for $i from 0 through 100 {
+  $gap2: $i * 2;
+
+  $gap2-calcul: calc($gap2 / 10);
+
+  .w-#{$gap2} {
+    width: $gap2-calcul * 1rem;
+  }
+
+  .h-#{$gap2} {
+    height: $gap2-calcul * 1rem;
+  }
+}

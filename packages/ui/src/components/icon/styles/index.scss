@@ -1,0 +1,19 @@
+.u-icon {
+  display: inline-flex;
+  width: 1em;
+  height: 1em;
+  font-size: inherit;
+  vertical-align: middle;
+  align-items: center;
+  justify-content: center;
+
+  &.u-icon--primary {
+    color: var(--uc-primary);
+  }
+
+  @each $val in info, success, warning, danger {
+    &.u-icon--#{$val} {
+      color: var(--uc-#{$val});
+    }
+  }
+}

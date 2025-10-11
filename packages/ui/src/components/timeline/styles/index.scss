@@ -1,0 +1,144 @@
+.u-timeline {
+  --timeline-content-gap: var(--uc-height-6);
+  --timeline-date-font-weight: var(--uc-font-weight-normal);
+  --timeline-date-color: var(--uc-text-3);
+  --timeline-date-font-size: var(--uc-font-size-md);
+  --timeline-content-font-weight: var(--uc-font-weight-regular);
+  --timeline-content-color: var(--uc-text-1);
+  --timeline-content-font-size: var(--uc-font-size-base);
+}
+
+.u-timeline {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: fit-content;
+  gap: var(--timeline-gutter);
+  box-sizing: border-box;
+  
+  &--vertical {
+    flex-direction: column;
+    padding-left: var(--timeline-margin);
+
+    .u-timeline-line {
+      width: 0.2rem;
+    }
+    .u-timeline-item {
+      &-dot {
+        left: calc(var(--timeline-margin) * -1);
+        transform: translateX(-50%);
+       
+      }
+    }
+  }
+
+  &--horizontal {
+    flex-direction: row;
+    padding-top: var(--timeline-margin);
+
+    .u-timeline-line {
+      height: 0.2rem;
+    }
+
+    .u-timeline-item {
+     
+      &-dot {
+        top: calc(var(--timeline-margin) * -1);
+        transform: translateY(-50%);
+        &.u-timeline-item-dot--left {
+          left: 0;
+        }
+        &.u-timeline-item-dot--right {
+          left: auto;
+          right: 0;
+        }
+        &.u-timeline-item-dot--center {
+          left: 50%;
+          transform: translateX(-50%) translateY(-50%);
+        }
+      }
+    }
+  }
+
+  &-line {
+    position: absolute;
+    left: 0;
+    top: 0;
+    background-color: var(--timeline-line-color);
+  }
+
+  &-item {
+    position: relative;
+
+    &__inner {
+      display: flex;
+    }
+
+    &-dot {
+      cursor: pointer;
+      position: absolute;
+      top: 0;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      background-color: var(--uc-white);
+
+      // 定义颜色映射
+      $colors: (
+        'primary': var(--uc-primary),
+        'success': var(--uc-success),
+        'warning': var(--uc-warning),
+        'danger': var(--uc-danger),
+        'info': var(--uc-info)
+      );
+
+      // 使用循环生成样式
+      @each $name, $color in $colors {
+        &--#{$name}:not(.u-icon) {
+          background-color: $color;
+          &.u-timeline-item-dot--hollow {
+            border: 0.2rem solid $color;
+          }
+        }
+        &--#{$name}.u-icon {
+          color: $color;
+        }
+      }
+
+      &--hollow {
+        background-color: white;
+      }
+
+      &--normal:not(.u-icon) {
+        width: 1.2rem;
+        height: 1.2rem;
+      }
+      &--normal.u-icon {
+        font-size: 1.4rem;
+      }
+      &--large:not(.u-icon) {
+        width: 1.6rem;
+        height: 1.6rem;
+      }
+      &--large.u-icon {
+        font-size: 2rem;
+      }
+    }
+    &__inner {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: var(--timeline-content-gap);
+    }
+    &-date {
+      font-size: var(--timeline-date-font-size);
+      color: var(--timeline-date-color);
+      font-weight: var(--timeline-date-font-weight);
+    }
+    &-content {
+      font-size: var(--timeline-content-font-size);
+      color: var(--timeline-content-color);
+      font-weight: var(--timeline-content-font-weight);
+    }
+  }
+}

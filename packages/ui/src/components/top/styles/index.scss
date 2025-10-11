@@ -1,0 +1,51 @@
+.u-top {
+  --top-inner-border-width: var(--uc-border-width-2);
+  --top-inner-border-color: var(--uc-border-1);
+  --top-inner-border-radius: var(--uc-border-radius-base);
+  --top-inner-transition: var(--uc-transition);
+  --top-inner-border-hover-color: var(--uc-primary);
+  --top-inner-animation-delay: var( --uc-animation-duration); 
+}
+
+.u-top {
+  height: 100%;
+  width: 100%;
+  position: relative;
+  box-sizing: border-box;
+
+  .u-top__inner {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    overflow: hidden;
+    align-items: center;
+    justify-content: center;
+    box-sizing: content-box;
+    z-index: 1;
+    padding: 0.8rem;
+    border: var(--top-inner-border-width) solid var(--top-inner-border-color);
+    border-radius: var(--top-inner-border-radius);
+    transition: border-color var(--top-inner-animation-delay),
+    opacity var(--top-inner-animation-delay);
+
+    &:hover {
+      border-color: var(--top-inner-border-hover-color);
+    }
+
+    &:active {
+      opacity: 0.6;
+    }
+  }
+}
+
+.u-top-slide-enter-active, .u-top-slide-leave-active {
+  transition: transform 0.5s, opacity 0.5s;
+}
+.u-top-slide-enter-from, .u-top-slide-leave-to {
+  opacity: 0;
+  transform: translate(0, 100%);
+}
+.u-top-slide-enter-to, .u-top-slide-leave-from {
+  opacity: 1;
+  transform: translate(0, 0);
+}

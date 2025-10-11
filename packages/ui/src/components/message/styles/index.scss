@@ -1,0 +1,110 @@
+.u-message {
+  position: fixed;
+  left: 50%;
+  top: 20px;
+  width: fit-content;
+  max-width: calc(100% - 3rem);
+  box-sizing: border-box;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 0;
+  font-size: var(--uc-font-size-base);
+  border-radius: var(--uc-border-radius-2);
+  z-index: var(--uc-z-index-message);
+  transition: top var(--uc-animation-duration) var(--uc-animation-ease-in-out),
+      opacity var(--uc-animation-duration) var(--uc-animation-ease-in-out),
+      transform var(--uc-animation-duration) var(--uc-animation-ease-in-out);
+
+  &.u-message--info {
+    background-color: var(--uc-info-light-5);
+    color: var(--uc-info-1);
+  }
+
+  &.u-message--success {
+    background-color: var(--uc-success-light-5);
+    color: var(--uc-success-1);
+  }
+
+  &.u-message--warning {
+    background-color: var(--uc-warning-light-5);
+    color: var(--uc-warning-1);
+  }
+
+  &.u-message--error {
+    background-color: var(--uc-danger-light-5);
+    color: var(--uc-danger-1);
+  }
+
+  &.u-message--primary {
+    background-color: var(--uc-primary-light-5);
+    color: var(--uc-primary);
+  }
+
+  &.is-center {
+    .u-message-content {
+      text-align: center;
+      justify-content: center;
+    }
+  }
+
+  &.is-plain {
+    background-color: var(--uc-white);
+    
+    &.u-message--info {
+      color: var(--uc-info-1);
+      border: var(--uc-border-width-2) solid var(--uc-info-1);
+    }
+
+    &.u-message--error {
+      color: var(--uc-danger-1);
+      border: var(--uc-border-width-2) solid var(--uc-danger-1);
+    }
+
+    &.u-message--warning {
+      background-color: var(--uc-warning-3);
+      border: var(--uc-border-width-2) solid var(--uc-warning-1);
+    }
+
+    &.u-message--success {
+      color: var(--uc-success-1);
+      border: var(--uc-border-width-2) solid var(--uc-success-1);
+    }
+
+    &.u-message--primary {
+      color: var(--uc-primary);
+      border: var(--uc-border-width-2) solid var(--uc-primary);
+    }
+  }
+
+  .u-message-icon,
+  .u-message-close,
+  .u-message-content {
+    display: flex;
+    align-items: center;
+  }
+  
+  .u-message-icon {
+    margin-left: 0.8rem;
+    justify-content: center;
+  }
+
+  .u-message-content {
+    padding: 0 0.8rem;
+    overflow-wrap: break-word;
+  }
+
+  .u-message-close {
+    cursor: pointer;
+    margin-right: 0.8rem;
+    justify-content: center;
+  }
+
+}
+
+.u-message.fade-up-enter-from,
+.u-message.fade-up-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -100%);
+}

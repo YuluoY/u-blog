@@ -1,0 +1,80 @@
+.u-tooltip {
+  display: inline-flex;  
+
+  .u-tooltip__trigger {
+    width: 100%;
+    height: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+
+    .u-tooltip__trigger-content {
+      width: inherit;
+      height: inherit;
+      display: inline-block;
+      opacity: 0;
+    }
+  }
+
+  .u-tooltip__popper {
+    position: relative;
+    text-align: center;
+    z-index: var(--uc-z-index-tooltip);
+    font-size: var(--uc-font-size-base);
+    border-radius: var(--uc-border-radius-2);
+    border: var(--uc-border-width-2) solid var(--uc-border-1);
+  }
+
+  @mixin tooltip-styles($text-color, $bg-color) {
+    color: $text-color;
+    background-color: $bg-color;
+  }
+  
+  @mixin renderTooltipArrow($bg-color) {
+    @each $direction, $polygon in (top: polygon(50% 100%, 0% 0%, 100% 0%), 
+                                   bottom: polygon(50% 0%, 0% 100%, 100% 100%), 
+                                   left: polygon(100% 50%, 0% 0%, 0% 100%), 
+                                   right: polygon(0% 50%, 100% 0%, 100% 100%)) {
+      &[data-popper-placement="#{$direction}"],
+      &[data-popper-placement="#{$direction}-start"],
+      &[data-popper-placement="#{$direction}-end"] {
+        .u-tooltip__popper--arrow {
+          clip-path: $polygon;
+          background-color: $bg-color;
+          width: 0.8rem;
+          height: 0.4rem;
+          #{$direction}: 100%;
+        }
+      }
+    }
+  }
+  
+  &.u-tooltip--dark {
+    @each $direction in (top, bottom, left, right) {
+      #{$direction}: -0.1rem;
+    }
+    .u-tooltip__popper {
+      @include renderTooltipArrow(var(--uc-background-dark-2));
+      @include tooltip-styles(var(--uc-text-7), var(--uc-background-dark-2));
+    }
+  }
+  
+  &.u-tooltip--light {
+    .u-tooltip__popper {
+      @include renderTooltipArrow(var(--uc-background-1));
+      @include tooltip-styles(var(--uc-text-1), var(--uc-background-1));
+      box-shadow: var(--uc-shadow-4);
+    }
+  }
+}
+
+/* Transition component fade */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity var(--uc-animation-delay-5);
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}

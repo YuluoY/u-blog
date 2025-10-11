@@ -1,0 +1,30 @@
+$directionBaseMap: (
+  'l': 'left',
+  'r': 'right',
+  't': 'top',
+  'b': 'bottom'
+);
+
+$directionMap: (
+  'center': 'center',
+  'start': 'start',
+  'f-start': 'flex-start',
+  'end': 'end',
+  'f-end': 'flex-end'
+);
+
+$layoutModeMap: (
+  'flex': 'flex',
+  'grid': 'grid',
+  'inline': 'inline',
+  'block': 'block',
+  'in-block': 'inline-block',
+  'in-flex': 'inline-flex',
+  'in-grid': 'inline-grid'
+);
+
+$flexWrapMap: (
+  'f-wrap': 'wrap',
+  'f-wrap-reverse': 'wrap-reverse',
+  'f-nowrap': 'nowrap'
+);

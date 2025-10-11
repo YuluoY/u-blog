@@ -1,0 +1,216 @@
+:root {
+   /* 颜色 */
+  --uc-primary: #007bff; /* 浅主色 */
+  --uc-primary-0: #0069d9; /* 主色 */
+  --uc-primary-1: #1E50A2; /* 青花蓝 */
+  --uc-primary-2: #17418C; /* 深青花蓝 */
+  --uc-primary-3: #113075; /* 更深青花蓝 */
+  --uc-primary-4: #0A1F5E; /* 近黑青花蓝 */
+  --uc-primary-5: #041247; /* 最深青花蓝 */
+
+   /* 主色的渐变层次 */
+   --uc-primary-light-1: #007bff;   /* 最不透明，原色 */
+   --uc-primary-light-2: #339aff;   /* 次不透明 */
+   --uc-primary-light-3: #66b8ff;   /* 渐浅 */
+   --uc-primary-light-4: #99d5ff;   /* 更浅 */
+   --uc-primary-light-5: #cceeff;   /* 接近白色 */
+   --uc-primary-light-6: #e5f5ff;   /* 极浅 */
+   --uc-primary-light-7: #f0faff;   /* 几乎透明 */
+   --uc-primary-light-8: #f9fdff;   /* 轻微着色 */
+   --uc-primary-light-9: #fcfeff;   /* 微不可见 */
+   --uc-primary-light-10: #ffffff;  /* 完全白色 */
+
+  /* 副色 */
+  --uc-secondary: #6c757d; /* 次色 */
+  --uc-secondary-1: #F4F4F8; /* 雪青 */
+  --uc-secondary-2: #E0E0E5; /* 深雪青 */
+  --uc-secondary-3: #CBCBD0; /* 更深雪青 */
+  --uc-secondary-4: #B5B5B9; /* 近黑雪青 */
+  --uc-secondary-5: #9F9FA3; /* 最深雪青 */
+
+  /* 强调色 */
+  --uc-accent-1: #8A8D91; /* 烟灰 */
+  --uc-accent-2: #6F7175; /* 深烟灰 */
+  --uc-accent-3: #535557; /* 更深烟灰 */
+  --uc-accent-4: #373839; /* 近黑烟灰 */
+  --uc-accent-5: #1B1C1D; /* 最深烟灰 */
+
+  /* 背景色 */
+  --uc-background-1: #FFFFFF; /* 白色 */
+  --uc-background-2: #F8F8F8; /* 略浅白 */
+  --uc-background-3: #F0F2F5; /* 浅灰 */
+  --uc-background-4: #E8E8EA; /* 更浅灰 */
+  --uc-background-5: #D0D0D3; /* 近黑浅灰 */
+  --uc-background-6: #B8B8BB; /* 最浅灰 */
+
+  --uc-background-dark-1: #000000; /* 黑色 */
+  --uc-background-dark-2: #1A1A1A; /* 略浅黑 */
+  --uc-background-dark-3: #333333; /* 深黑 */
+  --uc-background-dark-4: #4D4D4D; /* 更深黑 */
+
+  --uc-background-disabled: #F8F8F8; /* 略浅灰 */
+
+  /* 文字色 */
+  --uc-text-1: #333333; /* 深灰 */
+  --uc-text-2: #666666; /* 中灰 */
+  --uc-text-3: #999999; /* 浅灰 */
+  --uc-text-4: #CCCCCC; /* 更浅灰 */
+  --uc-text-5: #E5E5E5; /* 最浅灰 */
+  --uc-text-6: #F0F0F0; /* 极浅灰 */
+  --uc-text-7: #F5F5F5; /* 超浅灰 */
+  --uc-text-8: #FAFAFA; /* 近乎白色 */
+  --uc-text-9: #FCFCFC; /* 纯白稍浅 */
+
+  /* 链接色 */
+  --uc-link-1: #1E50A2; /* 青花蓝 */
+  --uc-link-2: #17418C; /* 深青花蓝 */
+  --uc-link-3: #113075; /* 更深青花蓝 */
+  --uc-link-4: #0A1F5E; /* 近黑青花蓝 */
+  --uc-link-5: #041247; /* 最深青花蓝 */
+
+  /* 边框色 */
+  --uc-border-1: #DADADA; /* 浅灰 */
+  --uc-border-2: #B0B0B0; /* 中灰 */
+  --uc-border-3: #888888; /* 深灰 */
+  --uc-border-4: #666666; /* 更深灰 */
+  --uc-border-5: #444444; /* 最深灰 */
+
+  /* 状态色 */
+  --uc-success: #2ebe50; /* 绿色 */
+  --uc-success-1: #28A745; /* 绿色 */
+  --uc-success-2: #218838; /* 深绿色 */
+  --uc-success-3: #1A6E2D; /* 更深绿色 */
+  --uc-success-4: #144622; /* 近黑绿色 */
+  --uc-success-5: #0D2D17; /* 最深绿色 */
+
+  --uc-success-light-1: #2ebe50;   /* 最不透明，原色 */
+  --uc-success-light-2: #54cc73;   /* 次不透明 */
+  --uc-success-light-3: #7ad995;   /* 渐浅 */
+  --uc-success-light-4: #9fe7b8;   /* 更浅 */
+  --uc-success-light-5: #c5f4da;   /* 接近白色 */
+  --uc-success-light-6: #e0faeb;   /* 极浅 */
+  --uc-success-light-7: #eafdf2;   /* 几乎透明 */
+  --uc-success-light-8: #f4fef8;   /* 轻微着色 */
+  --uc-success-light-9: #f9fefb;   /* 微不可见 */
+  --uc-success-light-10: #ffffff;  /* 完全白色 */
+
+  --uc-warning: #FFDD6B;
+  --uc-warning-1: #FFC107; /* 黄色 */
+  --uc-warning-2: #E0A800; /* 深黄色 */
+  --uc-warning-3: #B68900; /* 更深黄色 */
+  --uc-warning-4: #8F6600; /* 近黑黄色 */
+  --uc-warning-5: #5C4400; /* 最深黄色 */
+
+  --uc-warning-light-1: #FFDD6B;  /* 最不透明，原色 */
+  --uc-warning-light-2: #ffe086;  /* 次不透明 */
+  --uc-warning-light-3: #ffe3a0;  /* 渐浅 */
+  --uc-warning-light-4: #ffe6ba;  /* 更浅 */
+  --uc-warning-light-5: #ffeed6;  /* 接近白色 */
+  --uc-warning-light-6: #fff4e5;  /* 极浅 */
+  --uc-warning-light-7: #fff7ed;  /* 几乎透明 */
+  --uc-warning-light-8: #fffaf4;  /* 轻微着色 */
+  --uc-warning-light-9: #fefcf8;  /* 微不可见 */
+  --uc-warning-light-10: #ffffff; /* 完全白色 */
+
+  --uc-danger: #F57373;
+  --uc-danger-1: #DC3545; /* 红色 */
+  --uc-danger-2: #C82333; /* 深红色 */
+  --uc-danger-3: #A91B2C; /* 更深红色 */
+  --uc-danger-4: #7C1324; /* 近黑红色 */
+  --uc-danger-5: #500B17; /* 最深红色 */
+
+  --uc-danger-light-1: #f57373;   /* 最不透明，原色 */
+  --uc-danger-light-2: #f79494;   /* 次不透明 */
+  --uc-danger-light-3: #f9b4b4;   /* 渐浅 */
+  --uc-danger-light-4: #fbd5d5;   /* 更浅 */
+  --uc-danger-light-5: #fde5e5;   /* 接近白色 */
+  --uc-danger-light-6: #fee5e5;   /* 极浅 */
+  --uc-danger-light-7: #fef2f2;   /* 几乎透明 */
+  --uc-danger-light-8: #fef7f7;   /* 轻微着色 */
+  --uc-danger-light-9: #fefbfb;   /* 微不可见 */
+  --uc-danger-light-10: #ffffff;  /* 完全白色 */
+
+  --uc-info: #66D1E0;
+  --uc-info-1: #17A2B8; /* 蓝色 */
+  --uc-info-2: #138496; /* 深蓝色 */
+  --uc-info-3: #0F6674; /* 更深蓝色 */
+  --uc-info-4: #0B4953; /* 近黑蓝色 */
+  --uc-info-5: #072E36; /* 最深蓝色 */
+
+  --uc-info-light-1: #66D1E0;    /* 最不透明，原色 */
+  --uc-info-light-2: #84dcea;    /* 次不透明 */
+  --uc-info-light-3: #a1e5f0;    /* 渐浅 */
+  --uc-info-light-4: #bfeff6;    /* 更浅 */
+  --uc-info-light-5: #dbf8fb;    /* 接近白色 */
+  --uc-info-light-6: #e5fcfd;    /* 极浅 */
+  --uc-info-light-7: #effdfe;    /* 几乎透明 */
+  --uc-info-light-8: #f7fefe;    /* 轻微着色 */
+  --uc-info-light-9: #fcfefe;    /* 微不可见 */
+  --uc-info-light-10: #ffffff;   /* 完全白色 */
+
+  /* 表单元素 */
+  --uc-input-bg: #FFFFFF; /* 白色 */
+  --uc-input-border-1: #DADADA; /* 浅灰 */
+  --uc-input-border-2: #B0B0B0; /* 中灰 */
+  --uc-input-placeholder-1: #999999; /* 灰色 */
+  --uc-input-placeholder-2: #666666; /* 深灰 */
+  --uc-input-focus-border: #1E50A2; /* 青花蓝 */
+
+  /* 表格 */
+  --uc-table-header-bg: #F0F2F5; /* 浅灰 */
+  --uc-table-row-bg-1: #FFFFFF; /* 白色 */
+  --uc-table-row-bg-2: #F4F4F8; /* 雪青 */
+  --uc-table-row-hover-bg-1: #E8E8E8; /* 更浅灰 */
+  --uc-table-row-hover-bg-2: #CBCBD0; /* 更深雪青 */
+
+  /* 阴影 */
+  --uc-shadow-1: 0px 0px 0.4rem rgba(0, 0, 0, 0.1); 
+  --uc-shadow-2: 0px 0px 0.8rem rgba(0, 0, 0, 0.1); 
+  --uc-shadow-3: 0px 0px 1.2rem rgba(0, 0, 0, 0.1); 
+  --uc-shadow-4: 0px 0px 1.6rem rgba(0, 0, 0, 0.2); 
+  --uc-shadow-5: 0px 0px 2rem rgba(0, 0, 0, 0.2); 
+  --uc-shadow-6: 0px 0px 2.4rem rgba(0, 0, 0, 0.2); 
+  --uc-shadow-7: 0px 0px 2.8rem rgba(0, 0, 0, 0.3); 
+  --uc-shadow-8: 0px 0px 3.2rem rgba(0, 0, 0, 0.3); 
+  --uc-shadow-9: 0px 0px 3.6rem rgba(0, 0, 0, 0.3); 
+
+  /* 亮阴影 */
+  --uc-shadow-light-1: 0px 0px 0.4rem rgba(255, 255, 255, 0.1); 
+  --uc-shadow-light-2: 0px 0px 0.8rem rgba(255, 255, 255, 0.1); 
+  --uc-shadow-light-3: 0px 0px 1.2rem rgba(255, 255, 255, 0.1);
+  --uc-shadow-light-4: 0px 0px 1.6rem rgba(255, 255, 255, 0.2); 
+  --uc-shadow-light-5: 0px 0px 2rem rgba(255, 255, 255, 0.2); 
+  --uc-shadow-light-6: 0px 0px 2.4rem rgba(255, 255, 255, 0.2);
+  --uc-shadow-light-7: 0px 0px 2.8rem rgba(255, 255, 255, 0.3); 
+  --uc-shadow-light-8: 10px 0px 3.2rem rgba(255, 255, 255, 0.2); 
+  --uc-shadow-light-9: 0px 0px 3.6rem rgba(255, 255, 255, 0.3);
+
+  /* 遮罩层颜色 */
+  --uc-modal-color-1: rgba(0, 0, 0, 0.5); /* 半透明黑 */
+  --uc-modal-color-2: rgba(0, 0, 0, 0.7); /* 更深的半透明黑 */
+  --uc-modal-color-3: rgba(255, 255, 255, 0.2); /* 半透明白 */
+  --uc-modal-color-4: rgba(255, 255, 255, 0.5); /* 更浅的半透明白 */
+  --uc-modal-color-5: rgba(0, 0, 0, 0.3); /* 轻微的半透明黑 */
+  --uc-modal-color-6: rgba(0, 0, 0, 0.01); /* 极浅的半透明黑 */
+
+  /* 用于不同状态的遮罩色 */
+  --uc-modal-success: rgba(46, 190, 80, 0.5); /* 成功状态 */
+  --uc-modal-warning: rgba(255, 221, 107, 0.5); /* 警告状态 */
+  --uc-modal-danger: rgba(253, 115, 115, 0.5); /* 危险状态 */
+  --uc-modal-info: rgba(102, 209, 224, 0.5); /* 信息状态 */
+}
+
+.custom-scollbar::-webkit-scrollbar {
+  width: 0.2rem;
+  height: 0.2rem;
+}
+
+.custom-scollbar::-webkit-scrollbar-thumb {
+  border-radius: 2rem;
+  background-color: var(--uc-primary-light-2);
+}
+
+.custom-scollbar::-webkit-scrollbar-track {
+  border-radius: 2rem;
+  background-color: var(--uc-background-3)
+}

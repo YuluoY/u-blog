@@ -1,0 +1,25 @@
+.u-popconfirm,
+#u-popper-container {
+  .u-popconfirm__main {
+    .u-popconfirm__actions,
+    .u-popconfirm__content {
+      display: flex;
+      align-items: center;
+      font-size: var(--uc-font-size-base);
+      font-weight: var(--uc-font-weight-regular);
+      color: var(--uc-text-1);
+    }
+  
+    .u-popconfirm__content {
+  
+      .u-popconfirm__icon {
+        padding-right: 0.4rem;
+      }
+    }
+  
+    .u-popconfirm__actions {
+      padding-top: 0.8rem;
+      justify-content: flex-end;
+    }
+  }
+}

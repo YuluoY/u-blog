@@ -1,0 +1,1 @@
+export const DIALOG_DEF_INDEX = 2006

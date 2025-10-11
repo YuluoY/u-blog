@@ -1,0 +1,126 @@
+@charset "UTF-8";
+@use './blue/index.scss';
+@use './reset.scss';
+@use './uncss.scss';
+:root {
+
+  /* 字体大小 */
+  --uc-font-size-xs: 0.8rem; /* 超小字体 */
+  --uc-font-size-sm: 1rem; /* 小字体 */
+  --uc-font-size-md: 1.2rem; /* 中字体 */
+  --uc-font-size-base: 1.4rem; /* 基础字体大小 */
+  --uc-font-size-lg: 1.6rem; /* 大字体 */
+  --uc-font-size-xl: 1.8rem; /* 超大字体 */
+  --uc-font-size-xxl: 2rem; /* 超超大字体 */
+  --uc-font-size-xxxl: 2.2rem; /* 超超超大字体 */
+  /* 字体粗细 */
+  --uc-font-weight-regular: 400; /* 常规字体 */
+  --uc-font-weight-bold: 700; /* 粗体 */
+  --uc-font-weight-bolder: 800; /* 更粗 */
+  --uc-font-weight-lighter: 300; /* 更细 */
+  --uc-font-weight-light: 200; /* 细体 */
+  --uc-font-weight-normal: 500; /* 正常 */
+  --uc-font-weight-medium: 600; /* 中等 */
+  /* 基础色 */
+  --uc-white: #FFFFFF; /* 白色 */
+  --uc-black: #000000; /* 黑色 */
+  --uc-gray: #F0F0F0; /* 灰色 */
+  /* 边框圆角 */
+  --uc-border-radius-base: 0.4rem;
+  --uc-border-radius-2: 0.2rem; /* 小边框圆角 */
+  --uc-border-radius-3: 0.3rem; /* 较小边框圆角 */
+  --uc-border-radius-4: 0.4rem; /* 默认边框圆角 */
+  --uc-border-radius-6: 0.6rem; /* 大边框圆角 */
+  --uc-border-radius-8: 0.8rem; /* 超大边框圆角 */
+  --uc-border-radius-10: 1rem; /* 超超大边框圆角 */
+  --uc-border-radius-12: 1.2rem; /* 超超超大边框圆角 */
+  --uc-border-radius-16: 1.6rem; /* 超超超超大边框圆角 */
+  --uc-border-radius-20: 2rem; /* 超超超超超大边框圆角 */
+  --uc-border-radius-circle: 50%; /* 圆形边框圆角 */
+  --uc-border-width-base: 0.06rem;
+  --uc-border-width-1: 0.01rem;
+  --uc-border-width-2: 0.02rem;
+  --uc-border-width-4: 0.04rem;
+  --uc-border-width-6: 0.06rem;
+  --uc-border-width-8: 0.08rem;
+  --uc-border-width-10: 0.1rem;
+  --uc-border-width-12: 0.12rem;
+  --uc-border-width-14: 0.14rem;
+  --uc-border-width-16: 0.16rem;
+  --uc-border-width-18: 0.18rem;
+  --uc-border-width-20: 0.2rem;
+  --uc-height-base: 2rem;
+  --uc-height-2: 0.2rem;
+  --uc-height-4: 0.4rem;
+  --uc-height-6: 0.6rem;
+  --uc-height-8: 0.8rem;
+  --uc-height-10: 1rem;
+  --uc-height-12: 1.2rem;
+  --uc-height-14: 1.4rem;
+  --uc-height-16: 1.6rem;
+  --uc-height-18: 1.8rem;
+  --uc-height-20: 2rem;
+  --uc-height-22: 2.2rem;
+  --uc-height-24: 2.4rem;
+  --uc-height-26: 2.6rem;
+  --uc-height-28: 2.8rem;
+  --uc-height-30: 3rem;
+  --uc-height-32: 3.2rem;
+  --uc-height-34: 3.4rem;
+  --uc-height-36: 3.6rem;
+  --uc-height-38: 3.8rem;
+  --uc-height-40: 4rem;
+  --uc-height-42: 4.2rem;
+  --uc-height-44: 4.4rem;
+  --uc-height-46: 4.6rem;
+  --uc-height-48: 4.8rem;
+  --uc-height-50: 5rem;
+  --uc-height-0: 0;
+  /* 字体 */
+  --uc-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"; /* 字体族 */
+  /* 动画相关 */
+  --uc-transition: all 0.3s ease-in-out;
+  --uc-animation-duration: 0.3s;
+  --uc-animation-delay: 0.1s;
+  --uc-animation-delay-2: 0.2s;
+  --uc-animation-delay-3: 0.3s;
+  --uc-animation-delay-4: 0.4s;
+  --uc-animation-delay-5: 0.5s;
+  --uc-animation-delay-6: 0.6s;
+  --uc-animation-delay-7: 0.7s;
+  --uc-animation-delay-8: 0.8s;
+  --uc-animation-delay-9: 0.9s;
+  --uc-animation-delay-10: 1s;
+  --uc-animation-delay-20: 2s;
+  --uc-animation-delay-30: 3s;
+  /* ease ease-in */
+  --uc-animation-ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --uc-animation-ease-in: cubic-bezier(0.42, 0, 1, 1);
+  /* ease-out */
+  --uc-animation-ease-out: cubic-bezier(0.4, 0, 0.2, 1);
+  /* ease-in-out */
+  --uc-animation-ease-in-out: cubic-bezier(0.42, 0, 0.58, 1);
+  /* ease-in-back */
+  --uc-animation-ease-in-back: cubic-bezier(0.6, -0.28, 0.735, 0.045);
+  /* ease-out-back */
+  --uc-animation-ease-out-back: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  /* ease-in-out-back */
+  --uc-animation-ease-in-out-back: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  /* 其他 */
+  --uc-z-index-message: 1080; /* 消息的 z-index */
+  --uc-z-index-modal: 1050; /* 模态框的 z-index */
+  --uc-z-index-tooltip: 1060; /* 工具提示的 z-index */
+  --uc-z-index-popover: 1070; /* 弹出框的 z-index */
+  --uc-z-index-backdrop: 1040; /* 背景遮罩的 z-index */
+  --uc-z-index-dropdown: 1000; /* 下拉菜单的 z-index */
+  --uc-z-index-navbar: 1000; /* 导航栏的 z-index */
+  --uc-z-index-navbar-fixed: 1030; /* 固定导航栏的 z-index */
+  --uc-z-index-navbar-sticky: 1030; /* 粘性导航栏的 z-index */
+  --uc-z-index-navbar-static: 1030; /* 静态导航栏的 z-index */
+  --uc-z-index-navbar-fixed-top: 1030; /* 固定在顶部的导航栏的 z-index */
+  --uc-z-index-navbar-fixed-bottom: 1030; /* 固定在底部的导航栏的 z-index */
+  --uc-z-index-navbar-sticky-top: 1030; /* 粘性在顶部的导航栏的 z-index */
+  --uc-z-index-navbar-sticky-bottom: 1030; /* 粘性在底部的导航栏的 z-index */
+  --uc-z-index-navbar-static-top: 1030; /* 静态在顶部的导航栏的 z-index */
+  --uc-z-index-navbar-static-bottom: 1030; /* 静态在底部的导航栏的 z-index */
+}/*# sourceMappingURL=index.css.map */
