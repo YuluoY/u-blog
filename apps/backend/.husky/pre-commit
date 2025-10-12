@@ -1,0 +1,16 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "-----------代码正在eslint格式化-----------"
+
+# "lint:eslint": "eslint --cache --max-warnings 0  \"{applications,packages}/**/*.{vue,ts,js}\" --fix",
+# 对指定目录下的文件扫描后eslint格式化
+# 以下命令可以开启使用
+# npm run lint:eslint
+
+# 只对提交文件进行eslint格式化
+# 以下命令可以开启使用
+
+npx lint-staged
+
+echo "-----------代码格式化完成-----------"

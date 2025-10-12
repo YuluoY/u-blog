@@ -1,11 +1,11 @@
-# UCC Blog Monorepo
+# U Blog Monorepo
 
 这是一个基于 pnpm workspace 的 monorepo 项目，包含博客系统的前端、管理后台、后端服务以及共享的 UI 组件库和工具库。
 
 ## 🏗️ 项目结构
 
 ```
-ucc-blog/
+u-blog/
 ├── apps/                      # 应用项目
 │   ├── frontend/             # 前端应用 (Vue 3 + TypeScript)
 │   ├── admin/                # 管理后台 (React + TypeScript)
@@ -23,19 +23,19 @@ ucc-blog/
 
 ### Apps
 
-#### 🎨 Frontend (`@ucc-blog/frontend`)
+#### 🎨 Frontend (`@u-blog/frontend`)
 - **技术栈**: Vue 3 + TypeScript + Vite
 - **端口**: 默认 5173
 - **说明**: 博客前端展示应用
-- **依赖**: ucc-ui, vue, vue-router, pinia
+- **依赖**: u-ui, vue, vue-router, pinia
 
-#### 🔧 Admin (`@ucc-blog/admin`)
+#### 🔧 Admin (`@u-blog/admin`)
 - **技术栈**: React + TypeScript + Vite
 - **端口**: 默认 5174
 - **说明**: 博客管理后台
 - **依赖**: react, react-dom
 
-#### 🚀 Backend (`@ucc-blog/backend`)
+#### 🚀 Backend (`@u-blog/backend`)
 - **技术栈**: Express + JavaScript
 - **端口**: 默认 3000
 - **说明**: 后端 API 服务
@@ -43,12 +43,12 @@ ucc-blog/
 
 ### Packages
 
-#### 🎭 UI (`ucc-ui`)
+#### 🎭 UI (`u-ui`)
 - **说明**: Vue 3 UI 组件库
 - **技术栈**: Vue 3 + TypeScript + Vite
 - **包含**: 多个可复用的 UI 组件
 
-#### 🛠️ Utils (`ucc-utils`)
+#### 🛠️ Utils (`u-utils`)
 - **说明**: 通用工具库
 - **技术栈**: TypeScript + tsup
 - **包含**: 核心工具、请求封装、存储管理等
