@@ -1,5 +1,5 @@
 /**
- * 异常处理函数
+ * 异常处理函数 - 错误优先
  * @author    Yuluo
  * @link      https://github.com/YuluoY
  * @date      2024-08-29

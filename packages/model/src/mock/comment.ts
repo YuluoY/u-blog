@@ -1,4 +1,4 @@
-import type { IComment } from '../comment'
+import type { IComment } from '../schema/comment'
 import { faker } from '@faker-js/faker/locale/zh_CN'
 import { createArticle } from './article'
 import { createUser } from './user'

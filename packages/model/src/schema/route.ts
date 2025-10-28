@@ -1,4 +1,4 @@
-import type { IBaseFields } from './base'
+import type { IBaseFields } from '../base'
 
 export interface IRoute extends IBaseFields {
   title: string

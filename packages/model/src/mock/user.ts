@@ -1,4 +1,4 @@
-import type { IUserSocial, IUser, IUserWebsite } from '../user'
+import type { IUserSocial, IUser, IUserWebsite } from '../schema/user'
 import { faker } from '@faker-js/faker/locale/zh_CN'
 import { getRandomImage, toCopy } from './utils'
 

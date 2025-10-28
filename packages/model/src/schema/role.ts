@@ -1,4 +1,4 @@
-import type { IBaseFields } from './base'
+import type { IBaseFields } from '../base'
 import type { IPermission } from './permission'
 
 export const CUserRole = {

@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker/locale/zh_CN'
 import { generateRandomMarkdown, getRandomImage, toCopy } from './utils'
-import { CArticleStatus, type IArticle } from '../article'
+import { CArticleStatus, type IArticle } from '../schema/article'
 import { createTag } from './tag'
 import { createUser } from './user'
 import { createCategory } from './category'

@@ -1,4 +1,4 @@
-import type { ICategory } from '../category'
+import type { ICategory } from '../schema/category'
 import { faker } from '@faker-js/faker/locale/zh_CN'
 import { createUser } from './user'
 

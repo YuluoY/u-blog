@@ -1,4 +1,4 @@
-import type { ITag } from '../tag'
+import type { ITag } from '../schema/tag'
 import { faker } from '@faker-js/faker/locale/zh_CN'
 import { createUser } from './user'
 

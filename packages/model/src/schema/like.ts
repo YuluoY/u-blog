@@ -1,4 +1,4 @@
-import type { IBaseFields } from './base'
+import type { IBaseFields } from '../base'
 import type { IArticle } from './article'
 import type { IComment } from './comment'
 import type { IUser } from './user'
