@@ -15,24 +15,24 @@ export type ArticleStatus = typeof CArticleStatus[keyof typeof CArticleStatus]
 export interface IArticle extends IBaseFields {
   user: IUser
   author: IUser[]
-  category: ICategory
+  category?: ICategory | null
   tags: ITag[]
   title: string
   content: string
-  desc: string
-  cover: string
+  desc?: string | null
+  cover?: string | null
   status: ArticleStatus
   isPrivate: boolean
   isTop: boolean
-  protect: string
+  protect?: string | null
   commentCount: number
   likeCount: number
   viewCount: number
-  publishedAt: string
+  publishedAt?: string | null
 }
 
 export interface IArticleDto extends Omit<IArticle, keyof IBaseFields> {
   userId: string
-  categoryId: string
+  categoryId?: string | null
   tagIds: string[]
 }

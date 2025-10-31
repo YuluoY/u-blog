@@ -7,7 +7,6 @@ import database from '@/module'
 
 import { Router } from '@/router'
 import { I18n } from '@/plugin/i18n'
-import { Global } from '@/constants'
 import { Session } from '@/plugin/session'
 import { RequestInterceptor } from '@/middleware'
 import { ResponseInterceptor } from '@/middleware'
@@ -15,10 +14,6 @@ import { Swagger } from '@/plugin/swagger'
 
 dotenv.config()
 const app = express()
-
-// 设置全局变量
-app.locals[Global.APP_CONFIG] = appCfg
-
 // session
 Session.install(app)
 
@@ -26,7 +21,9 @@ Session.install(app)
 app.use(I18n)
 
 // 加载数据库
-database.install(app)
+database.install(app, {
+	database: appCfg.database
+})
 
 // 解析 application/json 类型的请求体 express 4.0+
 app.use(express.json())
@@ -51,6 +48,10 @@ app.use(express.static(appCfg.staticPath))
 
 // 配置API接口生成文档
 Swagger.install(app)
+
+app.get('/', (req, res) => {
+	res.send('Hello World')
+})
 
 app.listen(appCfg.port, () => {
 	console.log(`Ucc-blog server listening on http://localhost:${appCfg.port}`)

@@ -10,18 +10,19 @@ export interface IMedia extends IBaseFields {
   mineType: string
   url: string
   ext: string
-  size: number
-  thumbnail: string
-  width: number
-  height: number
-  duration: number
-  article?: Partial<IArticle>
-  comment?: Partial<IComment>
-  user: IUser
+  size?: number | null
+  hash: string
+  thumbnail?: string | null
+  width?: number | null
+  height?: number | null
+  duration?: number | null
+  article?: Partial<IArticle> | null
+  comment?: Partial<IComment> | null
+  user?: IUser | null
 }
 
 export interface IMediaDto extends Omit<IMedia, keyof IBaseFields> {
-  articleId?: string
-  commentId?: string
-  userId?: string
+  articleId?: string | null
+  commentId?: string | null
+  userId?: string | null
 }

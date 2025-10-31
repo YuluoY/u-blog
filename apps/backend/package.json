@@ -6,10 +6,14 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch main.ts",
-    "build": "tsc",
+    "build": "npm run clean && npm run build:ts && npm run build:alias && npm run build:copy",
+    "build:ts": "tsc",
+    "build:alias": "tsc-alias",
+    "build:copy": "node scripts/copy-assets.js",
     "start": "node dist/main.js",
-    "clean": "rimraf dist",
+    "clean": "node -e \"require('fs').rmSync('dist', {recursive: true, force: true})\"",
     "prebuild": "npm run clean",
+    "typecheck": "tsc --noEmit",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -35,6 +39,8 @@
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "eslint": "^8.57.0",
+    "tsc-alias": "^1.8.10",
+    "tsx": "^4.7.1",
     "typescript": "^5.0.0"
   },
   "dependencies": {

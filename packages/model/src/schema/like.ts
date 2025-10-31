@@ -5,12 +5,12 @@ import type { IUser } from './user'
 
 export interface ILike extends IBaseFields {
   user: IUser
-  article: IArticle
-  comment: IComment
+  article?: IArticle | null
+  comment?: IComment | null
 }
 
 export interface ILikeDto extends Omit<ILike, keyof IBaseFields> {
   userId: string
-  articleId: string
-  commentId: string
+  articleId?: string | null
+  commentId?: string | null
 }

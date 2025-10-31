@@ -90,7 +90,7 @@ public
 # Temporary folders
 tmp/
 temp/
-apps/backend/src
+# apps/backend/src
 
 # Editor directories and files
 .vscode/*
