@@ -6,9 +6,9 @@
   "type": "module",
   "scripts": {
     "build": "pnpm run build:es && pnpm run build:umd && pnpm run copy-package && pnpm run generate-components-dts",
-    "build:es": "vite build --config vite.es.config.ts",
+    "build:es": "vite build --config vite.es.config.ts && pnpm run copy-package && pnpm run generate-components-dts",
     "build:es:watch": "vite build --config vite.es.config.ts --watch",
-    "build:umd": "vite build --config vite.umd.config.ts",
+    "build:umd": "vite build --config vite.umd.config.ts && pnpm run copy-package && pnpm run generate-components-dts",
     "copy-package": "copy package.json dist\\package.json",
     "generate-components-dts": "node scripts/generate-components-dts.js",
     "dev": "pnpm run build:es:watch",

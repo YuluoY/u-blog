@@ -1,156 +1,235 @@
 #!/usr/bin/env node
 
-import { spawn } from 'child_process';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+const { spawn } = require('child_process');
+const path = require('path');
+const gulp = require('gulp');
+const fs = require('node:fs')
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const rootDir = join(__dirname, '..');
+const root = path.dirname(__dirname)
 
-// 子项目配置
 const packages = [
   {
-    name: 'ui',
-    path: join(rootDir, 'packages/ui'),
-    command: 'pnpm',
-    args: ['run', 'dev'],
-    color: '\x1b[36m', // cyan
-  },
-  {
-    name: 'utils',
-    path: join(rootDir, 'packages/utils'),
-    command: 'pnpm',
-    args: ['run', 'dev'],
-    color: '\x1b[32m', // green
-  },
-  {
     name: 'model',
-    path: join(rootDir, 'packages/model'),
+    root: path.join(root, 'packages', 'model'),  // 包根目录
+    src: path.join(root, 'packages', 'model', 'src'),  // 源码目录
+    watch: ['**/*.ts'],
     command: 'pnpm',
-    args: ['run', 'dev'],
-    color: '\x1b[33m', // yellow
+    argv: ['run', 'build']
+  },
+  {
+    name: 'ui',
+    root: path.join(root, 'packages', 'ui'),
+    src: path.join(root, 'packages', 'ui', 'src'),
+    watch: ['**/*.ts', '**/*.vue'],
+    command: 'pnpm',
+    argv: ['run', 'build:es']
+  },
+  {
+    entry: 'index.ts',
+    name: 'utils',
+    root: path.join(root, 'packages', 'utils'),
+    src: path.join(root, 'packages', 'utils', 'src'),
+    watch: ['**/*.ts'],
+    command: 'pnpm',
+    argv: ['run', 'build']
   },
   {
     name: 'helper',
-    path: join(rootDir, 'packages/helper'),
+    root: path.join(root, 'packages', 'helper'),
+    src: path.join(root, 'packages', 'helper', 'src'),
+    watch: ['**/*.ts'],
     command: 'pnpm',
-    args: ['run', 'dev'],
-    color: '\x1b[35m', // magenta
+    argv: ['run', 'build']
   },
   {
     name: 'composables',
-    path: join(rootDir, 'packages/composables'),
+    root: path.join(root, 'packages', 'composables'),
+    src: path.join(root, 'packages', 'composables', 'src'),
+    watch: ['**/*.ts'],
     command: 'pnpm',
-    args: ['run', 'dev'],
-    color: '\x1b[34m', // blue
-  },
-];
+    argv: ['run', 'build']
+  }
+]
+const building = new Map()
+const buildTimers = new Map()
+const buildDones = new Map()
 
-// 颜色重置
-const reset = '\x1b[0m';
-
-// 日志函数
-function log(packageName, color, message) {
-  const timestamp = new Date().toLocaleTimeString();
-  console.log(`${color}[${timestamp}] [${packageName}]${reset} ${message}`);
-}
-
-// 启动子进程
-function startPackage(pkg) {
-  return new Promise((resolve, reject) => {
-    log(pkg.name, pkg.color, `Starting ${pkg.name} package...`);
-    
-    const child = spawn(pkg.command, pkg.args, {
-      cwd: pkg.path,
-      stdio: 'pipe',
-      shell: true,
-    });
-
-    // 处理输出
-    child.stdout.on('data', (data) => {
-      const output = data.toString().trim();
-      if (output) {
-        log(pkg.name, pkg.color, output);
+function clean(pkg) {
+  if (pkg) {
+    const distPath = path.join(pkg.root, 'dist')
+    if (fs.existsSync(distPath)) {
+      try {
+        fs.rmSync(distPath, { recursive: true, force: true })
+      } catch (err) {
+        // 忽略清理错误
+        console.warn(`⚠️  ${pkg.name} 清理警告: ${err.message}`)
       }
-    });
-
-    child.stderr.on('data', (data) => {
-      const output = data.toString().trim();
-      if (output) {
-        log(pkg.name, pkg.color, `ERROR: ${output}`);
-      }
-    });
-
-    child.on('error', (error) => {
-      log(pkg.name, pkg.color, `Failed to start: ${error.message}`);
-      reject(error);
-    });
-
-    child.on('exit', (code) => {
-      if (code !== 0) {
-        log(pkg.name, pkg.color, `Process exited with code ${code}`);
-        reject(new Error(`Process exited with code ${code}`));
-      } else {
-        log(pkg.name, pkg.color, 'Process completed successfully');
-        resolve();
-      }
-    });
-
-    // 存储子进程引用以便后续清理
-    pkg.process = child;
-  });
-}
-
-// 清理函数
-function cleanup() {
-  console.log('\n\x1b[31mShutting down development environment...\x1b[0m');
-  
-  packages.forEach(pkg => {
-    if (pkg.process) {
-      log(pkg.name, pkg.color, 'Stopping process...');
-      pkg.process.kill('SIGTERM');
     }
-  });
-
-  // 强制退出
-  setTimeout(() => {
-    console.log('\x1b[31mForce exiting...\x1b[0m');
-    process.exit(0);
-  }, 2000);
-}
-
-// 主函数
-async function main() {
-  console.log('\x1b[1m\x1b[32m🚀 Starting UCC Blog Development Environment\x1b[0m\n');
-  
-  // 注册清理函数
-  process.on('SIGINT', cleanup);
-  process.on('SIGTERM', cleanup);
-  process.on('exit', cleanup);
-
-  try {
-    // 并行启动所有包
-    const promises = packages.map(pkg => startPackage(pkg));
-    
-    // 等待所有包启动完成
-    await Promise.all(promises);
-    
-    console.log('\n\x1b[1m\x1b[32m✅ All packages started successfully!\x1b[0m');
-    console.log('\x1b[33mPress Ctrl+C to stop all processes\x1b[0m\n');
-    
-    // 保持进程运行
-    await new Promise(() => {});
-    
-  } catch (error) {
-    console.error('\x1b[31m❌ Failed to start development environment:\x1b[0m', error.message);
-    cleanup();
-    process.exit(1);
+  } else {
+    packages.forEach(pkg => clean(pkg))
   }
 }
 
-// 启动主函数
-main().catch(error => {
-  console.error('\x1b[31m❌ Unexpected error:\x1b[0m', error);
-  process.exit(1);
-});
+function build(pkg, done) {
+  // ✅ 三重检查：在构建函数中再次检查并 kill
+  if (building.has(pkg)) {
+    const process = building.get(pkg)
+    if (process && !process.killed) {
+      console.log(`🛑 ${pkg.name} 构建前检测到旧进程，强制终止`)
+      try {
+        process.kill()
+      } catch (err) {
+        // 忽略错误
+      }
+      building.delete(pkg)
+      // 等待一小段时间确保进程终止
+      setTimeout(() => {
+        doBuild(pkg, done)
+      }, 50)
+      return
+    }
+    building.delete(pkg)
+  }
+
+  doBuild(pkg, done)
+}
+
+function doBuild(pkg, done) {
+  clean(pkg)
+  console.log(`🔄 ${pkg.name} 文件发生变化，开始构建...`)
+
+  const spawner = spawn(pkg.command, pkg.argv, {
+    cwd: pkg.root,
+    stdio: 'pipe',
+    shell: true
+  })
+
+  building.set(pkg, spawner)
+
+  spawner.on('spawn', () => {
+    console.time(`${pkg.name}构建`)
+    console.log(`🔨 开始构建 ${pkg.name}...`)
+  })
+
+  spawner.on('exit', (code, signal) => {
+    console.timeEnd(`${pkg.name}构建`)
+    
+    // 检查是否被手动终止
+    if (signal === 'SIGTERM' || signal === 'SIGKILL') {
+      console.log(`⚠️  ${pkg.name} 构建被终止`)
+    } else if (code === 0) {
+      console.log(`✅ ${pkg.name} 构建成功`)
+    } else {
+      console.error(`❌ ${pkg.name} 构建失败，退出码: ${code}`)
+    }
+    
+    building.delete(pkg)
+    
+    // 检查是否有待执行的 done 回调
+    const pendingDone = buildDones.get(pkg)
+    if (pendingDone) {
+      buildDones.delete(pkg)
+      pendingDone()
+    } else {
+      done?.()
+    }
+  })
+
+  spawner.on('error', err => {
+    console.error(`❌ ${pkg.name} 构建失败：${err.message}`)
+    building.delete(pkg)
+    
+    const pendingDone = buildDones.get(pkg)
+    if (pendingDone) {
+      buildDones.delete(pkg)
+      pendingDone(err)
+    } else {
+      done?.(err)
+    }
+  })
+}
+
+// 防抖版本的构建函数
+function debouncedBuild(pkg, done) {
+  if (building.has(pkg)) {
+    const process = building.get(pkg)
+    if (process && !process.killed) {
+      console.log(`🛑 ${pkg.name} 检测到新文件变化，终止正在进行的构建`)
+      try {
+        process.kill()
+      } catch (err) {
+        // 忽略错误
+      }
+      building.delete(pkg)
+    }
+  }
+
+  if (buildTimers.has(pkg)) {
+    clearTimeout(buildTimers.get(pkg))
+    buildDones.get(pkg)?.()
+    buildDones.delete(pkg)
+  }
+
+  const timer = setTimeout(() => {
+    buildTimers.delete(pkg)
+    buildDones.delete(pkg)
+    
+    if (building.has(pkg)) {
+      const process = building.get(pkg)
+      if (process && !process.killed) {
+        console.log(`🛑 ${pkg.name} 防抖结束，但检测到构建仍在进行，终止`)
+        try {
+          process.kill()
+        } catch (err) {
+          // 忽略错误
+        }
+        building.delete(pkg)
+        setTimeout(() => {
+          build(pkg, done)
+        }, 100)
+        return
+      }
+      building.delete(pkg)
+    }
+    
+    build(pkg, done)
+  }, 300)
+
+  buildTimers.set(pkg, timer)
+  buildDones.set(pkg, done)
+}
+
+// 关键：为每个包创建独立的 watch，使用绝对路径
+const watchers = packages.map(pkg => {
+  const watchPaths = pkg.watch.map(pattern => {
+    const fullPath = path.resolve(pkg.src, pattern)
+    return fullPath
+  })
+  
+  console.log(`👀 监听 ${pkg.name}`)
+  console.log(`   📂 根目录: ${pkg.root}`)
+  console.log(`   📝 监听模式: ${pkg.watch.join(', ')}`)
+  console.log(`   🔗 绝对路径: ${watchPaths.join(', ')}`)
+  
+  const watcher = gulp.watch(watchPaths, (done) => {
+    console.log(`📝 检测到 ${pkg.name} 目录下的文件变化`)
+    debouncedBuild(pkg, done)
+  })
+  
+  watcher.on('ready', () => {
+    console.log(`✅ ${pkg.name} 监听器已就绪\n`)
+  })
+  
+  watcher.on('change', (filePath) => {
+    console.log(`📝 ${pkg.name} 文件变化: ${filePath}`)
+    debouncedBuild(pkg, null)
+  })
+  
+  watcher.on('error', (err) => {
+    console.error(`❌ ${pkg.name} 监听器错误:`, err)
+  })
+  
+  return watcher
+})
+
+console.log(`\n🎯 共创建 ${watchers.length} 个文件监听器\n`)

@@ -14,4 +14,3 @@ export * from './schema/role'
 export * from './schema/tag'
 export * from './schema/user'
 export * from './base'
-

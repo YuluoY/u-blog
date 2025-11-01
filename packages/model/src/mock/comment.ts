@@ -11,6 +11,7 @@ export const createComment = (): IComment =>
     pid: faker.string.uuid(),
     article: createArticle(),
     user: createUser(),
+    path: faker.internet.url(),
     createdAt: faker.date.past().toISOString().split('T')[0],
     updatedAt: faker.date.past().toISOString().split('T')[0]
   }
