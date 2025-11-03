@@ -15,7 +15,6 @@ export class RolePermission {
 	@Column({ 
 		name: 'roleName', 
 		type: 'enum', 
-		length: 50, 
 		comment: '角色名称',
 		enum: Object.values(CUserRole)
 	})

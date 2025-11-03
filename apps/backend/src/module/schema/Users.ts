@@ -44,7 +44,6 @@ export class Users {
 
 	@Column({ 
 		type: 'enum', 
-		length: 50, 
 		default: CUserRole.GUEST, 
 		comment: '角色 (枚举: ' + Object.values(CUserRole).join(',') + ')',
 		enum: Object.values(CUserRole)

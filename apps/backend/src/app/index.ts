@@ -7,6 +7,8 @@ import type { Options } from 'swagger-jsdoc'
 import type { ConfigurationOptions } from 'i18n'
 import type { CookieOptions } from 'express'
 import type { DataSourceOptions } from 'typeorm'
+import dotenv from 'dotenv'
+dotenv.config()
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -26,7 +28,6 @@ export interface IAppConfig {
 	plugins: PluginsConfig
 	database: DataSourceOptions
 }
-
 const appCfg: IAppConfig = {
 	/**
 	 * 服务器端口号
@@ -61,7 +62,9 @@ const appCfg: IAppConfig = {
 			idleTimeoutMillis: 30000,     // 30秒空闲超时
 			connectionTimeoutMillis: 5000, // 5秒连接超时
 		},
-		synchronize: process.env.NODE_ENV === 'development',
+		synchronize: process.env.NODE_ENV === 'development',  
+		// dropSchema: process.env.NODE_ENV === 'development',
+		schema: 'public',
 		logging: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : false,
 		entities: [resolve(__dirname, '../module/schema/**/*.ts')]
 	},

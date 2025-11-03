@@ -5,7 +5,7 @@ export const CTheme = {
 } as const
 
 export const CTable = {
-  USER: 'user',
+  USER: 'users',
   ARTICLE: 'article',
   COMMENT: 'comment',
   CATEGORY: 'category',

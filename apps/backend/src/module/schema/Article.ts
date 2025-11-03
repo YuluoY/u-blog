@@ -54,7 +54,6 @@ export class Article {
 
 	@Column({ 
 		type: 'enum', 
-		length: 50, 
 		default: CArticleStatus.DRAFT, 
 		comment: '状态 (枚举: article_status)',
 		enum: Object.values(CArticleStatus)

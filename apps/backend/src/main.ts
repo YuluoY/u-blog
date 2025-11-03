@@ -1,7 +1,5 @@
 import express from 'express'
 import cookieParser from 'cookie-parser'
-import dotenv from 'dotenv'
-
 import appCfg from '@/app'
 import database from '@/module'
 
@@ -12,7 +10,6 @@ import { RequestInterceptor } from '@/middleware'
 import { ResponseInterceptor } from '@/middleware'
 import { Swagger } from '@/plugin/swagger'
 
-dotenv.config()
 const app = express()
 // session
 Session.install(app)
@@ -50,7 +47,7 @@ app.use(express.static(appCfg.staticPath))
 Swagger.install(app)
 
 app.get('/', (req, res) => {
-	res.send('Hello World')
+	res.send('Hello World123')
 })
 
 app.listen(appCfg.port, () => {
