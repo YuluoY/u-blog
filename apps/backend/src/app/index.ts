@@ -1,4 +1,5 @@
-import { resolve } from 'node:path'
+import { resolve, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import YAML from 'yaml'
 import type { SignOptions } from 'jsonwebtoken'
 import type { ConfigObject } from 'svg-captcha'
@@ -6,6 +7,8 @@ import type { Options } from 'swagger-jsdoc'
 import type { ConfigurationOptions } from 'i18n'
 import type { CookieOptions } from 'express'
 import type { DataSourceOptions } from 'typeorm'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export interface PluginsConfig {
 	cookie: CookieOptions
