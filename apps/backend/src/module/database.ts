@@ -5,7 +5,11 @@ export interface DbOptions {
   database: DataSourceOptions
 }
 
-export class Database {
+export interface IDatabase {
+  getDataSource(): DataSource
+}
+
+export class Database implements IDatabase {
   
   private dataSource: DataSource
 
@@ -14,16 +18,21 @@ export class Database {
     this.__init(opts)
   }
 
-  __init(opts: DbOptions)
+  private __init(opts: DbOptions)
   {
     this.dataSource = new DataSource(opts.database)
   }
 
-  async start()
+  getDataSource(): DataSource
   {
-    const [err, data] = await tryit<DataSource>(() => this.dataSource.initialize())
+    return this.dataSource
+  }
+
+  async start(): Promise<DataSource>
+  {
+    const [err, data] = await tryit<DataSource, Error>(() => this.dataSource.initialize())
     if (err)
-      console.error(err)
+      throw err
     return data
   }
 }

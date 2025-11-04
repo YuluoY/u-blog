@@ -48,6 +48,14 @@ const packages = [
     watch: ['**/*.ts'],
     command: 'pnpm',
     argv: ['run', 'build']
+  },
+  {
+    name: 'types',
+    root: path.join(root, 'packages', 'types'),
+    src: path.join(root, 'packages', 'types', 'src'),
+    watch: ['**/*.ts'],
+    command: 'pnpm',
+    argv: ['run', 'build']
   }
 ]
 const building = new Map()

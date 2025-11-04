@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express'
-// import { getModel, toModelName, toTableName } from '@/utils'
+import { toModelName, getDataSource } from '@/utils'
 
 /**
  * 处理model表实例中间件
@@ -8,8 +8,9 @@ import type { Request, Response, NextFunction } from 'express'
  * @param next
  */
 export const ModelHandler = (req: Request, res: Response, next: NextFunction) => {
-	// const { model } = req.params
-	// req.model = model ? getModel(req, toModelName(model)) : null
-	// req.tableName = toTableName(model)
+	const { model } = req.params
+	const database = getDataSource(req)
+	const modelInstance = database.getRepository(toModelName(model))
+	req.model = modelInstance
 	next()
 }

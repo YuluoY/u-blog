@@ -1,16 +1,29 @@
-import type { Response } from "express"
+import { FailReturn, PageReturn, SuccessReturn } from "@u-blog/types"
 
 /**
  * 成功响应模板
  * @param   data	
  * @param   message
+ * @param   extra
+ * @example
+ * ```ts
+ * const data = { name: 'John', age: 20 }
+ * const result = successTempl(data, 'success', 0, { page: 1, limit: 10, total: 100 })
+ * ```
  */
-export const successTempl = <T = any>(data: T, message: string) => {
+export const successTempl = <T = any>(
+	data: T, 
+	message: string, 
+	code: number = 0,
+	extra?: Pick<PageReturn<T>, 'page' | 'limit' | 'total'>
+): SuccessReturn<T> | PageReturn<T> =>
+{
 	return {
-		code: 0,
+		code,
 		data,
 		message,
-		timestamp: Date.now()
+		timestamp: Date.now(),
+		...extra
 	}
 }
 
@@ -18,61 +31,17 @@ export const successTempl = <T = any>(data: T, message: string) => {
  * 失败响应模板
  * @param   message
  * @param   moreMsg
+ * @example
+ * ```ts
+ * const result = failTempl('error')
+ * const result = failTempl('error', 400)
+ * ```
  */
-export const failTempl = (message: string, moreMsg = ''):
-{
-	code: 1,
-	data: null,
-	message: string,
-	timestamp: number
-} => {
+export const failTempl = (message: string, code: number = 1): FailReturn => {
 	return {
-		code: 1,
+		code,
 		data: null,
-		message: `${message}${moreMsg ? `, ${moreMsg}` : ''}`,
-		timestamp: Date.now()
-	}
-}
-
-/**
- * 分页查询模板
- * @param   data
- * @param   message
- * @param   options
- * @param   options.page
- * @param   options.limit
- * @param   options.total
- */
-export const pageTempl = <T = any>(
-	data: T, 
-	message: string, 
-	options: { 
-		page: number, 
-		limit: number, 
-		total: number
-	}
-) => 
-{
-	return {
-		code: 0,
-		data,
 		message,
-		timestamp: Date.now(),
-		...options
-	}
-}
-
-/**
- * 响应返回模板
- * @param 	res           响应对象
- * @param   code          0: 成功 1: 失败 object: 其他
- * @param   data          返回数据
- * @param   message       返回信息
- */
-export const responseTempl = (res: Response, code: 0 | 1 | object, data: any, message: string): void => {
-	if (typeof code === 'object') {
-		res.json(code)
-	} else {
-		res.json(code ? failTempl(message) : successTempl(data, message))
+		timestamp: Date.now()
 	}
 }

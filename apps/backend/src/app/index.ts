@@ -54,7 +54,7 @@ const appCfg: IAppConfig = {
 		username: process.env.DB_USERNAME,
 		password: process.env.DB_PASSWORD,
 		database: process.env.DB_DATABASE,
-		
+
 		poolSize: 8, // 根据你的服务器配置调整
 		extra: {
 			max: 20,           // 最大连接数

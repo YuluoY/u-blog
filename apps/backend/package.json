@@ -15,7 +15,8 @@
   "packageManager": "pnpm@10.13.1",
   "peerDependencies": {
     "@u-blog/model": "workspace:*",
-    "@u-blog/utils": "workspace:*"
+    "@u-blog/utils": "workspace:*",
+    "@u-blog/types": "workspace:*"
   },
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.3.0",

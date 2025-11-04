@@ -1,53 +1,36 @@
-import { camelCase, capitalize, isFunction, snakeCase, tryit } from '@u-blog/utils'
-import { failTempl, successTempl } from '@/utils/template'
-import type { Response, Request } from 'express'
+import { camelCase, capitalize, snakeCase } from '@u-blog/utils'
+import type { Request } from 'express'
 import { DATABASE } from '@/constants'
 import { DataSource } from 'typeorm'
+import { failTempl, successTempl } from './template'
+import { FailReturn, SuccessReturn } from '@u-blog/types'
 
 /**
  * 获取数据库实例
  */
-export const getDatabase = (req: Request): DataSource => req.app.locals[DATABASE]
+export const getDataSource = (req: Request): DataSource => req.app.locals[DATABASE]?.getDataSource?.()
 
 /**
- * 返回响应模板
- * @param 	{import('express').Response} res
- * @param 	{Function} fn
- * @param 	{Object} opts
- * @param 	{Function} opts.handleData
- * @param 	{string} opts.success
- * @param 	{string} opts.error
- * @param 	{number} opts.statusCode
- * @param   {any[]} [opts.fnArgs=[]]
- * @return 	{Promise<{code: number, data: any, message: string, timestamp: number}>}
+ * 断言
+ * @param tryData - 尝试数据
+ * @param success - 成功消息
+ * @param fail - 失败消息
+ * @returns - 成功返回值或失败返回值
  * @example
- * ```js
- * const templ = await toRespTempl(res, async (data) => data, {...})
- * ```
+ * ```ts
+ * const [err, data] = await tryit<any, Error>(() => RestService.query(req.model))
+ * assert([err, data], 'success', 'fail')
  */
-export const toRespTempl = async <T>(
-	res: Response, 
-	fn: () => T, 
-	opts: { 
-		fnArgs?: any[], 
-		statusCode?: number, 
-		handleData?: (data: any) => any, success?: string, error?: string } = {}
-	) => 
+export const assert = <T = any, E = Error>(
+	tryData: [E, T], 
+	success: string,
+	fail: string
+): SuccessReturn<T> | FailReturn =>
 {
-	let [err, data] = await tryit(fn, { fnArgs: opts.fnArgs || [] })
-
-	try {
-		if (opts.statusCode) res.status(opts.statusCode)
-		if (err) throw new Error(err.message)
-
-		if (isFunction(opts.handleData)) data = await opts.handleData(data)
-		if (data === false) throw new Error()
-
-		return res.send(successTempl(data, opts.success ? res.__(opts.success) : '请求成功！'))
-	} catch (error) {
-		console.log(error)
-		return res.send(failTempl(opts.error ? res.__(opts.error) : '请求失败！'))
-	}
+	const [err, data] = tryData
+	if (err)
+		return failTempl(fail)
+	return successTempl<T>(data, success)
 }
 
 /**
@@ -60,9 +43,7 @@ export const toRespTempl = async <T>(
  * const ArticleTag = toModelName('article_tag') // ArticleTag
  * ```
  */
-export const toModelName = (tableName: string) => {
-	return capitalize(camelCase(tableName))
-}
+export const toModelName = (tableName: string): string => capitalize(camelCase(tableName))
 
 /**
  * 将模型名称转换为表名称
@@ -74,15 +55,18 @@ export const toModelName = (tableName: string) => {
  * const articleTag = toTableName('ArticleTag') // article_tag
  * ```
  */
-export const toTableName = (modelName: string) => {
-	return snakeCase(modelName)
-}
+export const toTableName = (modelName: string): string => snakeCase(modelName)
 
 /**
  * 返回带类型的值
  * @param {string} str
  * @returns
  */
-export const withType = (str: string) => {
-	return new Function(`return ${str}`)()
+export const withType = <T = any>(str: string, defaultValue: T): T =>
+{
+	try {
+		return new Function(`return ${str}`)() as T
+	} catch (error) {
+		return defaultValue
+	}
 }
