@@ -1,14 +1,16 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, ManyToOne, JoinColumn } from 'typeorm'
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm'
 import { CTable } from '@u-blog/model'
 import { IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, Min } from 'class-validator'
 import { Article } from './Article'
 import { Comment } from './Comment'
 import { Users } from './Users'
+import { BaseSchema } from '../BaseSchema'
 
 /**
  * 媒体表
  */
 @Entity({ name: CTable.MEDIA, comment: '媒体表' })
+@BaseSchema
 export class Media {
 	@PrimaryGeneratedColumn({ type: 'bigint', comment: '主键' })
 	id!: number
@@ -112,12 +114,4 @@ export class Media {
 	@JoinColumn({ name: 'userId' })
 	user?: Users | null
 
-	@CreateDateColumn({ name: 'createdAt', type: 'timestamp', comment: '创建时间' })
-	createdAt!: Date
-
-	@UpdateDateColumn({ name: 'updatedAt', type: 'timestamp', comment: '更新时间' })
-	updatedAt!: Date
-
-	@DeleteDateColumn({ name: 'deletedAt', type: 'timestamp', nullable: true, comment: '删除时间' })
-	deletedAt?: Date | null
 }

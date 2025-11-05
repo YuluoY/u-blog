@@ -1,7 +1,6 @@
 import { DATABASE } from '@/constants'
 import { Database, type DbOptions } from './database'
 import { type Application } from 'express'
-import appCfg from '@/app'
 
 export default {
   install(app: Application, opts: DbOptions)
@@ -16,4 +15,3 @@ export default {
     return database
   }
 }
-

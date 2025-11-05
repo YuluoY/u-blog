@@ -1,11 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn } from 'typeorm'
-import { CTable } from '@u-blog/model'
-import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator'
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany } from 'typeorm'
+import { CTable, CPermission, Permission, PermissionAction, CPermissionAction } from '@u-blog/model'
+import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator'
+import { BaseSchema } from '../BaseSchema'
+import { Role } from './Role'
 
 /**
  * 权限表
  */
 @Entity({ name: CTable.PERMISSION, comment: '权限表' })
+@BaseSchema
 export class Permission {
 	@PrimaryGeneratedColumn({ type: 'smallint', comment: '主键' })
 	id!: number
@@ -28,11 +31,16 @@ export class Permission {
 	@MaxLength(255, { message: '权限描述最多255个字符' })
 	desc?: string | null
 
-	@Column({ type: 'varchar', length: 50, default: 'button', comment: '权限类型' })
+	@Column({ 
+		type: 'varchar', 
+		length: 50, 
+		comment: '权限类型',
+		enum: Object.values(CPermission)
+	})
 	@IsNotEmpty({ message: '权限类型不能为空' })
-	@IsString({ message: '权限类型必须为字符串' })
+	@IsEnum(CPermission, { message: '权限类型必须是有效的枚举值' })
 	@MaxLength(50, { message: '权限类型最多50个字符' })
-	type!: string // button, menu, api
+	type!: Permission
 
 	@Column({ type: 'varchar', length: 100, nullable: true, comment: '资源标识' })
 	@IsOptional()
@@ -40,19 +48,19 @@ export class Permission {
 	@MaxLength(100, { message: '资源标识最多100个字符' })
 	resource?: string | null
 
-	@Column({ type: 'varchar', length: 50, nullable: true, comment: '操作类型' })
-	@IsOptional()
-	@IsString({ message: '操作类型必须为字符串' })
+	@Column({ 
+		type: 'varchar', 
+		length: 50, 
+		comment: '操作类型',
+		enum: Object.values(CPermissionAction)
+	})
+	@IsNotEmpty({ message: '操作类型不能为空' })
+	@IsEnum(CPermissionAction, { message: '操作类型必须是有效的枚举值' })
 	@MaxLength(50, { message: '操作类型最多50个字符' })
-	action?: string | null // create, read, update, delete
+	action: PermissionAction
 
-	@CreateDateColumn({ name: 'createdAt', type: 'timestamp', comment: '创建时间' })
-	createdAt!: Date
-
-	@UpdateDateColumn({ name: 'updatedAt', type: 'timestamp', comment: '更新时间' })
-	updatedAt!: Date
-
-	@DeleteDateColumn({ name: 'deletedAt', type: 'timestamp', nullable: true, comment: '删除时间' })
-	deletedAt?: Date | null
+	@ManyToMany(() => Role, role => role.permissions)
+	@IsOptional()
+	roles?: Role[] | null
 }
 

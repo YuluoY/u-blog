@@ -1,12 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, ManyToOne, JoinColumn } from 'typeorm'
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm'
 import { CTable } from '@u-blog/model'
 import { IsInt, IsNotEmpty } from 'class-validator'
 import { Users } from './Users'
+import { BaseSchema } from '../BaseSchema'
 
 /**
  * 粉丝表
  */
-@Entity({ name: CTable.FOLLOWER, comment: '粉丝表' })
+@Entity({ name: CTable.FOLLOWER, comment: '粉丝表' })	
+@BaseSchema
 export class Follower {
 	@PrimaryGeneratedColumn({ type: 'bigint', comment: '主键' })
 	id!: number
@@ -28,13 +30,4 @@ export class Follower {
 	@ManyToOne(() => Users)
 	@JoinColumn({ name: 'followingId' })
 	following?: Users | null
-
-	@CreateDateColumn({ name: 'createdAt', type: 'timestamp', comment: '创建时间' })
-	createdAt!: Date
-
-	@UpdateDateColumn({ name: 'updatedAt', type: 'timestamp', comment: '更新时间' })
-	updatedAt!: Date
-
-	@DeleteDateColumn({ name: 'deletedAt', type: 'timestamp', nullable: true, comment: '删除时间' })
-	deletedAt?: Date | null
 }

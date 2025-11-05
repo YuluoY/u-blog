@@ -1,5 +1,6 @@
 import type { IUserSocial, IUser, IUserWebsite } from '../schema/user'
 import { faker } from '@faker-js/faker/locale/zh_CN'
+import { CUserRole } from '../schema/role'
 import { getRandomImage, toCopy } from './utils'
 
 /**
@@ -11,23 +12,37 @@ import { getRandomImage, toCopy } from './utils'
 export const createUser = (): IUser =>
 {
   return {
-    id: faker.string.uuid(),
+    id: faker.number.int({ min: 1, max: 1000000 }),
     username: faker.internet.userName(),
+    password: faker.internet.password({ length: 12 }),
     email: faker.internet.email(),
     namec: faker.person.fullName(),
     avatar: getRandomImage(),
     bio: faker.lorem.sentence(),
-    role: 'user',
+    role: faker.helpers.arrayElement(Object.values(CUserRole)) as any,
     location: faker.location.city(),
     ip: faker.internet.ip(),
     website: createWebsite(),
     socials: toCopy(createSocial, { min: 1, max: 5 }),
-    isActive: true,
-    isVerified: true,
-    token: faker.string.alphanumeric(),
-    lastLoginAt: faker.date.past().toISOString().split('T')[0],
-    createdAt: faker.date.past().toISOString().split('T')[0],
-    updatedAt: faker.date.past().toISOString().split('T')[0]
+    isActive: faker.datatype.boolean(),
+    token: faker.helpers.arrayElement([faker.string.alphanumeric(32), undefined]),
+    failLoginCount: faker.number.int({ min: 0, max: 5 }),
+    lockoutExpiresAt: faker.helpers.arrayElement([
+      faker.date.future(),
+      undefined
+    ]),
+    lastLoginAt: faker.date.between({
+      from: '2020-01-01',
+      to: new Date()
+    }),
+    createdAt: faker.date.between({
+      from: '2020-01-01',
+      to: new Date()
+    }),
+    updatedAt: faker.date.between({
+      from: '2020-01-01',
+      to: new Date()
+    })
   }
 }
 
@@ -47,12 +62,21 @@ export const createWebsite = (): IUserWebsite =>
   }
 }
 
+/**
+ * 创建社交账号
+ * @returns 社交账号
+ * @example
+ * createSocial()
+ */
 export const createSocial = (): IUserSocial =>
 {
+  const socialPlatforms = ['github', 'twitter', 'facebook', 'linkedin', 'instagram', 'weibo', 'zhihu', 'bilibili']
+  const platform = faker.helpers.arrayElement(socialPlatforms)
+  
   return {
-    type: faker.helpers.arrayElement(['github', 'twitter', 'facebook', 'linkedin', 'instagram']),
-    logo: getRandomImage(),
-    url: faker.internet.url()
+    name: platform,
+    icon: getRandomImage(),
+    url: faker.internet.url({ protocol: 'https' })
   }
 }
   

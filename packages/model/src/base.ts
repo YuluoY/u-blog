@@ -49,7 +49,13 @@ export type Language = typeof CLanguage[keyof typeof CLanguage]
 export type CustomType = typeof CCustomType[keyof typeof CCustomType]
 
 export interface IBaseFields {
-  id: string
-  createdAt: string
-  updatedAt: string
+  id: number
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface IBaseSchema {
+  createdAt: Date
+  updatedAt: Date
+  deletedAt?: Date | null
 }

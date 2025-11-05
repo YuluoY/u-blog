@@ -1,15 +1,17 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, ManyToOne, JoinColumn, Check } from 'typeorm'
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Check } from 'typeorm'
 import { CTable } from '@u-blog/model'
-import { IsInt, IsNotEmpty, IsOptional, ValidateIf } from 'class-validator'
+import { IsInt, IsNotEmpty, ValidateIf } from 'class-validator'
 import { Users } from './Users'
 import { Article } from './Article'
 import { Comment } from './Comment'
+import { BaseSchema } from '../BaseSchema'
 
 /**
  * 点赞表
  */
 @Entity({ name: CTable.LIKE, comment: '点赞表' })
 @Check(`("articleId" IS NOT NULL AND "commentId" IS NULL) OR ("articleId" IS NULL AND "commentId" IS NOT NULL)`)
+@BaseSchema
 export class Likes {
 	@PrimaryGeneratedColumn({ type: 'bigint', comment: '主键' })
 	id!: number
@@ -43,12 +45,4 @@ export class Likes {
 	@JoinColumn({ name: 'commentId' })
 	comment?: Comment | null
 
-	@CreateDateColumn({ name: 'createdAt', type: 'timestamp', comment: '创建时间' })
-	createdAt!: Date
-
-	@UpdateDateColumn({ name: 'updatedAt', type: 'timestamp', comment: '更新时间' })
-	updatedAt!: Date
-
-	@DeleteDateColumn({ name: 'deletedAt', type: 'timestamp', nullable: true, comment: '删除时间' })
-	deletedAt?: Date | null
 }

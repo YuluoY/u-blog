@@ -13,43 +13,42 @@ import { createCategory } from './category'
  */
 export const createArticle = (): IArticle =>
 {
+  const descLength = faker.number.int({ min: 50, max: 500 })
+  const desc = faker.lorem.paragraphs(3).substring(0, descLength)
+  const publishedAt = faker.date.between({
+    from: '2020-01-01',
+    to: new Date()
+  })
+
   return {
-    id: faker.string.uuid(),
-    title: faker.lorem.sentence(),
-    desc: faker.lorem.paragraphs(3).substring(0, 500),
-    status: faker.helpers.arrayElement(Object.values(CArticleStatus)),
-    cover: getRandomImage(),
-    author: [createUser()],
-    content: generateRandomMarkdown(10000, 5),
-    protect: faker.helpers.arrayElement([faker.lorem.word(), '', '', '', '']),
-    commentCount: faker.number.int({ min: 1, max: 100 }),
+    userId: faker.number.int({ min: 1, max: 1000000 }),
     user: createUser(),
-    category: createCategory(),
-    isPrivate: faker.helpers.arrayElement([true, false]),
-    isTop: faker.helpers.arrayElement([true, false]),
-    tags: toCopy(createTag()),
-    viewCount: faker.number.int({ min: 1, max: 1000 }),
-    likeCount: faker.number.int({ min: 1, max: 100 }),
-    createdAt: faker.date
-      .between({
-        from: '2020-01-01',
-        to: new Date()
-      })
-      .toISOString()
-      .split('T')[0],
-    updatedAt: faker.date
-      .between({
-        from: '2020-01-01',
-        to: new Date()
-      })
-      .toISOString()
-      .split('T')[0],
-    publishedAt: faker.date
-      .between({
-        from: '2020-01-01',
-        to: new Date()
-      })
-      .toISOString()
-      .split('T')[0]
+    
+    categoryId: faker.helpers.arrayElement([faker.number.int({ min: 1, max: 1000000 }), undefined]),
+    category: faker.helpers.arrayElement([createCategory(), undefined]),
+
+    tags: toCopy(createTag, { min: 1, max: 5 }),
+
+    id: faker.number.int({ min: 1, max: 1000000 }),
+    title: faker.lorem.sentence(),
+    desc: desc.length > 0 ? desc : undefined,
+    status: faker.helpers.arrayElement(Object.values(CArticleStatus)),
+    cover: faker.helpers.arrayElement([getRandomImage(), undefined]),
+    content: generateRandomMarkdown(10000, 5),
+    protect: faker.helpers.arrayElement([faker.lorem.word(), undefined, undefined, undefined]),
+    commentCount: faker.number.int({ min: 0, max: 100 }),
+    isPrivate: faker.datatype.boolean(),
+    isTop: faker.datatype.boolean(),
+    viewCount: faker.number.int({ min: 0, max: 10000 }),
+    likeCount: faker.number.int({ min: 0, max: 1000 }),
+    publishedAt,
+    createdAt: faker.date.between({
+      from: '2020-01-01',
+      to: publishedAt
+    }),
+    updatedAt: faker.date.between({
+      from: publishedAt,
+      to: new Date()
+    })
   }
 }

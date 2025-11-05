@@ -1,13 +1,22 @@
-import type { IBaseFields } from '../base'
+import type { IBaseFields, IBaseSchema } from '../base'
+import { IArticle } from './article'
 import type { IUser } from './user'
 
-export interface ITag extends IBaseFields {
+export interface ITag extends IBaseSchema, Pick<IBaseFields, 'id'> {
   name: string
-  desc?: string | null
-  user?: IUser | null
-  color?: string | null
+  desc?: string
+  color?: string
+  userId: number
+  user?: IUser
+  articles?: IArticle[]
 }
 
-export interface ITagDto extends Omit<ITag, keyof IBaseFields> {
-  userId?: string | null
-}
+/**
+ * 前 --> 后
+ */
+export interface ITagDto extends Omit<ITag, keyof IBaseFields | 'deletedAt' | 'user' | 'articles'> {}
+
+/**
+ * 前 <-- 后
+ */
+export interface ITagVo extends Omit<ITag, 'deletedAt'> {}

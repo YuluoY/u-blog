@@ -1,13 +1,13 @@
-import type { IBaseFields } from '../base'
+import type { IBaseFields, IBaseSchema } from '../base'
+import type { ISetting } from './setting'
 
-export interface IRoute extends IBaseFields {
-  title?: string | null
+export interface IRoute extends IBaseSchema, Pick<IBaseFields, 'id'> {
+  title?: string
   name: string
   path: string
-  component?: string | null
-  redirect?: string | null
-  icon?: string | null
-  // isHidden?: boolean // 注意：后端实体中目前没有此字段，如果前端需要可以添加
+  component?: string
+  redirect?: string
+  icon?: string
   isKeepAlive: boolean
   isAffix: boolean
   isExact: boolean
@@ -15,8 +15,17 @@ export interface IRoute extends IBaseFields {
   isHero: boolean
   isLeftSide: boolean
   isRightSide: boolean
-  pid?: string | null
-  parent?: IRoute | null
+  pid?: number
+  parent?: IRoute
+  settings?: ISetting[]
 }
 
-export interface IRouteDto extends Omit<IRoute, keyof IBaseFields> {}
+/**
+ * 前 --> 后
+ */
+export interface IRouteDto extends Omit<IRoute, keyof IBaseFields | 'deletedAt' | 'parent'> {}
+
+/**
+ * 前 <-- 后
+ */
+export interface IRouteVo extends Omit<IRoute, 'deletedAt'> {}

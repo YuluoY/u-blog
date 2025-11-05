@@ -1,19 +1,20 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, ManyToOne, JoinColumn } from 'typeorm'
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm'
 import { CTable } from '@u-blog/model'
 import { IsInt, IsIP, IsOptional, IsString, MaxLength } from 'class-validator'
 import { Users } from './Users'
 import { Article } from './Article'
 import { Route } from './Route'
-
+import { BaseSchema } from '../BaseSchema'
 /**
  * 访问表
  */
 @Entity({ name: CTable.VIEW, comment: '访问表' })
+@BaseSchema
 export class View {
 	@PrimaryGeneratedColumn({ type: 'bigint', comment: '主键' })
 	id!: number
 
-	@Column({ type: 'varchar', length: 50, nullable: true, comment: 'ip地址' })
+	@Column({ type: 'varchar', length: 100, nullable: true, comment: 'ip地址' })
 	@IsOptional()
 	@IsIP(undefined, { message: 'IP地址格式不正确' })
 	ip?: string | null
@@ -57,12 +58,4 @@ export class View {
 	@JoinColumn({ name: 'routeId' })
 	route?: Route | null
 
-	@CreateDateColumn({ name: 'createdAt', type: 'timestamp', comment: '创建时间' })
-	createdAt!: Date
-
-	@UpdateDateColumn({ name: 'updatedAt', type: 'timestamp', comment: '更新时间' })
-	updatedAt!: Date
-
-	@DeleteDateColumn({ name: 'deletedAt', type: 'timestamp', nullable: true, comment: '删除时间' })
-	deletedAt?: Date | null
 }

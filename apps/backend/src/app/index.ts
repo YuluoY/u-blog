@@ -63,10 +63,11 @@ const appCfg: IAppConfig = {
 			connectionTimeoutMillis: 5000, // 5秒连接超时
 		},
 		synchronize: process.env.NODE_ENV === 'development',  
-		// dropSchema: process.env.NODE_ENV === 'development',
+		dropSchema: process.env.NODE_ENV === 'development',
 		schema: 'public',
 		logging: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : false,
-		entities: [resolve(__dirname, '../module/schema/**/*.ts')]
+		entities: [resolve(__dirname, '../module/schema/**/*.ts')],
+		subscribers: [resolve(__dirname, '../module/subscriber/**/*.ts')]
 	},
 
 	/**

@@ -1,12 +1,15 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, ManyToOne, JoinColumn } from 'typeorm'
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, ManyToMany, JoinTable } from 'typeorm'
 import { CTable } from '@u-blog/model'
 import { IsInt, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator'
 import { Users } from './Users'
+import { BaseSchema } from '../BaseSchema'
+import { Article } from './Article'
 
 /**
  * 标签表
  */
 @Entity({ name: CTable.TAG, comment: '标签表' })
+@BaseSchema
 export class Tag {
 	@PrimaryGeneratedColumn({ type: 'smallint', comment: '主键' })
 	id!: number
@@ -29,22 +32,21 @@ export class Tag {
 	@MaxLength(50, { message: '标签颜色最多50个字符' })
 	color?: string | null
 
-	@Column({ name: 'userId', type: 'int', nullable: true, comment: '用户id' })
-	@IsOptional()
+	@Column({ name: 'userId', type: 'int', comment: '用户id' })
+	@IsNotEmpty({ message: '创建用户ID不能为空' })
 	@IsInt({ message: '用户ID必须为整数' })
-	userId?: number | null
+	userId: number
 
 	@ManyToOne(() => Users)
 	@JoinColumn({ name: 'userId' })
 	user?: Users | null
 
-	@CreateDateColumn({ name: 'createdAt', type: 'timestamp', comment: '创建时间' })
-	createdAt!: Date
-
-	@UpdateDateColumn({ name: 'updatedAt', type: 'timestamp', comment: '更新时间' })
-	updatedAt!: Date
-
-	@DeleteDateColumn({ name: 'deletedAt', type: 'timestamp', nullable: true, comment: '删除时间' })
-	deletedAt?: Date | null
+	@ManyToMany(() => Article)
+	@JoinTable({
+		name: CTable.ARTICLE_TAG,
+		joinColumn: { name: 'tagId', referencedColumnName: 'id' },
+		inverseJoinColumn: { name: 'articleId', referencedColumnName: 'id' }
+	})
+	articles?: Article[] | null
 }
 

@@ -29,7 +29,10 @@ export const assert = <T = any, E = Error>(
 {
 	const [err, data] = tryData
 	if (err)
+	{
+		console.error(err)
 		return failTempl(fail)
+	}
 	return successTempl<T>(data, success)
 }
 

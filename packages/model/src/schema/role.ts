@@ -1,5 +1,5 @@
-import type { IBaseFields } from '../base'
-import type { IPermission } from './permission'
+import type { IBaseFields, IBaseSchema } from '../base'
+import { IPermission } from './permission'
 
 export const CUserRole = {
   ADMIN: 'admin',
@@ -9,10 +9,20 @@ export const CUserRole = {
 
 export type UserRole = typeof CUserRole[keyof typeof CUserRole]
 
-export interface IRole extends IBaseFields {
-  name: UserRole
+export interface IRole extends IBaseSchema, Pick<IBaseFields, 'id'> {
+  name: string
   desc: string
-  permissions: IPermission[]
+  permissions?: IPermission[]
 }
 
-export interface IRoleDto extends Omit<IRole, keyof IBaseFields> {}
+/**
+ * 前 --> 后
+ */
+export interface IRoleDto extends Omit<IRole, keyof IBaseFields | 'deletedAt' | 'permissions'> {
+  permissions?: number[]
+}
+
+/**
+ * 前 <-- 后
+ */
+export interface IRoleVo extends Omit<IRole, 'deletedAt'> {}

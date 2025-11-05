@@ -1,12 +1,21 @@
-import type { IBaseFields } from '../base'
+import type { IBaseFields, IBaseSchema } from '../base'
 import type { IUser } from './user'
 
-export interface IActivityLog extends IBaseFields {
-  user: IUser
+/**
+ * 数据表实例对象（与表字段一一对应）
+ */
+export interface IActivityLog extends IBaseSchema, Pick<IBaseFields, 'id'> {
+  userId: number
+  user?: IUser | null
   action: string
 }
+/**
+ * 前 --> 后
+ */
+export interface IActivityLogDto extends Omit<IActivityLog, keyof IBaseFields | 'deletedAt'> {}
 
-export interface IActivityLogDto extends Omit<IActivityLog, keyof IBaseFields> {
-  userId: string
-}
+/**
+ * 前 <-- 后
+ */
+export interface IActivityLogVo extends Omit<IActivityLog, 'deletedAt'> {}
 

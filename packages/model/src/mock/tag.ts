@@ -11,9 +11,10 @@ import { createUser } from './user'
 export const createTag = (): ITag =>
 {
   return {
-    id: faker.string.uuid(),
+    id: faker.number.int({ min: 1, max: 1000000 }),
     name: faker.lorem.word(),
     desc: faker.lorem.paragraphs(3).substring(0, 500),
+    userId: faker.number.int({ min: 1, max: 1000000 }),
     user: createUser(),
     color: faker.color.rgb({ format: 'css', casing: 'lower', prefix: '#' }).replace(/^#/, () =>
     {
@@ -24,13 +25,13 @@ export const createTag = (): ITag =>
       const b = Math.floor(Math.random() * 55 + 200).toString(16)
       return base + r + g + b
     }),
-    createdAt: faker.date
-      .past()
-      .toISOString()
-      .split('T')[0],
-    updatedAt: faker.date
-      .past()
-      .toISOString()
-      .split('T')[0]
+    createdAt: faker.date.between({
+      from: '2020-01-01',
+      to: new Date()
+    }),
+    updatedAt: faker.date.between({
+      from: '2020-01-01',
+      to: new Date()
+    })
   }
 }

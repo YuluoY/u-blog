@@ -7,7 +7,7 @@ const router = express.Router() as Router
 /**
  * 通用查询
  */
-router.get('/query', async (req: Request, res: Response) => {
+router.post('/query', async (req: Request, res: Response) => {
   const data = await RestController.query(req)
   res.json(data)
 })
@@ -22,8 +22,9 @@ router.delete('/del', (req: Request, res: Response) => {
 /**
  * 通用添加
  */
-router.post('/add', (req: Request, res: Response) => {
-
+router.post('/add', async (req: Request, res: Response) => {
+  const data = await RestController.add(req)
+  res.json(data)
 })
 
 /**

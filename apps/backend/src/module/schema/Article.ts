@@ -1,13 +1,16 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, ManyToOne, JoinColumn } from 'typeorm'
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, ManyToMany, JoinTable } from 'typeorm'
 import { CTable, CArticleStatus, type ArticleStatus } from '@u-blog/model'
-import { IsBoolean, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, Min } from 'class-validator'
+import { IsBoolean, IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, Min } from 'class-validator'
 import { Users } from './Users'
 import { Category } from './Category'
+import { BaseSchema } from '../BaseSchema'
+import { Tag } from './Tag'
 
 /**
  * 文章表
  */
 @Entity({ name: CTable.ARTICLE, comment: '文章表' })
+@BaseSchema
 export class Article {
 	@PrimaryGeneratedColumn({ type: 'int', comment: '主键' })
 	id!: number
@@ -29,6 +32,14 @@ export class Article {
 	@ManyToOne(() => Category)
 	@JoinColumn({ name: 'categoryId' })
 	category?: Category | null
+
+	@ManyToMany(() => Tag)
+	@JoinTable({
+		name: CTable.ARTICLE_TAG,
+		joinColumn: { name: 'articleId', referencedColumnName: 'id' },
+		inverseJoinColumn: { name: 'tagId', referencedColumnName: 'id' }
+	})
+	tags?: Tag[] | null
 
 	@Column({ type: 'varchar', length: 100, unique: true, comment: '标题' })
 	@IsNotEmpty({ message: '标题不能为空' })
@@ -55,7 +66,7 @@ export class Article {
 	@Column({ 
 		type: 'enum', 
 		default: CArticleStatus.DRAFT, 
-		comment: '状态 (枚举: article_status)',
+		comment: '状态 (枚举: ' + Object.values(CArticleStatus).join(',') + ')',
 		enum: Object.values(CArticleStatus)
 	})
 	@IsNotEmpty({ message: '状态不能为空' })
@@ -91,15 +102,8 @@ export class Article {
 	@Min(0, { message: '浏览数不能小于0' })
 	viewCount!: number
 
-	@Column({ name: 'publishedAt', type: 'timestamp', nullable: true, comment: '发布时间' })
-	publishedAt?: Date | null
-
-	@CreateDateColumn({ name: 'createdAt', type: 'timestamp', comment: '创建时间' })
-	createdAt!: Date
-
-	@UpdateDateColumn({ name: 'updatedAt', type: 'timestamp', comment: '更新时间' })
-	updatedAt!: Date
-
-	@DeleteDateColumn({ name: 'deletedAt', type: 'timestamp', nullable: true, comment: '删除时间' })
-	deletedAt?: Date | null
+	@Column({ name: 'publishedAt', type: 'timestamp', comment: '发布时间' })
+	@IsNotEmpty({ message: '发布时间不能为空' })
+	@IsDateString({}, { message: '发布时间必须是日期字符串' })
+	publishedAt!: Date
 }

@@ -10,7 +10,6 @@ import { toModelName, getDataSource } from '@/utils'
 export const ModelHandler = (req: Request, res: Response, next: NextFunction) => {
 	const { model } = req.params
 	const database = getDataSource(req)
-	const modelInstance = database.getRepository(toModelName(model))
-	req.model = modelInstance
+	req.model = database.getRepository(toModelName(model))
 	next()
 }

@@ -56,8 +56,33 @@ const packages = [
     watch: ['**/*.ts'],
     command: 'pnpm',
     argv: ['run', 'build']
+  },
+  {
+    name: 'backend',
+    root: path.join(root, 'apps', 'backend'),
+    src: path.join(root, 'apps', 'backend', 'src'),
+    command: 'pnpm',
+    argv: ['run', 'dev'],
+    logging: true
   }
 ]
+
+const Icons = {
+  '✅': '✅', // 成功
+  '🔄': '🔄', // 构建中
+  '🛑': '🛑', // 终止
+  '❌': '❌', // 失败
+  '👀': '👀', // 监听
+  '📂': '📂', // 目录
+  '📝': '📝', // 日志
+  '🔗': '🔗', // 链接
+  '🎯': '🎯', // 目标
+  '🔨': '🔨', // 构建
+  '⚠️': '⚠️', // 警告
+  '🚨': '🚨', // 错误
+  '🚫': '🚫'  // 禁止
+}
+
 const building = new Map()
 const buildTimers = new Map()
 const buildDones = new Map()
@@ -104,11 +129,11 @@ function build(pkg, done) {
 
 function doBuild(pkg, done) {
   clean(pkg)
-  console.log(`🔄 ${pkg.name} 文件发生变化，开始构建...`)
+  !pkg.logging && console.log(`🔄 ${pkg.name} 文件发生变化，开始构建...`)
 
   const spawner = spawn(pkg.command, pkg.argv, {
     cwd: pkg.root,
-    stdio: 'pipe',
+    stdio: pkg.logging ? 'inherit' : 'pipe',
     shell: true
   })
 
@@ -209,6 +234,13 @@ function debouncedBuild(pkg, done) {
 
 // 关键：为每个包创建独立的 watch，使用绝对路径
 const watchers = packages.map(pkg => {
+  if (!pkg.watch)
+  {
+    debouncedBuild(pkg, _ => {
+      console.log(`✅ ${pkg.name} 已启动`)
+    })
+    return null
+  }
   const watchPaths = pkg.watch.map(pattern => {
     const fullPath = path.resolve(pkg.src, pattern)
     return fullPath
@@ -225,7 +257,7 @@ const watchers = packages.map(pkg => {
   })
   
   watcher.on('ready', () => {
-    console.log(`✅ ${pkg.name} 监听器已就绪\n`)
+    console.log(`✅ ${pkg.name} 监听器已就绪`)
   })
   
   watcher.on('change', (filePath) => {

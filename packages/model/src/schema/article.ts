@@ -1,7 +1,7 @@
-import type { IBaseFields } from '@/base'
+import type { IBaseFields, IBaseSchema } from '@/base'
 import type { ICategory } from './category'
-import type { ITag } from './tag'
 import type { IUser } from './user'
+import { ITag } from './tag'
 
 export const CArticleStatus =
 {
@@ -12,27 +12,38 @@ export const CArticleStatus =
 
 export type ArticleStatus = typeof CArticleStatus[keyof typeof CArticleStatus]
 
-export interface IArticle extends IBaseFields {
-  user: IUser
-  author: IUser[]
-  category?: ICategory | null
-  tags: ITag[]
+/**
+ * 数据表实例对象（与表字段一一对应）
+ */
+export interface IArticle extends IBaseSchema, Pick<IBaseFields, 'id'> {
+  user?: IUser
+  userId: number
+  
+  category?: ICategory
+  categoryId?: number
+
+  tags?: ITag[]
+
   title: string
   content: string
-  desc?: string | null
-  cover?: string | null
+  desc?: string
+  cover?: string
   status: ArticleStatus
   isPrivate: boolean
   isTop: boolean
-  protect?: string | null
+  protect?: string
   commentCount: number
   likeCount: number
   viewCount: number
-  publishedAt?: string | null
+  publishedAt: Date
 }
 
-export interface IArticleDto extends Omit<IArticle, keyof IBaseFields> {
-  userId: string
-  categoryId?: string | null
-  tagIds: string[]
-}
+/**
+ * 前 --> 后
+ */
+export interface IArticleDto extends Omit<IArticle, keyof IBaseFields | 'deletedAt'> {}
+
+/**
+ * 前 <-- 后
+ */
+export interface IArticleVo extends Omit<IArticle, 'deletedAt'> {}

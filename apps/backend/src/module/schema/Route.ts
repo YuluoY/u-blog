@@ -1,11 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, ManyToOne, JoinColumn } from 'typeorm'
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm'
 import { CTable } from '@u-blog/model'
 import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator'
+import { BaseSchema } from '../BaseSchema'
+import { Setting } from './Setting'
 
 /**
  * 路由表
  */
 @Entity({ name: CTable.ROUTE, comment: '路由表' })
+@BaseSchema
 export class Route {
 	@PrimaryGeneratedColumn({ type: 'smallint', comment: '主键' })
 	id!: number
@@ -74,21 +77,15 @@ export class Route {
 	@IsBoolean({ message: '是否显示右侧信息必须是布尔值' })
 	isRightSide!: boolean
 
-	@Column({ type: 'smallint', nullable: true, comment: '父级路由ID' })
+	@Column({ name: 'pid', type: 'smallint', nullable: true, comment: '父级路由ID' })
 	@IsOptional()
 	@IsInt({ message: '父级路由ID必须为整数' })
-	pid?: number | null
+	pid?: number
 
 	@ManyToOne(() => Route)
 	@JoinColumn({ name: 'pid' })
-	parent?: Route | null
-
-	@CreateDateColumn({ name: 'createdAt', type: 'timestamp', comment: '创建时间' })
-	createdAt!: Date
-
-	@UpdateDateColumn({ name: 'updatedAt', type: 'timestamp', comment: '更新时间' })
-	updatedAt!: Date
-
-	@DeleteDateColumn({ name: 'deletedAt', type: 'timestamp', nullable: true, comment: '删除时间' })
-	deletedAt?: Date | null
+	parent?: Route
+	
+	@OneToMany(() => Setting, setting => setting.route)
+	settings?: Setting[]
 }
