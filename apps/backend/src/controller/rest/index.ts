@@ -27,6 +27,11 @@ class RestController
     const tryData = await tryit<any, Error>(() => RestService.add(req.model, data, ret))
     return assert(tryData, req.__('rest.addSuccess'), req.__('rest.addFail'))
   }
+
+  async update(req: Request): ControllerReturn
+  {
+
+  }
 }
 
 export default new RestController()

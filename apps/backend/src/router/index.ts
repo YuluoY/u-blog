@@ -1,5 +1,5 @@
 import { ModelHandler } from '@/middleware'
-// import commonRouter from './common'
+import commonRouter from './common'
 import restRouter from './rest'
 import webRouter from './web'
 import backRouter from './back'
@@ -11,7 +11,7 @@ export const Router = {
 	 * @param {import('express').Application} app
 	 */
 	install(app: Application) {
-		// app.use('/', commonRouter)
+		app.use('/', commonRouter)
 		app.use('/rest/:model', ModelHandler, restRouter)
 		// app.use('/web/:model', ModelHandler, SqlHandler(), webRouter)
 		// app.use('/back/:model', ModelHandler, SqlHandler(), backRouter)

@@ -19,7 +19,7 @@ export class Users {
 	@MinLength(3, { message: '用户名至少3个字符' })
 	username!: string
 
-	@Column({ type: 'varchar', length: 50, nullable: false, comment: '密码' })
+	@Column({ type: 'varchar', length: 	50, nullable: false, comment: '密码' })
 	@IsNotEmpty({ message: '密码不能为空' })
 	@IsString({ message: '密码必须为字符串' })
 	@MaxLength(50, { message: '密码最多50个字符' })

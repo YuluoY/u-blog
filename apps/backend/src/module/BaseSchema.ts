@@ -17,6 +17,10 @@ export function BaseSchema<T extends new (...args: any[]) => {}>(constructor: T)
     @IsOptional()
     deletedAt?: Date | null
   }
+  
+  // 确保原类的名称被保留
+  Object.defineProperty(Base, 'name', { value: constructor.name })
+  
   return Base as unknown as new (...args: ConstructorParameters<T>) => InstanceType<T> & IBaseSchema
 }
 

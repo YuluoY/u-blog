@@ -14,7 +14,7 @@ export class Tag {
 	@PrimaryGeneratedColumn({ type: 'smallint', comment: '主键' })
 	id!: number
 
-	@Column({ type: 'varchar', length: 50, comment: '标签名称' })
+	@Column({ type: 'varchar', length: 50, nullable: false, unique: true, comment: '标签名称' })
 	@IsNotEmpty({ message: '标签名称不能为空' })
 	@IsString({ message: '标签名称必须为字符串' })
 	@MaxLength(50, { message: '标签名称最多50个字符' })

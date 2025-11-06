@@ -15,8 +15,9 @@ router.post('/query', async (req: Request, res: Response) => {
 /**
  * 通用删除
  */
-router.delete('/del', (req: Request, res: Response) => {
-
+router.delete('/del', async (req: Request, res: Response) => {
+  const data = await RestController.del(req)
+  res.json(data)
 })
 
 /**
@@ -30,16 +31,9 @@ router.post('/add', async (req: Request, res: Response) => {
 /**
  * 通用修改
  */
-router.put('/update', (req: Request, res: Response) => {
-
+router.put('/update', async (req: Request, res: Response) => {
+  const data = await RestController.update(req)
+  res.json(data)
 })
-
-/**
- * 通用分页查询
- */
-router.get('/page', (req: Request, res: Response) => {
-
-})
-
 
 export default router
