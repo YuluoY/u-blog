@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "标签表",
+  "description": "标签表类型定义",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "主键"
+    },
+    "name": {
+      "type": "string",
+      "description": "标签名称"
+    },
+    "desc": {
+      "type": "string",
+      "description": "标签描述"
+    },
+    "color": {
+      "type": "string",
+      "description": "标签颜色"
+    },
+    "userId": {
+      "type": "integer",
+      "description": "创建人ID"
+    },
+    "user": {
+      "type": "object",
+      "description": "创建人信息",
+      "$ref": "#/definitions/User"
+    },
+    "articles": {
+      "type": "array",
+      "description": "文章列表",
+      "items": {
+        "$ref": "#/definitions/Article"
+      }
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "创建时间"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "更新时间"
+    },
+    "deletedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "删除时间"
+    }
+  },
+  "required": ["id", "name", "userId", "createdAt", "updatedAt"],
+  "definitions": {
+    "User": {
+      "type": "object",
+      "description": "用户信息"
+    },
+    "Article": {
+      "type": "object",
+      "description": "文章信息"
+    }
+  }
+}
+

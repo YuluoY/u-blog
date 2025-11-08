@@ -1,0 +1,130 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "文章表",
+  "description": "文章表类型定义",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "主键"
+    },
+    "userId": {
+      "type": "integer",
+      "description": "创建人ID"
+    },
+    "user": {
+      "type": "object",
+      "description": "创建人信息",
+      "$ref": "#/definitions/User"
+    },
+    "categoryId": {
+      "type": "integer",
+      "description": "分类ID"
+    },
+    "category": {
+      "type": "object",
+      "description": "分类信息",
+      "$ref": "#/definitions/Category"
+    },
+    "tags": {
+      "type": "array",
+      "description": "标签列表",
+      "items": {
+        "$ref": "#/definitions/Tag"
+      }
+    },
+    "title": {
+      "type": "string",
+      "description": "标题",
+      "maxLength": 100
+    },
+    "content": {
+      "type": "string",
+      "description": "内容"
+    },
+    "desc": {
+      "type": "string",
+      "description": "描述"
+    },
+    "cover": {
+      "type": "string",
+      "description": "封面",
+      "maxLength": 255
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "published", "deleted"],
+      "description": "状态",
+      "default": "draft"
+    },
+    "isPrivate": {
+      "type": "boolean",
+      "description": "是否私密",
+      "default": false
+    },
+    "isTop": {
+      "type": "boolean",
+      "description": "是否置顶",
+      "default": false
+    },
+    "protect": {
+      "type": "string",
+      "description": "密码保护",
+      "maxLength": 50
+    },
+    "commentCount": {
+      "type": "integer",
+      "description": "评论数",
+      "default": 0,
+      "minimum": 0
+    },
+    "likeCount": {
+      "type": "integer",
+      "description": "点赞数",
+      "default": 0,
+      "minimum": 0
+    },
+    "viewCount": {
+      "type": "integer",
+      "description": "浏览数",
+      "default": 0,
+      "minimum": 0
+    },
+    "publishedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "发布时间"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "创建时间"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "更新时间"
+    },
+    "deletedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "删除时间"
+    }
+  },
+  "required": ["id", "userId", "title", "content", "status", "isPrivate", "isTop", "commentCount", "likeCount", "viewCount", "publishedAt", "createdAt", "updatedAt"],
+  "definitions": {
+    "User": {
+      "type": "object",
+      "description": "用户信息"
+    },
+    "Category": {
+      "type": "object",
+      "description": "分类信息"
+    },
+    "Tag": {
+      "type": "object",
+      "description": "标签信息"
+    }
+  }
+}
+

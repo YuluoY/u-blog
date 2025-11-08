@@ -1,0 +1,152 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "用户表",
+  "description": "用户表类型定义",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "用户ID"
+    },
+    "username": {
+      "type": "string",
+      "description": "用户名",
+      "maxLength": 50
+    },
+    "password": {
+      "type": "string",
+      "description": "密码",
+      "maxLength": 50,
+      "minLength": 6
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "邮箱"
+    },
+    "namec": {
+      "type": "string",
+      "description": "昵称",
+      "maxLength": 100
+    },
+    "avatar": {
+      "type": "string",
+      "description": "头像",
+      "maxLength": 255
+    },
+    "bio": {
+      "type": "string",
+      "description": "个人简介",
+      "maxLength": 255
+    },
+    "role": {
+      "type": "string",
+      "enum": ["super_admin", "admin", "user"],
+      "description": "角色",
+      "default": "user"
+    },
+    "location": {
+      "type": "string",
+      "description": "所在地",
+      "maxLength": 255
+    },
+    "ip": {
+      "type": "string",
+      "format": "ipv4",
+      "description": "登录IP",
+      "maxLength": 100
+    },
+    "website": {
+      "type": "object",
+      "description": "个人网站",
+      "properties": {
+        "url": {
+          "type": "string",
+          "description": "网站URL"
+        },
+        "title": {
+          "type": "string",
+          "description": "网站标题"
+        },
+        "desc": {
+          "type": "string",
+          "description": "网站描述"
+        },
+        "avatar": {
+          "type": "string",
+          "description": "网站头像"
+        }
+      }
+    },
+    "socials": {
+      "type": "array",
+      "description": "社交账号",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "社交平台名称"
+          },
+          "icon": {
+            "type": "string",
+            "description": "图标"
+          },
+          "url": {
+            "type": "string",
+            "description": "社交账号URL"
+          }
+        }
+      }
+    },
+    "isActive": {
+      "type": "boolean",
+      "description": "账号是否激活",
+      "default": true
+    },
+    "token": {
+      "type": "string",
+      "description": "签发访问令牌",
+      "maxLength": 255
+    },
+    "rthash": {
+      "type": "string",
+      "description": "刷新令牌的随机字符串密钥",
+      "maxLength": 255
+    },
+    "failLoginCount": {
+      "type": "integer",
+      "description": "登录失败次数",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 5
+    },
+    "lockoutExpiresAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "失败锁定过期时间"
+    },
+    "lastLoginAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "最后登录时间"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "创建时间"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "更新时间"
+    },
+    "deletedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "删除时间"
+    }
+  },
+  "required": ["id", "username", "password", "email", "role", "isActive", "failLoginCount", "lastLoginAt", "createdAt", "updatedAt"]
+}
+

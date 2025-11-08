@@ -1,3 +1,8 @@
+common:
+  registerSuccess: Register successfully!
+  registerFail: Register failed
+  loginSuccess: Login successfully!
+  loginFail: Login failed
 login:
   success: Login successfully !
   error: Login failed !

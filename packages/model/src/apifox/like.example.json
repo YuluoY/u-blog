@@ -1,0 +1,21 @@
+{
+  "id": 1,
+  "userId": 2,
+  "user": {
+    "id": 2,
+    "username": "jane_smith",
+    "email": "jane.smith@example.com"
+  },
+  "articleId": 1,
+  "article": {
+    "id": 1,
+    "title": "深入理解 TypeScript 泛型",
+    "status": "published"
+  },
+  "commentId": null,
+  "comment": null,
+  "createdAt": "2024-01-11T11:00:00Z",
+  "updatedAt": "2024-01-11T11:00:00Z",
+  "deletedAt": null
+}
+

@@ -1,0 +1,24 @@
+{
+  "id": 1,
+  "articleId": 1,
+  "article": {
+    "id": 1,
+    "title": "深入理解 TypeScript 泛型",
+    "status": "published"
+  },
+  "userId": 2,
+  "user": {
+    "id": 2,
+    "username": "jane_smith",
+    "email": "jane.smith@example.com",
+    "namec": "简·史密斯"
+  },
+  "content": "这篇文章写得非常好，对我帮助很大！",
+  "path": "1",
+  "pid": null,
+  "parent": null,
+  "createdAt": "2024-01-11T10:00:00Z",
+  "updatedAt": "2024-01-11T10:00:00Z",
+  "deletedAt": null
+}
+

@@ -1,0 +1,23 @@
+{
+  "id": 1,
+  "name": "JavaScript",
+  "desc": "JavaScript 编程语言相关",
+  "color": "#F7DF1E",
+  "userId": 1,
+  "user": {
+    "id": 1,
+    "username": "john_doe",
+    "email": "john.doe@example.com"
+  },
+  "articles": [
+    {
+      "id": 1,
+      "title": "深入理解 TypeScript 泛型",
+      "status": "published"
+    }
+  ],
+  "createdAt": "2024-01-01T08:00:00Z",
+  "updatedAt": "2024-01-01T08:00:00Z",
+  "deletedAt": null
+}
+

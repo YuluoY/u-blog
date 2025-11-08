@@ -1,0 +1,21 @@
+{
+  "id": 1,
+  "followerId": 2,
+  "follower": {
+    "id": 2,
+    "username": "jane_smith",
+    "email": "jane.smith@example.com",
+    "namec": "简·史密斯"
+  },
+  "followingId": 1,
+  "following": {
+    "id": 1,
+    "username": "john_doe",
+    "email": "john.doe@example.com",
+    "namec": "约翰·多伊"
+  },
+  "createdAt": "2024-01-10T08:00:00Z",
+  "updatedAt": "2024-01-10T08:00:00Z",
+  "deletedAt": null
+}
+

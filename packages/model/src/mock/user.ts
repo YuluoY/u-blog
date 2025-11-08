@@ -58,7 +58,7 @@ export const createWebsite = (): IUserWebsite =>
     url: faker.internet.url(),
     title: faker.lorem.sentence(),
     desc: faker.lorem.paragraphs(3).substring(0, 500),
-    cover: getRandomImage()
+    avatar: getRandomImage()
   }
 }
 

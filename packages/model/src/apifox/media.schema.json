@@ -1,0 +1,118 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "媒体表",
+  "description": "媒体表类型定义",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "主键"
+    },
+    "name": {
+      "type": "string",
+      "description": "文件名"
+    },
+    "originalName": {
+      "type": "string",
+      "description": "原始文件名"
+    },
+    "type": {
+      "type": "string",
+      "description": "文件类型"
+    },
+    "mineType": {
+      "type": "string",
+      "description": "MIME类型"
+    },
+    "url": {
+      "type": "string",
+      "description": "文件URL"
+    },
+    "ext": {
+      "type": "string",
+      "description": "文件扩展名"
+    },
+    "size": {
+      "type": "integer",
+      "description": "文件大小（字节）"
+    },
+    "hash": {
+      "type": "string",
+      "description": "文件哈希值"
+    },
+    "thumbnail": {
+      "type": "string",
+      "description": "缩略图URL"
+    },
+    "width": {
+      "type": "integer",
+      "description": "宽度（图片/视频）"
+    },
+    "height": {
+      "type": "integer",
+      "description": "高度（图片/视频）"
+    },
+    "duration": {
+      "type": "number",
+      "description": "时长（视频/音频，秒）"
+    },
+    "articleId": {
+      "type": "integer",
+      "description": "关联文章ID"
+    },
+    "article": {
+      "type": "object",
+      "description": "关联文章信息",
+      "$ref": "#/definitions/Article"
+    },
+    "commentId": {
+      "type": "integer",
+      "description": "关联评论ID"
+    },
+    "comment": {
+      "type": "object",
+      "description": "关联评论信息",
+      "$ref": "#/definitions/Comment"
+    },
+    "userId": {
+      "type": "integer",
+      "description": "上传用户ID"
+    },
+    "user": {
+      "type": "object",
+      "description": "上传用户信息",
+      "$ref": "#/definitions/User"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "创建时间"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "更新时间"
+    },
+    "deletedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "删除时间"
+    }
+  },
+  "required": ["id", "name", "originalName", "type", "mineType", "url", "ext", "hash", "createdAt", "updatedAt"],
+  "definitions": {
+    "Article": {
+      "type": "object",
+      "description": "文章信息"
+    },
+    "Comment": {
+      "type": "object",
+      "description": "评论信息"
+    },
+    "User": {
+      "type": "object",
+      "description": "用户信息"
+    }
+  }
+}
+

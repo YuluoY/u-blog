@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "分类表",
+  "description": "分类表类型定义",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "主键"
+    },
+    "name": {
+      "type": "string",
+      "description": "分类名称"
+    },
+    "desc": {
+      "type": "string",
+      "description": "分类描述"
+    },
+    "userId": {
+      "type": "integer",
+      "description": "创建人ID"
+    },
+    "user": {
+      "type": "object",
+      "description": "创建人信息",
+      "$ref": "#/definitions/User"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "创建时间"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "更新时间"
+    },
+    "deletedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "删除时间"
+    }
+  },
+  "required": ["id", "name", "createdAt", "updatedAt"],
+  "definitions": {
+    "User": {
+      "type": "object",
+      "description": "用户信息"
+    }
+  }
+}
+

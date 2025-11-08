@@ -1,0 +1,40 @@
+{
+  "id": 1,
+  "username": "john_doe",
+  "password": "securePassword123",
+  "email": "john.doe@example.com",
+  "namec": "约翰·多伊",
+  "avatar": "https://example.com/avatars/john.jpg",
+  "bio": "我是一名全栈开发者，热爱编程和开源项目。",
+  "role": "user",
+  "location": "北京市",
+  "ip": "192.168.1.100",
+  "website": {
+    "url": "https://johndoe.com",
+    "title": "John's Personal Website",
+    "desc": "这是我的个人网站，分享技术文章和项目经验。",
+    "avatar": "https://example.com/website-avatar.jpg"
+  },
+  "socials": [
+    {
+      "name": "github",
+      "icon": "https://example.com/icons/github.png",
+      "url": "https://github.com/johndoe"
+    },
+    {
+      "name": "twitter",
+      "icon": "https://example.com/icons/twitter.png",
+      "url": "https://twitter.com/johndoe"
+    }
+  ],
+  "isActive": true,
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+  "rthash": "random_refresh_token_hash_12345",
+  "failLoginCount": 0,
+  "lockoutExpiresAt": null,
+  "lastLoginAt": "2024-01-15T10:30:00Z",
+  "createdAt": "2024-01-01T08:00:00Z",
+  "updatedAt": "2024-01-15T10:30:00Z",
+  "deletedAt": null
+}
+

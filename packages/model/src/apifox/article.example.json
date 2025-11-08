@@ -1,0 +1,46 @@
+{
+  "id": 1,
+  "userId": 1,
+  "user": {
+    "id": 1,
+    "username": "john_doe",
+    "email": "john.doe@example.com",
+    "namec": "约翰·多伊"
+  },
+  "categoryId": 1,
+  "category": {
+    "id": 1,
+    "name": "技术",
+    "desc": "技术相关文章"
+  },
+  "tags": [
+    {
+      "id": 1,
+      "name": "JavaScript",
+      "desc": "JavaScript相关",
+      "color": "#F7DF1E"
+    },
+    {
+      "id": 2,
+      "name": "TypeScript",
+      "desc": "TypeScript相关",
+      "color": "#3178C6"
+    }
+  ],
+  "title": "深入理解 TypeScript 泛型",
+  "content": "# 深入理解 TypeScript 泛型\n\nTypeScript 泛型是类型系统中的一个强大特性...",
+  "desc": "本文深入探讨 TypeScript 泛型的使用方法和最佳实践。",
+  "cover": "https://example.com/covers/typescript-generics.jpg",
+  "status": "published",
+  "isPrivate": false,
+  "isTop": true,
+  "protect": null,
+  "commentCount": 15,
+  "likeCount": 42,
+  "viewCount": 1280,
+  "publishedAt": "2024-01-10T09:00:00Z",
+  "createdAt": "2024-01-08T10:00:00Z",
+  "updatedAt": "2024-01-12T14:30:00Z",
+  "deletedAt": null
+}
+

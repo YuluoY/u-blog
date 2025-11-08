@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "关注表",
+  "description": "关注表类型定义",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "主键"
+    },
+    "followerId": {
+      "type": "integer",
+      "description": "关注者ID"
+    },
+    "follower": {
+      "type": "object",
+      "description": "关注者信息",
+      "$ref": "#/definitions/User"
+    },
+    "followingId": {
+      "type": "integer",
+      "description": "被关注者ID"
+    },
+    "following": {
+      "type": "object",
+      "description": "被关注者信息",
+      "$ref": "#/definitions/User"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "创建时间"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "更新时间"
+    },
+    "deletedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "删除时间"
+    }
+  },
+  "required": ["id", "followerId", "followingId", "createdAt", "updatedAt"],
+  "definitions": {
+    "User": {
+      "type": "object",
+      "description": "用户信息"
+    }
+  }
+}
+

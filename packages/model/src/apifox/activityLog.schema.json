@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "用户行为日志表",
+  "description": "用户行为日志表类型定义",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "主键"
+    },
+    "userId": {
+      "type": "integer",
+      "description": "用户ID"
+    },
+    "user": {
+      "type": "object",
+      "description": "用户信息",
+      "$ref": "#/definitions/User"
+    },
+    "action": {
+      "type": "string",
+      "description": "操作动作"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "创建时间"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "更新时间"
+    },
+    "deletedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "删除时间"
+    }
+  },
+  "required": ["id", "userId", "action", "createdAt", "updatedAt"],
+  "definitions": {
+    "User": {
+      "type": "object",
+      "description": "用户信息"
+    }
+  }
+}
+

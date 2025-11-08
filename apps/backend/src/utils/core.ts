@@ -1,5 +1,5 @@
 import { camelCase, capitalize, snakeCase } from '@u-blog/utils'
-import type { Request } from 'express'
+import type { Request, Response } from 'express'
 import { DATABASE } from '@/constants'
 import { DataSource } from 'typeorm'
 import { failTempl, successTempl } from './template'
@@ -9,6 +9,18 @@ import { FailReturn, SuccessReturn } from '@u-blog/types'
  * 获取数据库实例
  */
 export const getDataSource = (req: Request): DataSource => req.app.locals[DATABASE]?.getDataSource?.()
+
+/**
+ * 返回处理结果
+ * @param data - 数据
+ * @param res - 响应
+ * @returns
+ */
+export const toResponse = (data: any, res: Response): any => {
+	if (data.code !== 0 && data.code !== 1)
+		return res.status(data.code).json(data)
+	return res.json(data)
+}
 
 /**
  * 断言
@@ -21,19 +33,20 @@ export const getDataSource = (req: Request): DataSource => req.app.locals[DATABA
  * const [err, data] = await tryit<any, Error>(() => RestService.query(req.model))
  * assert([err, data], 'success', 'fail')
  */
-export const assert = <T = any, E = Error>(
+export const assert = <T = any, E extends Error = Error>(
 	tryData: [E, T], 
 	success: string,
-	fail: string
+	fail: string,
+	code?: number
 ): SuccessReturn<T> | FailReturn =>
 {
 	const [err, data] = tryData
 	if (err)
 	{
 		console.error(err)
-		return failTempl(fail)
+		return failTempl(err.message ?  `${fail}, ${err.message}` : fail, code || 1)
 	}
-	return successTempl<T>(data, success)
+	return successTempl<T>(data, success, code || 0)
 }
 
 /**
@@ -72,4 +85,29 @@ export const withType = <T = any>(str: string, defaultValue: T): T =>
 	} catch (error) {
 		return defaultValue
 	}
+}
+
+/**
+ * 格式化 class-validator 验证错误
+ * @param errors - 验证错误数组（来自 validate 函数）
+ * @returns 格式化后的错误信息字符串，格式：字段名: 错误信息; 字段名: 错误信息
+ * @example
+ * ```ts
+ * const errors = await validate(plainToInstance(Users, data))
+ * if (errors.length > 0) {
+ *   throw new Error(formatValidationErrors(errors))
+ * }
+ * // 输出示例: "email: 邮箱格式不正确; password: 密码长度必须在6-20之间"
+ * ```
+ */
+export const formatValidationErrors = (errors: any[]): string => {
+	return errors
+		.map(error => {
+			const field = error.property
+			const messages = error.constraints 
+				? Object.values(error.constraints).join(',') 
+				: '验证失败'
+			return `${field}: ${messages}`
+		})
+		.join('; ')
 }

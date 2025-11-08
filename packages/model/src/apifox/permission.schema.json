@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "权限表",
+  "description": "权限表类型定义",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "主键"
+    },
+    "name": {
+      "type": "string",
+      "description": "权限名称"
+    },
+    "code": {
+      "type": "string",
+      "description": "权限代码"
+    },
+    "desc": {
+      "type": "string",
+      "description": "权限描述"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["menu", "button", "api"],
+      "description": "权限类型"
+    },
+    "resource": {
+      "type": "string",
+      "description": "资源路径"
+    },
+    "action": {
+      "type": "string",
+      "enum": ["create", "read", "update", "delete"],
+      "description": "操作类型"
+    },
+    "roles": {
+      "type": "array",
+      "description": "角色列表",
+      "items": {
+        "$ref": "#/definitions/Role"
+      }
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "创建时间"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "更新时间"
+    },
+    "deletedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "删除时间"
+    }
+  },
+  "required": ["id", "name", "code", "type", "action", "createdAt", "updatedAt"],
+  "definitions": {
+    "Role": {
+      "type": "object",
+      "description": "角色信息"
+    }
+  }
+}
+

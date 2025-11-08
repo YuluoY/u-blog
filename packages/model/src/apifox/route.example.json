@@ -1,0 +1,30 @@
+{
+  "id": 1,
+  "title": "首页",
+  "name": "Home",
+  "path": "/",
+  "component": "views/Home.vue",
+  "redirect": null,
+  "icon": "home",
+  "isKeepAlive": true,
+  "isAffix": true,
+  "isExact": true,
+  "isProtected": false,
+  "isHero": true,
+  "isLeftSide": true,
+  "isRightSide": false,
+  "pid": null,
+  "parent": null,
+  "settings": [
+    {
+      "id": 1,
+      "key": "showBanner",
+      "value": true,
+      "desc": "显示横幅"
+    }
+  ],
+  "createdAt": "2024-01-01T08:00:00Z",
+  "updatedAt": "2024-01-01T08:00:00Z",
+  "deletedAt": null
+}
+

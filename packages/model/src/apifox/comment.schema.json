@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "评论表",
+  "description": "评论表类型定义",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "主键"
+    },
+    "articleId": {
+      "type": "integer",
+      "description": "文章ID"
+    },
+    "article": {
+      "type": "object",
+      "description": "文章信息",
+      "$ref": "#/definitions/Article"
+    },
+    "userId": {
+      "type": "integer",
+      "description": "用户ID"
+    },
+    "user": {
+      "type": "object",
+      "description": "用户信息",
+      "$ref": "#/definitions/User"
+    },
+    "content": {
+      "type": "string",
+      "description": "评论内容"
+    },
+    "path": {
+      "type": "string",
+      "description": "评论路径"
+    },
+    "pid": {
+      "type": "integer",
+      "description": "父评论ID"
+    },
+    "parent": {
+      "type": "object",
+      "description": "父评论信息",
+      "$ref": "#/definitions/Comment"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "创建时间"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "更新时间"
+    },
+    "deletedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "删除时间"
+    }
+  },
+  "required": ["id", "userId", "content", "path", "createdAt", "updatedAt"],
+  "definitions": {
+    "Article": {
+      "type": "object",
+      "description": "文章信息"
+    },
+    "User": {
+      "type": "object",
+      "description": "用户信息"
+    },
+    "Comment": {
+      "type": "object",
+      "description": "评论信息"
+    }
+  }
+}
+

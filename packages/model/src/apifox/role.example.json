@@ -1,0 +1,25 @@
+{
+  "id": 1,
+  "name": "管理员",
+  "desc": "系统管理员，拥有所有权限",
+  "permissions": [
+    {
+      "id": 1,
+      "name": "用户管理",
+      "code": "user:manage",
+      "type": "menu",
+      "action": "read"
+    },
+    {
+      "id": 2,
+      "name": "文章管理",
+      "code": "article:manage",
+      "type": "menu",
+      "action": "read"
+    }
+  ],
+  "createdAt": "2024-01-01T08:00:00Z",
+  "updatedAt": "2024-01-01T08:00:00Z",
+  "deletedAt": null
+}
+

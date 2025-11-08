@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "角色表",
+  "description": "角色表类型定义",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "主键"
+    },
+    "name": {
+      "type": "string",
+      "description": "角色名称"
+    },
+    "desc": {
+      "type": "string",
+      "description": "角色描述"
+    },
+    "permissions": {
+      "type": "array",
+      "description": "权限列表",
+      "items": {
+        "$ref": "#/definitions/Permission"
+      }
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "创建时间"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "更新时间"
+    },
+    "deletedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "删除时间"
+    }
+  },
+  "required": ["id", "name", "desc", "createdAt", "updatedAt"],
+  "definitions": {
+    "Permission": {
+      "type": "object",
+      "description": "权限信息"
+    }
+  }
+}
+

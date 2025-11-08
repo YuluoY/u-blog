@@ -1,0 +1,15 @@
+{
+  "id": 1,
+  "name": "技术",
+  "desc": "技术相关文章分类",
+  "userId": 1,
+  "user": {
+    "id": 1,
+    "username": "john_doe",
+    "email": "john.doe@example.com"
+  },
+  "createdAt": "2024-01-01T08:00:00Z",
+  "updatedAt": "2024-01-01T08:00:00Z",
+  "deletedAt": null
+}
+

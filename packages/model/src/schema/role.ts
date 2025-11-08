@@ -2,9 +2,9 @@ import type { IBaseFields, IBaseSchema } from '../base'
 import { IPermission } from './permission'
 
 export const CUserRole = {
+  SUPER_ADMIN: 'super_admin',
   ADMIN: 'admin',
-  USER: 'user',
-  GUEST: 'guest'
+  USER: 'user'
 } as const
 
 export type UserRole = typeof CUserRole[keyof typeof CUserRole]

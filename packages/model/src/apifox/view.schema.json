@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "浏览记录表",
+  "description": "浏览记录表类型定义",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "主键"
+    },
+    "ip": {
+      "type": "string",
+      "format": "ipv4",
+      "description": "IP地址"
+    },
+    "agent": {
+      "type": "string",
+      "description": "用户代理"
+    },
+    "address": {
+      "type": "string",
+      "description": "地址"
+    },
+    "userId": {
+      "type": "integer",
+      "description": "用户ID"
+    },
+    "user": {
+      "type": "object",
+      "description": "用户信息",
+      "$ref": "#/definitions/User"
+    },
+    "articleId": {
+      "type": "integer",
+      "description": "文章ID"
+    },
+    "article": {
+      "type": "object",
+      "description": "文章信息",
+      "$ref": "#/definitions/Article"
+    },
+    "routeId": {
+      "type": "integer",
+      "description": "路由ID"
+    },
+    "route": {
+      "type": "object",
+      "description": "路由信息",
+      "$ref": "#/definitions/Route"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "创建时间"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "更新时间"
+    },
+    "deletedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "删除时间"
+    }
+  },
+  "required": ["id", "createdAt", "updatedAt"],
+  "definitions": {
+    "User": {
+      "type": "object",
+      "description": "用户信息"
+    },
+    "Article": {
+      "type": "object",
+      "description": "文章信息"
+    },
+    "Route": {
+      "type": "object",
+      "description": "路由信息"
+    }
+  }
+}
+

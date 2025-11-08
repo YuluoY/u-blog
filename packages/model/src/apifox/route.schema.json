@@ -1,0 +1,114 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "路由表",
+  "description": "路由表类型定义",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "主键"
+    },
+    "title": {
+      "type": "string",
+      "description": "路由标题"
+    },
+    "name": {
+      "type": "string",
+      "description": "路由名称"
+    },
+    "path": {
+      "type": "string",
+      "description": "路由路径"
+    },
+    "component": {
+      "type": "string",
+      "description": "组件路径"
+    },
+    "redirect": {
+      "type": "string",
+      "description": "重定向路径"
+    },
+    "icon": {
+      "type": "string",
+      "description": "图标"
+    },
+    "isKeepAlive": {
+      "type": "boolean",
+      "description": "是否缓存",
+      "default": false
+    },
+    "isAffix": {
+      "type": "boolean",
+      "description": "是否固定",
+      "default": false
+    },
+    "isExact": {
+      "type": "boolean",
+      "description": "是否精确匹配",
+      "default": false
+    },
+    "isProtected": {
+      "type": "boolean",
+      "description": "是否需要保护",
+      "default": false
+    },
+    "isHero": {
+      "type": "boolean",
+      "description": "是否为主页",
+      "default": false
+    },
+    "isLeftSide": {
+      "type": "boolean",
+      "description": "是否显示在左侧",
+      "default": false
+    },
+    "isRightSide": {
+      "type": "boolean",
+      "description": "是否显示在右侧",
+      "default": false
+    },
+    "pid": {
+      "type": "integer",
+      "description": "父路由ID"
+    },
+    "parent": {
+      "type": "object",
+      "description": "父路由信息",
+      "$ref": "#/definitions/Route"
+    },
+    "settings": {
+      "type": "array",
+      "description": "设置列表",
+      "items": {
+        "$ref": "#/definitions/Setting"
+      }
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "创建时间"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "更新时间"
+    },
+    "deletedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "删除时间"
+    }
+  },
+  "required": ["id", "name", "path", "isKeepAlive", "isAffix", "isExact", "isProtected", "isHero", "isLeftSide", "isRightSide", "createdAt", "updatedAt"],
+  "definitions": {
+    "Route": {
+      "type": "object",
+      "description": "路由信息"
+    },
+    "Setting": {
+      "type": "object",
+      "description": "设置信息"
+    }
+  }
+}
+

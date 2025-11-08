@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "设置表",
+  "description": "设置表类型定义",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "主键"
+    },
+    "key": {
+      "type": "string",
+      "description": "设置键"
+    },
+    "value": {
+      "description": "设置值（可以是任意类型）"
+    },
+    "desc": {
+      "type": "string",
+      "description": "设置描述"
+    },
+    "routeId": {
+      "type": "integer",
+      "description": "关联路由ID"
+    },
+    "route": {
+      "type": "object",
+      "description": "关联路由信息",
+      "$ref": "#/definitions/Route"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "创建时间"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "更新时间"
+    },
+    "deletedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "删除时间"
+    }
+  },
+  "required": ["id", "key", "value", "createdAt", "updatedAt"],
+  "definitions": {
+    "Route": {
+      "type": "object",
+      "description": "路由信息"
+    }
+  }
+}
+

@@ -15,11 +15,12 @@
   "packageManager": "pnpm@10.13.1",
   "peerDependencies": {
     "@u-blog/model": "workspace:*",
-    "@u-blog/utils": "workspace:*",
-    "@u-blog/types": "workspace:*"
+    "@u-blog/types": "workspace:*",
+    "@u-blog/utils": "workspace:*"
   },
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.3.0",
+    "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.9",
     "@types/express": "^5.0.3",
     "@types/express-session": "^1.18.2",
@@ -32,6 +33,7 @@
     "@types/swagger-ui-express": "^4.1.8",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
+    "class-transformer": "^0.5.1",
     "eslint": "^8.57.0",
     "ts-node": "^10.9.2",
     "tsc-alias": "^1.8.10",
@@ -39,6 +41,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "class-validator": "^0.14.2",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",

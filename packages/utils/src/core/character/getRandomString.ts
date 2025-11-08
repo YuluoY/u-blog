@@ -1,45 +1,37 @@
-import { getCrypto } from '../common'
 /**
- * 获取加密随机字符串
+ * @param length 字符串长度
+ * @param type 字符串类型：'hex'(16进制) | 'base64'(base64) | 'alphanumeric'(字母数字)
  * @example
  * ```ts
- * getRandomString(32) // '1234567890abcdef1234567890abcdef'
- * getRandomString(32, 'base64') // '1234567890abcdef1234567890abcdef'
+ * getRandomString(32) // '1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p'
+ * getRandomString(32, 'hex') // '1234567890abcdef1234567890abcdef'
+ * getRandomString(32, 'base64') // 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef'
+ * getRandomString(32, 'alphanumeric') // 'aB3dE5gH7jK9mN1pQ3sT5vW7yZ0bC2e'
  * ```
  */
-export const getRandomString = (length: number = 32, encoding: BufferEncoding = 'hex') => {
-	const crypto = getCrypto()
-	
-	// 浏览器环境使用 crypto.getRandomValues
-	if (typeof window !== 'undefined' && 'getRandomValues' in crypto) {
-		const array = new Uint8Array(Math.ceil(length / 2))
-		crypto.getRandomValues(array)
-		
-		if (encoding === 'hex') {
-			return Array.from(array)
-				.map(b => b.toString(16).padStart(2, '0'))
-				.join('')
-				.slice(0, length)
-		} else if (encoding === 'base64') {
-			// 浏览器环境需要手动转换为 base64
-			const binary = Array.from(array).map(b => String.fromCharCode(b)).join('')
-			return btoa(binary)
-				.replace(/[+/=]/g, '')
-				.slice(0, length)
-		} else {
-			// 其他编码类型，转换为 Buffer 再处理
-			const buffer = Buffer.from(array)
-			return buffer.toString(encoding).slice(0, length)
-		}
+export const getRandomString = (
+	length: number = 32, 
+	type: 'hex' | 'base64' | 'alphanumeric' = 'hex'
+): string => {
+	const charSets = {
+		hex: '0123456789abcdef',
+		base64: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
+		alphanumeric: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 	}
 	
-	// Node.js 环境使用 crypto.randomBytes
-	if (typeof crypto.randomBytes === 'function') {
-		return crypto
-			.randomBytes(Math.ceil(length / 2))
-			.toString(encoding)
-			.slice(0, length)
+	const chars = charSets[type]
+	let result = ''
+	
+	// 使用 Math.random() 生成随机字符串
+	// 为了增加随机性，结合时间戳作为种子
+	const timestamp = Date.now()
+	
+	for (let i = 0; i < length; i++) {
+		// 混合使用 Math.random() 和时间戳来增加随机性
+		const seed = Math.random() * timestamp * (i + 1)
+		const randomIndex = Math.floor((seed % 1) * chars.length * Math.random())
+		result += chars[randomIndex % chars.length]
 	}
 	
-	throw new Error('crypto 对象不支持 randomBytes 或 getRandomValues')
+	return result
 }

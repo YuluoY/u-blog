@@ -2,6 +2,11 @@ auth:
   success: 身份验证成功！
   fail: 身份验证失败！
   forbid: '身份异常，禁止访问！'
+common:
+  registerSuccess: 注册成功！
+  registerFail: 注册失败
+  loginSuccess: 登录成功！
+  loginFail: 登录失败
 login:
   success: 登录成功！
   fail: 登录失败！

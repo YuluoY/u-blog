@@ -1,0 +1,16 @@
+{
+  "id": 1,
+  "key": "siteName",
+  "value": "我的博客",
+  "desc": "网站名称",
+  "routeId": 1,
+  "route": {
+    "id": 1,
+    "name": "Home",
+    "path": "/"
+  },
+  "createdAt": "2024-01-01T08:00:00Z",
+  "updatedAt": "2024-01-01T08:00:00Z",
+  "deletedAt": null
+}
+

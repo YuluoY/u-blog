@@ -28,7 +28,7 @@ export interface TryitOptions<T, E = Error> {
  *  const [err, data] = await tryit(getDataBind, { onErrorFn: console.log })
  * ```
  */
-export const tryit = async <T = any, E = Error>(
+export const tryit = async <T = any, E extends Error = Error>(
   fn: (...args: any[]) => Promise<T> | T,
   opts?: TryitOptions<T, E>
 ): Promise<TryitResult<T, E>> => {
@@ -42,8 +42,7 @@ export const tryit = async <T = any, E = Error>(
   try {
     const data = await fn(...fnArgs);
     return [null, data] as [null, T];
-  } catch (err: unknown) {
-    // 更好的错误规范化
+  } catch (err) {
     const error = err instanceof Error 
       ? err as E
       : new errorConstructor(String(err)) as E;

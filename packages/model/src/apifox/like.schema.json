@@ -1,0 +1,70 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "点赞表",
+  "description": "点赞表类型定义",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "主键"
+    },
+    "userId": {
+      "type": "integer",
+      "description": "用户ID"
+    },
+    "user": {
+      "type": "object",
+      "description": "用户信息",
+      "$ref": "#/definitions/User"
+    },
+    "articleId": {
+      "type": "integer",
+      "description": "文章ID"
+    },
+    "article": {
+      "type": "object",
+      "description": "文章信息",
+      "$ref": "#/definitions/Article"
+    },
+    "commentId": {
+      "type": "integer",
+      "description": "评论ID"
+    },
+    "comment": {
+      "type": "object",
+      "description": "评论信息",
+      "$ref": "#/definitions/Comment"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "创建时间"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "更新时间"
+    },
+    "deletedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "删除时间"
+    }
+  },
+  "required": ["id", "userId", "createdAt", "updatedAt"],
+  "definitions": {
+    "User": {
+      "type": "object",
+      "description": "用户信息"
+    },
+    "Article": {
+      "type": "object",
+      "description": "文章信息"
+    },
+    "Comment": {
+      "type": "object",
+      "description": "评论信息"
+    }
+  }
+}
+

@@ -5,7 +5,7 @@ export interface IUserWebsite {
   url: string
   title: string
   desc: string
-  cover: string
+  avatar: string
 }
 
 export interface IUserSocial {
