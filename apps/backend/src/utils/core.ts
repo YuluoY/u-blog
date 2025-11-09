@@ -1,5 +1,5 @@
 import { camelCase, capitalize, snakeCase } from '@u-blog/utils'
-import type { Request, Response } from 'express'
+import type { CookieOptions, Request, Response } from 'express'
 import { DATABASE } from '@/constants'
 import { DataSource } from 'typeorm'
 import { failTempl, successTempl } from './template'
@@ -9,6 +9,17 @@ import { FailReturn, SuccessReturn } from '@u-blog/types'
  * 获取数据库实例
  */
 export const getDataSource = (req: Request): DataSource => req.app.locals[DATABASE]?.getDataSource?.()
+
+/**
+ * 存储响应cookie
+ * @param res - 响应
+ * @param key - 键
+ * @param value - 值
+ * @param options - 选项
+ */
+export const setResponseCookie = (res: Response, key: string, value: string, options: CookieOptions): void => {
+	res.cookie(key, value, options)
+}
 
 /**
  * 返回处理结果
@@ -23,7 +34,7 @@ export const toResponse = (data: any, res: Response): any => {
 }
 
 /**
- * 断言
+ * 格式化响应数据
  * @param tryData - 尝试数据
  * @param success - 成功消息
  * @param fail - 失败消息
@@ -31,9 +42,9 @@ export const toResponse = (data: any, res: Response): any => {
  * @example
  * ```ts
  * const [err, data] = await tryit<any, Error>(() => RestService.query(req.model))
- * assert([err, data], 'success', 'fail')
+ * formatResponse([err, data], 'success', 'fail', 0)
  */
-export const assert = <T = any, E extends Error = Error>(
+export const formatResponse = <T = any, E extends Error = Error>(
 	tryData: [E, T], 
 	success: string,
 	fail: string,

@@ -34,6 +34,8 @@ export interface IUser extends IBaseSchema, Pick<IBaseFields, 'id'> {
   lastLoginAt: Date
 }
 
+type SensitiveFields = 'deletedAt' | 'password' | 'rthash' | 'failLoginCount' | 'lockoutExpiresAt' | 'lastLoginAt'
+
 /**
  * 前 --> 后
  */
@@ -48,4 +50,12 @@ export interface IUserRegisterDto extends Omit<
 /**
  * 前 <-- 后
  */
-export interface IUserVo extends Omit<IUser, 'deletedAt' | 'password' | 'rthash' | 'failLoginCount' | 'lockoutExpiresAt' | 'lastLoginAt'> {}
+export interface IUserVo extends Omit<IUser, SensitiveFields> {}
+
+export interface IUserRegister {
+  id: number
+  token: string
+  rt: string
+}
+
+export interface IUserLogin extends Omit<IUser & IUserRegister, SensitiveFields> {}

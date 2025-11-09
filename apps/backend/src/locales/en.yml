@@ -3,6 +3,8 @@ common:
   registerFail: Register failed
   loginSuccess: Login successfully!
   loginFail: Login failed
+  refreshTokenSuccess: Refresh token successfully!
+  refreshTokenFail: Refresh token failed
 login:
   success: Login successfully !
   error: Login failed !

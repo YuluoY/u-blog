@@ -1,11 +1,11 @@
 import type { Repository } from 'typeorm'
 import { Users } from '@/module/schema/Users'
-import { IUserRegisterDto, CUserRole } from '@u-blog/model'
+import { IUserRegisterDto, CUserRole, IUserLogin, IUser, IUserRegister, IUserVo } from '@u-blog/model'
 import { plainToInstance } from 'class-transformer'
 import { validate } from 'class-validator'
 import { getRandomString } from '@u-blog/utils'
 import type { Request } from 'express'
-import { sign, signRt } from '@/plugin/jwt'
+import { sign, signRt, verify, decode } from '@/plugin/jwt'
 import { formatValidationErrors, encrypt, decrypt } from '@/utils'
 
 class CommonService {
@@ -70,14 +70,14 @@ class CommonService {
       return {
         ...userInfo,
         token,
-        refreshToken
+        rt: refreshToken  // 返回给前端，前端可选择性存储或忽略
       }
     } else {
       // 只返回用户ID和令牌
       return {
         id: user.id,
         token,
-        refreshToken
+        rt: refreshToken  // 返回给前端，前端可选择性存储或忽略
       }
     }
   }
@@ -177,7 +177,88 @@ class CommonService {
     return {
       ...userInfo,
       token,
-      refreshToken
+      rt: refreshToken  // 返回给前端，前端可选择性存储或忽略
+    }
+  }
+
+  async refreshToken(
+    req: Request,
+    userRepo: Repository<Users>
+  ) {
+    // 1. 从 Cookie 中获取刷新令牌
+    const rt = req.cookies?.rt
+    if (!rt) {
+      throw new Error('刷新令牌不存在，请重新登录')
+    }
+
+    // 2. 解码刷新令牌获取用户信息（不验证，只解码）
+    const decoded = decode<{ id: number; username: string; role: string }>(rt)
+    if (!decoded || !decoded.id) {
+      throw new Error('无效的刷新令牌')
+    }
+
+    // 3. 查询用户
+    const user = await userRepo.findOne({
+      where: { id: decoded.id },
+      select: [
+        'id',
+        'username',
+        'email',
+        'role',
+        'isActive',
+        'rthash',
+        'avatar',
+        'bio',
+        'namec',
+        'location',
+        'website',
+        'socials'
+      ]
+    })
+
+    if (!user) {
+      throw new Error('用户不存在')
+    }
+
+    // 4. 检查账号是否激活
+    if (user.isActive === false) {
+      throw new Error('账号未激活')
+    }
+
+    // 5. 使用用户的 rthash 验证刷新令牌
+    if (!user.rthash) {
+      throw new Error('刷新令牌密钥不存在，请重新登录')
+    }
+
+    const verifyResult = verify(rt, user.rthash)
+    if (!verifyResult.valid) {
+      throw new Error('刷新令牌无效或已过期，请重新登录')
+    }
+
+    // 6. 生成新的刷新令牌密钥
+    const rthash = getRandomString(32, 'hex')
+    user.rthash = rthash
+
+    // 7. 生成新的访问令牌和刷新令牌
+    const tokenPayload = {
+      id: user.id,
+      username: user.username,
+      role: user.role
+    }
+    const token = sign(req, tokenPayload)
+    const newRt = signRt(req, tokenPayload, rthash)
+
+    // 8. 更新用户的 token 字段
+    user.token = token
+    await userRepo.save(user)
+
+    // 9. 返回用户信息和新的令牌
+    const { rthash: _, ...userInfo } = user
+
+    return {
+      ...userInfo,
+      token,
+      rt: newRt  // 返回新的刷新令牌（也会通过Cookie发送）
     }
   }
 }
