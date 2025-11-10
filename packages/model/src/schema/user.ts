@@ -55,7 +55,6 @@ export interface IUserVo extends Omit<IUser, SensitiveFields> {}
 export interface IUserRegister {
   id: number
   token: string
-  rt: string
 }
 
 export interface IUserLogin extends Omit<IUser & IUserRegister, SensitiveFields> {}
