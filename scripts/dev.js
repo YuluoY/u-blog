@@ -58,6 +58,15 @@ const packages = [
     argv: ['run', 'build']
   },
   {
+    name: 'frontend',
+    root: path.join(root, 'apps', 'frontend'),
+    src: path.join(root, 'apps', 'frontend', 'src'),
+    command: 'pnpm',
+    argv: ['run', 'dev'],
+    // 不配置 watch，保持 Vite Dev Server 常驻运行
+    logging: true
+  },
+  {
     name: 'backend',
     root: path.join(root, 'apps', 'backend'),
     src: path.join(root, 'apps', 'backend', 'src'),

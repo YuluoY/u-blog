@@ -1,5 +1,5 @@
 import api from '@/api'
-import { CTables, type IArticle } from '@u-blog/model'
+import { CTable, type IArticle } from '@u-blog/model'
 import { useState } from '@u-blog/composables'
 import { defineStore } from 'pinia'
 
@@ -10,7 +10,7 @@ export const useArticleStore = defineStore('article', () =>
 
   const qryArticleList = async() =>
   {
-    const articleList = await api(CTables.ARTICLE).getArticleList()
+    const articleList = await api(CTable.ARTICLE).getArticleList()
     setArticleList(articleList)
   }
 

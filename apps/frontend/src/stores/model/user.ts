@@ -1,5 +1,5 @@
 import api from '@/api'
-import { CTables, type IUser } from '@u-blog/model'
+import { CTable, type IUser } from '@u-blog/model'
 import { useState } from '@u-blog/composables'
 import { defineStore } from 'pinia'
 
@@ -9,7 +9,7 @@ export const useUserStore = defineStore('user', () =>
 
   const qryUser = async() =>
   {
-    const user = await api(CTables.USER).getUser()
+    const user = await api(CTable.USER).getUser()
     setUser(user)
   }
 

@@ -46,9 +46,9 @@ app.use(express.static(appCfg.staticPath))
 // 配置API接口生成文档
 Swagger.install(app)
 
-app.get('/', (req, res) => {
-	res.send('Hello World123')
-})
+// app.get('/', (req, res) => {
+// 	res.send('Hello World123')
+// })
 
 app.listen(appCfg.port, () => {
 	console.log(`Ucc-blog server listening on http://localhost:${appCfg.port}`)

@@ -1,5 +1,5 @@
 import api from '@/api'
-import { CTables, type ICategory } from '@u-blog/model'
+import { CTable, type ICategory } from '@u-blog/model'
 import { useState } from '@u-blog/composables'
 import { defineStore } from 'pinia'
 
@@ -9,7 +9,7 @@ export const useCategoryStore = defineStore('category', () =>
 
   const qryCategoryList = async() =>
   {
-    const categoryList = await api(CTables.CATEGORY).getCategoryList()
+    const categoryList = await api(CTable.CATEGORY).getCategoryList()
     setCategoryList(categoryList)
   }
 

@@ -1,5 +1,6 @@
 // eslint-disable-next-line spaced-comment
-/// <reference types="@ucc-blog/ui/dist/ucc-blog-ui.d.ts" />
+// 引入 UI 库的全局组件声明（UBadge/UButton 等），确保模板中有类型提示
+/// <reference types="@u-blog/ui/dist/u-blog-ui.d.ts" />
 
 import { App } from 'vue'
 import type { AppFn } from '@/app/fn'

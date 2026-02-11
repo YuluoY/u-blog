@@ -1,5 +1,5 @@
 import api from '@/api'
-import { CTables, type ITag } from '@u-blog/model'
+import { CTable, type ITag } from '@u-blog/model'
 import { useState } from '@u-blog/composables'
 import { defineStore } from 'pinia'
 
@@ -9,7 +9,7 @@ export const useTagStore = defineStore('tag', () =>
 
   const qryTagList = async() =>
   {
-    const tagList = await api(CTables.TAG).getTagList()
+    const tagList = await api(CTable.TAG).getTagList()
     setTagList(tagList)
   }
 
