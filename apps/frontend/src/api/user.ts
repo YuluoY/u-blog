@@ -1,15 +1,23 @@
-import { type IUser, createUser } from '@u-blog/model'
+import type { IUser } from '@u-blog/model'
 import type { ApiMethod } from './types'
+import request from './request'
 
 export interface IUserApis {
   [keyof: string]: ApiMethod
-  getUser: () => Promise<IUser>
+  getUser: () => Promise<IUser | null>
 }
 
 const apis: IUserApis = {
-  getUser()
-  {
-    return Promise.resolve(createUser())
+  async getUser() {
+    try {
+      const res = await request.post<{ code: number; data: IUser; message: string }>('/refresh', {}, { withCredentials: true })
+      if (res.data?.code === 0 && res.data?.data) {
+        return res.data.data
+      }
+      return null
+    } catch {
+      return null
+    }
   }
 }
 

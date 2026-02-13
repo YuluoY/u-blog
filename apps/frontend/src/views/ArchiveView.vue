@@ -5,7 +5,7 @@
         <u-timeline-item
           v-for="item in articleList"
           :key="item.id"
-          :date="item.createdAt"
+          :date="formatDateTime(item.createdAt)"
           @dot-click="handleDotClick(item.id)"
         >
           <u-card
@@ -18,7 +18,7 @@
             <div class="info">
               <div class="info-item">
                 <u-icon icon="fa-solid fa-clock"></u-icon>
-                <span>{{ item.updatedAt }}</span>
+                <span>{{ formatDateTime(item.updatedAt) }}</span>
               </div>
               <div class="info-item">
                 <u-icon icon="fa-solid fa-eye"></u-icon>
@@ -42,6 +42,7 @@
 
 <script setup lang="ts">
 import { useArticleStore } from '@/stores/model/article'
+import { formatDateTime } from '@/utils/date'
 
 defineOptions({
   name: 'ArchiveView'

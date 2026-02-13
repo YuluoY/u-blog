@@ -1,5 +1,6 @@
-import { type ICategory, createCategory, toCopy } from '@u-blog/model'
+import type { ICategory } from '@u-blog/model'
 import type { ApiMethod } from './types'
+import { restQuery } from './request'
 
 export interface ICategoryApis {
   [keyof: string]: ApiMethod
@@ -7,11 +8,13 @@ export interface ICategoryApis {
 }
 
 const apis: ICategoryApis = {
-  getCategoryList()
-  {
-    return Promise.resolve(
-      toCopy(createCategory, { min: 10, max: 20 })
-    )
+  async getCategoryList() {
+    try {
+      const list = await restQuery<ICategory[]>('category', { take: 100 })
+      return Array.isArray(list) ? list : []
+    } catch {
+      return []
+    }
   }
 }
 

@@ -7,7 +7,7 @@
         height: route.meta.isHero ? '100vh' : 'auto',
       }"
     >
-      <HeadNav class="layout-base__nav" ref="headNavRef"></HeadNav>
+      <HeadNav class="layout-base__nav"></HeadNav>
       <HomeHero
         v-show="route.meta?.isHero"
         class="layout-base__hero"
@@ -65,21 +65,13 @@ const headerStore = useHeaderStore()
 const footerStore = useFooterStore()
 const heroStore = useHeroStore()
 
-const headNavRef = ref<InstanceType<typeof HeadNav>>()
-
-const topNavHeight = computed<string>(() => headerStore.height ? pxToRem(headerStore.height) : 'auto')
+const topNavHeight = computed<string>(() => pxToRem(headerStore.height))
 const bottomInfoHeight = computed<string>(() => pxToRem(footerStore.height))
 
 const heroContentGap = computed(() => pxToRem(heroStore.gap))
 
 const titleStyle = computed(() => useTransStyle(heroStore.titleStyles))
 const descStyle = computed(() => useTransStyle(heroStore.descStyles))
-
-onMounted(() =>
-{
-  if (headNavRef.value?.headNavElement?.$el)
-    headerStore.setHeight(headNavRef.value.headNavElement.$el.clientHeight)
-})
 </script>
 
 <style lang="scss" scoped>
@@ -121,8 +113,8 @@ onMounted(() =>
     }
   }
   .layout-base__bottom {
-    height: v-bind(bottomInfoHeight);
-    margin-top: 1.6rem;
+    min-height: v-bind(bottomInfoHeight);
+    margin-top: auto;
   }
 }
 </style>

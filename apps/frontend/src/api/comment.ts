@@ -1,5 +1,6 @@
-import { type IComment, createComment, toCopy } from '@u-blog/model'
+import type { IComment } from '@u-blog/model'
 import type { ApiMethod } from './types'
+import { restQuery } from './request'
 
 export interface ICommentApis {
   [keyof: string]: ApiMethod
@@ -7,11 +8,13 @@ export interface ICommentApis {
 }
 
 const apis: ICommentApis = {
-  getCommentList()
-  {
-    return Promise.resolve(
-      toCopy(createComment, { min: 10, max: 20 })
-    )
+  async getCommentList() {
+    try {
+      const list = await restQuery<IComment[]>('comment', { take: 100 })
+      return Array.isArray(list) ? list : []
+    } catch {
+      return []
+    }
   }
 }
 

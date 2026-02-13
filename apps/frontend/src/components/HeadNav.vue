@@ -1,5 +1,5 @@
 <template>
-  <u-layout class="head-nav" mode="row" ref="headNavElement">
+  <u-layout class="head-nav" mode="row" :style="{ height: navHeight }">
     <u-region class="head-nav-left" :span="navLeftWidth" align="center" justify="space-around" :title="name">
       <div class="head-nav-left__image" @click="router.push('/')">
         <img :src="logo" alt="随机图片" />
@@ -31,29 +31,25 @@
 <script setup lang="ts">
 import { UMenu, UMenuItem, USubMenu } from '@/components/Menu'
 import { useRouter, type RouteRecordRaw } from 'vue-router'
-import type { ULayout } from '@u-blog/ui'
-import { useHeaderStore } from '@/stores/header'
+import { useHeaderStore, TOP_NAV_HEIGHT_PX } from '@/stores/header'
 import { useAppStore } from '@/stores/app'
+import { useUserStore } from '@/stores/model/user'
+import { pxToRem } from '@u-blog/utils'
 defineOptions({
   name: 'HeadNav'
 })
 
 const headerStore = useHeaderStore()
 const appStore = useAppStore()
+const userStore = useUserStore()
 
 const router = useRouter()
 const routes = computed(() => appStore.routes?.filter((v: RouteRecordRaw) => v.name && v.meta?.isAffix))
 
 const logo = computed(() => headerStore.logo)
-const name = computed(() => headerStore.name)
+const name = computed(() => userStore.user?.username ?? (headerStore.name || '游客'))
 const navLeftWidth = computed(() => headerStore.leftWidth)
-
-// 暴露 DOM 元素
-const headNavElement = ref<InstanceType<typeof ULayout>>()
-
-defineExpose({
-  headNavElement
-})
+const navHeight = computed(() => pxToRem(TOP_NAV_HEIGHT_PX))
 </script>
 
 <style lang="scss" scoped>
@@ -63,7 +59,9 @@ defineExpose({
   z-index: 10000;
   box-shadow: var(--uc-shadow-2);
   background-color: var(--uc-background-1);
-  padding: 0.5rem 1rem;
+  box-sizing: border-box;
+  padding: 0 1rem;
+  align-items: center;
   .head-nav-left {
     overflow: hidden;
     .head-nav-left__image {

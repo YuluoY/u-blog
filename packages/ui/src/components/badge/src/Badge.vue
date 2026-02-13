@@ -22,6 +22,7 @@
 import { computed } from 'vue'
 import type { UBadgeProps } from '../types'
 import { isNumber } from 'lodash-es'
+import { pxToRem } from '@u-blog/utils'
 
 defineOptions({
   name: 'UBadge'
@@ -45,8 +46,9 @@ const _badgeStyle = computed(() =>
   return {
     ...props.badgeStyle,
     backgroundColor: props.color,
-    right: props.offset[0] + 'px',
-    top: props.offset[1] + 'px',
+    // 偏移量语义定义为设计稿 px，这里统一换算为 rem 参与响应式缩放。
+    right: pxToRem(props.offset[0]),
+    top: pxToRem(props.offset[1]),
   }
 })
 </script>

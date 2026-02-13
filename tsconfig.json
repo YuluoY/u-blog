@@ -5,7 +5,11 @@
     // { "path": "./apps/backend" },
     // { "path": "./apps/admin" },
     { "path": "./packages/ui" },
-    { "path": "./packages/utils" }
+    { "path": "./packages/utils" },
+    { "path": "./packages/model" },
+    { "path": "./packages/types" },
+    { "path": "./packages/composables" },
+    { "path": "./packages/helper" }
   ]
 }
 

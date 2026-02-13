@@ -1,10 +1,10 @@
 <template>
   <u-layout class="base-info-card" mode="column" :gutter="16">
     <u-region class="base-info-card__avatar" justify="center">
-      <img :src="user.avatar" :alt="user.namec" />
+      <img :src="user?.avatar ?? ''" :alt="user?.namec ?? '用户'" />
     </u-region>
     <u-region class="base-info-card__name" justify="center">
-      {{ user.namec }}
+      {{ user?.namec ?? user?.username ?? '游客' }}
     </u-region>
     <u-region class="base-info-card__info">
       <div class="base-info-card__info-item">

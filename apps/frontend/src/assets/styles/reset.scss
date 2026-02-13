@@ -7,6 +7,11 @@ body,
   overflow-x: hidden;
 }
 
+html {
+  // 统一 rem 基线：项目历史设计稿按 1rem = 10px，保持与既有样式语义一致。
+  font-size: 10px;
+}
+
 a {
   font-size: 1.4rem;
   color: #333;

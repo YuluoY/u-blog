@@ -52,6 +52,7 @@ import { computed, inject, onMounted, onUnmounted, ref, watch, provide } from 'v
 import { get } from 'lodash-es'
 import type { UFormItemProps, FormContext, FormItemContext } from '../types'
 import { FORM_ITEM_SIZE_INJECTION_KEY, FORM_INJECTION_KEY } from '../consts'
+import { pxToRem } from '@u-blog/utils'
 
 defineOptions({
   name: 'UFormItem',
@@ -90,7 +91,8 @@ const labelStyle = computed(() =>
   const labelWidth = props.labelWidth || form?.labelWidth
   if (!labelWidth) return {}
   return {
-    width: typeof labelWidth === 'number' ? `${labelWidth}px` : labelWidth
+    // 数值宽度默认按设计稿 px 传入，这里统一转换为 rem。
+    width: typeof labelWidth === 'number' ? pxToRem(labelWidth) : labelWidth
   }
 })
 

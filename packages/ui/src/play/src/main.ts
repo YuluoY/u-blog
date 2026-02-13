@@ -1,7 +1,6 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import 'normalize.css'
-import { useRootFontSize } from '@u-blog/helper'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 
@@ -14,7 +13,5 @@ import UccUI from '@/core'
 const app = createApp(App)
 app.use(ElementPlus)
 app.use(UccUI, { locale: zhCn })
-
-useRootFontSize({ immediate: true })
 
 app.mount('#app')

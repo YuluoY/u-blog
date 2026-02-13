@@ -1,12 +1,37 @@
+import { root } from './root'
+
+const DEFAULT_ROOT_FONT_SIZE = 10
+
+/**
+ * 获取当前文档根字号。
+ * 说明：
+ * - 浏览器环境优先读取 `html` 的实时计算值。
+ * - 非浏览器环境（SSR/测试）统一回退到 10，保证换算可预测。
+ */
+function getCurrentRootFontSize(): number
+{
+  if (!root?.document?.documentElement)
+    return DEFAULT_ROOT_FONT_SIZE
+
+  const fontSizeText = getComputedStyle(root.document.documentElement).fontSize
+  const parsedFontSize = Number.parseFloat(fontSizeText)
+  return Number.isFinite(parsedFontSize) && parsedFontSize > 0
+    ? parsedFontSize
+    : DEFAULT_ROOT_FONT_SIZE
+}
+
 export const rootFontSize: {
   value: number
 } =
 {
   get value() {
-    return parseInt(getComputedStyle(document.documentElement).fontSize, 10) || window.innerWidth / 100
+    return getCurrentRootFontSize()
   },
   set value(value: number) {
-    document.documentElement.style.fontSize = `${value}px`
+    if (!root?.document?.documentElement)
+      return
+
+    root.document.documentElement.style.fontSize = `${value}px`
   }
 }
 /**
@@ -22,14 +47,14 @@ export const rootFontSize: {
  * @returns     {number | string}
  * @example
  * ```ts
- * const px = 100
- * const rem = pxToRem(px) // 100
+ * const px = 32
+ * const rem = pxToRem(px) // '3.2rem' (根字号为 10 时)
  *
- * const rem = 10
- * const px = pxToRem(rem, { isReverse: true }) // 100
+ * const rem = 2
+ * const px = pxToRem(rem, { isReverse: true }) // '20px'
  *
- * const px2 = pxToRem(rem, { isReverse: true, rootFontSize: 16 }) // 100
- * const rem2 = pxToRem(px2) // 10
+ * const px2 = pxToRem(rem, { isReverse: true, rootFontSize: 10 }) // '20px'
+ * const rem2 = pxToRem(32, { rootFontSize: 10 }) // '3.2rem'
  * ```
  */
 export function pxToRem<T = string | number>(
@@ -46,7 +71,10 @@ export function pxToRem<T = string | number>(
     isNumber = false
   } = opts
 
-  const fontSize = opts.rootFontSize || rootFontSize.value
+  const customRootFontSize = opts.rootFontSize
+  const fontSize = Number.isFinite(customRootFontSize) && (customRootFontSize as number) > 0
+    ? customRootFontSize as number
+    : rootFontSize.value
 
   if (val === undefined || Number.isNaN(val))
     return val as T

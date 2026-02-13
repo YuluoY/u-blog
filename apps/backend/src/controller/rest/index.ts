@@ -8,11 +8,7 @@ class RestController
 {
   async query(req: Request): ControllerReturn
   {
-    const {
-
-    } = req.body
-
-    const tryData = await tryit<any, Error>(() => RestService.query(req.model))
+    const tryData = await tryit<any, Error>(() => RestService.query(req.model, req))
     return formatResponse(tryData, req.__('rest.querySuccess'), req.__('rest.queryFail'))
   }
 

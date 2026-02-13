@@ -20,6 +20,7 @@ export const useUserStore = defineStore('user', () =>
 
   return {
     user,
-    setUser
+    setUser,
+    fetchUser: qryUser
   }
 })

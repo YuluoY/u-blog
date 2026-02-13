@@ -24,7 +24,8 @@
   "packageManager": "pnpm@10.13.1",
   "devDependencies": {
     "@faker-js/faker": "^8.4.1",
+    "@types/node": "^20.19.19",
     "tsup": "^8.5.0",
-    "@types/node": "^20.19.19"
+    "typescript": "^5.8.2"
   }
 }

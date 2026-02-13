@@ -22,17 +22,13 @@ export const useAppStore = defineStore('app', () =>
   const [language, setLanguage] = useState<Language | null>(null, (newLanguage: Language | null) => newLanguage && document.documentElement.setAttribute('lang', newLanguage))
   // 主页文章排版模式
   const [articleListType, setArticleListType] = useState<ArticleList>(CArticleList.BASE)
-  // 根字体大小
-  const [rootFontSize, setRootFontSize] = useState<number>(16)
   
   return {
-    rootFontSize,
     routes,
     theme,
     language,
     articleListType,
 
-    setRootFontSize,
     refreshRoutes,
     replRoutes,
     addRoutes,

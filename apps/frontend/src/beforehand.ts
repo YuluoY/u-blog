@@ -1,27 +1,17 @@
 import type { App } from 'vue'
 import { CLanguage, CTheme } from '@u-blog/model'
-import { useRootFontSize } from '@u-blog/helper'
 import { useAppStore } from './stores/app'
+import { useUserStore } from './stores/model/user'
 
 export default async function beforehand(app: App): Promise<void>
 {
+  void app
 
   const appStore = useAppStore()
-  /**
-   * 设置根字体大小
-   */
-  useRootFontSize({
-    rootFontSize: appStore.rootFontSize,
-    beforeRefreshCallback: size => appStore.setRootFontSize(size!),
-    immediate: true
-  })
+  const userStore = useUserStore()
 
-  /**
-   * 设置主题
-   */
   appStore.setTheme(CTheme.DEFAULT)
-  /**
-   * 设置语言
-   */
   appStore.setLanguage(CLanguage.ZH)
+
+  await userStore.fetchUser()
 }

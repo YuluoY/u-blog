@@ -21,11 +21,11 @@
             <div class="info-left">
               <div class="publish-time info-item">
                 <u-icon icon="calendar"></u-icon>
-                <span>{{ item.publishedAt }}</span>
+                <span>{{ formatDateTime(item.publishedAt) }}</span>
               </div>
               <div class="update-time info-item">
                 <u-icon icon="fa-solid fa-clock-rotate-left"></u-icon>
-                <span>{{ item.updatedAt }}</span>
+                <span>{{ formatDateTime(item.updatedAt) }}</span>
               </div>
               <div class="view-count info-item">
                 <u-icon icon="fa-solid fa-eye"></u-icon>
@@ -58,6 +58,7 @@
 
 <script setup lang="ts">
 import type { IArticle } from '@/types/models/article'
+import { formatDateTime } from '@/utils/date'
 
 const props = withDefaults(
   defineProps<{

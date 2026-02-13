@@ -1,3 +1,8 @@
+html {
+  /* 管理端与前台保持一致：项目 rem 基线为 1rem = 10px */
+  font-size: 10px;
+}
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;

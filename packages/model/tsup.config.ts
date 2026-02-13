@@ -11,7 +11,12 @@ export default defineConfig({
   outDir: 'dist',
   
   // 是否生成 d.ts 类型文件
-  dts: true,
+  dts: {
+    resolve: true,
+    compilerOptions: {
+      composite: false
+    }
+  },
   
   // 是否清理输出目录
   clean: true,

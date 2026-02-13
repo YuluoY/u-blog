@@ -7,7 +7,7 @@ import tag from './tag'
 
 const tableApis = {
   article,
-  user,
+  users: user,
   comment,
   category,
   tag
