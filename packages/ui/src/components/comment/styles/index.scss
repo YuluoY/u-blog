@@ -388,7 +388,38 @@
   &__toolbar {
     display: flex;
     align-items: center;
+    gap: 4px;
     min-height: 32px;
+  }
+
+  &__toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  &__toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--u-text-3);
+    cursor: pointer;
+    transition: color 0.2s, background 0.2s;
+
+    &:hover:not(:disabled) {
+      color: var(--u-text-1);
+      background: var(--u-background-3);
+    }
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
   }
 
   &__emoji-wrap {
@@ -458,6 +489,10 @@
 
     .u-comment-input__toolbar {
       min-height: 28px;
+    }
+    .u-comment-input__toolbar-btn {
+      width: 24px;
+      height: 24px;
     }
     .u-comment-input__emoji-btn {
       width: 28px;

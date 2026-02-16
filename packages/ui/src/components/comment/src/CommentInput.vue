@@ -4,12 +4,53 @@
 -->
 <template>
   <div
-    ref="rootRef"
     class="u-comment-input"
     :class="{ 'u-comment-input--compact': compact }"
   >
     <slot name="prepend" />
     <div class="u-comment-input__toolbar">
+      <div class="u-comment-input__toolbar-group">
+        <button
+          type="button"
+          class="u-comment-input__toolbar-btn"
+          :disabled="disabled"
+          aria-label="粗体"
+          title="粗体"
+          @mousedown.prevent="insertWrap('**', '**')"
+        >
+          <u-icon icon="fa-solid fa-bold" />
+        </button>
+        <button
+          type="button"
+          class="u-comment-input__toolbar-btn"
+          :disabled="disabled"
+          aria-label="斜体"
+          title="斜体"
+          @mousedown.prevent="insertWrap('*', '*')"
+        >
+          <u-icon icon="fa-solid fa-italic" />
+        </button>
+        <button
+          type="button"
+          class="u-comment-input__toolbar-btn"
+          :disabled="disabled"
+          aria-label="行内代码"
+          title="行内代码"
+          @mousedown.prevent="insertWrap('`', '`')"
+        >
+          <u-icon icon="fa-solid fa-code" />
+        </button>
+        <button
+          type="button"
+          class="u-comment-input__toolbar-btn"
+          :disabled="disabled"
+          aria-label="链接"
+          title="链接"
+          @mousedown.prevent="insertWrap('[', '](url)')"
+        >
+          <u-icon icon="fa-solid fa-link" />
+        </button>
+      </div>
       <div ref="emojiWrapRef" class="u-comment-input__emoji-wrap">
         <button
           ref="emojiBtnRef"
@@ -39,6 +80,7 @@
       </div>
     </div>
     <u-input
+      ref="inputRef"
       :model-value="modelValue"
       type="textarea"
       :placeholder="placeholder"
@@ -96,7 +138,7 @@ const props = withDefaults(defineProps<UCommentInputProps>(), {
 })
 const emit = defineEmits<UCommentInputEmits>()
 
-const rootRef = ref<HTMLElement | null>(null)
+const inputRef = ref<{ $el?: HTMLElement } | null>(null)
 const emojiWrapRef = ref<HTMLElement | null>(null)
 const emojiBtnRef = ref<HTMLElement | null>(null)
 const panelRef = ref<HTMLElement | null>(null)
@@ -146,6 +188,24 @@ function updatePanelPosition() {
 }
 
 const trimmedValue = computed(() => (props.modelValue ?? '').trim())
+
+/** 在光标/选区处插入 Markdown 包裹（mousedown.prevent 保留选区） */
+function insertWrap(prefix: string, suffix: string) {
+  const el = inputRef.value?.$el as HTMLElement | undefined
+  const textarea = el?.querySelector?.('textarea') as HTMLTextAreaElement | undefined
+  if (!textarea) return
+  const text = props.modelValue ?? ''
+  const start = textarea.selectionStart
+  const end = textarea.selectionEnd
+  const selected = text.slice(start, end)
+  const newText = text.slice(0, start) + prefix + selected + suffix + text.slice(end)
+  const newEnd = start + prefix.length + selected.length + suffix.length
+  emit('update:modelValue', newText)
+  nextTick(() => {
+    textarea.focus()
+    textarea.setSelectionRange(newEnd, newEnd)
+  })
+}
 
 const pickerTheme = computed(() => {
   if (props.emojiPickerTheme === 'dark' || props.emojiPickerTheme === 'light') return props.emojiPickerTheme
