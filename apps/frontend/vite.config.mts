@@ -20,7 +20,9 @@ export default defineConfig({
   },
   optimizeDeps: {
     // 不预构建 UI 包，避免 dist/es 内相对路径（如 ./vendors-xxx.js）解析失败
-    exclude: ['@u-blog/ui']
+    exclude: ['@u-blog/ui'],
+    // 显式包含 md-editor-v3，减少预构建缓存过期导致的 504 Outdated Optimize Dep
+    include: ['md-editor-v3']
   },
   assetsInclude: ['**/*.jpg', '**/*.jpeg', '**/*.png', '**/*.gif', '**/*.svg'],
   plugins: [
