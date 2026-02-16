@@ -19,12 +19,12 @@ export const successTempl = <T = any>(
 ): SuccessReturn<T> | PageReturn<T> =>
 {
 	return {
-		code,
+		code: code as 0,
 		data,
 		message,
 		timestamp: Date.now(),
 		...extra
-	}
+	} as SuccessReturn<T> | PageReturn<T>
 }
 
 /**
@@ -39,7 +39,7 @@ export const successTempl = <T = any>(
  */
 export const failTempl = (message: string, code: number = 1): FailReturn => {
 	return {
-		code,
+		code: code as 1,
 		data: null,
 		message,
 		timestamp: Date.now()

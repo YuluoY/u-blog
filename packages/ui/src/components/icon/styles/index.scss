@@ -8,12 +8,12 @@
   justify-content: center;
 
   &.u-icon--primary {
-    color: var(--uc-primary);
+    color: var(--u-primary);
   }
 
   @each $val in info, success, warning, danger {
     &.u-icon--#{$val} {
-      color: var(--uc-#{$val});
+      color: var(--u-#{$val});
     }
   }
 }

@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "node scripts/dev.js",
     "start": "pnpm run dev",
+    "typecheck": "pnpm --filter @u-blog/backend exec tsc --noEmit && pnpm --filter ./apps/frontend exec vue-tsc --noEmit",
+    "build": "pnpm --filter @u-blog/model run build && pnpm --filter @u-blog/types run build && pnpm --filter @u-blog/utils run build && pnpm --filter @u-blog/helper run build && pnpm --filter @u-blog/composables run build && pnpm --filter @u-blog/ui run build:es && pnpm --filter ./apps/frontend run build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

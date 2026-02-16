@@ -1,3 +1,6 @@
+<!--
+  Form 表单：提供 label 布局、校验规则、尺寸等上下文，暴露 validate/validateField/resetFields/clearValidate/scrollToField。
+-->
 <template>
   <form
     class="u-form"
@@ -37,7 +40,9 @@ const props = withDefaults(defineProps<UFormProps & { inline?: boolean }>(), {
 
 const formItems: FormItemContext[] = []
 
-// 提供给FormItem的上下文
+/**
+ * 提供给 FormItem 的上下文：model、rules、布局与校验配置，以及 addField/removeField
+ */
 const formContext = reactive<FormContext>({
   model: props.model,
   rules: props.rules,
@@ -68,7 +73,9 @@ const formContext = reactive<FormContext>({
 
 provide(FORM_INJECTION_KEY, formContext)
 
-// 暴露方法
+/**
+ * 校验全部表单项，成功调用 callback(true)，失败 callback(false, invalidFields)
+ */
 const validate = async(callback?: UFormValidateCallback): Promise<void> =>
 {
   const invalidFields: ValidateFieldsError = {}
@@ -86,6 +93,9 @@ const validate = async(callback?: UFormValidateCallback): Promise<void> =>
   }
 }
 
+/**
+ * 仅校验指定 prop 的字段
+ */
 const validateField = async(props?: Arrayable<string | string[]>, callback?: UFormValidateCallback): Promise<boolean> =>
 {
   if (!props) return true
@@ -110,6 +120,7 @@ const validateField = async(props?: Arrayable<string | string[]>, callback?: UFo
   }
 }
 
+/** 将所有表单项重置为初始值并清空校验状态 */
 const resetFields = () =>
 {
   formItems.forEach(item =>
@@ -118,6 +129,7 @@ const resetFields = () =>
   })
 }
 
+/** 清除校验状态，不传 prop 时清除全部 */
 const clearValidate = (props?: Arrayable<string | string[]>) =>
 {
   if (!props)
@@ -138,6 +150,7 @@ const clearValidate = (props?: Arrayable<string | string[]>) =>
   })
 }
 
+/** 滚动到指定 prop 对应的表单项（smooth） */
 const scrollToField = (prop: string | string[]) =>
 {
   const field = formItems.find(item =>
@@ -145,8 +158,6 @@ const scrollToField = (prop: string | string[]) =>
   )
   if (field)
   {
-    // 这里可以添加滚动到字段的逻辑
-    // 例如使用 scrollIntoView
     const el = document.querySelector(`.u-form-item[data-prop="${field.prop}"]`)
     el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
   }

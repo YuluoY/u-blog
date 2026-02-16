@@ -259,7 +259,7 @@ describe('UTimelineItem 组件测试', () =>
       date: '2024-01-01'
     }, {
       slots: {
-        content: '自定义内容',
+        default: '自定义内容',
         date: '自定义日期'
       }
     })

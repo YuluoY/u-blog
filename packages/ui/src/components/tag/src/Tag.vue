@@ -1,4 +1,6 @@
-
+<!--
+  Tag 标签：类型/尺寸/效果/圆角/边框，可关闭，关闭图标可左可右，点击与 close 事件分离。
+-->
 <template>
   <div
     :class="[
@@ -13,14 +15,14 @@
       },
     ]"
     :style="{backgroundColor: color}"
+    :role="closable ? 'button' : undefined"
+    :tabindex="closable ? 0 : undefined"
     @click="onClick"
   >
     <span
       v-if="closable && isCloseIconLeft"
-      :class="[
-        'u-tag__close',
-        { [`u-tag__close--${closePosition}`]: closePosition }
-      ]"
+      :class="['u-tag__close', { [`u-tag__close--${closePosition}`]: closePosition }]"
+      aria-hidden="true"
     >
       <u-icon icon="close" />
     </span>
@@ -32,10 +34,8 @@
     </span>
     <span
       v-if="closable && !isCloseIconLeft"
-      :class="[
-        'u-tag__close',
-        { [`u-tag__close--${closePosition}`]: closePosition }
-      ]"
+      :class="['u-tag__close', { [`u-tag__close--${closePosition}`]: closePosition }]"
+      aria-hidden="true"
     >
       <u-icon icon="close" />
     </span>
@@ -46,7 +46,7 @@
 import { computed } from 'vue'
 import type { UTagEmits, UTagProps } from '../types'
 import { CTagClosePosition } from '../consts'
-import { UIcon } from '@/components'
+import { UIcon } from '@/components/icon'
 
 defineOptions({
   name: 'UTag'
@@ -63,12 +63,11 @@ const emits = defineEmits<UTagEmits>()
 
 const isCloseIconLeft = computed(() => props.closePosition === CTagClosePosition.LEFT)
 
-const onClick = (event: MouseEvent):void =>
-{
-  if ((event.target as HTMLElement).classList.contains('u-tag__close'))
-  {
+/** 点击关闭图标时派发 close，可选同时派发 click；否则仅派发 click */
+const onClick = (event: MouseEvent): void => {
+  if ((event.target as HTMLElement).closest?.('.u-tag__close')) {
     emits('close', event)
-    props.triggerClick && emits('click', event)
+    if (props.triggerClick) emits('click', event)
     return
   }
   emits('click', event)

@@ -1,11 +1,11 @@
 .u-badge {
-  --badge-danger-bg-color: var(--uc-danger-1);
-  --badge-success-bg-color: var(--uc-success-1);
-  --badge-warning-bg-color: var(--uc-warning-3);
-  --badge-info-bg-color: var(--uc-info-1);
-  --badge-primary-bg-color: var(--uc-primary-0);
-  --badge-content-font-size: var(--uc-font-size-xs);
-  --badge-content-color: var(--uc-white);
+  --badge-danger-bg-color: var(--u-danger-1);
+  --badge-success-bg-color: var(--u-success-1);
+  --badge-warning-bg-color: var(--u-warning-3);
+  --badge-info-bg-color: var(--u-info-1);
+  --badge-primary-bg-color: var(--u-primary-0);
+  --badge-content-font-size: var(--u-font-size-xs);
+  --badge-content-color: var(--u-white);
 }
 
 .u-badge {
@@ -21,13 +21,13 @@
     min-width: 1rem;
     height: 1rem;
     line-height: 1rem;
-    border-radius: 45%;
+    border-radius: 9999px;
     padding: 0 0.2rem;
     font-size: var(--badge-content-font-size);
     color: var(--badge-content-color);
     text-align: center;
     box-sizing: border-box;
-    z-index: 99;
+    z-index: var(--u-z-index-badge);
     white-space: nowrap;
 
     

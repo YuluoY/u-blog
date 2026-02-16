@@ -85,7 +85,7 @@ export interface UMessageProps {
    * @type {Function}
    * @default () => {}
    */
-  onDestory?: () => void
+  onDestroy?: () => void
 
   /**
    * @description 垂直偏移量
@@ -166,4 +166,4 @@ export interface UMessageInstance {
   handler: UMessageHandler
 }
 
-export type ICreateMessageProps = Omit<UMessageProps, 'onDestory'>
+export type ICreateMessageProps = Omit<UMessageProps, 'onDestroy'>

@@ -10,36 +10,36 @@
   align-items: center;
   justify-content: center;
   padding: 0.6rem 0;
-  font-size: var(--uc-font-size-base);
-  border-radius: var(--uc-border-radius-2);
-  z-index: var(--uc-z-index-message);
-  transition: top var(--uc-animation-duration) var(--uc-animation-ease-in-out),
-      opacity var(--uc-animation-duration) var(--uc-animation-ease-in-out),
-      transform var(--uc-animation-duration) var(--uc-animation-ease-in-out);
+  font-size: var(--u-font-size-base);
+  border-radius: var(--u-border-radius-2);
+  z-index: var(--u-z-index-message);
+  transition: top var(--u-animation-duration) var(--u-animation-ease-in-out),
+      opacity var(--u-animation-duration) var(--u-animation-ease-in-out),
+      transform var(--u-animation-duration) var(--u-animation-ease-in-out);
 
   &.u-message--info {
-    background-color: var(--uc-info-light-5);
-    color: var(--uc-info-1);
+    background-color: var(--u-info-light-5);
+    color: var(--u-info-1);
   }
 
   &.u-message--success {
-    background-color: var(--uc-success-light-5);
-    color: var(--uc-success-1);
+    background-color: var(--u-success-light-5);
+    color: var(--u-success-1);
   }
 
   &.u-message--warning {
-    background-color: var(--uc-warning-light-5);
-    color: var(--uc-warning-1);
+    background-color: var(--u-warning-light-5);
+    color: var(--u-warning-1);
   }
 
   &.u-message--error {
-    background-color: var(--uc-danger-light-5);
-    color: var(--uc-danger-1);
+    background-color: var(--u-danger-light-5);
+    color: var(--u-danger-1);
   }
 
   &.u-message--primary {
-    background-color: var(--uc-primary-light-5);
-    color: var(--uc-primary);
+    background-color: var(--u-primary-light-5);
+    color: var(--u-primary);
   }
 
   &.is-center {
@@ -50,31 +50,31 @@
   }
 
   &.is-plain {
-    background-color: var(--uc-white);
+    background-color: var(--u-white);
     
     &.u-message--info {
-      color: var(--uc-info-1);
-      border: var(--uc-border-width-2) solid var(--uc-info-1);
+      color: var(--u-info-1);
+      border: var(--u-border-width-2) solid var(--u-info-1);
     }
 
     &.u-message--error {
-      color: var(--uc-danger-1);
-      border: var(--uc-border-width-2) solid var(--uc-danger-1);
+      color: var(--u-danger-1);
+      border: var(--u-border-width-2) solid var(--u-danger-1);
     }
 
     &.u-message--warning {
-      background-color: var(--uc-warning-3);
-      border: var(--uc-border-width-2) solid var(--uc-warning-1);
+      background-color: var(--u-warning-3);
+      border: var(--u-border-width-2) solid var(--u-warning-1);
     }
 
     &.u-message--success {
-      color: var(--uc-success-1);
-      border: var(--uc-border-width-2) solid var(--uc-success-1);
+      color: var(--u-success-1);
+      border: var(--u-border-width-2) solid var(--u-success-1);
     }
 
     &.u-message--primary {
-      color: var(--uc-primary);
-      border: var(--uc-border-width-2) solid var(--uc-primary);
+      color: var(--u-primary);
+      border: var(--u-border-width-2) solid var(--u-primary);
     }
   }
 

@@ -15,17 +15,16 @@ export const useHeaderStore = defineStore('header', () =>
   const [height, setHeight] = useState(TOP_NAV_HEIGHT_PX)
   const [logo, setLogo] = useState(getRandomImage())
   const [name, setName] = useState('')
-  const [leftWidth, setLeftWidth] = useState(3)
+  const [siteName, setSiteName] = useState('博客')
 
   return {
     logo,
     name,
-    leftWidth,
+    siteName,
     height,
-
     setHeight,
     setLogo,
     setName,
-    setLeftWidth
+    setSiteName,
   }
 })

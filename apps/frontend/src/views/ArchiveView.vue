@@ -1,19 +1,25 @@
 <template>
   <u-layout :padding="16">
     <u-region region="center">
-      <u-timeline>
+      <template v-if="articleStore.archiveLoading">
+        <div class="archive-loading">
+          <u-icon icon="fa-solid fa-spinner" spin />
+          <u-text>加载归档中...</u-text>
+        </div>
+      </template>
+      <u-timeline v-else :data="archiveTimelineData">
         <u-timeline-item
-          v-for="item in articleList"
+          v-for="item in archiveList"
           :key="item.id"
           :date="formatDateTime(item.createdAt)"
-          @dot-click="handleDotClick(item.id)"
+          @dot-click="handleDotClick(String(item.id))"
         >
           <u-card
             :body-class="'timeline-item__card'"
             shadow="hover"
           >
             <div class="title">
-              <u-text class="title-text" @click="handleDotClick(item.id)">{{ item.title }}</u-text>
+              <u-text class="title-text" @click="handleDotClick(String(item.id))">{{ item.title }}</u-text>
             </div>
             <div class="info">
               <div class="info-item">
@@ -50,7 +56,14 @@ defineOptions({
 
 const router = useRouter()
 const articleStore = useArticleStore()
-const articleList = computed(() => articleStore.articleList.toSorted((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))
+const archiveList = computed(() => articleStore.archiveList)
+const archiveTimelineData = computed(() =>
+  archiveList.value.map(a => ({ date: formatDateTime(a.createdAt) }))
+)
+
+onMounted(() => {
+  articleStore.qryArchiveList()
+})
 
 const handleDotClick = (id: string) => {
   router.push(`/read/${id}`)
@@ -85,4 +98,13 @@ const handleDotClick = (id: string) => {
       }
     }
   }
+
+.archive-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px;
+  color: var(--u-text-3);
+}
 </style>

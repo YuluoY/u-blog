@@ -1,3 +1,6 @@
+<!--
+  FormItem 表单项：标签、必填星号、校验状态与错误信息，向子组件提供 size，并注册到 Form 的 addField/removeField。
+-->
 <template>
   <div
     class="u-form-item"
@@ -65,8 +68,7 @@ const props = withDefaults(defineProps<UFormItemProps>(), {
 })
 
 const form = inject(FORM_INJECTION_KEY, null)
-
-// 提供size给子组件
+// 向子组件（如 Input、Button）提供表单项尺寸
 const formSize = computed(() => form?.size)
 provide(FORM_ITEM_SIZE_INJECTION_KEY, formSize)
 
@@ -75,7 +77,7 @@ const validateMessage = ref('')
 const showMessage = computed(() => form?.showMessage ?? true)
 const initialValue = ref<any>(undefined)
 
-// 计算是否必填
+// 根据 form.rules 中对应 prop 的 required 判断是否必填
 const isRequired = computed(() =>
 {
   if (!props.prop || !form?.rules) return false
@@ -85,17 +87,20 @@ const isRequired = computed(() =>
   return ruleList.some(rule => rule.required)
 })
 
+// 标签宽度：数字按设计稿 px 转 rem
 const labelStyle = computed(() =>
 {
   if (form?.labelPosition === 'top') return {}
   const labelWidth = props.labelWidth || form?.labelWidth
   if (!labelWidth) return {}
   return {
-    // 数值宽度默认按设计稿 px 传入，这里统一转换为 rem。
     width: typeof labelWidth === 'number' ? pxToRem(labelWidth) : labelWidth
   }
 })
 
+/**
+ * 按 trigger 执行当前表单项校验，支持 required/type/min/max/pattern/enum/validator 等规则
+ */
 const validate = async(trigger: string): Promise<void> =>
 {
   if (!props.prop) return
@@ -116,7 +121,6 @@ const validate = async(trigger: string): Promise<void> =>
     const value = get(model, typeof props.prop === 'string' ? props.prop : props.prop[0])
     const rulesToValidate = Array.isArray(rules) ? rules : [rules]
 
-    // 检查是否有匹配当前触发方式的规则
     const hasMatchingTrigger = rulesToValidate.some(rule =>
     {
       if (!rule.trigger) return false
@@ -124,28 +128,19 @@ const validate = async(trigger: string): Promise<void> =>
       return rule.trigger === trigger
     })
 
-    // 如果没有匹配的触发方式，则不进行校验
     if (trigger && !hasMatchingTrigger)
-    
       return
-    
 
     for (const rule of rulesToValidate)
     {
       if (trigger && rule.trigger && !Array.isArray(rule.trigger) && rule.trigger !== trigger)
-      
         continue
-      
 
       if (trigger && rule.trigger && Array.isArray(rule.trigger) && !rule.trigger.includes(trigger))
-      
         continue
-      
 
-      // 转换值
       const transformedValue = rule.transform ? rule.transform(value) : value
 
-      // 自定义验证器
       if (rule.validator)
       {
         await rule.validator(rule, transformedValue)
@@ -154,16 +149,11 @@ const validate = async(trigger: string): Promise<void> =>
 
       // 必填验证
       if (rule.required && (transformedValue === '' || transformedValue === null || transformedValue === undefined))
-      
         throw new Error(rule.message || '此字段是必填的')
-      
 
       if (transformedValue === null || transformedValue === undefined || transformedValue === '')
-      
         continue
-      
 
-      // 类型验证
       if (rule.type)
       {
         let valid = true
@@ -206,12 +196,9 @@ const validate = async(trigger: string): Promise<void> =>
         }
 
         if (!valid)
-        
           throw new Error(rule.message || `类型应该是${type}`)
-        
       }
 
-      // 长度验证
       if (typeof transformedValue === 'string' || Array.isArray(transformedValue))
       {
         if (rule.min != null && transformedValue.length < rule.min)
@@ -228,7 +215,6 @@ const validate = async(trigger: string): Promise<void> =>
         
       }
 
-      // 数值范围验证
       if (typeof transformedValue === 'number')
       {
         if (rule.min != null && transformedValue < rule.min)
@@ -241,13 +227,9 @@ const validate = async(trigger: string): Promise<void> =>
         
       }
 
-      // 枚举验证
       if (rule.enum && !rule.enum.includes(transformedValue))
-      
         throw new Error(rule.message || `值应该在 ${rule.enum.join(', ')} 中`)
-      
 
-      // 正则验证
       if (rule.pattern && !rule.pattern.test(transformedValue))
       
         throw new Error(rule.message || '格式不正确')
@@ -265,7 +247,6 @@ const validate = async(trigger: string): Promise<void> =>
   }
 }
 
-// 监听输入事件
 const onFieldBlur = () =>
 {
   validate('blur').catch(() =>
@@ -287,9 +268,9 @@ const onFieldInput = (e: Event) =>
   }
 }
 
+/** 将当前字段恢复为初始值并清空校验状态 */
 const resetField = () =>
 {
-  // 重置表单值到初始值
   if (props.prop && form?.model)
   {
     const propPath = typeof props.prop === 'string' ? props.prop : props.prop[0]
@@ -302,17 +283,11 @@ const resetField = () =>
           : { ...initialValue.value }
       }
       else
-      
         form.model[propPath] = initialValue.value
-      
     }
     else
-    
       form.model[propPath] = ''
-    
   }
-
-  // 重置验证状态
   validateState.value = ''
   validateMessage.value = ''
 }
@@ -323,7 +298,6 @@ const clearValidate = () =>
   validateMessage.value = ''
 }
 
-// 监听model变化
 watch(
   () => form?.model?.[typeof props.prop === 'string' ? props.prop : props.prop[0]],
   _ =>
@@ -337,7 +311,6 @@ watch(
   { deep: true }
 )
 
-// 在 onMounted 中保存初始值
 onMounted(() =>
 {
   if (props.prop && form?.model)
@@ -355,7 +328,6 @@ onMounted(() =>
       clearValidate
     })
 
-    // 获取表单项的输入元素并添加事件监听
     const input = document.querySelector(`.u-form-item[data-prop="${props.prop}"] input`)
     const textarea = document.querySelector(`.u-form-item[data-prop="${props.prop}"] textarea`)
 
@@ -380,7 +352,6 @@ onUnmounted(() =>
       prop: typeof props.prop === 'string' ? props.prop : props.prop[0]
     } as FormItemContext)
 
-    // 移除事件监听
     const input = document.querySelector(`.u-form-item[data-prop="${props.prop}"] input`)
     const textarea = document.querySelector(`.u-form-item[data-prop="${props.prop}"] textarea`)
 

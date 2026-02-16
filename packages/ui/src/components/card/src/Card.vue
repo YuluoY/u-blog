@@ -1,5 +1,8 @@
+<!--
+  Card 卡片：带 header/body/footer 的容器，支持折叠、阴影、内边距与国际化。
+-->
 <template>
-  <main
+  <article
     :class="[
       'u-card',
       { [`u-card--shadow-${shadow}`]: shadow }
@@ -15,6 +18,9 @@
         <UIcon
           v-if="collapse"
           :icon="['fas', isCollapse ? 'chevron-down' : 'chevron-up']"
+          role="button"
+          :aria-expanded="!isCollapse"
+          :aria-label="t('card.collapseExpand')"
           @click="isCollapse = !isCollapse"
         />
       </slot>
@@ -40,28 +46,34 @@
         <span>{{ footer }}</span>
       </slot>
     </footer>
-  </main>
+  </article>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { UCardProps } from '../types'
 import { pxToRem } from '@u-blog/utils'
-import { UIcon } from '@/components'
+import { UIcon } from '@/components/icon'
+import { useLocale } from '@/components/config-provider'
 
 defineOptions({
   name: 'UCard'
 })
+
+const { t } = useLocale()
 const props = withDefaults(defineProps<UCardProps>(), {
   padding: 16,
   bodyStyle: () => ({})
 })
+// 内边距转为 rem，参与响应式
 const _padding = computed(() => pxToRem(props.padding))
+// body 样式：合并 bodyStyle 与统一 padding
 const _bodyStyle = computed(() => ({
   ...props.bodyStyle,
   padding: _padding.value
 }))
-  
+
+// 头部折叠状态
 const isCollapse = ref(false)
 const isNotCollapse = computed(() => !isCollapse.value)
 </script>

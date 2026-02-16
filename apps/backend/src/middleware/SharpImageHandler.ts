@@ -1,5 +1,4 @@
 import type { Request, Response, NextFunction } from 'express'
-import type { SharpImageRequest } from '@/types/express'
 import sharp from 'sharp'
 import { join } from 'node:path'
 import { existsSync } from 'node:fs'
@@ -33,7 +32,7 @@ import { existsSync } from 'node:fs'
  * // 调整图片为正方形 150x150 像素
  * // GET /image/photo.jpg?s=150
  */
-export const SharpImageHandler = async (req: SharpImageRequest, res: Response, next: NextFunction) => {
+export const SharpImageHandler = async (req: Request, res: Response, next: NextFunction) => {
 	const { w, h, s, q } = req.query
 	const quality = q ? Number(typeof q === 'string' ? q : Array.isArray(q) ? q[0] : q) : 100
 	const width = w ? Number(typeof w === 'string' ? w : Array.isArray(w) ? w[0] : w) : null

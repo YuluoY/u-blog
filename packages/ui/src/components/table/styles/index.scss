@@ -1,0 +1,50 @@
+.u-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--u-font-size-base);
+  color: var(--u-text-1);
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th,
+  td {
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid var(--u-border-1);
+
+    &.is-left {
+      text-align: left;
+    }
+    &.is-center {
+      text-align: center;
+    }
+    &.is-right {
+      text-align: right;
+    }
+  }
+
+  th {
+    background-color: var(--u-background-2);
+    font-weight: 600;
+    color: var(--u-text-2);
+  }
+
+  tbody tr {
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: var(--u-background-2);
+    }
+  }
+
+  &--stripe tbody tr:nth-child(even) {
+    background-color: var(--u-background-2);
+  }
+
+  &--border th,
+  &--border td {
+    border: 1px solid var(--u-border-1);
+  }
+}

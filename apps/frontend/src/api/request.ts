@@ -23,9 +23,24 @@ export interface BackendResponse<T = unknown> {
  */
 export async function restQuery<T = unknown>(
   model: string,
-  body: { where?: Record<string, unknown>; take?: number; skip?: number; order?: Record<string, 'ASC' | 'DESC'> } = {}
+  body: { where?: Record<string, unknown>; take?: number; skip?: number; order?: Record<string, 'ASC' | 'DESC'>; relations?: string[] } = {}
 ): Promise<T> {
   const res = await instance.post<BackendResponse<T>>(`/rest/${model}/query`, body)
+  const payload = res.data
+  if (payload.code !== 0) {
+    throw new Error(payload.message || '请求失败')
+  }
+  return payload.data as T
+}
+
+/**
+ * 调用后端 REST 通用添加接口
+ */
+export async function restAdd<T = unknown>(
+  model: string,
+  body: Record<string, unknown> = {}
+): Promise<T> {
+  const res = await instance.post<BackendResponse<T>>(`/rest/${model}/add`, body)
   const payload = res.data
   if (payload.code !== 0) {
     throw new Error(payload.message || '请求失败')

@@ -1,6 +1,6 @@
 import type { CSSProperties, InputHTMLAttributes, ReservedProps } from 'vue'
 import type { CInputSize, CInputType, CInputResize } from '../consts'
-import type { UIconProps } from '@/components'
+import type { UIconProps } from '@/components/icon'
 
 type Input = InputHTMLAttributes & ReservedProps
 export type UInputType = typeof CInputType[keyof typeof CInputType];
@@ -14,6 +14,8 @@ export interface UInputProps {
   maxLength?: number | string
   minLength?: number | string
   autocomplete?: Input['autocomplete']
+  /** 原生 id，用于 label[for] 关联与无障碍；未传时内部自动生成 */
+  id?: Input['id']
   name?: Input['name']
   readonly?: Input['readonly']
   max?: Input['max']
@@ -43,4 +45,22 @@ export interface UInputEmits {
   (e: 'blur', evt: FocusEvent | Event): void
   (e: 'clear', evt: MouseEvent | Event): void
   (e: 'input', evt: InputEvent | Event): void
+}
+
+export interface UInputNumberProps {
+  modelValue?: number
+  min?: number
+  max?: number
+  step?: number
+  disabled?: boolean
+  controls?: boolean
+  placeholder?: string
+  ariaLabel?: string
+}
+
+export interface UInputNumberEmits {
+  (e: 'update:modelValue', value: number | undefined): void
+  (e: 'change', value: number | undefined): void
+  (e: 'focus', evt: FocusEvent): void
+  (e: 'blur', evt: FocusEvent): void
 }

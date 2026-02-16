@@ -33,13 +33,13 @@
     "noUncheckedIndexedAccess": false,
   },
   "include": [
-    "**/*.ts",
-    "**/*.js",
-     "**/*.d.ts"
+    "src/**/*.ts",
+    "src/**/*.d.ts"
   ],
   "exclude": [
     "node_modules",
     "dist",
+    "scripts",
     "**/*.test.ts",
     "**/*.spec.ts"
   ]

@@ -1,3 +1,6 @@
+<!--
+  CodeEditor 代码编辑器：基于 Monaco，支持语言/主题/只读/高度/阴影，提供 toolbox 插槽与 provide 上下文。
+-->
 <template>
   <main
     :class="[
@@ -49,7 +52,6 @@ const CodeEditorOptions = cloneDeep(toRaw(props)) as UCodeEditorProps
 const Height = computed(() => pxToRem(props.height))
 
 const resizeObserver = ref<ResizeObserver | null>(null)
-
 const editor = ref<UCodeEditor>(null)
 const editorRef = ref(null)
 const editorModel = shallowRef<UCodeEditorModel>(null)
@@ -72,6 +74,7 @@ onMounted(() =>
   init()
 })
 
+/** 创建 Monaco 实例、绑定 model 变更与 resize */
 function init()
 {
   if (!editorRef.value)

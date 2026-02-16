@@ -1,9 +1,13 @@
+<!--
+  Timeline 时间线：垂直/水平、data 或插槽、连接线根据首尾节点位置自动计算，提供 onCalcLine 给子项。
+-->
 <template>
   <div
     ref="timelineRef"
     class="u-timeline"
     :class="`u-timeline--${direction}`"
     :style="styles"
+    role="list"
   >
     <div class="u-timeline-line" :style="lineStyle"></div>
     <slot>
@@ -46,7 +50,7 @@ const margin = computed(() => props.margin ? pxToRem(props.margin) : props.margi
 const lineStyle = shallowRef<CSSProperties>({})
 
 /**
- * 自动计算线位置
+ * 根据首尾 timeline-item 的 dot 位置计算连接线的宽高与偏移
  */
 const onCalcLine = () =>
 {
@@ -89,7 +93,7 @@ const watcher = watch(() => [props.direction, props.data.length], () =>
 const styles = computed(() => ({
   '--timeline-gutter': gutter.value,
   '--timeline-margin': margin.value,
-  '--timeline-line-color': props.lineColor || 'var(--uc-background-4)',
+  '--timeline-line-color': props.lineColor || 'var(--u-background-4)',
 }))
 
 provide(CTimelineContextKey, {

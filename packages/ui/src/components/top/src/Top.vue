@@ -1,3 +1,6 @@
+<!--
+  Top 回到顶部：根据滚动阈值显隐，支持位置/尺寸/动画，暴露 show/hide/toggle/scrollTo/scrollToTop/scrollToBottom/scrollToElement。
+-->
 <template>
   <Teleport :to="appendTo">
     <Transition
@@ -7,12 +10,17 @@
       <div
         v-show="visible"
         class="u-top"
+        role="button"
+        :aria-label="t('top.backToTop')"
         :style="topStyles"
+        tabindex="0"
         @click.prevent="handleClick"
+        @keydown.enter.prevent="handleClick"
+        @keydown.space.prevent="handleClick"
       >
         <div class="u-top__inner">
           <slot>
-            <h2>TOP</h2>
+            <span class="u-top__default">TOP</span>
           </slot>
         </div>
       </div>
@@ -23,15 +31,17 @@
 <script setup lang="ts">
 import { type UTopProps, type UTopEmits, type UTopExposes } from '../types'
 import { computed, onBeforeUnmount, onMounted, ref, watch, type CSSProperties } from 'vue'
-import { pxToRem } from '@u-blog/utils' 
+import { pxToRem } from '@u-blog/utils'
 import { isString } from 'lodash-es'
 import { useScrollTo, type UseScrollToReturn } from '@u-blog/composables'
 import { CTopPosition } from '../consts'
+import { useLocale } from '@/components/config-provider'
 
 defineOptions({
   name: 'UTop'
 })
 
+const { t } = useLocale()
 const props = withDefaults(defineProps<UTopProps>(), {
   size: 40,
   offset: 50,
@@ -95,7 +105,7 @@ const topStyles = computed<CSSProperties>(() =>
     width: size,
     height: size,
     position: 'fixed',
-    zIndex: 9999,
+    zIndex: 'var(--u-z-index-top)',
     cursor: 'pointer',
     ...offsetStyle
   }
@@ -117,12 +127,12 @@ onMounted(() =>
     el: container,
     duration: props.duration,
     isAuto: false,
-    scrolling: () => vaildate() ? show() : hide(),
-    wheeling: () => vaildate() ? show() : hide()
+    scrolling: () => validate() ? show() : hide(),
+    wheeling: () => validate() ? show() : hide()
   })
   
   scrollToFn = scrollTo
-  vaildate() ? show() : hide()
+  validate() ? show() : hide()
 })
 
 function getSurplusScroll(el: HTMLElement): number
@@ -135,7 +145,7 @@ function getSurplusScroll(el: HTMLElement): number
 /**
  * 是否在阈值内
  */
-function vaildate()
+function validate()
 {
   if (!container.value)
     return false
@@ -207,7 +217,7 @@ defineExpose<UTopExposes>({
   scrollToTop,
   scrollToBottom,
   scrollToElement,
-  vaildate,
+  validate,
   get visible()
   {
     return visible.value

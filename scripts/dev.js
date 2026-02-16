@@ -143,7 +143,7 @@ function doBuild(pkg, done) {
   const spawner = spawn(pkg.command, pkg.argv, {
     cwd: pkg.root,
     stdio: pkg.logging ? 'inherit' : 'pipe',
-    shell: true
+    shell: false
   })
 
   building.set(pkg, spawner)

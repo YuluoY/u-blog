@@ -352,13 +352,13 @@ const timelineData = [
 
 ```css
 .u-timeline {
-  --timeline-content-gap: var(--uc-height-6);
-  --timeline-date-font-weight: var(--uc-font-weight-normal);
-  --timeline-date-color: var(--uc-text-3);
-  --timeline-date-font-size: var(--uc-font-size-md);
-  --timeline-content-font-weight: var(--uc-font-weight-regular);
-  --timeline-content-color: var(--uc-text-1);
-  --timeline-content-font-size: var(--uc-font-size-base);
+  --timeline-content-gap: var(--u-height-6);
+  --timeline-date-font-weight: var(--u-font-weight-normal);
+  --timeline-date-color: var(--u-text-3);
+  --timeline-date-font-size: var(--u-font-size-md);
+  --timeline-content-font-weight: var(--u-font-weight-regular);
+  --timeline-content-color: var(--u-text-1);
+  --timeline-content-font-size: var(--u-font-size-base);
 }
 ```
 

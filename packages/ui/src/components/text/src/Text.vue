@@ -1,4 +1,6 @@
-
+<!--
+  Text 文本：可设 tag/type/size，支持单行省略与多行 line-clamp（maxLine）。
+-->
 <template>
   <component
     :is="tag"
@@ -28,6 +30,7 @@ const props = withDefaults(defineProps<UTextProps>(), {
   ellipsis: false,
   tag: 'span'
 })
+// 多行截断时设置 line-clamp
 const styles = computed<CSSProperties>(() => props.maxLine ? {
   'line-clamp': props.maxLine,
   '-webkit-line-clamp': props.maxLine

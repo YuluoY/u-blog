@@ -1,3 +1,6 @@
+<!--
+  Button 按钮：支持多种类型、尺寸、图标、节流/防抖，可被 FormItem 控制尺寸。
+-->
 <template>
   <component
     :is="tag"
@@ -58,7 +61,7 @@ import { computed, ref, inject } from 'vue'
 import type { UButtonEmits, UButtonInstance, UButtonProps } from '../types'
 import { throttle, debounce } from 'lodash-es'
 import { CIconPosition } from '../consts'
-import { UIcon } from '@/components'
+import { UIcon } from '@/components/icon'
 import { FORM_ITEM_SIZE_INJECTION_KEY } from '@/components/form'
 
 defineOptions({
@@ -83,20 +86,21 @@ const props = withDefaults(defineProps<UButtonProps>(), {
   })
 })
 
-// 注入form-item的size
+// 注入 FormItem 的 size，用于与表单项统一尺寸
 const formItemSize = inject(FORM_ITEM_SIZE_INJECTION_KEY, null)
-
-// 计算最终的size
+// 最终使用的尺寸：优先表单项尺寸，否则使用 props.size
 const _size = computed(() => formItemSize?.value || props.size)
 
 const slots = defineSlots()
 const _ref = ref<HTMLButtonElement>()
 
-
 const handleClick = (e: MouseEvent) => emits('click', e)
 const handleThrottleClick = throttle(handleClick, props.throttleTime)
 const handleDebounceClick = debounce(handleClick, props.debounceTime)
 
+/**
+ * 图标 props：loading 时使用 loadingIcon 并 spin，否则使用 icon/iconProps
+ */
 const _iconProps = computed<UButtonProps['iconProps']>(() => Object.assign(props.iconProps, {
   spin: props.loading || props.iconProps.spin,
   icon: (props.loading ? props.loadingIcon || props.icon || props.iconProps.icon : props.icon || props.iconProps.icon) || ''

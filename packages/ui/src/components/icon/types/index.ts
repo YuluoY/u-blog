@@ -116,6 +116,18 @@ export interface UIconProps {
    * @type {string}
    */
   title?: string
+
+  /**
+   * @description 无障碍标签，优先于 title
+   * @type {string}
+   */
+  ariaLabel?: string
+
+  /**
+   * @description 是否为装饰性图标（设为 true 时使用 aria-hidden）
+   * @type {boolean}
+   */
+  decorative?: boolean
   
   /**
    * 是否反转图标颜色

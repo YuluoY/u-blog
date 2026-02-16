@@ -1,11 +1,19 @@
+<!--
+  TimelineItem 时间线项：圆点/图标/VNode、日期与内容插槽、placement 控制日期上下，点击派发 dot-click。
+-->
 <template>
-  <div class="u-timeline-item">
+  <div class="u-timeline-item" role="listitem">
     <div
       v-if="!icon"
       class="u-timeline-item-dot"
       :class="classList"
       :style="{ color: props.color }"
+      role="button"
+      tabindex="0"
+      :aria-label="t('timelineItem.ariaLabel')"
       @click="handleDotClick($event)"
+      @keydown.enter.prevent="handleDotClick($event)"
+      @keydown.space.prevent="handleDotClick($event)"
     >
     </div>
     <u-icon
@@ -15,7 +23,12 @@
       v-bind="iconProps"
       :icon="icon"
       :style="{ color: props.color }"
+      role="button"
+      tabindex="0"
+      :aria-label="t('timelineItem.ariaLabel')"
       @click="handleDotClick($event)"
+      @keydown.enter.prevent="handleDotClick($event)"
+      @keydown.space.prevent="handleDotClick($event)"
     />
     <component
       v-else-if="isVNode(icon) || isFunction(icon)"
@@ -23,7 +36,12 @@
       :class="classList"
       :style="{ color: props.color }"
       :is="icon"
+      role="button"
+      tabindex="0"
+      :aria-label="t('timelineItem.ariaLabel')"
       @click="handleDotClick($event)"
+      @keydown.enter.prevent="handleDotClick($event)"
+      @keydown.space.prevent="handleDotClick($event)"
     />
     <div class="u-timeline-item__inner">
       <div
@@ -53,7 +71,8 @@
 
 <script lang="ts" setup>
 import { isFunction } from 'lodash-es'
-import { UIcon } from '@/components'
+import { UIcon } from '@/components/icon'
+import { useLocale } from '@/components/config-provider'
 import type { UTimelineItemEmits, UTimelineItemProps } from '../types'
 import { CTimelinePlacement, CTimelineContextKey } from '../consts'
 import { computed, effectScope, inject, isVNode, onBeforeUnmount, watch } from 'vue'
@@ -61,6 +80,8 @@ import { computed, effectScope, inject, isVNode, onBeforeUnmount, watch } from '
 defineOptions({
   name: 'UTimelineItem'
 })
+
+const { t } = useLocale()
 
 const emits = defineEmits<UTimelineItemEmits>()
 const props = withDefaults(defineProps<UTimelineItemProps>(), {
@@ -72,7 +93,6 @@ const props = withDefaults(defineProps<UTimelineItemProps>(), {
 })
 
 const timelineContext = inject(CTimelineContextKey)
-
 const scope = effectScope()
 
 const classList = computed(() => [

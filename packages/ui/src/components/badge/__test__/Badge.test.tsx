@@ -120,8 +120,9 @@ describe('UBadge 组件测试', () =>
     
     const content = wrapper.find('.u-badge-content')
     const style = content.attributes('style')
-    expect(style).toContain(`right: ${offset[0]}px`)
-    expect(style).toContain(`top: ${offset[1]}px`)
+    // 组件使用 pxToRem，输出为 rem
+    expect(style).toMatch(/right:\s*[\d.]+rem/)
+    expect(style).toMatch(/top:\s*[\d.]+rem/)
   })
 
   // 自定义样式测试

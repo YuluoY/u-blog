@@ -1,93 +1,124 @@
 :root.dark {
   /* 浅色青花蓝 */
-  --uc-primary: #007bff; /* 主色 */
-  --uc-primary-0: #0069d9; /* 浅主色 */
-  --uc-primary-1: #1E50A2; /* 青花蓝 */
-  --uc-primary-2: #17418C; /* 深青花蓝 */
-  --uc-primary-3: #113075; /* 更深青花蓝 */
-  --uc-primary-4: #0A1F5E; /* 近黑青花蓝 */
-  --uc-primary-5: #041247; /* 最深青花蓝 */
+  --u-primary: #007bff; /* 主色 */
+  --u-primary-0: #0069d9; /* 浅主色 */
+  --u-primary-1: #1E50A2; /* 青花蓝 */
+  --u-primary-2: #17418C; /* 深青花蓝 */
+  --u-primary-3: #113075; /* 更深青花蓝 */
+  --u-primary-4: #0A1F5E; /* 近黑青花蓝 */
+  --u-primary-5: #041247; /* 最深青花蓝 */
+
+  /* 主色浅色层次（暗色主题） */
+  --u-primary-light-1: #007bff;
+  --u-primary-light-2: #339aff;
+  --u-primary-light-3: #66b8ff;
+  --u-primary-light-4: #99d5ff;
+  --u-primary-light-5: #cceeff;
+  --u-primary-light-6: #1a3a5c;
+  --u-primary-light-7: #152d47;
+  --u-primary-light-8: #0f1f32;
+  --u-primary-light-9: #0a1220;
+  --u-primary-light-10: #050a10;
 
   /* 副色 */
-  --uc-secondary: #6C757D; /* 深灰 */
-  --uc-secondary-1: #2B2B2B; /* 墨黑 */
-  --uc-secondary-2: #1C1C1C; /* 深墨黑 */
-  --uc-secondary-3: #151515; /* 更深墨黑 */
-  --uc-secondary-4: #0F0F0F; /* 近黑墨黑 */
-  --uc-secondary-5: #080808; /* 最深墨黑 */
+  --u-secondary: #6C757D; /* 深灰 */
+  --u-secondary-1: #2B2B2B; /* 墨黑 */
+  --u-secondary-2: #1C1C1C; /* 深墨黑 */
+  --u-secondary-3: #151515; /* 更深墨黑 */
+  --u-secondary-4: #0F0F0F; /* 近黑墨黑 */
+  --u-secondary-5: #080808; /* 最深墨黑 */
 
   /* 强调色 */
-  --uc-accent-1: #8A8D91; /* 烟灰 */
-  --uc-accent-2: #6F7175; /* 深烟灰 */
-  --uc-accent-3: #535557; /* 更深烟灰 */
-  --uc-accent-4: #373839; /* 近黑烟灰 */
-  --uc-accent-5: #1B1C1D; /* 最深烟灰 */
+  --u-accent-1: #8A8D91; /* 烟灰 */
+  --u-accent-2: #6F7175; /* 深烟灰 */
+  --u-accent-3: #535557; /* 更深烟灰 */
+  --u-accent-4: #373839; /* 近黑烟灰 */
+  --u-accent-5: #1B1C1D; /* 最深烟灰 */
 
   /* 背景色 */
-  --uc-background-1: #1E1E1E; /* 深灰 */
-  --uc-background-2: #2B2B2B; /* 墨黑 */
-  --uc-background-3: #3A3A3A; /* 更深灰 */
-  --uc-background-4: #4A4A4A; /* 近黑深灰 */
-  --uc-background-5: #5A5A5A; /* 最深灰 */
+  --u-background-1: #1E1E1E; /* 深灰 */
+  --u-background-2: #2B2B2B; /* 墨黑 */
+  --u-background-3: #3A3A3A; /* 更深灰 */
+  --u-background-4: #4A4A4A; /* 近黑深灰 */
+  --u-background-5: #5A5A5A; /* 最深灰 */
 
-  /* 文字色 */
-  --uc-text-5: #F4F4F8; /* 雪青 */
-  --uc-text-4: #B0B0B0; /* 中灰 */
-  --uc-text-3: #8A8D91; /* 烟灰 */
-  --uc-text-2: #666666; /* 更深灰 */
-  --uc-text-1: #444444; /* 最深灰 */
+  /* 文字色：暗色下适中对比，避免纯白/纯黑，色差适中 */
+  --u-text-1: #E2E2E6; /* 主文案，偏软白 */
+  --u-text-2: #CACACE; /* 次要文案 */
+  --u-text-3: #A8A8AC; /* 辅助/说明，保证可辨 */
+  --u-text-4: #8E8E92; /* 弱化 */
+  --u-text-5: #76767A; /* 最弱但仍可读 */
+  --u-text-6: #5C5C60;
+  --u-text-7: #424246;
+  --u-text-8: #2E2E32;
+  --u-text-9: #E4E4E8; /* 与 --u-white 一致，供标题等使用 */
+
+  /* 基础色：暗色下不用纯白/纯黑 */
+  --u-white: #E4E4E8;
+  --u-black: #1A1A1E;
 
   /* 链接色 */
-  --uc-link-1: #8A8D91; /* 烟灰 */
-  --uc-link-2: #B0B0B0; /* 中灰 */
-  --uc-link-3: #DADADA; /* 浅灰 */
-  --uc-link-4: #FFFFFF; /* 白色 */
-  --uc-link-5: #F4F4F8; /* 雪青 */
+  --u-link-1: #8A8D91;
+  --u-link-2: #B0B0B0;
+  --u-link-3: #D2D2D6;
+  --u-link-4: #E2E2E6; /* 不用纯白 */
+  --u-link-5: #D8D8DC;
 
   /* 边框色 */
-  --uc-border-1: #3A3A3A; /* 深灰 */
-  --uc-border-2: #4A4A4A; /* 更深灰 */
-  --uc-border-3: #5A5A5A; /* 最深灰 */
-  --uc-border-4: #666666; /* 近黑灰 */
-  --uc-border-5: #8A8D91; /* 烟灰 */
+  --u-border-1: #3A3A3A; /* 深灰 */
+  --u-border-2: #4A4A4A; /* 更深灰 */
+  --u-border-3: #5A5A5A; /* 最深灰 */
+  --u-border-4: #666666; /* 近黑灰 */
+  --u-border-5: #8A8D91; /* 烟灰 */
 
   /* 状态色 */
-  --uc-success-1: #28A745; /* 绿色 */
-  --uc-success-2: #218838; /* 深绿色 */
-  --uc-success-3: #1A6E2D; /* 更深绿色 */
-  --uc-success-4: #144622; /* 近黑绿色 */
-  --uc-success-5: #0D2D17; /* 最深绿色 */
+  --u-success-1: #28A745; /* 绿色 */
+  --u-success-2: #218838; /* 深绿色 */
+  --u-success-3: #1A6E2D; /* 更深绿色 */
+  --u-success-4: #144622; /* 近黑绿色 */
+  --u-success-5: #0D2D17; /* 最深绿色 */
 
-  --uc-warning-1: #FFC107; /* 黄色 */
-  --uc-warning-2: #E0A800; /* 深黄色 */
-  --uc-warning-3: #B68900; /* 更深黄色 */
-  --uc-warning-4: #8F6600; /* 近黑黄色 */
-  --uc-warning-5: #5C4400; /* 最深黄色 */
+  --u-warning-1: #FFC107; /* 黄色 */
+  --u-warning-2: #E0A800; /* 深黄色 */
+  --u-warning-3: #B68900; /* 更深黄色 */
+  --u-warning-4: #8F6600; /* 近黑黄色 */
+  --u-warning-5: #5C4400; /* 最深黄色 */
 
-  --uc-danger-1: #DC3545; /* 红色 */
-  --uc-danger-2: #C82333; /* 深红色 */
-  --uc-danger-3: #A91B2C; /* 更深红色 */
-  --uc-danger-4: #7C1324; /* 近黑红色 */
-  --uc-danger-5: #500B17; /* 最深红色 */
+  --u-danger-1: #DC3545; /* 红色 */
+  --u-danger-2: #C82333; /* 深红色 */
+  --u-danger-3: #A91B2C; /* 更深红色 */
+  --u-danger-4: #7C1324; /* 近黑红色 */
+  --u-danger-5: #500B17; /* 最深红色 */
 
-  --uc-info-1: #17A2B8; /* 蓝色 */
-  --uc-info-2: #138496; /* 深蓝色 */
-  --uc-info-3: #0F6674; /* 更深蓝色 */
-  --uc-info-4: #0B4953; /* 近黑蓝色 */
-  --uc-info-5: #072E36; /* 最深蓝色 */
+  --u-info-1: #17A2B8; /* 蓝色 */
+  --u-info-2: #138496; /* 深蓝色 */
+  --u-info-3: #0F6674; /* 更深蓝色 */
+  --u-info-4: #0B4953; /* 近黑蓝色 */
+  --u-info-5: #072E36; /* 最深蓝色 */
 
   /* 表单元素 */
-  --uc-input-bg: #2B2B2B; /* 墨黑 */
-  --uc-input-border-1: #4A4A4A; /* 深烟灰 */
-  --uc-input-border-2: #5A5A5A; /* 更深烟灰 */
-  --uc-input-placeholder-1: #8A8D91; /* 烟灰 */
-  --uc-input-placeholder-2: #666666; /* 深灰 */
-  --uc-input-focus-border: #1E50A2; /* 青花蓝 */
+  --u-input-bg: #2B2B2B; /* 墨黑 */
+  --u-input-border-1: #4A4A4A; /* 深烟灰 */
+  --u-input-border-2: #5A5A5A; /* 更深烟灰 */
+  --u-input-placeholder-1: #8A8D91; /* 烟灰 */
+  --u-input-placeholder-2: #666666; /* 深灰 */
+  --u-input-focus-border: #1E50A2; /* 青花蓝 */
 
   /* 表格 */
-  --uc-table-header-bg: #2B2B2B; /* 墨黑 */
-  --uc-table-row-bg-1: #1E1E1E; /* 深灰 */
-  --uc-table-row-bg-2: #3A3A3A; /* 更深灰 */
-  --uc-table-row-hover-bg-1: #4A4A4A; /* 深烟灰 */
-  --uc-table-row-hover-bg-2: #5A5A5A; /* 更深烟灰 */
+  --u-table-header-bg: #2B2B2B; /* 墨黑 */
+  --u-table-row-bg-1: #1E1E1E; /* 深灰 */
+  --u-table-row-bg-2: #3A3A3A; /* 更深灰 */
+  --u-table-row-hover-bg-1: #4A4A4A; /* 深烟灰 */
+  --u-table-row-hover-bg-2: #5A5A5A; /* 更深烟灰 */
+
+  /* 阴影（暗色主题） */
+  --u-shadow-1: 0px 0px 0.4rem rgba(0, 0, 0, 0.3);
+  --u-shadow-2: 0px 0px 0.8rem rgba(0, 0, 0, 0.4);
+  --u-shadow-3: 0px 0px 1.2rem rgba(0, 0, 0, 0.4);
+  --u-shadow-4: 0px 0px 1.6rem rgba(0, 0, 0, 0.5);
+  --u-shadow-5: 0px 0px 2rem rgba(0, 0, 0, 0.5);
+  --u-shadow-6: 0px 0px 2.4rem rgba(0, 0, 0, 0.5);
+  --u-shadow-7: 0px 0px 2.8rem rgba(0, 0, 0, 0.6);
+  --u-shadow-8: 0px 0px 3.2rem rgba(0, 0, 0, 0.6);
+  --u-shadow-9: 0px 0px 3.6rem rgba(0, 0, 0, 0.6);
 }

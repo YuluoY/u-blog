@@ -35,7 +35,18 @@ class CommonController {
     const tryData = await tryit<any, Error>(() => CommonService.refreshToken(req, userRepo))
     if (tryData[1])
       this.setCookie(res, tryData[1])
-    return formatResponse(tryData, req.__('common.refreshTokenSuccess'), req.__('common.refreshTokenFail'))
+    return formatResponse(tryData, req.__('common.refreshTokenSuccess'), req.__('common.refreshTokenFail'), undefined, { skipErrorLog: true })
+  }
+
+  /** 博客 AI 助手：接收用户消息，返回回复（可扩展接入 OpenAI 等） */
+  async chat(req: Request, _res: Response): ControllerReturn<{ reply: string }>
+  {
+    const { message } = req.body || {}
+    const text = typeof message === 'string' ? message.trim() : ''
+    const reply = text
+      ? `收到：${text}\n\n（当前为演示回复，可在后端接入 OpenAI/本地模型实现真实对话）`
+      : '请发送文本消息。'
+    return formatResponse([null, { reply }], 'ok', 'fail')
   }
 
   private setCookie(res: Response, data: any): void

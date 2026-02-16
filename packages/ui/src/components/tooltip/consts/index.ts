@@ -1,4 +1,5 @@
-export const CTooltipContainerId = Symbol('u-popper-container')
+// export const CTooltipContainerId = Symbol('u-popper-container')
+export const CTooltipContainerId = 'u-popper-container'
 
 export const CTooltipEffect = {
   DARK: 'dark',

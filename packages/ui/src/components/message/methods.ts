@@ -38,7 +38,7 @@ const createMessage = (props: ICreateMessageProps): UMessageInstance =>
 {
   const id = useId()
   const container = document.createElement('div')
-  const destory = () =>
+  const destroy = () =>
   {
     const idx = findIndex(instances, { id })
     if (idx === -1) return
@@ -49,7 +49,7 @@ const createMessage = (props: ICreateMessageProps): UMessageInstance =>
     ...props,
     id,
     zIndex: nextZIndex(),
-    onDestory: destory
+    onDestroy: destroy
   }
 
   const vnode = h(UMessageSFC, _props)

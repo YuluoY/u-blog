@@ -6,7 +6,8 @@
     "jsx": "preserve",
     "jsxImportSource": "vue",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@u-blog/model": ["../../packages/model/dist/index.d.ts"]
     },
     "types": ["vite/client", "node"],
     "declaration": true,

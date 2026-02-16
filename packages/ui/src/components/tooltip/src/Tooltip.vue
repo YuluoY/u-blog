@@ -1,3 +1,6 @@
+<!--
+  Tooltip 气泡提示：基于 Popper.js，支持 hover/click、虚拟触发器、placement/箭头，Teleport 到统一容器。
+-->
 <template>
   <div
     ref="containerRef"
@@ -38,7 +41,7 @@
         <transition
           :name="transition"
           v-bind="transitionProps ?? void 0"
-          @after-leave="destoryPopperInstance"
+          @after-leave="destroyPopperInstance"
         >
           <div
             v-if="visible"
@@ -114,7 +117,7 @@ const popperStyles = computed(() => ({
   width: props.width ? pxToRem<string>(props.width) : 'auto',
   padding: pxToRem<string>(props.padding),
 }))
-const visible = ref<boolean>(!!props.visible) // 是否显示
+const visible = ref<boolean>(!!props.visible)
 
 const containerRef = ref<HTMLDivElement | null>(null)
 const _triggerRef = ref<HTMLDivElement | null>(null)
@@ -193,7 +196,7 @@ function setVisible(val: boolean)
   emits('update:visible', val)
 }
 
-function destoryPopperInstance()
+function destroyPopperInstance()
 {
   if (isNil(popperInstance.value)) return
   popperInstance.value.destroy()
@@ -302,7 +305,7 @@ onBeforeUnmount(() =>
   manualWatch()
   triggerWatch()
   tooltipWatchEffect()
-  destoryPopperInstance()
+  destroyPopperInstance()
 })
 
 defineExpose<UTooltipExposes>({

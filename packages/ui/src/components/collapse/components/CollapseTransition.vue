@@ -1,3 +1,6 @@
+<!--
+  CollapseTransition 折叠过渡：基于 maxHeight/padding 的展开收起动画钩子。
+-->
 <template>
   <transition
     name="u-collapse-transition"
@@ -13,6 +16,9 @@ defineOptions({
   name: 'UCollapseTransition',
 })
 
+/**
+ * 恢复元素内联样式为进入前保存的值
+ */
 const reset = (el: RendererElement) =>
 {
   el.style.maxHeight = ''
@@ -21,6 +27,9 @@ const reset = (el: RendererElement) =>
   el.style.paddingBottom = el.dataset.oldPaddingBottom
 }
 
+/**
+ * 折叠过渡钩子：进入时从 0 展开到 scrollHeight，离开时收起到 0
+ */
 const on = {
   beforeEnter(el: RendererElement)
   {

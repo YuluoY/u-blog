@@ -22,4 +22,9 @@ router.post('/refresh', async (req: Request, res: Response) => {
   toResponse(result, res)
 })
 
+router.post('/chat', async (req: Request, res: Response) => {
+  const result = await CommonController.chat(req, res)
+  toResponse(result, res)
+})
+
 export default router

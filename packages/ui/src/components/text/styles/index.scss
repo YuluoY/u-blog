@@ -1,8 +1,8 @@
 .u-text {
   vertical-align: middle;
-  font-size: var(--uc-font-size-base);
-  font-weight: var(--uc-font-weight-regular);
-  color: var(--uc-text-1);
+  font-size: var(--u-font-size-base);
+  font-weight: var(--u-font-weight-regular);
+  color: var(--u-text-1);
   /* white-space: nowrap; */
   height: fit-content;
   box-sizing: border-box;
@@ -17,31 +17,31 @@
   }
   
   &.u-text--default {
-    color: var(--uc-text-1);
+    color: var(--u-text-1);
   }
   &.u-text--primary {
-    color: var(--uc-primary-0);
+    color: var(--u-primary-0);
   }
   &.u-text--success {
-    color: var(--uc-success-1);
+    color: var(--u-success-1);
   }
   &.u-text--warning {
-    color: var(--uc-warning-3);
+    color: var(--u-warning-3);
   }
   &.u-text--danger {
-    color: var(--uc-danger-1);
+    color: var(--u-danger-1);
   }
   &.u-text--info {
-    color: var(--uc-info-1);
+    color: var(--u-info-1);
   }
 
   &.u-text--small {
-    font-size: var(--uc-font-size-xs);
+    font-size: var(--u-font-size-xs);
   }
   &.u-text--default {
-    font-size: var(--uc-font-size-base);
+    font-size: var(--u-font-size-base);
   }
   &.u-text--large {
-    font-size: var(--uc-font-size-lg);
+    font-size: var(--u-font-size-lg);
   }
 }

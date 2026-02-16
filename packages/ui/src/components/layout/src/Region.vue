@@ -1,3 +1,6 @@
+<!--
+  Region 布局区域：作为 Layout 子区域，支持 span/region/padding/justify/align/direction/gap，与同级 Region 分配剩余列数。
+-->
 <template>
   <section
     :class="['u-region', `u-region__${region}`, 'u-region-container']"
@@ -25,32 +28,13 @@ const props = withDefaults(defineProps<URegionProps>(), {
   region: 'center'
 })
 
-/**
- * 上下文
- */
 const ctx = inject<ULayoutContext>(CLayoutContext)
-
-/**
- * 最大列数
- */
 const maxSpan = computed(() => ctx?.maxSpan?.value!)
-
-/**
- * 同级dom
- */
 const siblings = shallowRef((instance?.parent?.subTree.children as VNode[])?.[0]?.children as VNode[])
-/**
- * region组件
- */
 const siblingRegions = computed(() => siblings.value.filter(item => (item.type as any)?.name === CComponentName.REGION))
-/**
- * region没有span的组件
- */
 const siblingRegionsWithoutSpan = computed(() => siblingRegions.value.filter(item => isNil(item.props?.span)))
 
-/**
- * 列数
- */
+// 有 span 用 props.span，否则在未指定 span 的兄弟间平分剩余列数
 const span = computed(() =>
 {
   if (props.span)
@@ -61,9 +45,6 @@ const span = computed(() =>
   return surplus / siblingRegionsWithoutSpan.value.length
 })
 
-/**
- * 区域样式
- */
 const regionStyle = computed<CSSProperties>(() =>
 {
   const style = {
@@ -94,8 +75,7 @@ const regionStyle = computed<CSSProperties>(() =>
 })
 
 /**
- * 计算行跨度
- * @param regions 同级组件
+ * 计算已占列数与剩余列数，供未指定 span 的 Region 平分
  */
 function handleRowSpan(regions: VNode[])
 {

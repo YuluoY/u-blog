@@ -44,17 +44,23 @@ export const toResponse = (data: any, res: Response): any => {
  * const [err, data] = await tryit<any, Error>(() => RestService.query(req.model))
  * formatResponse([err, data], 'success', 'fail', 0)
  */
+export interface FormatResponseOptions {
+	/** 为 true 时不打印错误栈（用于预期业务失败，如未登录） */
+	skipErrorLog?: boolean
+}
+
 export const formatResponse = <T = any, E extends Error = Error>(
 	tryData: [E, T], 
 	success: string,
 	fail: string,
-	code?: number
+	code?: number,
+	opts?: FormatResponseOptions
 ): SuccessReturn<T> | FailReturn =>
 {
 	const [err, data] = tryData
 	if (err)
 	{
-		console.error(err)
+		if (!opts?.skipErrorLog) console.error(err)
 		return failTempl(err.message ?  `${fail}, ${err.message}` : fail, code || 1)
 	}
 	return successTempl<T>(data, success, code || 0)

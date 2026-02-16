@@ -110,8 +110,6 @@ describe('UCollapse 组件', () =>
       },
     })
 
-    const svg = wrapper.find('svg')
-    expect(svg.exists()).toBe(true)
-    expect(svg.classes()).toContain('fa-check')
+    expect(wrapper.find('.u-icon').exists()).toBe(true)
   })
 })

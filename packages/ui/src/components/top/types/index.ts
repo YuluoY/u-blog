@@ -75,7 +75,7 @@ export interface UTopExposes {
   /**
    * @description 校验是否显示按钮
    */
-  vaildate: () => boolean
+  validate: () => boolean
 
   /**
    * @description 滚动到指定位置

@@ -1,8 +1,15 @@
-
+<!--
+  ReadProgress 阅读进度条：根据页面滚动计算 0–100% 进度，支持自定义颜色/高度/文案与国际化。
+-->
 <template>
   <div
     v-show="showProgress"
     class="u-read-progress"
+    role="progressbar"
+    :aria-valuenow="Math.round(progress)"
+    aria-valuemin="0"
+    aria-valuemax="100"
+    :aria-label="t('readProgress.label')"
     :style="progressStyle"
   >
     <div
@@ -35,11 +42,14 @@ import { computed, type CSSProperties } from 'vue'
 import type { UReadProgressEmits, UReadProgressProps } from '../types'
 import { pxToRem } from '@u-blog/utils'
 import { useEventListener, useWatchRef } from '@u-blog/composables'
-import { UText } from '@/components'
+import { UText } from '@/components/text'
+import { useLocale } from '@/components/config-provider'
 
 defineOptions({
   name: 'UReadProgress'
 })
+
+const { t } = useLocale()
 
 const props = withDefaults(defineProps<UReadProgressProps>(), {
   type: 'primary',
@@ -61,6 +71,7 @@ const progressStyle = computed<CSSProperties>(() => ({
   backgroundColor: props.backgroundColor,
 }))
 
+// 监听文档滚动，计算阅读进度并同步 modelValue
 useEventListener(document, 'scroll', () =>
 {
   window.requestAnimationFrame(() =>
@@ -74,11 +85,13 @@ useEventListener(document, 'scroll', () =>
   })
 })
 
+/** 隐藏进度条 */
 function hide()
 {
   showProgress.value = false
 }
 
+/** 显示进度条 */
 function show()
 {
   showProgress.value = true

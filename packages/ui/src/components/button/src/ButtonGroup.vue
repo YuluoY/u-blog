@@ -1,4 +1,6 @@
-
+<!--
+  ButtonGroup 按钮组：将多个按钮横向排列，首尾圆角、中间无间隙。
+-->
 <template>
   <div class="u-button-group">
     <slot />
@@ -6,7 +8,6 @@
 </template>
 
 <script setup lang="ts">
-  
 defineOptions({
   name: 'UButtonGroup'
 })
@@ -23,12 +24,12 @@ defineOptions({
     }
 
     .u-button:first-child {
-      border-top-left-radius: var(--uc-border-radius-4);
-      border-bottom-left-radius: var(--uc-border-radius-4);
+      border-top-left-radius: var(--u-border-radius-4);
+      border-bottom-left-radius: var(--u-border-radius-4);
     }
     .u-button:last-child {
-      border-top-right-radius: var(--uc-border-radius-4);
-      border-bottom-right-radius: var(--uc-border-radius-4);
+      border-top-right-radius: var(--u-border-radius-4);
+      border-bottom-right-radius: var(--u-border-radius-4);
     }
   }
 </style>

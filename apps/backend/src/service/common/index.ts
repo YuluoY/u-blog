@@ -44,8 +44,8 @@ class CommonService {
       rthash, // 刷新令牌密钥
     }
 
-    // 6、创建用户
-    const user = userRepo.create(userData)
+    // 6、创建用户（create 单对象返回单实体，类型断言避免 Users[] 推断）
+    const user = userRepo.create(userData) as unknown as Users
     await userRepo.save(user)
 
     // 7、生成访问令牌

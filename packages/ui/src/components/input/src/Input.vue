@@ -1,3 +1,6 @@
+<!--
+  Input 输入框：支持前缀/后缀插槽、密码显隐、清空、字数统计，可与 FormItem 尺寸联动。
+-->
 <template>
   <div
     class="u-input"
@@ -6,10 +9,11 @@
       'u-input--prefix': $slots.prefix,
       'is-disabled': disabled,
       'is-readonly': readonly,
+      'u-input--textarea': isTextArea,
       [`u-input--${_size}`]: _size
     }"
   >
-    <div class="u-input__wapper">
+    <div class="u-input__wrapper">
       <div
         v-if="!isTextArea"
         class="u-input__prefix-wrapper"
@@ -32,6 +36,7 @@
 
       <input
         v-if="!isTextArea"
+        :id="inputId"
         :value="_value"
         class="u-input__inner"
         :type="_type"
@@ -74,45 +79,59 @@
           v-if="isPassword && isValue"
           class="u-input__password"
           :icon="_icon"
+          :aria-label="passwordVisible ? t('input.hidePassword') : t('input.showPassword')"
           @click="passwordVisible = !passwordVisible"
         />
         <u-icon
           v-if="clearable && isValue"
           class="u-input__clear"
           icon="close"
+          :aria-label="t('input.clear')"
           @click="onClear"
         />
       </div>
       
       <textarea
         v-if="isTextArea"
-        class="u-input__inner u-textarea"
+        class="u-input__inner u-input__textarea"
         :value="_value"
-        v-bind="props"
+        :id="inputId"
+        :name="name"
+        :placeholder="placeholder"
+        :disabled="disabled"
+        :readonly="readonly"
+        :rows="rows"
+        :maxlength="maxLength"
+        :aria-label="ariaLabel"
+        :tabindex="tabindex"
         @input="onInput"
         @focus="onFocus"
         @blur="onBlur"
         @change="onChange"
       />
-      <span
-        v-if="isTextArea"
-        class="u-textarea__count"
-      >
-        {{ (_value +'').length }} / {{ maxLength }}
-      </span>
     </div>
+    <span
+      v-if="isTextArea && (showWordLimit || maxLength)"
+      class="u-input__word-count"
+    >
+      {{ (_value + '').length }}{{ maxLength ? ` / ${maxLength}` : '' }}
+    </span>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, inject } from 'vue'
+import { computed, ref, inject, useId } from 'vue'
 import type { UInputEmits, UInputProps } from '../types'
 import { CInputType } from '../consts'
-import { FORM_ITEM_SIZE_INJECTION_KEY, UIcon } from '@/components'
+import { FORM_ITEM_SIZE_INJECTION_KEY } from '@/components/form'
+import { UIcon } from '@/components/icon'
+import { useLocale } from '@/components/config-provider'
 
 defineOptions({
   name: 'UInput'
 })
+
+const { t } = useLocale()
 
 const props = withDefaults(defineProps<UInputProps>(), {
   type: 'text',
@@ -122,10 +141,12 @@ const props = withDefaults(defineProps<UInputProps>(), {
   tabindex: 0
 })
 
-// 注入form-item的size
-const formItemSize = inject(FORM_ITEM_SIZE_INJECTION_KEY, null)
+/** 满足「表单字段应有 id 或 name」：未传 id 时自动生成，便于 label[for] 与无障碍 */
+const fallbackId = `u-input-${useId()}`
+const inputId = computed(() => props.id ?? fallbackId)
 
-// 计算最终的size
+// 注入 FormItem 的 size
+const formItemSize = inject(FORM_ITEM_SIZE_INJECTION_KEY, null)
 const _size = computed(() => formItemSize?.value || props.size)
 
 const emits = defineEmits<UInputEmits>()

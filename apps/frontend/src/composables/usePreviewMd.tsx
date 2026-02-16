@@ -1,8 +1,10 @@
-import { useHeaderStore, TOP_NAV_HEIGHT_PX } from '@/stores/header'
+import { useAppStore } from '@/stores/app'
 import { useArticleStore } from '@/stores/model/article'
 import { watchFn } from '@u-blog/utils'
+import { CTheme } from '@u-blog/model'
 import { MdCatalog, MdPreview } from 'md-editor-v3'
-import { Teleport, type Component, type CSSProperties, ref, watch, computed } from 'vue'
+import type { ComputedRef } from 'vue'
+import { defineComponent, type Component, type CSSProperties, watch, computed, shallowRef, markRaw } from 'vue'
 import { storeToRefs } from 'pinia'
 import 'md-editor-v3/lib/preview.css'
 
@@ -13,24 +15,27 @@ export const usePreviewMd = ({
 }): {
   Preview: Component | null
   Catalog: Component | null
-  articleContent: ReturnType<typeof computed<string>>
+  articleContent: ComputedRef<string>
+  scrollElement: import('vue').ShallowRef<HTMLElement | undefined>
 } =>
 {
   const id = 'preview-only'
-  const rightSideId = 'layout-center__right'
-  const scrollElement = document.documentElement
+  const scrollElement = shallowRef<HTMLElement | undefined>(undefined)
+  watchFn<HTMLElement>(
+    () => document.querySelector('.layout-base__main') as HTMLElement,
+    (el: HTMLElement | null) => { scrollElement.value = el ?? undefined }
+  )
 
   const articleStore = useArticleStore()
   const { currentArticle } = storeToRefs(articleStore)
-  const headerStore = useHeaderStore()
   
   // 响应式的文章内容
   const articleContent = computed(() => {
     const found = articleStore.findArticleById(articleId)
     if (found?.content) return found.content
     
-    if (currentArticle.value && 
-        (currentArticle.value.id === articleId || currentArticle.value.id === parseInt(articleId))) {
+    if (currentArticle.value &&
+        (String(currentArticle.value.id) === articleId || currentArticle.value.id === parseInt(articleId, 10))) {
       return currentArticle.value.content || ''
     }
     return ''
@@ -57,38 +62,22 @@ export const usePreviewMd = ({
 
   const Preview = shallowRef<Component | null>(null)
   const Catalog = shallowRef<Component | null>(null)
-  const sideRightEl = shallowRef<HTMLElement | null>(null)
-  const catalogStyle = shallowRef<CSSProperties>()
+  const catalogStyle: CSSProperties = {
+    width: '100%',
+    maxHeight: 'calc(100vh - 100px)',
+    overflowY: 'auto'
+  }
 
-  watchFn<HTMLElement>(() => document.querySelector(`#${rightSideId}`) as HTMLElement, result =>
-  {
-    sideRightEl.value = result
-    const top = (headerStore.height || TOP_NAV_HEIGHT_PX) + 20
-    catalogStyle.value = {
-      width: result.clientWidth + 'px',
-      height: '400px',
-      overflowY:'auto',
-      position: 'fixed',
-      top: top ? top + 'px' : 'unset'
-    }
-  })
-
-  // 使用 ref 来存储 articleId，确保组件能响应式更新
-  const previewArticleId = ref(articleId)
-  
-  // 监听 articleId 变化，更新 previewArticleId
-  watch(() => articleId, (newId) => {
-    previewArticleId.value = newId
-  })
-
-  // 创建 Preview 组件，使用 key 强制重新渲染
+  // 创建 Preview 组件，使用 key 强制重新渲染；主题跟随应用主题
   Preview.value = markRaw(defineComponent({
     name: 'Preview',
     setup()
     {
       const articleStore = useArticleStore()
+      const appStore = useAppStore()
       const route = useRoute()
       const { currentArticle: currentArticleRef } = storeToRefs(articleStore)
+      const previewTheme = computed(() => appStore.theme === CTheme.DARK ? 'dark' : 'light')
       
       // 监听路由变化，获取文章
       watch(() => route.params.id, async (id) => {
@@ -109,23 +98,25 @@ export const usePreviewMd = ({
       
       // 响应式的文章内容
       const content = computed(() => {
-        const found = articleStore.findArticleById(route.params.id as string)
+        const paramId = Array.isArray(route.params.id) ? route.params.id[0] : route.params.id
+        const idStr = paramId != null ? String(paramId) : ''
+        const found = idStr ? articleStore.findArticleById(idStr) : null
         if (found?.content) return found.content
-        
-        if (currentArticleRef.value && 
-            (currentArticleRef.value.id === route.params.id || 
-             currentArticleRef.value.id === parseInt(route.params.id as string))) {
+
+        if (currentArticleRef.value &&
+            (String(currentArticleRef.value.id) === idStr ||
+             currentArticleRef.value.id === parseInt(idStr, 10))) {
           return currentArticleRef.value.content || ''
         }
         return ''
       })
 
-      // 使用 key 确保内容变化时重新渲染
       return () => (
         <MdPreview 
-          key={`preview-${route.params.id}-${content.value.length}`}
+          key={`preview-${route.params.id}-${content.value.length}-${previewTheme.value}`}
           id={id} 
-          modelValue={content.value} 
+          modelValue={content.value}
+          theme={previewTheme.value}
         />
       )
     }
@@ -133,18 +124,20 @@ export const usePreviewMd = ({
 
   Catalog.value = markRaw(defineComponent({
     name: 'Catalog',
-    setup()
-    {
+    props: {
+      scrollElement: { type: Object as () => HTMLElement | undefined, default: undefined }
+    },
+    setup(props) {
+      const appStore = useAppStore()
+      const catalogTheme = computed(() => appStore.theme === CTheme.DARK ? 'dark' : 'light')
+      const scrollEl = computed(() => props.scrollElement ?? document.documentElement)
       return () => (
-        <>
-          {
-            sideRightEl.value && (
-              <Teleport to={sideRightEl.value}>
-                <MdCatalog style={catalogStyle.value} editorId={id} scrollElement={scrollElement} />
-              </Teleport>
-            )
-          }
-        </>
+        <MdCatalog
+          style={catalogStyle}
+          editorId={id}
+          scrollElement={scrollEl.value}
+          theme={catalogTheme.value}
+        />
       )
     }
   }))
@@ -152,6 +145,7 @@ export const usePreviewMd = ({
   return {
     Preview,
     Catalog,
-    articleContent
+    articleContent,
+    scrollElement
   }
 }

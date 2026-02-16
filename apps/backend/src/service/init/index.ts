@@ -1,4 +1,5 @@
 import { DataSource } from 'typeorm'
+import { CTable } from '@u-blog/model'
 import { Users } from '@/module/schema/Users'
 import { Article } from '@/module/schema/Article'
 import { Category } from '@/module/schema/Category'
@@ -6,8 +7,65 @@ import { Tag } from '@/module/schema/Tag'
 import { CUserRole, CArticleStatus } from '@u-blog/model'
 import { encrypt } from '@/utils'
 import { getRandomString } from '@u-blog/utils'
-import { createCategory, createTag, generateRandomMarkdown, createArticle } from '@u-blog/model'
+import { createCategory, createTag } from '@u-blog/model'
 import { faker } from '@faker-js/faker/locale/zh_CN'
+import { getSampleMdByIndex } from './sampleMd'
+
+/** 中文标题前缀/中缀/后缀，用于随机组合 */
+const TITLE_PREFIX = ['如何理解', '浅谈', '关于', '一文读懂', '从零开始', '深入理解', '实战', '我的', '日常', '聊聊', '再谈', '小结']
+const TITLE_MID = ['Vue', 'React', 'TypeScript', 'Node', '前端', '后端', '数据库', '算法', '设计模式', '工程化', '性能优化', '博客', '生活', '读书', '电影', '旅行', '美食']
+const TITLE_SUFFIX = ['实践', '指南', '总结', '笔记', '心得', '入门', '进阶', '踩坑记', '随想', '分享']
+
+/** 中文段落常用词，用于生成正文 */
+const ZH_WORDS = '的技术开发学习实践应用方法经验总结笔记心得分享理解掌握提升优化改进设计实现代码项目框架工具库函数模块组件状态数据接口请求响应渲染更新配置部署测试调试错误问题解决方案思路步骤流程规范约定风格'.split('')
+const ZH_PHRASES = ['在实际开发中', '需要注意的是', '简单来说', '举个例子', '从另一个角度', '总的来说', '首先我们要', '接下来', '最后', '因此', '然而', '另外', '同时', '一方面', '另一方面']
+
+function pick<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)]
+}
+
+function randomChineseTitle(): string {
+  const a = pick(TITLE_PREFIX)
+  const b = pick(TITLE_MID)
+  const c = pick(TITLE_SUFFIX)
+  if (faker.datatype.boolean(0.5)) {
+    return `${a}${b}${c}`.slice(0, 50)
+  }
+  return `${a}${b}：${c}与${pick(TITLE_MID)}`.slice(0, 50)
+}
+
+function randomChineseParagraph(minLen: number, maxLen: number): string {
+  const len = faker.number.int({ min: minLen, max: maxLen })
+  let s = ''
+  while (s.length < len) {
+    if (faker.datatype.boolean(0.3) && s.length > 10) {
+      s += pick(ZH_PHRASES)
+    } else {
+      s += pick(ZH_WORDS)
+    }
+  }
+  return s.slice(0, len)
+}
+
+/** 生成中文 Markdown 正文 */
+function generateChineseMarkdown(targetLength: number): string {
+  const parts: string[] = []
+  let len = 0
+  const headings = ['## 前言', '## 背景与动机', '## 实现思路', '## 具体步骤', '## 小结', '## 参考资料']
+  let hi = 0
+  while (len < targetLength) {
+    if (hi < headings.length && len < targetLength * 0.85) {
+      parts.push('\n' + headings[hi] + '\n\n')
+      len += headings[hi].length + 4
+      hi++
+    }
+    const pLen = Math.min(targetLength - len - 2, faker.number.int({ min: 80, max: 300 }))
+    if (pLen <= 0) break
+    parts.push(randomChineseParagraph(pLen, pLen) + '\n\n')
+    len += pLen + 2
+  }
+  return '# 正文\n\n' + parts.join('').slice(0, targetLength)
+}
 
 /**
  * 默认用户数据列表
@@ -153,6 +211,28 @@ export async function initDefaultUser(dataSource: DataSource): Promise<void> {
 }
 
 /**
+ * 清空种子数据（文章、文章-标签关联、标签、分类），不删用户
+ */
+export async function clearSeedData(dataSource: DataSource): Promise<void> {
+  const qr = dataSource.createQueryRunner()
+  await qr.connect()
+  try {
+    await qr.startTransaction()
+    await qr.query(`DELETE FROM "${CTable.ARTICLE_TAG}"`)
+    await qr.query(`DELETE FROM "${CTable.ARTICLE}"`)
+    await qr.query(`DELETE FROM "${CTable.TAG}"`)
+    await qr.query(`DELETE FROM "${CTable.CATEGORY}"`)
+    await qr.commitTransaction()
+    console.log('  🗑️  已清空文章、标签、分类及关联表')
+  } catch (e) {
+    await qr.rollbackTransaction()
+    throw e
+  } finally {
+    await qr.release()
+  }
+}
+
+/**
  * 初始化假数据（分类、标签、文章）
  * @param dataSource 数据源
  */
@@ -160,6 +240,7 @@ export async function initSeedData(dataSource: DataSource): Promise<void> {
   console.log('\n🌱 开始初始化假数据...')
   
   try {
+    await clearSeedData(dataSource)
     const userRepo = dataSource.getRepository(Users)
     const categoryRepo = dataSource.getRepository(Category)
     const tagRepo = dataSource.getRepository(Tag)
@@ -221,21 +302,20 @@ export async function initSeedData(dataSource: DataSource): Promise<void> {
       }
     }
 
-    // 4. 创建文章
+    // 4. 创建文章（50 篇，faker 填充、多种 MD 格式、每篇至少 3000 字）
+    const articleCount = 50
     console.log('  📝 创建文章...')
-    const articleCount = 50 // 创建50篇文章
     let createdCount = 0
     
     for (let i = 0; i < articleCount; i++) {
       const user = faker.helpers.arrayElement(users)
       const category = categories.length > 0 ? faker.helpers.arrayElement([...categories, null]) : null
       const articleTags = tags.length > 0 ? faker.helpers.arrayElements(tags, { min: 1, max: Math.min(5, tags.length) }) : []
-      
-      // 生成文章标题和内容
-      const title = faker.lorem.sentence(faker.number.int({ min: 5, max: 15 })).slice(0, 100)
-      const content = generateRandomMarkdown(faker.number.int({ min: 1000, max: 5000 }), 3)
-      const desc = faker.lorem.paragraph().substring(0, 255)
-      
+      // 标题加序号保证唯一，避免违反 title 唯一约束
+      const title = `${randomChineseTitle()}（${i + 1}）`.slice(0, 100)
+      const content = getSampleMdByIndex(i) // 多篇高质量 MD 模板轮询，内容不重复
+      const desc = randomChineseParagraph(50, 120).slice(0, 255)
+      const publishedAt = faker.date.between({ from: '2024-01-01', to: new Date() })
       const article = articleRepo.create({
         userId: user.id,
         categoryId: category?.id || null,
@@ -249,14 +329,17 @@ export async function initSeedData(dataSource: DataSource): Promise<void> {
         commentCount: faker.number.int({ min: 0, max: 50 }),
         likeCount: faker.number.int({ min: 0, max: 100 }),
         viewCount: faker.number.int({ min: 0, max: 1000 }),
-        publishedAt: faker.date.between({ from: '2024-01-01', to: new Date() })
-      })
+        publishedAt,
+        createdAt: publishedAt,
+        updatedAt: publishedAt
+      } as any)
       
-      const savedArticle = await articleRepo.save(article)
+      const saveResult = await articleRepo.save(article)
+      const savedArticle = Array.isArray(saveResult) ? saveResult[0] : saveResult
       
       // 关联标签
-      if (articleTags.length > 0) {
-        savedArticle.tags = articleTags
+      if (articleTags.length > 0 && savedArticle) {
+        ;(savedArticle as Article).tags = articleTags
         await articleRepo.save(savedArticle)
       }
       

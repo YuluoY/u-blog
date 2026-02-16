@@ -1,20 +1,20 @@
 .u-form {
-  --form-font-size: var(--uc-font-size-base);
-  --form-color: var(--uc-text-2);
-  --form-line-height: var(--uc-height-32);
-  --form-error-font-size: var(--uc-font-size-xs);
-  --form-error-color: var(--uc-danger);
-  --form-error-border-color: var(--uc-danger);
-  --form-margin-bottom: var(--uc-height-22);
-  --form-padding-right: var(--uc-height-12);
-  --form-margin-right: var(--uc-height-32);
-  --form-error-padding-top: var(--uc-height-4);
-  --form-error-margin-left: var(--uc-height-10);
-  --form-label-padding-bottom: var(--uc-height-10);
-  --form-animation-duration: var(--uc-animation-duration);
-  --form-animation-function: var(--uc-animation-ease-out);
-  --form-required-star-color: var(--uc-danger);
-  --form-required-star-margin: var(--uc-height-4);
+  --form-font-size: var(--u-font-size-base);
+  --form-color: var(--u-text-2);
+  --form-line-height: var(--u-height-32);
+  --form-error-font-size: var(--u-font-size-xs);
+  --form-error-color: var(--u-danger);
+  --form-error-border-color: var(--u-danger);
+  --form-margin-bottom: var(--u-height-22);
+  --form-padding-right: var(--u-height-12);
+  --form-margin-right: var(--u-height-32);
+  --form-error-padding-top: var(--u-height-4);
+  --form-error-margin-left: var(--u-height-10);
+  --form-label-padding-bottom: var(--u-height-10);
+  --form-animation-duration: var(--u-animation-duration);
+  --form-animation-function: var(--u-animation-ease-out);
+  --form-required-star-color: var(--u-danger);
+  --form-required-star-margin: var(--u-height-4);
 }
 
 .u-form--label-left .u-form-item__label {
@@ -89,7 +89,7 @@
   &--error {
     .u-form-item__content {
       .u-input {
-        .u-input__wapper {
+        .u-input__wrapper {
           border-color: var(--form-error-border-color);
 
           &:hover {
@@ -107,15 +107,15 @@
   &--validating {
     .u-form-item__content {
       .u-input {
-        .u-input__wapper {
-          border-color: var(--uc-warning-1);
+        .u-input__wrapper {
+          border-color: var(--u-warning-1);
 
           &:hover {
-            border-color: var(--uc-warning-2);
+            border-color: var(--u-warning-2);
           }
 
           &:focus-within {
-            border-color: var(--uc-warning-3);
+            border-color: var(--u-warning-3);
           }
         }
       }

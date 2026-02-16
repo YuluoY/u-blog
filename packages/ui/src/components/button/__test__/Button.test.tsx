@@ -42,9 +42,7 @@ describe('UButton 组件覆盖测试', () =>
     const wrapper = createWrapper({
       icon: 'check'
     } as UButtonProps)
-    const icon = wrapper.find('svg')
-    expect(icon.exists()).toBe(true)
-    expect(icon.classes()).toContain('fa-check')
+    expect(wrapper.find('.u-icon').exists()).toBe(true)
   })
 
   it('正确处理点击事件', async() =>

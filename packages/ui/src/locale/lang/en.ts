@@ -1,3 +1,7 @@
+/**
+ * English locale for UI components i18n.
+ * Keys under `el` match t('el.xxx') usage in components.
+ */
 export const en = {
   name: 'en',
   el: {
@@ -80,10 +84,6 @@ export const en = {
         dec: 'Dec',
       },
     },
-    inputNumber: {
-      decrease: 'decrease number',
-      increase: 'increase number',
-    },
     select: {
       loading: 'Loading',
       noMatch: 'No matching data',
@@ -115,9 +115,6 @@ export const en = {
       nextPages: 'Next {pager} pages',
       deprecationWarning:
         'Deprecated usages detected, please refer to the el-pagination documentation for more details',
-    },
-    dialog: {
-      close: 'Close this dialog',
     },
     drawer: {
       close: 'Close this dialog',
@@ -177,6 +174,44 @@ export const en = {
       leftArrow: 'Carousel arrow left',
       rightArrow: 'Carousel arrow right',
       indicator: 'Carousel switch to index {index}',
+    },
+    top: {
+      backToTop: 'Back to top',
+    },
+    readProgress: {
+      label: 'Reading progress',
+    },
+    card: {
+      collapseExpand: 'Collapse/Expand',
+    },
+    timelineItem: {
+      ariaLabel: 'Timeline node',
+    },
+    notification: {
+      close: 'Close',
+    },
+    input: {
+      showPassword: 'Show password',
+      hidePassword: 'Hide password',
+      clear: 'Clear',
+    },
+    codeEditor: {
+      increaseFontSize: 'Increase font size',
+      decreaseFontSize: 'Decrease font size',
+      resetFontSize: 'Reset font size',
+      format: 'Format',
+      minimap: 'Minimap',
+    },
+    dialog: {
+      confirm: 'OK',
+      cancel: 'Cancel',
+      close: 'Close this dialog',
+    },
+    inputNumber: {
+      decrease: 'decrease number',
+      increase: 'increase number',
+      decreaseAria: 'Decrease',
+      increaseAria: 'Increase',
     },
   },
 }

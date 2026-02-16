@@ -1,6 +1,7 @@
 export * from './button'
 export * from './layout'
 export * from './icon'
+export * from './image'
 export * from './card'
 export * from './input'
 export * from './text'

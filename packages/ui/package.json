@@ -9,10 +9,11 @@
     "build:es": "vite build --config vite.es.config.ts && pnpm run copy-package && pnpm run generate-components-dts",
     "build:es:watch": "vite build --config vite.es.config.ts --watch",
     "build:umd": "vite build --config vite.umd.config.ts && pnpm run copy-package && pnpm run generate-components-dts",
-    "copy-package": "copy package.json dist\\package.json",
+    "copy-package": "node -e \"require('fs').copyFileSync('package.json','dist/package.json')\"",
     "generate-components-dts": "node scripts/generate-components-dts.js",
     "dev": "pnpm run build:es:watch",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "files": [
     "dist"
@@ -54,6 +55,8 @@
     "vue3-i18n": "^1.1.5"
   },
   "devDependencies": {
+    "postcss": "^8.4.40",
+    "postcss-prefix-selector": "^2.1.1",
     "@types/lodash-es": "^4.17.12",
     "@types/node": "^20.11.20",
     "@vitejs/plugin-vue": "^6.0.1",

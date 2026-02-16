@@ -5,21 +5,22 @@ import type { UTopProps } from '../types'
 import { nextTick } from 'vue'
 import { pxToRem } from '@u-blog/utils'
 
-vi.mock('@u-blog/composables', () => ({
-  default: ({ scrolling, wheeling }: any) =>
-  {
-    // 模拟滚动事件回调
-    const mockScrollTo = vi.fn((to: number = 0, duration: number = 300) =>
-    {
-      document.documentElement.scrollTop = to
-      scrolling?.()
-      return Promise.resolve()
-    })
-    return {
-      scrollTo: mockScrollTo
-    }
+vi.mock('@u-blog/composables', () => {
+  const mockScrollTo = vi.fn(() => Promise.resolve())
+  return {
+    useScrollTo: vi.fn(() => ({ scrollTo: mockScrollTo })),
+    useResize: vi.fn(() => ({})),
+    useDraggle: vi.fn(() => ({})),
+    useEventListener: vi.fn(),
+    useOffset: vi.fn(() => ({ topOffset: { value: 0 }, bottomOffset: { value: 0 } })),
+    useZIndex: vi.fn(() => ({ nextZIndex: vi.fn(() => 2000) })),
+    useWatchRef: vi.fn((val: any) => ({ value: val })),
+    useClickOutside: vi.fn(),
+    useState: vi.fn((initial: any) => [{ value: initial }, vi.fn()]),
+    useFixed: vi.fn(),
+    useDebounceRef: vi.fn((val: any) => ({ value: val }))
   }
-}))
+})
 
 // 创建通用的测试配置
 const createWrapper = (props: Partial<UTopProps> = {}, slots = {}) =>
@@ -73,7 +74,7 @@ describe('UTop 组件测试', () =>
     const top = document.querySelector('.u-top')
     expect(top).toBeTruthy()
     expect(top?.querySelector('.u-top__inner')).toBeTruthy()
-    expect(top?.querySelector('h2')?.textContent).toBe('TOP')
+    expect(top?.querySelector('.u-top__default')?.textContent).toBe('TOP')
   })
 
   // 尺寸测试

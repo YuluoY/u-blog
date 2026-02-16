@@ -14,7 +14,8 @@ class RestController
 
   async del(req: Request): ControllerReturn
   {
-
+    const tryData = await tryit<any, Error>(() => Promise.resolve(null))
+    return formatResponse(tryData, req.__('rest.delSuccess'), req.__('rest.delFail'))
   }
 
   async add(req: Request): ControllerReturn
@@ -26,7 +27,8 @@ class RestController
 
   async update(req: Request): ControllerReturn
   {
-
+    const tryData = await tryit<any, Error>(() => Promise.resolve(null))
+    return formatResponse(tryData, req.__('rest.updateSuccess'), req.__('rest.updateFail'))
   }
 }
 

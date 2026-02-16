@@ -1,5 +1,5 @@
 import type { Ref, VNode } from 'vue'
-import type { UTextProps } from '@/components'
+import type { UTextProps } from '@/components/text'
 import type { CReadProgress } from '../consts'
 
 export type UReadProgressType = typeof CReadProgress[keyof typeof CReadProgress];

@@ -13,17 +13,16 @@
       width: inherit;
       height: inherit;
       display: inline-block;
-      opacity: 0;
     }
   }
 
   .u-tooltip__popper {
     position: relative;
     text-align: center;
-    z-index: var(--uc-z-index-tooltip);
-    font-size: var(--uc-font-size-base);
-    border-radius: var(--uc-border-radius-2);
-    border: var(--uc-border-width-2) solid var(--uc-border-1);
+    z-index: var(--u-z-index-tooltip);
+    font-size: var(--u-font-size-base);
+    border-radius: var(--u-border-radius-2);
+    border: var(--u-border-width-2) solid var(--u-border-1);
   }
 
   @mixin tooltip-styles($text-color, $bg-color) {
@@ -55,16 +54,16 @@
       #{$direction}: -0.1rem;
     }
     .u-tooltip__popper {
-      @include renderTooltipArrow(var(--uc-background-dark-2));
-      @include tooltip-styles(var(--uc-text-7), var(--uc-background-dark-2));
+      @include renderTooltipArrow(var(--u-background-dark-2));
+      @include tooltip-styles(var(--u-text-7), var(--u-background-dark-2));
     }
   }
   
   &.u-tooltip--light {
     .u-tooltip__popper {
-      @include renderTooltipArrow(var(--uc-background-1));
-      @include tooltip-styles(var(--uc-text-1), var(--uc-background-1));
-      box-shadow: var(--uc-shadow-4);
+      @include renderTooltipArrow(var(--u-background-1));
+      @include tooltip-styles(var(--u-text-1), var(--u-background-1));
+      box-shadow: var(--u-shadow-4);
     }
   }
 }
@@ -72,7 +71,7 @@
 /* Transition component fade */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity var(--uc-animation-delay-5);
+  transition: opacity var(--u-animation-delay-5);
 }
 .fade-enter-from,
 .fade-leave-to {

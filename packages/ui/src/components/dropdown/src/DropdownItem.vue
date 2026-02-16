@@ -1,3 +1,6 @@
+<!--
+  DropdownItem 下拉项：单条菜单项，支持图标、分割线、禁用与 command，依赖父级 Dropdown 的 provide。
+-->
 <template>
   <li
     v-if="divided"
@@ -11,7 +14,12 @@
       'is-disabled': disabled,
       'is-divided': divided
     }"
+    role="menuitem"
+    :aria-disabled="disabled"
+    :tabindex="disabled ? -1 : 0"
     @click="handleClick"
+    @keydown.enter.prevent="!disabled && handleClick()"
+    @keydown.space.prevent="!disabled && handleClick()"
   >
     <slot name="icon">
       <u-icon
@@ -30,7 +38,7 @@
 import { computed, inject, useId } from 'vue'
 import type { UDropdownItemProps } from '../types'
 import { CDropdownCtx } from '../consts'
-import { UIcon } from '@/components'
+import { UIcon } from '@/components/icon'
 
 defineOptions({
   name: 'UDropdownItem'
@@ -41,7 +49,7 @@ const props = withDefaults(defineProps<UDropdownItemProps>(), {
   command: ''
 })
 
-// 生成唯一的 command ID
+// 未传 command 时用唯一 id 作为 command
 const commandId = `dropdown-item-${useId()}`
 const finalCommand = computed(() => props.command || commandId)
 

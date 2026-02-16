@@ -1,5 +1,6 @@
 import type { Component } from 'vue'
-import type { UButtonProps, UTooltipProps } from '@/components'
+import type { UButtonProps } from '@/components/button'
+import type { UTooltipProps } from '@/components/tooltip'
 
 export interface UPopconfirmProps {
   title: string

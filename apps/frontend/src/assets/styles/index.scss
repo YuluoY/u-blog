@@ -2,8 +2,13 @@
 @use './variables.scss';
 
 :root {
-  --uc-font-size-lg: 2rem !important;
-  --uc-font-size-base: 1.4rem !important;
+  /* 使用 UI 组件库的字体变量，符合设计规范 */
+  /* Blog Layout MVP 令牌：间距步进 4px 基础 */
+  --app-shell-spacing-xs: 4px;
+  --app-shell-spacing-sm: 8px;
+  --app-shell-spacing-md: 16px;
+  --app-shell-spacing-lg: 24px;
+  --app-shell-spacing-xl: 32px;
 }
 
 .text-base {
@@ -15,4 +20,49 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/**
+ * View Transition：主题切换圆形扩散动画
+ * 旧视图（当前主题）不动画，新视图（目标主题）用 clip-path 圆形展开
+ */
+::view-transition-old(root) {
+  animation: none;
+  z-index: 1;
+}
+::view-transition-new(root) {
+  animation: none;
+  z-index: 9999;
+  mix-blend-mode: normal;
+}
+
+/**
+ * 阅读页 md-editor 预览区：暗色下与站点背景统一
+ */
+:root.dark .md-editor-dark,
+:root.dark .md-editor-previewOnly,
+[theme='dark'] .md-editor-dark,
+[theme='dark'] .md-editor-previewOnly {
+  background-color: var(--u-background-1);
+}
+:root.dark .md-editor-dark .md-editor-preview,
+:root.dark .md-editor-previewOnly .md-editor-preview,
+[theme='dark'] .md-editor-dark .md-editor-preview,
+[theme='dark'] .md-editor-previewOnly .md-editor-preview {
+  --md-theme-bg-color: var(--u-background-1);
+  --md-theme-bg-color-inset: var(--u-background-2);
+  background-color: var(--u-background-1);
+}
+
+/**
+ * 撰写页：编辑器主题与站点一致
+ */
+.write-view__editor-wrap .md-editor,
+.write-view__editor-wrap .md-editor-dark {
+  background-color: var(--u-background-1);
+}
+.write-view__editor-wrap .md-editor-dark .md-editor-toolbar,
+.write-view__editor-wrap .md-editor-dark .md-editor-content {
+  background-color: var(--u-background-1);
+  border-color: var(--u-border-1);
 }

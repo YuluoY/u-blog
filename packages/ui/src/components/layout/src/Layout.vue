@@ -1,3 +1,6 @@
+<!--
+  Layout 布局：根据 mode 渲染默认插槽或 useLayoutMode 处理后的区域，提供 padding/gutter 与上下文（mode、maxSpan）。
+-->
 <template>
   <main
     :class="['u-layout', `u-layout__${mode}`]"
@@ -39,9 +42,6 @@ const props = withDefaults(defineProps<ULayoutProps>(), {
 
 const slots: SetupContext['slots'] = useSlots()
 
-/**
- * 布局模式
- */
 const {
   processedSlot
 } = useLayoutMode({
@@ -49,9 +49,7 @@ const {
   slots
 })
 
-/**
- * 布局样式
- */
+// padding/gutter 支持数字转 rem
 const layoutStyle = computed(() =>
 {
   const style: CSSProperties = {}
@@ -63,9 +61,6 @@ const layoutStyle = computed(() =>
 })
 
 
-/**
- * 提供上下文信息
- */
 provide(CLayoutContext, {
   mode: computed(() => props.mode as ULayoutMode),
   maxSpan: computed(() => props.maxSpan ?? CMaxSpan),

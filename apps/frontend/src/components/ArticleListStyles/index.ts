@@ -1,8 +1,8 @@
-import type { ArticleListType } from '@/types'
+import type { ArticleList } from '@/types'
 import ArticleBase from './ArticleBase.vue'
 import type { Component } from 'vue'
 
-const components: Record<ArticleListType, Component> = {
+const components: Record<ArticleList, Component> = {
   base: ArticleBase,
   waterfall: ArticleBase,
   card: ArticleBase

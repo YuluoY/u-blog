@@ -7,9 +7,9 @@
         </div>
         <div class="article-item__main">
           <div class="title">{{ item.title }}</div>
-          <div class="author">
+          <div class="author" v-if="item.user">
             <span>作者：</span>
-            <span v-for="(author, index) in item.author" :key="index">{{ author.namec || author.username }}</span>
+            <span>{{ item.user.namec || item.user.username }}</span>
           </div>
           <div class="tags">
             <u-tag v-for="tag in item.tags" :key="tag.id" :color="tag.color"> {{ tag.name }} </u-tag>
@@ -46,7 +46,7 @@
                 <span>分享</span>
               </div>
               <div class="info-item">
-                <u-button @click="emit('jump', item.id)">浏览</u-button>
+                <u-button @click="emit('jump', String(item.id))">浏览</u-button>
               </div>
             </div>
           </div>
@@ -57,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import type { IArticle } from '@/types/models/article'
+import type { IArticle } from '@u-blog/model'
 import { formatDateTime } from '@/utils/date'
 
 const props = withDefaults(
@@ -99,6 +99,7 @@ const emit = defineEmits<{
         font-size: 1.8rem;
         font-weight: 600;
         text-align: center;
+        color: var(--u-text-1);
       }
       .author {
         width: 100%;
@@ -106,6 +107,7 @@ const emit = defineEmits<{
         justify-content: center;
         font-size: 1.4rem;
         font-weight: 500;
+        color: var(--u-text-2);
         span {
           margin-right: 0.4rem;
         }
@@ -122,11 +124,13 @@ const emit = defineEmits<{
 
       .desc {
         flex: 1;
+        color: var(--u-text-2);
       }
 
       .info {
         display: flex;
         justify-content: space-between;
+        color: var(--u-text-3);
         .info-left,
         .info-right {
           display: flex;

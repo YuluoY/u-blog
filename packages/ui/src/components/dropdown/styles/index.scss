@@ -20,13 +20,22 @@
       cursor: pointer;
       padding: 0.6rem 1rem;
       text-align: center;
-      &:hover {
-        background-color: var(--uc-primary-light-6);
-        .u-dropdown-item__label {
-          color: var(--uc-primary);
-        }
+      &:hover:not(.is-disabled) {
+        background-color: var(--u-primary-light-6);
+        .u-dropdown-item__label { color: var(--u-primary); }
       }
-      
+      &:focus-visible {
+        outline: 2px solid var(--u-primary);
+        outline-offset: -2px;
+      }
+      &.is-disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+    }
+    .u-dropdown-item__divider {
+      margin: 0.4rem 0;
+      border-top: 1px solid var(--u-border-1);
     }
   }
 }

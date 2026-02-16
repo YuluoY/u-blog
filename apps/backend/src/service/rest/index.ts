@@ -4,15 +4,20 @@ import type { Request } from 'express'
 class RestService {
   async query<T = any>(model: Repository<T>, req: Request)
   {
-    const { where, take, skip, order } = req.body || {}
-    
-    // 获取实体元数据
+    const { where, take, skip, order, relations } = req.body || {}
     const metadata = model.metadata
-    // 使用实体名称的小写作为别名
     const alias = metadata.name.toLowerCase()
     
     // 创建查询构建器，TypeORM 会自动处理软删除（deletedAt）
     const queryBuilder = model.createQueryBuilder(alias)
+    
+    // 处理关联加载（如 category、tags、user）
+    if (Array.isArray(relations) && relations.length > 0) {
+      for (const relName of relations) {
+        const relation = metadata.relations.find((r: { propertyName: string }) => r.propertyName === relName)
+        if (relation) queryBuilder.leftJoinAndSelect(`${alias}.${relName}`, relName)
+      }
+    }
     
     // 处理 where 条件
     if (where && typeof where === 'object') {
@@ -31,19 +36,23 @@ class RestService {
       })
     }
     
-    // 处理排序
+    // 处理排序（先排序再分页）
     if (order && typeof order === 'object') {
+      const dir = (v: string) => (String(v).toUpperCase() === 'DESC' ? 'DESC' : 'ASC') as 'ASC' | 'DESC'
       Object.keys(order).forEach(key => {
-        const column = metadata.findColumnWithPropertyName(key)
-        if (column) {
-          queryBuilder.addOrderBy(`${alias}.${column.databaseName}`, order[key] as 'ASC' | 'DESC')
+        const orderDir = dir(order[key])
+        let colName: string
+        if (metadata.name === 'Article' && key === 'createdAt') {
+          const col = metadata.findColumnWithPropertyName('createdAt')
+          colName = col?.databaseName ?? 'createdAt'
         } else {
-          // 如果找不到列，尝试直接使用属性名
-          queryBuilder.addOrderBy(`${alias}.${key}`, order[key] as 'ASC' | 'DESC')
+          const column = metadata.findColumnWithPropertyName(key)
+          colName = column ? column.databaseName : key
         }
+        queryBuilder.addOrderBy(`${alias}.${colName}`, orderDir)
       })
     }
-    
+
     // 处理分页
     if (skip !== undefined && skip !== null && !isNaN(Number(skip))) {
       queryBuilder.skip(Number(skip))

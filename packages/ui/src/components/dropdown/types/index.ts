@@ -1,5 +1,7 @@
 import type { Component, ComputedRef } from 'vue'
-import type { UButtonProps, UTooltipProps, UIconProps } from '@/components'
+import type { UButtonProps } from '@/components/button'
+import type { UTooltipProps } from '@/components/tooltip'
+import type { UIconProps } from '@/components/icon'
 
 export interface UDropdownProps {
 

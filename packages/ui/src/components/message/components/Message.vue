@@ -1,9 +1,12 @@
+<!--
+  Message 消息：Teleport 到 body，支持类型/偏移/持续时间/关闭按钮，悬停暂停计时，ESC 关闭，暴露 close 与 bottomOffset。
+-->
 <template>
   <Teleport to="body">
     <Transition
       appear
       :name="transitionName"
-      @after-leave="!visible && isFunction(onDestory) && onDestory()"
+      @after-leave="!visible && isFunction(onDestroy) && onDestroy()"
     >
       <div
         v-show="visible"
@@ -49,7 +52,7 @@
 import { watch, computed, onBeforeUnmount, onMounted, ref, type CSSProperties } from 'vue'
 import type { UMessageExposes, UMessageProps } from '../types'
 import { pxToRem } from '@u-blog/utils'
-import { UIcon } from '@/components'
+import { UIcon } from '@/components/icon'
 import { bind, delay, isFunction } from 'lodash-es'
 import { DefaultIconMap } from '../consts'
 import { RenderVNode } from '..'
@@ -75,9 +78,7 @@ const _icon = computed(() => props.icon ?? DefaultIconMap[props.type])
 const visible = ref(true)
 const messageRef = ref<HTMLElement | null>(null)
 
-/**
- * 垂直偏移计算
- */
+// 垂直偏移：依赖 boxHeight 与 getLastBottomOffset 做堆叠
 const boxHeight = ref(0)
 const {
   topOffset,
@@ -95,9 +96,7 @@ const messageStyle = computed<CSSProperties>(() => ({
 const visibleWatcher = watch(visible, val =>
 {
   if (!val)
-  
-    boxHeight.value = -props.offset  // 关闭时，高度变为负值，避免出现空白
-  
+    boxHeight.value = -props.offset
 })
 
 useEventListener(document, 'keydown', (e: KeyboardEvent) =>
@@ -139,17 +138,13 @@ let timer: number | null = null
 function startTimer()
 {
   if (props.duration > 0)
-  
     timer = delay(onClose, props.duration)
-  
 }
 
 function clearTimer()
 {
   if (timer)
-  
     clearTimeout(timer as any)
-  
 }
 
 defineExpose<UMessageExposes>({

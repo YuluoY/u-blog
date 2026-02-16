@@ -1,3 +1,6 @@
+<!--
+  Dropdown 下拉菜单：基于 Tooltip 展示菜单，支持点击/悬停触发、分割按钮与 command 事件。
+-->
 <template>
   <div
     class="u-dropdown"
@@ -64,11 +67,13 @@
 import { computed, provide, ref } from 'vue'
 import type { UDropdownEmits, UDropdownExposes, UDropdownItemProps, UDropdownProps } from '../types'
 import { CDropdownCtx } from '../consts'
-import  type { UButtonInstance, UTooltipExposes, UTooltipProps } from '@/components'
+import type { UButtonInstance } from '@/components/button'
+import type { UTooltipExposes, UTooltipProps } from '@/components/tooltip'
 import DropdownItem from './DropdownItem.vue'
 import DropdownMenu from './DropdownMenu.vue'
 import { isNil } from 'lodash-es'
-import { CTooltipEffect, UTooltip, UButtonGroup, UButton } from '@/components'
+import { CTooltipEffect, UTooltip } from '@/components/tooltip'
+import { UButtonGroup, UButton } from '@/components/button'
 import { useTransDown } from '../composables'
 
 defineOptions({
@@ -94,6 +99,7 @@ provide(CDropdownCtx, {
 
 const tooltipRef = ref<UTooltipExposes>()
 const triggerRef = ref<UButtonInstance>()
+// 分割按钮时用按钮 ref 作为虚拟触发器
 const virtualRef = computed(() => triggerRef.value?.ref) as any
 
 const tooltipProps = computed(() => ({
@@ -101,6 +107,9 @@ const tooltipProps = computed(() => ({
   ...props.tooltipProps
 }) as UTooltipProps)
 
+/**
+ * 菜单项点击：可选关闭浮层并派发 command
+ */
 function handleItemClick(item: UDropdownItemProps)
 {
   props.hideOnClick && tooltipRef.value?.hide()

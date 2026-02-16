@@ -5,12 +5,12 @@
   text-align: center;
   vertical-align: middle;
   cursor: pointer;
-  color: var(--uc-text-1); 
-  font-size: var(--uc-font-size-base);
+  color: var(--u-text-1); 
+  font-size: var(--u-font-size-base);
   background-color: transparent;
-  border: solid var(--uc-border-width-base) var(--uc-border-1);
-  border-radius: var(--uc-border-radius-3);
-  transition: all var(--uc-animation-delay-2) var(--uc-animation-ease-in-out);
+  border: solid var(--u-border-width-base) var(--u-border-1);
+  border-radius: var(--u-border-radius-3);
+  transition: all var(--u-animation-delay-2) var(--u-animation-ease-in-out);
   overflow: hidden;
   user-select: none;
   font-family: inherit;
@@ -26,47 +26,52 @@
     margin-left: 0.4rem;
   }
   span+[class*=u-button__icon--right]{
-    margin-right: 0.4rem;
+    margin-left: 0.4rem;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--u-primary);
+    outline-offset: 2px;
   }
 
   &:hover {
-    background-color: var(--uc-primary-light-7);
-    border: var(--uc-border-width-base) solid var(--uc-primary-light-4);
-    color: var(--uc-primary);
+    background-color: var(--u-primary-light-7);
+    border: var(--u-border-width-base) solid var(--u-primary-light-4);
+    color: var(--u-primary);
   }
   
   &:active {
-    border-color: var(--uc-primary-light-2);
+    border-color: var(--u-primary-light-2);
   }
   
   &.u-button--primary { 
-    background-color: var(--uc-primary-0); 
+    background-color: var(--u-primary-0); 
     &:hover {
-      background-color: var(--uc-primary);
+      background-color: var(--u-primary);
     }
     &:active {
-      background-color: var(--uc-primary-1);
+      background-color: var(--u-primary-1);
     }
     &.is-loading,
     &.is-disabled {
-      background-color: var(--uc-primary-0);
+      background-color: var(--u-primary-0);
       &:active,
       &:hover {
-        background-color: var(--uc-primary-0);
+        background-color: var(--u-primary-0);
       }
     }
     &.is-plain {
-      color: var(--uc-primary-0);
-      border: solid var(--uc-border-width-base) var(--uc-primary-0);
-      background-color: var(--uc-primary-light-7);
+      color: var(--u-primary-0);
+      border: solid var(--u-border-width-base) var(--u-primary-0);
+      background-color: var(--u-primary-light-7);
       &:hover {
-        color: var(--uc-text-9);
-        background-color: var(--uc-primary-0);
-        border: solid var(--uc-border-width-base) var(--uc-primary-0);
+        color: var(--u-text-9);
+        background-color: var(--u-primary-0);
+        border: solid var(--u-border-width-base) var(--u-primary-0);
       }
       &:active {
-        background-color: var(--uc-primary-1);
-        border: solid var(--uc-border-width-base) var(--uc-primary-0);
+        background-color: var(--u-primary-1);
+        border: solid var(--u-border-width-base) var(--u-primary-0);
       }
     }
   }
@@ -76,151 +81,151 @@
   &.u-button--danger,
   &.u-button--info,
   &.u-button--primary {
-    color: var(--uc-text-9);
+    color: var(--u-text-9);
   }
   /* success状态 */
   &.u-button--success { 
-    background-color: var(--uc-success-1); 
+    background-color: var(--u-success-1); 
     &:hover {
-      background-color: var(--uc-success);
+      background-color: var(--u-success);
     }
     &:active {
-      background-color: var(--uc-success-2)
+      background-color: var(--u-success-2)
     }
     &.is-loading,
     &.is-disabled {
-      background-color: var(--uc-success-1);
+      background-color: var(--u-success-1);
       &:active,
       &:hover {
-        background-color: var(--uc-success-1);
+        background-color: var(--u-success-1);
       }
     }
     &.is-plain {
-      border: solid var(--uc-border-width-base) var(--uc-success-2);
-      color: var(--uc-success-1);
-      background-color: var(--uc-success-light-7);
+      border: solid var(--u-border-width-base) var(--u-success-2);
+      color: var(--u-success-1);
+      background-color: var(--u-success-light-7);
       &:hover {
-        color: var(--uc-text-9);
-        background-color: var(--uc-success-1);
-        border: solid var(--uc-border-width-base) var(--uc-success-1);
+        color: var(--u-text-9);
+        background-color: var(--u-success-1);
+        border: solid var(--u-border-width-base) var(--u-success-1);
       }
       &:active {
-        background-color: var(--uc-success-2);
-        border: solid var(--uc-border-width-base) var(--uc-success-2);
+        background-color: var(--u-success-2);
+        border: solid var(--u-border-width-base) var(--u-success-2);
       }
     }
   }
 
   /* warning状态 */
   &.u-button--warning { 
-    background-color: var(--uc-warning-3); 
+    background-color: var(--u-warning-3); 
     &:hover {
-      background-color: var(--uc-warning-2);
+      background-color: var(--u-warning-2);
     }
     &:active {
-      background-color: var(--uc-warning-4);
+      background-color: var(--u-warning-4);
     }
     &.is-loading,
     &.is-disabled {
-      background-color: var(--uc-warning-3);
+      background-color: var(--u-warning-3);
       &:active,
       &:hover {
-        background-color: var(--uc-warning-3);
+        background-color: var(--u-warning-3);
       }
     }
     &.is-plain {
-      border: solid var(--uc-border-width-base) var(--uc-warning-4);
-      color: var(--uc-warning-3);
-      background-color: var(--uc-warning-light-7);
+      border: solid var(--u-border-width-base) var(--u-warning-4);
+      color: var(--u-warning-3);
+      background-color: var(--u-warning-light-7);
       &:hover {
-        color: var(--uc-text-9);
-        background-color: var(--uc-warning-3);
-        border: solid var(--uc-border-width-base) var(--uc-warning-3);
+        color: var(--u-text-9);
+        background-color: var(--u-warning-3);
+        border: solid var(--u-border-width-base) var(--u-warning-3);
       }
       &:active {
-        background-color: var(--uc-warning-4);
-        border: solid var(--uc-border-width-base) var(--uc-warning-4);
+        background-color: var(--u-warning-4);
+        border: solid var(--u-border-width-base) var(--u-warning-4);
       }
     }
   }
 
   /* danger状态 */
   &.u-button--danger { 
-    background-color: var(--uc-danger-1); 
+    background-color: var(--u-danger-1); 
     &:hover {
-      background-color: var(--uc-danger);
+      background-color: var(--u-danger);
     }
     &:active {
-      background-color: var(--uc-danger-2);
+      background-color: var(--u-danger-2);
     }
     &.is-loading,
     &.is-disabled {
-      background-color: var(--uc-danger-1);
+      background-color: var(--u-danger-1);
       &:active,
       &:hover {
-        background-color: var(--uc-danger-1);
+        background-color: var(--u-danger-1);
       }
     }
     &.is-plain {
-      border: solid var(--uc-border-width-base) var(--uc-danger-2);
-      color: var(--uc-danger-1);
-      background-color: var(--uc-danger-light-7);
+      border: solid var(--u-border-width-base) var(--u-danger-2);
+      color: var(--u-danger-1);
+      background-color: var(--u-danger-light-7);
       &:hover {
-        color: var(--uc-text-9);
-        background-color: var(--uc-danger-1);
-        border: solid var(--uc-border-width-base) var(--uc-danger-1);
+        color: var(--u-text-9);
+        background-color: var(--u-danger-1);
+        border: solid var(--u-border-width-base) var(--u-danger-1);
       }
       &:active {
-        background-color: var(--uc-danger-2);
-        border: solid var(--uc-border-width-base) var(--uc-danger-2);
+        background-color: var(--u-danger-2);
+        border: solid var(--u-border-width-base) var(--u-danger-2);
       }
     }
   }
 
   /* info状态 */
   &.u-button--info {
-    background-color: var(--uc-info-1); 
+    background-color: var(--u-info-1); 
     &:hover {
-      background-color: var(--uc-info);
+      background-color: var(--u-info);
     }
     &:active {
-      background-color: var(--uc-info-2);
+      background-color: var(--u-info-2);
     }
     &.is-loading,
     &.is-disabled {
-      background-color: var(--uc-info-1);
+      background-color: var(--u-info-1);
       &:active,
       &:hover {
-        background-color: var(--uc-info-1);
+        background-color: var(--u-info-1);
       }
     }
     &.is-plain {
-      border: solid var(--uc-border-width-base) var(--uc-info-2);
-      color: var(--uc-info-1);
-      background-color: var(--uc-info-light-7);
+      border: solid var(--u-border-width-base) var(--u-info-2);
+      color: var(--u-info-1);
+      background-color: var(--u-info-light-7);
       &:hover {
-        color: var(--uc-text-9);
-        background-color: var(--uc-info-1);
-        border: solid var(--uc-border-width-base) var(--uc-info-1);
+        color: var(--u-text-9);
+        background-color: var(--u-info-1);
+        border: solid var(--u-border-width-base) var(--u-info-1);
       }
       &:active {
-        background-color: var(--uc-info-2);
-        border: solid var(--uc-border-width-base) var(--uc-info-2);
+        background-color: var(--u-info-2);
+        border: solid var(--u-border-width-base) var(--u-info-2);
       }
     }
   }
 
   &.is-link {
-    color: var(--uc-primary-1);
+    color: var(--u-primary-1);
     background-color: transparent;
     border: none;
     padding: 0.16rem 0 !important;
     &:hover {
-      color: var(--uc-primary);
+      color: var(--u-primary);
       background-color: transparent;
     }
     &:active {
-      color: var(--uc-primary-2);
+      color: var(--u-primary-2);
     }
   }
 
@@ -232,50 +237,50 @@
   &.is-disabled {
     opacity: 0.6;
     cursor: not-allowed;
-    background-color: var(--uc-background-disabled);
-    border: solid var(--uc-border-width-base) var(--uc-border-1);
-    color: var(--uc-text-1);
+    background-color: var(--u-background-disabled);
+    border: solid var(--u-border-width-base) var(--u-border-1);
+    color: var(--u-text-1);
   }
 
   &.is-plain {
-    color: var(--uc-text-1);
+    color: var(--u-text-1);
     background-color: transparent;
 
     &:hover {
-      border: solid var(--uc-border-width-base) var(--uc-primary-0);
-      color: var(--uc-primary-0);
+      border: solid var(--u-border-width-base) var(--u-primary-0);
+      color: var(--u-primary-0);
     }
     &:active {
-      color: var(--uc-primary-1);
-      border: solid var(--uc-border-width-base) var(--uc-primary-1);
+      color: var(--u-primary-1);
+      border: solid var(--u-border-width-base) var(--u-primary-1);
     }
   }
 
   &.u-button--large {
     padding: 1.8rem 1.2rem;
     height: 2.4rem;
-    font-size: var(--uc-font-size-lg);
+    font-size: var(--u-font-size-lg);
   }
 
   &.u-button--default {
     padding: 1.4rem 1rem;
     height: 2rem;
-    font-size: var(--uc-font-size-base);
+    font-size: var(--u-font-size-base);
   }
 
   &.u-button--small {
     padding: 1rem 0.8rem;
     height: 1.6rem;
-    font-size: var(--uc-font-size-md);
+    font-size: var(--u-font-size-md);
   }
 
   &.is-round {
-    border-radius: var(--uc-border-radius-20);
+    border-radius: var(--u-border-radius-20);
   }
 
   &.is-circle {
     aspect-ratio: 1 / 1; /* 保持宽高比为1:1 */
-    border-radius: var(--uc-border-radius-circle);
+    border-radius: var(--u-border-radius-circle);
 
     &.u-button--large {
       width: 2.5rem;

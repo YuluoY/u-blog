@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToMany } from 'typeorm'
-import { CTable, CPermission, Permission, PermissionAction, CPermissionAction } from '@u-blog/model'
+import { CTable, CPermission, type Permission as PermissionType, PermissionAction, CPermissionAction } from '@u-blog/model'
 import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator'
 import { BaseSchema } from '../BaseSchema'
 import { Role } from './Role'
@@ -40,7 +40,7 @@ export class Permission {
 	@IsNotEmpty({ message: '权限类型不能为空' })
 	@IsEnum(CPermission, { message: '权限类型必须是有效的枚举值' })
 	@MaxLength(50, { message: '权限类型最多50个字符' })
-	type!: Permission
+	type!: PermissionType
 
 	@Column({ type: 'varchar', length: 100, nullable: true, comment: '资源标识' })
 	@IsOptional()

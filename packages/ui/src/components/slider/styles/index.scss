@@ -1,22 +1,22 @@
 .u-slider {
-  --uc-slider-height: var(--uc-height-4);
-  --uc-slider-thumb-size: 1rem;
-  --uc-silder-thumb-border-width: var(--uc-border-width-12);
-  --uc-slider-thumb-border-color: var(--uc-primary);
-  --uc-slider-thumb-background-color: var(--uc-white);
-  --uc-slider-thumb-transition: scale var(--uc-animation-delay-2) var(--uc-animation-ease-in-back);
+  --u-slider-height: var(--u-height-4);
+  --u-slider-thumb-size: 1rem;
+  --u-silder-thumb-border-width: var(--u-border-width-12);
+  --u-slider-thumb-border-color: var(--u-primary);
+  --u-slider-thumb-background-color: var(--u-white);
+  --u-slider-thumb-transition: scale var(--u-animation-delay-2) var(--u-animation-ease-in-back);
   
-  --uc-slider-track-border-radius: var(--uc-border-radius-3);
-  --uc-slider-track-background-color: var(--uc-background-3);
+  --u-slider-track-border-radius: var(--u-border-radius-3);
+  --u-slider-track-background-color: var(--u-background-3);
 
-  --uc-slider-progress-border-radius: var(--uc-border-radius-3);
-  --uc-slider-progress-background-color: var(--uc-primary);
+  --u-slider-progress-border-radius: var(--u-border-radius-3);
+  --u-slider-progress-background-color: var(--u-primary);
 }
 
 .u-slider {
   position: relative;
   width: 100%;
-  height: var(--uc-slider-height);
+  height: var(--u-slider-height);
   display: flex;
   align-items: center;
 
@@ -28,22 +28,22 @@
     width: 100%;
     height: 100%;
     cursor: pointer;
-    border-radius: var(--uc-slider-track-border-radius);
+    border-radius: var(--u-slider-track-border-radius);
   }
 
   .u-slider__track {
-    background-color: var(--uc-slider-track-background-color);
+    background-color: var(--u-slider-track-background-color);
     z-index: 1;
   }
 
   .u-slider__progress {
-    background-color: var(--uc-slider-progress-background-color);
+    background-color: var(--u-slider-progress-background-color);
     z-index: 2;
   }
 
   .u-slider__thumb-wrapper {
-    width: var(--uc-slider-thumb-size);
-    height: var(--uc-slider-thumb-size);
+    width: var(--u-slider-thumb-size);
+    height: var(--u-slider-thumb-size);
     transform: translate(-50%);
     position: absolute;
     top: -0.4rem;
@@ -59,10 +59,10 @@
       position: absolute;
       width: inherit;
       height: inherit;
-      background-color: var(--uc-slider-thumb-background-color);
+      background-color: var(--u-slider-thumb-background-color);
       border-radius: 50%;
-      border: solid var(--uc-silder-thumb-border-width) var(--uc-slider-thumb-border-color);
-      transition: var(--uc-slider-thumb-transition);
+      border: solid var(--u-silder-thumb-border-width) var(--u-slider-thumb-border-color);
+      transition: var(--u-slider-thumb-transition);
 
 
       &:hover {

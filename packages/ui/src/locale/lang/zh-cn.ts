@@ -1,3 +1,7 @@
+/**
+ * 简体中文语言包
+ * 用于 UI 组件的国际化，el 下为各组件文案 key，与 vue3-i18n 的 t('el.xxx') 对应
+ */
 export const zhCn = {
   name: 'zh-cn',
   el: {
@@ -78,10 +82,6 @@ export const zhCn = {
         dec: '十二月',
       },
     },
-    inputNumber: {
-      decrease: '减少数值',
-      increase: '增加数值',
-    },
     select: {
       loading: '加载中',
       noMatch: '无匹配数据',
@@ -113,9 +113,6 @@ export const zhCn = {
       nextPages: '向后 {pager} 页',
       deprecationWarning:
         '你使用了一些已被废弃的用法，请参考 el-pagination 的官方文档',
-    },
-    dialog: {
-      close: '关闭此对话框',
     },
     drawer: {
       close: '关闭此对话框',
@@ -175,6 +172,45 @@ export const zhCn = {
       leftArrow: '上一张幻灯片',
       rightArrow: '下一张幻灯片',
       indicator: '幻灯片切换至索引 {index}',
+    },
+    /** 回到顶部按钮等 */
+    top: {
+      backToTop: '回到顶部',
+    },
+    readProgress: {
+      label: '阅读进度',
+    },
+    card: {
+      collapseExpand: '折叠/展开',
+    },
+    timelineItem: {
+      ariaLabel: '时间节点',
+    },
+    notification: {
+      close: '关闭',
+    },
+    input: {
+      showPassword: '显示密码',
+      hidePassword: '隐藏密码',
+      clear: '清除内容',
+    },
+    codeEditor: {
+      increaseFontSize: '增加字号',
+      decreaseFontSize: '减小字号',
+      resetFontSize: '重置字号',
+      format: '格式化',
+      minimap: '缩略图',
+    },
+    dialog: {
+      confirm: '确认',
+      cancel: '取消',
+      close: '关闭此对话框',
+    },
+    inputNumber: {
+      decrease: '减少数值',
+      increase: '增加数值',
+      decreaseAria: '减少',
+      increaseAria: '增加',
     },
   },
 }

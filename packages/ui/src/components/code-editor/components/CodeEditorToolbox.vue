@@ -1,4 +1,6 @@
-
+<!--
+  CodeEditorToolbox 代码编辑器工具栏：字体缩放、只读切换等，依赖 CodeEditor 的 provide 上下文。
+-->
 <template>
   <section class="u-code-editor__toolbox">
     <div
@@ -19,7 +21,7 @@
       >
         <u-icon
           :icon="item.icon"
-          :v-bind="item.iconProps ?? void 0"
+          v-bind="item.iconProps ?? void 0"
         />
       </u-tooltip>
       <div
@@ -28,7 +30,7 @@
       >
         <u-icon
           :icon="item.icon"
-          :v-bind="item.iconProps ?? void 0"
+          v-bind="item.iconProps ?? void 0"
         />
         <span
           v-show="item.showLabel ?? false"
@@ -42,8 +44,9 @@
 <script setup lang="ts">
 import { inject, reactive } from 'vue'
 import { rootFontSize } from '@u-blog/utils'
-import { UIcon } from '@/components'
-import { UTooltip } from '@/components'
+import { UIcon } from '@/components/icon'
+import { UTooltip } from '@/components/tooltip'
+import { useLocale } from '@/components/config-provider'
 import { isFunction } from 'lodash-es'
 import type { UCodeEditorCtx, UCodeEditorToolbarItem } from '../types'
 import { CCodeEditorToolbox as Toolbox, CCodeEditorCtx } from '../consts' 
@@ -53,12 +56,13 @@ const {
   options
 } = inject(CCodeEditorCtx) as UCodeEditorCtx
 
+const { t } = useLocale()
 const toolbox = reactive<UCodeEditorToolbarItem[]>([
-  { name: Toolbox.IncrementFontSize, label: '增加字号', icon: 'fa-plus', onClick: onIncrementFontSize },
-  { name: Toolbox.DecrementFontSize, label: '减小字号', icon: 'fa-minus', onClick: onDecrementFontSize },
-  { name: Toolbox.ResetFontSize, label: '重置字号', icon: 'fa-undo', onClick: onResetFontSize },
-  { name: Toolbox.Fomatter, label: '格式化', icon: 'fa-code', onClick: onFormatter },
-  { name: Toolbox.ToggleMinimap, label: '缩略图', icon: 'fa-compress', onClick: onToggleMinimap }
+  { name: Toolbox.IncrementFontSize, label: t('codeEditor.increaseFontSize'), icon: 'fa-plus', onClick: onIncrementFontSize },
+  { name: Toolbox.DecrementFontSize, label: t('codeEditor.decreaseFontSize'), icon: 'fa-minus', onClick: onDecrementFontSize },
+  { name: Toolbox.ResetFontSize, label: t('codeEditor.resetFontSize'), icon: 'fa-undo', onClick: onResetFontSize },
+  { name: Toolbox.Fomatter, label: t('codeEditor.format'), icon: 'fa-code', onClick: onFormatter },
+  { name: Toolbox.ToggleMinimap, label: t('codeEditor.minimap'), icon: 'fa-compress', onClick: onToggleMinimap }
 ])
 
 function onIncrementFontSize()

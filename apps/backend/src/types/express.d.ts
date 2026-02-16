@@ -5,7 +5,7 @@ import type { Repository } from 'typeorm'
 declare module 'express' {
   export interface Request {
     model?: Repository<any>
-    image?: { 
+    image?: {
       buffer: Buffer
       type: string
       quality?: number

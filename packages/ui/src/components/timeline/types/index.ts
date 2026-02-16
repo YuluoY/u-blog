@@ -1,6 +1,6 @@
 import type { Component } from 'vue'
 import type { CTimelinePlacement, CTimelinePosition, CTimelineSize, CTimelineType, CTimelineDirection } from '../consts'
-import type { UIconProps } from '@/components'
+import type { UIconProps } from '@/components/icon'
 
 export type UTimelinePlacement = typeof CTimelinePlacement[keyof typeof CTimelinePlacement];
 export type UTimelineType = typeof CTimelineType[keyof typeof CTimelineType];

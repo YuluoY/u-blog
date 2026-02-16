@@ -112,7 +112,7 @@ describe('UInput 组件测试', () =>
       prefixIcon: 'home',
       suffixIcon: 'check'
     } as UInputProps)
-    expect(wrapper.find('.u-input__prefix svg').exists()).toBe(true)
-    expect(wrapper.find('.u-input__suffix svg').exists()).toBe(true)
+    expect(wrapper.find('.u-input__prefix .u-icon').exists()).toBe(true)
+    expect(wrapper.find('.u-input__suffix .u-icon').exists()).toBe(true)
   })
 })

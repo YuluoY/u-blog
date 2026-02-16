@@ -1,10 +1,10 @@
 .u-top {
-  --top-inner-border-width: var(--uc-border-width-2);
-  --top-inner-border-color: var(--uc-border-1);
-  --top-inner-border-radius: var(--uc-border-radius-base);
-  --top-inner-transition: var(--uc-transition);
-  --top-inner-border-hover-color: var(--uc-primary);
-  --top-inner-animation-delay: var( --uc-animation-duration); 
+  --top-inner-border-width: var(--u-border-width-2);
+  --top-inner-border-color: var(--u-border-1);
+  --top-inner-border-radius: var(--u-border-radius-base);
+  --top-inner-transition: var(--u-transition);
+  --top-inner-border-hover-color: var(--u-primary);
+  --top-inner-animation-delay: var( --u-animation-duration); 
 }
 
 .u-top {
@@ -35,6 +35,11 @@
     &:active {
       opacity: 0.6;
     }
+  }
+
+  .u-top__default {
+    font-size: var(--u-font-size-base);
+    font-weight: 600;
   }
 }
 

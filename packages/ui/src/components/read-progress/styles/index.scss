@@ -1,12 +1,12 @@
 .u-read-progress {
-  --read-progressBar-delay: var(--uc-animation-delay);
-  --read-progressBar-animation: var(--uc-animation-ease);
+  --read-progressBar-delay: var(--u-animation-delay);
+  --read-progressBar-animation: var(--u-animation-ease);
   
-  --read-progressBar-primary: var(--uc-primary-0);
-  --read-progressBar-success: var(--uc-success-1);
-  --read-progressBar-warning: var(--uc-warning-3);
-  --read-progressBar-danger: var(--uc-danger-1);
-  --read-progressBar-info: var(--uc-info-1);
+  --read-progressBar-primary: var(--u-primary-0);
+  --read-progressBar-success: var(--u-success-1);
+  --read-progressBar-warning: var(--u-warning-3);
+  --read-progressBar-danger: var(--u-danger-1);
+  --read-progressBar-info: var(--u-info-1);
 }
 
 .u-read-progress {
@@ -14,13 +14,14 @@
   top: 0;
   left: 0;
   width: 100%;
-  z-index: 9999;
+  z-index: var(--u-z-index-read-progress);
 
   .u-read-progress__bar {
     position: absolute;
     top: 0;
     left: 0;
     height: 100%;
+    transition: width 0.2s ease;
      
     &.u-read-progress__bar--primary {
       background-color: var(--read-progressBar-primary);
