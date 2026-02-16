@@ -162,7 +162,7 @@ function percentToValue(percent: number): number {
 /** Tooltip 显示文案：优先 formatTooltip，否则四舍五入整数 */
 function formatValue(val: number): string {
   if (props.formatTooltip) {
-    return props.formatTooltip(val)
+    return String(props.formatTooltip(val))
   }
   return String(Math.round(val))
 }

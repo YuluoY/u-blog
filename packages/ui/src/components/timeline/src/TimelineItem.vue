@@ -102,8 +102,7 @@ const classList = computed(() => [
   { 'u-timeline-item-dot--hollow': props.hollow }
 ])
 
-const handleDotClick = (evt: MouseEvent) =>
-{
+const handleDotClick = (evt: MouseEvent | KeyboardEvent) => {
   emits('dot-click', evt, { ...props })
   props.dotClick?.(evt, { ...props })
 }

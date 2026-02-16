@@ -44,8 +44,10 @@
     border-color: var(--u-primary-light-2);
   }
   
-  &.u-button--primary { 
-    background-color: var(--u-primary-0); 
+  &.u-button--primary {
+    /* 亮色主题下主色背景需浅色文字，避免与 --u-text-1 继承导致灰字 */
+    color: var(--u-button-primary-text, var(--u-text-9, #fff));
+    background-color: var(--u-primary-0);
     &:hover {
       background-color: var(--u-primary);
     }

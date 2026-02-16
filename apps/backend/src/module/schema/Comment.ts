@@ -51,4 +51,33 @@ export class Comment {
 	@ManyToOne(() => Comment)
 	@JoinColumn({ name: 'pid' })
 	parent?: Comment | null
+
+	@Column({ type: 'varchar', length: 100, nullable: true, comment: '评论时客户端 IP' })
+	@IsOptional()
+	@IsString()
+	@MaxLength(100)
+	ip?: string | null
+
+	@Column({ name: 'userAgent', type: 'text', nullable: true, comment: '评论时 User-Agent 原始串' })
+	@IsOptional()
+	@IsString()
+	userAgent?: string | null
+
+	@Column({ type: 'varchar', length: 100, nullable: true, comment: '评论时使用的浏览器' })
+	@IsOptional()
+	@IsString()
+	@MaxLength(100)
+	browser?: string | null
+
+	@Column({ type: 'varchar', length: 100, nullable: true, comment: '评论时使用的设备类型' })
+	@IsOptional()
+	@IsString()
+	@MaxLength(100)
+	device?: string | null
+
+	@Column({ name: 'ipLocation', type: 'varchar', length: 255, nullable: true, comment: 'IP 解析的地名' })
+	@IsOptional()
+	@IsString()
+	@MaxLength(255)
+	ipLocation?: string | null
 }

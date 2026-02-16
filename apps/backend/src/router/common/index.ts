@@ -2,7 +2,6 @@ import express, { type Router } from 'express'
 import type { Request, Response } from 'express'
 import CommonController from '@/controller/common'
 import { toResponse } from '@/utils'
-import appCfg from '@/app'
 import { IUserLogin } from '@u-blog/model'
 
 const router = express.Router() as Router

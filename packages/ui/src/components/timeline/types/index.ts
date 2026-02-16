@@ -102,20 +102,19 @@ export interface UTimelineItemProps {
   hollow?: boolean;
 
   /**
-   * @description 圆点点击事件
+   * @description 圆点点击事件（点击或回车/空格键触发）
    * @default () => {}
    */
-  dotClick?: (evt: MouseEvent, item: UTimelineItemProps) => void
+  dotClick?: (evt: MouseEvent | KeyboardEvent, item: UTimelineItemProps) => void
 }
 
 export interface UTimelineItemEmits {
   /**
-   * @description 圆点点击事件
-   * @param {MouseEvent} evt
+   * @description 圆点点击事件（点击或回车/空格键触发）
+   * @param {MouseEvent | KeyboardEvent} evt
    * @param {UTimelineItemProps} item
-   * @default () => {}
    */
-  (e: 'dot-click', evt: MouseEvent, item: UTimelineItemProps): void
+  (e: 'dot-click', evt: MouseEvent | KeyboardEvent, item: UTimelineItemProps): void
 }
 export interface UTimelineContext {
   onCalcLine: () => void;

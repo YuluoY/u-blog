@@ -31,6 +31,10 @@ import {
   USubMenu,
   UTimeline,
   UTimelineItem,
+  UComment,
+  UCommentInput,
+  UCommentList,
+  UCommentItem,
 
   UMessageFn,
   UDialogFn,
@@ -70,7 +74,11 @@ export default [
   USubMenu,
   UTimeline,
   UTimelineItem,
-  
+  UComment,
+  UCommentInput,
+  UCommentList,
+  UCommentItem,
+
   UMessageFn,
   UDialogFn,
   UReadProgressFn,

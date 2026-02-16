@@ -69,6 +69,18 @@ class RestService {
   async add<T extends DeepPartial<any>>(model: Repository<T>, data: T | T[], ret: number = 0)
   {
     const entity = model.create(data as T)
+    const isComment = model.metadata?.name === 'Comment'
+    const raw = Array.isArray(data) ? (data as T[])[0] : (data as T)
+    if (isComment && raw && typeof raw === 'object' && !Array.isArray(raw)) {
+      const r = raw as Record<string, unknown>
+      Object.assign(entity, {
+        ip: r.ip,
+        userAgent: r.userAgent,
+        browser: r.browser,
+        device: r.device,
+        ipLocation: r.ipLocation
+      })
+    }
     const result = await model.save(entity) as any
     if (ret)
       return result

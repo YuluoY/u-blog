@@ -18,6 +18,10 @@ export default defineConfig({
   build: {
     manifest: true
   },
+  optimizeDeps: {
+    // 不预构建 UI 包，避免 dist/es 内相对路径（如 ./vendors-xxx.js）解析失败
+    exclude: ['@u-blog/ui']
+  },
   assetsInclude: ['**/*.jpg', '**/*.jpeg', '**/*.png', '**/*.gif', '**/*.svg'],
   plugins: [
     vue(),

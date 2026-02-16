@@ -28,6 +28,11 @@ interface Document {
   startViewTransition?: (callback: () => void | Promise<void>) => ViewTransition
 }
 
+/** 开发环境控制台抓包：触发评论请求，便于后端分析 */
+interface Window {
+  __debugAddComment?: (data: { content: string; path: string; userId: number; pid?: number | null }) => Promise<{ id: number }>
+}
+
 /** workspace 包类型未解析时的回退声明 */
 declare module '@u-blog/utils' {
   export function watchFn<T>(

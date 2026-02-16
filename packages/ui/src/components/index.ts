@@ -23,5 +23,6 @@ export * from './form'
 export * from './table'
 export * from './menu'
 export * from './timeline'
+export * from './comment'
 
 export * from './constants'

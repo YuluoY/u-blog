@@ -25,6 +25,11 @@ app.use(UccUI)
 beforehand(app).then(() =>
 {
   app.mount('#app')
+  if (import.meta.env.DEV) {
+    import('@/api/comment').then((m) => {
+      window.__debugAddComment = (data) => m.default.addComment(data)
+    })
+  }
 })
 
 export default app
