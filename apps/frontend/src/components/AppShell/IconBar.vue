@@ -1,110 +1,135 @@
 <template>
-  <aside class="icon-bar" role="navigation" aria-label="侧边栏工具" :style="barStyle">
+  <aside class="icon-bar" role="navigation" :aria-label="t('sidebar.ariaTools')" :style="barStyle">
     <!-- 顶部：折叠/展开 -->
     <div class="icon-bar__top">
-      <button
-        type="button"
-        class="icon-bar__item"
-        :aria-label="sidebarStore.collapsed ? '展开侧边栏' : '折叠侧边栏'"
-        :title="sidebarStore.collapsed ? '展开' : '折叠'"
-        @click="sidebarStore.toggleCollapsed()"
+      <u-tooltip
+        :content="sidebarStore.collapsed ? t('sidebar.expand') : t('sidebar.collapse')"
+        placement="right"
+        trigger="hover"
+        :width="0"
+        show-arrow
       >
-        <u-icon
-          :icon="sidebarStore.collapsed ? 'fa-solid fa-angles-right' : 'fa-solid fa-angles-left'"
-          size="lg"
-        />
-      </button>
+        <button
+          type="button"
+          class="icon-bar__item"
+          :aria-label="sidebarStore.collapsed ? t('sidebar.expandSidebar') : t('sidebar.collapseSidebar')"
+          @click="sidebarStore.toggleCollapsed()"
+        >
+          <u-icon
+            :icon="sidebarStore.collapsed ? 'fa-solid fa-angles-right' : 'fa-solid fa-angles-left'"
+            size="lg"
+          />
+        </button>
+      </u-tooltip>
     </div>
 
     <div class="icon-bar__divider" />
 
     <!-- 面板型工具入口 -->
     <div class="icon-bar__tools">
-      <!-- 用户/站长信息 -->
-      <button
-        type="button"
-        class="icon-bar__item"
-        :class="{ 'is-active': sidebarStore.activePanel === PANEL_ID.PROFILE }"
-        title="站长信息"
-        aria-label="站长信息"
-        @click="toggle(PANEL_ID.PROFILE)"
-      >
-        <u-icon icon="fa-solid fa-user" size="lg" />
-      </button>
-      <!-- 发布记录 -->
-      <button
-        type="button"
-        class="icon-bar__item"
-        :class="{ 'is-active': sidebarStore.activePanel === PANEL_ID.CALENDAR }"
-        title="发布记录"
-        aria-label="发布记录"
-        @click="toggle(PANEL_ID.CALENDAR)"
-      >
-        <u-icon icon="fa-solid fa-calendar-days" size="lg" />
-      </button>
-      <!-- 搜索 -->
-      <button
-        type="button"
-        class="icon-bar__item"
-        :class="{ 'is-active': sidebarStore.activePanel === PANEL_ID.SEARCH }"
-        title="搜索"
-        aria-label="搜索"
-        @click="toggle(PANEL_ID.SEARCH)"
-      >
-        <u-icon icon="fa-solid fa-magnifying-glass" size="lg" />
-      </button>
-      <!-- 标签云 -->
-      <button
-        type="button"
-        class="icon-bar__item"
-        :class="{ 'is-active': sidebarStore.activePanel === PANEL_ID.TAGS }"
-        title="标签"
-        aria-label="标签"
-        @click="toggle(PANEL_ID.TAGS)"
-      >
-        <u-icon icon="fa-solid fa-tags" size="lg" />
-      </button>
-      <!-- 网站信息 -->
-      <button
-        type="button"
-        class="icon-bar__item"
-        :class="{ 'is-active': sidebarStore.activePanel === PANEL_ID.SITE_INFO }"
-        title="网站信息"
-        aria-label="网站信息"
-        @click="toggle(PANEL_ID.SITE_INFO)"
-      >
-        <u-icon icon="fa-solid fa-chart-simple" size="lg" />
-      </button>
+      <u-tooltip :content="t('sidebar.profile')" placement="right" trigger="hover" :width="0" show-arrow>
+        <button
+          type="button"
+          class="icon-bar__item"
+          :class="{ 'is-active': sidebarStore.activePanel === PANEL_ID.PROFILE }"
+          :aria-label="t('sidebar.profile')"
+          @click="toggle(PANEL_ID.PROFILE)"
+        >
+          <u-icon icon="fa-solid fa-user" size="lg" />
+        </button>
+      </u-tooltip>
+      <u-tooltip :content="t('sidebar.calendar')" placement="right" trigger="hover" :width="0" show-arrow>
+        <button
+          type="button"
+          class="icon-bar__item"
+          :class="{ 'is-active': sidebarStore.activePanel === PANEL_ID.CALENDAR }"
+          :aria-label="t('sidebar.calendar')"
+          @click="toggle(PANEL_ID.CALENDAR)"
+        >
+          <u-icon icon="fa-solid fa-calendar-days" size="lg" />
+        </button>
+      </u-tooltip>
+      <u-tooltip :content="t('sidebar.search')" placement="right" trigger="hover" :width="0" show-arrow>
+        <button
+          type="button"
+          class="icon-bar__item"
+          :class="{ 'is-active': sidebarStore.activePanel === PANEL_ID.SEARCH }"
+          :aria-label="t('sidebar.search')"
+          @click="toggle(PANEL_ID.SEARCH)"
+        >
+          <u-icon icon="fa-solid fa-magnifying-glass" size="lg" />
+        </button>
+      </u-tooltip>
+      <u-tooltip :content="t('sidebar.tags')" placement="right" trigger="hover" :width="0" show-arrow>
+        <button
+          type="button"
+          class="icon-bar__item"
+          :class="{ 'is-active': sidebarStore.activePanel === PANEL_ID.TAGS }"
+          :aria-label="t('sidebar.tags')"
+          @click="toggle(PANEL_ID.TAGS)"
+        >
+          <u-icon icon="fa-solid fa-tags" size="lg" />
+        </button>
+      </u-tooltip>
+      <u-tooltip :content="t('sidebar.siteInfo')" placement="right" trigger="hover" :width="0" show-arrow>
+        <button
+          type="button"
+          class="icon-bar__item"
+          :class="{ 'is-active': sidebarStore.activePanel === PANEL_ID.SITE_INFO }"
+          :aria-label="t('sidebar.siteInfo')"
+          @click="toggle(PANEL_ID.SITE_INFO)"
+        >
+          <u-icon icon="fa-solid fa-chart-simple" size="lg" />
+        </button>
+      </u-tooltip>
     </div>
 
     <div class="icon-bar__divider" />
 
-    <!-- 底部：主题切换 -->
+    <!-- 底部：语言切换 + 主题切换 -->
     <div class="icon-bar__bottom">
-      <!-- 主题切换（圆形扩散动画） -->
-      <button
-        type="button"
-        class="icon-bar__item"
-        :title="isDark ? '切换亮色' : '切换暗色'"
-        :aria-label="isDark ? '切换亮色主题' : '切换暗色主题'"
-        @click="appStore.toggleTheme($event)"
+      <u-tooltip :content="t('sidebar.langSwitch')" placement="right" trigger="hover" :width="0" show-arrow>
+        <button
+          type="button"
+          class="icon-bar__item"
+          :aria-label="t('sidebar.langSwitchAria')"
+          @click="toggleLanguage"
+        >
+          <u-text class="icon-bar__lang-text">{{ appStore.language === 'en' ? '中' : 'En' }}</u-text>
+        </button>
+      </u-tooltip>
+      <u-tooltip
+        :content="isDark ? t('sidebar.themeLight') : t('sidebar.themeDark')"
+        placement="right"
+        trigger="hover"
+        :width="0"
+        show-arrow
       >
-        <u-icon :icon="isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon'" size="lg" />
-      </button>
+        <button
+          type="button"
+          class="icon-bar__item"
+          :aria-label="isDark ? t('sidebar.themeLightAria') : t('sidebar.themeDarkAria')"
+          @click="appStore.toggleTheme($event)"
+        >
+          <u-icon :icon="isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon'" size="lg" />
+        </button>
+      </u-tooltip>
     </div>
   </aside>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useSidebarStore } from '@/stores/sidebar'
 import { useAppStore } from '@/stores/app'
 import { PANEL_ID, ICON_BAR_WIDTH_PX } from '@/constants/layout'
-import { CTheme } from '@u-blog/model'
+import { CTheme, CLanguage } from '@u-blog/model'
 import { pxToRem } from '@u-blog/utils'
 import type { PanelId } from '@/constants/layout'
 
 defineOptions({ name: 'IconBar' })
 
+const { t } = useI18n({ useScope: 'global' })
 const sidebarStore = useSidebarStore()
 const appStore = useAppStore()
 
@@ -112,6 +137,10 @@ const isDark = computed(() => appStore.theme === CTheme.DARK)
 
 function toggle(id: PanelId) {
   sidebarStore.setActivePanel(id)
+}
+
+function toggleLanguage() {
+  appStore.setLanguage(appStore.language === CLanguage.EN ? CLanguage.ZH : CLanguage.EN)
 }
 
 const barStyle = computed(() => ({
@@ -142,6 +171,17 @@ const barStyle = computed(() => ({
     gap: 4px;
   }
 
+  /* UTooltip 包裹按钮时保持 44px 居中，不因 inline-flex 破坏布局 */
+  :deep(.u-tooltip) {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+  }
+  :deep(.u-tooltip__trigger) {
+    display: flex;
+    justify-content: center;
+  }
+
   &__bottom {
     margin-top: auto;
   }
@@ -151,6 +191,13 @@ const barStyle = computed(() => ({
     height: 1px;
     background: var(--u-border-1);
     margin: 4px 0;
+  }
+
+  /* 左侧中英切换：覆盖 UText 默认色，与其它 icon 一致为 text-3 */
+  :deep(.icon-bar__lang-text) {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--u-text-3);
   }
 
   /* ghost icon：无边框透明底，hover 微弱底色，active 蓝色 + 左侧指示条 */

@@ -1,14 +1,14 @@
 <template>
   <u-layout class="article-base article-list" :mode="'column'" :gutter="12">
-    <u-region class="article-item" v-for="item in data" :key="item.id">
-      <u-card :body-class="'article-item__card'" :shadow="'hover'">
+    <u-region class="article-item" v-for="item in data" :key="item.id" @click="emit('jump', String(item.id))">
+      <u-card :body-class="'article-item__card'" :shadow="'hover'" class="article-item__card-wrap">
         <div class="article-item__card-img">
-          <img :src="item.cover" alt="随机图片" />
+          <img :src="item.cover" :alt="item.title" />
         </div>
         <div class="article-item__main">
           <div class="title">{{ item.title }}</div>
           <div class="author" v-if="item.user">
-            <span>作者：</span>
+            <span>{{ t('article.author') }}</span>
             <span>{{ item.user.namec || item.user.username }}</span>
           </div>
           <div class="tags">
@@ -39,14 +39,14 @@
             <div class="info-right">
               <div class="info-item">
                 <u-icon icon="fa-solid fa-bookmark"></u-icon>
-                <span>收藏</span>
+                <span>{{ t('article.collect') }}</span>
               </div>
               <div class="info-item">
                 <u-icon icon="fa-solid fa-share-nodes"></u-icon>
-                <span>分享</span>
+                <span>{{ t('article.share') }}</span>
               </div>
-              <div class="info-item">
-                <u-button @click="emit('jump', String(item.id))">浏览</u-button>
+              <div class="info-item" @click.stop>
+                <u-button @click="emit('jump', String(item.id))">{{ t('article.browse') }}</u-button>
               </div>
             </div>
           </div>
@@ -57,7 +57,10 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { IArticle } from '@u-blog/model'
+
+const { t } = useI18n()
 import { formatDateTime } from '@/utils/date'
 
 const props = withDefaults(
@@ -76,16 +79,23 @@ const emit = defineEmits<{
 
 <style scoped lang="scss">
 .article-base.article-list {
+  .article-item {
+    cursor: pointer;
+  }
   :deep(.article-item__card) {
     display: flex;
     width: 100%;
+    transition: box-shadow 0.2s ease;
     .article-item__card-img {
-      width: 30rem;
+      width: 28rem;
+      min-width: 28rem;
+      aspect-ratio: 4 / 3;
       margin-right: 1.6rem;
+      overflow: hidden;
       img {
         width: 100%;
         height: 100%;
-        object-fit: contain;
+        object-fit: cover;
       }
     }
     .article-item__main {

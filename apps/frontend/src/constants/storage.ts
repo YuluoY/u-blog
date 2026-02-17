@@ -17,4 +17,8 @@ export const STORAGE_KEYS = {
   SIDEBAR_ACTIVE_PANEL: `${PREFIX}sidebar-activePanel`,
   /** 全局侧栏：上次激活的面板 id */
   SIDEBAR_LAST_ACTIVE_PANEL: `${PREFIX}sidebar-lastActivePanel`,
+  /** 界面语言：zh / en */
+  LANGUAGE: `${PREFIX}language`,
+  /** 首页文章列表样式：base / card / waterfall / compact */
+  ARTICLE_LIST_TYPE: `${PREFIX}article-list-type`,
 } as const

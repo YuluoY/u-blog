@@ -1,6 +1,6 @@
 <template>
   <div class="tags-panel">
-    <u-text class="tags-panel__title">标签</u-text>
+    <u-text class="tags-panel__title">{{ t('tags.title') }}</u-text>
     <div v-if="tagList.length" class="tags-panel__cloud">
       <span
         v-for="tag in tagList"
@@ -12,15 +12,18 @@
         {{ tag.name }}
       </span>
     </div>
-    <u-text v-else class="tags-panel__empty">暂无标签</u-text>
+    <u-text v-else class="tags-panel__empty">{{ t('tags.empty') }}</u-text>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useTagStore } from '@/stores/model/tag'
 import { storeToRefs } from 'pinia'
 
 defineOptions({ name: 'TagsPanel' })
+
+const { t } = useI18n()
 
 const { tagList } = storeToRefs(useTagStore())
 

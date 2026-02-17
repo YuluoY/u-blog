@@ -3,6 +3,7 @@ import type { ControllerReturn } from '@u-blog/types'
 import { tryit } from '@u-blog/utils'
 import { formatResponse, getDataSource } from '@/utils'
 import CommonService from '@/service/common'
+import * as SiteOverviewService from '@/service/siteOverview'
 import { Users } from '@/module/schema/Users'
 import { Repository } from 'typeorm'
 import { IUserLogin } from '@u-blog/model'
@@ -36,6 +37,13 @@ class CommonController {
     if (tryData[1])
       this.setCookie(res, tryData[1])
     return formatResponse(tryData, req.__('common.refreshTokenSuccess'), req.__('common.refreshTokenFail'), undefined, { skipErrorLog: true })
+  }
+
+  /** 网站概览统计（文章/分类/标签数、浏览/点赞/评论、运行天数、最后更新） */
+  async getSiteOverview(req: Request, _res: Response): ControllerReturn<Awaited<ReturnType<typeof SiteOverviewService.getSiteOverview>>>
+  {
+    const tryData = await tryit(() => SiteOverviewService.getSiteOverview(req))
+    return formatResponse(tryData, 'ok', '获取网站概览失败')
   }
 
   /** 博客 AI 助手：接收用户消息，返回回复（可扩展接入 OpenAI 等） */

@@ -1,0 +1,210 @@
+@import 'tailwindcss';
+
+html {
+  font-size: 14px;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: #f5f5f5;
+}
+
+[data-theme='dark'] body {
+  background: #141414;
+}
+
+#root {
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* 后台布局：固定视口，右侧内容区填满并内部滚动 */
+.admin-layout-root {
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+}
+
+.admin-layout-right {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.admin-layout-header {
+  flex-shrink: 0;
+  padding: 0 24px !important;
+  background: #fff !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+[data-theme='dark'] .admin-layout-header {
+  background: #1f1f1f !important;
+  border-bottom-color: #303030;
+}
+
+.admin-header-meta {
+  font-size: 14px;
+  color: #666;
+}
+
+[data-theme='dark'] .admin-header-meta {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.admin-layout-content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  margin: 24px;
+  padding: 24px;
+  background: #fff;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+[data-theme='dark'] .admin-layout-content {
+  background: #141414;
+}
+
+.admin-layout-content > * {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* 内容区：各页面共用，标题 + 主体（表格等）尽量在视口内 */
+.admin-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.admin-content h1 {
+  margin: 0 0 16px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  flex-shrink: 0;
+}
+
+[data-theme='dark'] .admin-content h1 {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.admin-content p {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+}
+
+[data-theme='dark'] .admin-content p {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.admin-content__toolbar {
+  flex-shrink: 0;
+  margin-bottom: 16px;
+}
+
+.admin-content__table-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-content__table-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.admin-content__table-body .ant-table-wrapper {
+  height: 100%;
+}
+
+.admin-content__table-body .ant-spin-nested-loading,
+.admin-content__table-body .ant-spin-container,
+.admin-content__table-body .ant-table-container {
+  height: 100%;
+}
+
+.admin-content__table-body .ant-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.admin-content__table-body .ant-table-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-content__table-body .ant-table-header {
+  flex-shrink: 0;
+}
+
+.admin-content__table-body .ant-table-body {
+  flex: 1;
+  overflow: auto !important;
+}
+
+/* 表格列头与单元格统一居中 */
+.admin-content__table-body .ant-table thead th,
+.admin-content__table-body .ant-table tbody td {
+  text-align: center !important;
+}
+
+/* 长内容列：两行省略，内容居中 */
+.admin-table-cell-ellipsis-2 {
+  text-align: center;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+  margin: 0 auto;
+}
+
+/* 登录页：全屏居中 + 渐变背景，antd Card 标题居中 */
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.login-page .ant-card-head-title {
+  text-align: center;
+  font-size: 18px;
+}
+
+/**
+ * View Transitions API：主题切换时新视图从点击处圆形扩散露出（与 frontend 一致，不盖住内容）
+ */
+::view-transition-old(root) {
+  animation: none;
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  animation: none;
+  z-index: 9999;
+  mix-blend-mode: normal;
+}

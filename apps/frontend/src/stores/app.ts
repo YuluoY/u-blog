@@ -1,12 +1,15 @@
-import { watch } from 'vue'
+import { watch, computed } from 'vue'
 import { useRoutes } from '@/composables/useRoutes'
 import { useState } from '@u-blog/composables'
 import type { Language, Theme } from '@u-blog/model'
-import { CTheme } from '@u-blog/model'
+import { CTheme, CLanguage } from '@u-blog/model'
 import type { ArticleList } from '@/types'
 import { STORAGE_KEYS } from '@/constants/storage'
+import { SETTING_KEYS } from '@/constants/settings'
 import { CArticleList } from '@/types/const'
 import { defineStore } from 'pinia'
+import { updateSettings } from '@/api/settings'
+import type { SettingsMap } from '@/api/settings'
 
 function loadTheme(): Theme {
   try {
@@ -15,6 +18,16 @@ function loadTheme(): Theme {
     return CTheme.DEFAULT
   } catch {
     return CTheme.DEFAULT
+  }
+}
+
+function loadLanguage(): Language {
+  try {
+    const v = localStorage.getItem(STORAGE_KEYS.LANGUAGE)
+    if (v === CLanguage.ZH || v === CLanguage.EN) return v
+    return CLanguage.ZH
+  } catch {
+    return CLanguage.ZH
   }
 }
 
@@ -47,17 +60,87 @@ export const useAppStore = defineStore('app', () =>
     if (t) applyTheme(t)
   }, { immediate: true })
 
-  watch(theme, (t) => {
+  const [language, setLanguageState] = useState<Language | null>(loadLanguage(), (l: Language | null) => l && document.documentElement.setAttribute('lang', l))
+
+  function setLanguage(l: Language | null) {
+    setLanguageState(l)
+    if (l) {
+      try {
+        localStorage.setItem(STORAGE_KEYS.LANGUAGE, l)
+      } catch { /* ignore */ }
+      updateSettings({ [SETTING_KEYS.LANGUAGE]: { value: l } }).catch(() => {})
+      // locale 同步在 App.vue 的 watch 中做，保证在 Vue 响应式上下文中触发重渲染
+    }
+  }
+  function loadArticleListType(): ArticleList {
+    try {
+      const v = localStorage.getItem(STORAGE_KEYS.ARTICLE_LIST_TYPE)
+      if (v === CArticleList.BASE || v === CArticleList.CARD || v === CArticleList.WATERFALL || v === CArticleList.COMPACT) return v
+      return CArticleList.BASE
+    } catch {
+      return CArticleList.BASE
+    }
+  }
+  const [articleListTypeState, setArticleListTypeState] = useState<ArticleList>(loadArticleListType())
+  /** 用 computed 暴露并兜底，避免 ShallowRef 在 Pinia 下未被正确追踪导致首页不更新 */
+  const articleListType = computed<ArticleList>(() => articleListTypeState.value || CArticleList.BASE)
+  function setArticleListType(v: ArticleList) {
+    setArticleListTypeState(v)
+    try {
+      localStorage.setItem(STORAGE_KEYS.ARTICLE_LIST_TYPE, v)
+    } catch { /* ignore */ }
+    updateSettings({ [SETTING_KEYS.ARTICLE_LIST_TYPE]: { value: v } }).catch(() => {})
+  }
+
+  /** 从接口项中取出标量（兼容 value 为对象 { value: x } 或直接为 x） */
+  function toScalar(item: { value: unknown } | null | undefined): unknown {
+    if (item?.value == null) return undefined
+    const raw = item.value
+    if (typeof raw === 'object' && raw !== null && 'value' in raw) return (raw as { value: unknown }).value
+    return raw
+  }
+
+  /** 用服务端设置回填外观（主题、语言、列表样式），并写回 localStorage */
+  function hydrateAppearance(settingsMap: SettingsMap) {
+    const themeVal = toScalar(settingsMap[SETTING_KEYS.THEME])
+    if (themeVal != null) {
+      const v = String(themeVal).trim()
+      if (v === CTheme.DARK || v === CTheme.LIGHT || v === CTheme.DEFAULT) {
+        setThemeState(v)
+        try {
+          localStorage.setItem(STORAGE_KEYS.THEME, v)
+        } catch { /* ignore */ }
+      }
+    }
+    const langVal = toScalar(settingsMap[SETTING_KEYS.LANGUAGE])
+    if (langVal != null) {
+      const v = String(langVal).trim()
+      if (v === CLanguage.ZH || v === CLanguage.EN) {
+        setLanguageState(v)
+        try {
+          localStorage.setItem(STORAGE_KEYS.LANGUAGE, v)
+        } catch { /* ignore */ }
+      }
+    }
+    const listVal = toScalar(settingsMap[SETTING_KEYS.ARTICLE_LIST_TYPE])
+    if (listVal != null) {
+      const v = String(listVal).trim()
+      if (v === CArticleList.BASE || v === CArticleList.CARD || v === CArticleList.WATERFALL || v === CArticleList.COMPACT) {
+        setArticleListTypeState(v as ArticleList)
+        try {
+          localStorage.setItem(STORAGE_KEYS.ARTICLE_LIST_TYPE, v)
+        } catch { /* ignore */ }
+      }
+    }
+  }
+
+  /** 设置主题（不带动画），watch 会同步到 DOM 和本地缓存，并入库 */
+  function setTheme(t: Theme | null) {
+    setThemeState(t)
     try {
       localStorage.setItem(STORAGE_KEYS.THEME, t ?? CTheme.DEFAULT)
     } catch { /* ignore */ }
-  }, { immediate: true })
-  const [language, setLanguage] = useState<Language | null>(null, (l: Language | null) => l && document.documentElement.setAttribute('lang', l))
-  const [articleListType, setArticleListType] = useState<ArticleList>(CArticleList.BASE)
-
-  /** 设置主题（不带动画），watch 会同步到 DOM 和本地缓存 */
-  function setTheme(t: Theme | null) {
-    setThemeState(t)
+    updateSettings({ [SETTING_KEYS.THEME]: { value: t ?? CTheme.DEFAULT } }).catch(() => {})
   }
 
   /**
@@ -79,7 +162,7 @@ export const useAppStore = defineStore('app', () =>
     // 支持 View Transitions API 的浏览器
     if (document.startViewTransition) {
       const transition = document.startViewTransition(() => {
-        setThemeState(nextTheme)
+        setTheme(nextTheme)
       })
 
       transition.ready.then(() => {
@@ -99,7 +182,7 @@ export const useAppStore = defineStore('app', () =>
         )
       })
     } else {
-      setThemeState(nextTheme)
+      setTheme(nextTheme)
     }
   }
 
@@ -117,5 +200,6 @@ export const useAppStore = defineStore('app', () =>
     setLanguage,
     setArticleListType,
     toggleTheme,
+    hydrateAppearance,
   }
 })

@@ -22,6 +22,7 @@ export const CTable = {
   AUTHOR: 'author',
   ARTICLE_TAG: 'article_tag',
   ROLE_PERMISSION: 'role_permission',
+  PAGE_BLOCK: 'page_block',
 } as const
 
 export const CLanguage = {

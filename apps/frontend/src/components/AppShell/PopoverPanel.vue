@@ -5,7 +5,7 @@
       ref="popoverRef"
       class="popover-panel"
       role="dialog"
-      aria-label="侧边面板"
+      :aria-label="t('popover.sidePanel')"
       :style="popoverStyle"
       @keydown.esc="close"
     >
@@ -29,6 +29,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useSidebarStore } from '@/stores/sidebar'
 import { PANEL_ID, ICON_BAR_WIDTH_PX } from '@/constants/layout'
 import { pxToRem } from '@u-blog/utils'
@@ -39,6 +40,8 @@ import TagsPanel from './TagsPanel.vue'
 import SiteInfoPanel from './SiteInfoPanel.vue'
 
 defineOptions({ name: 'PopoverPanel' })
+
+const { t } = useI18n()
 
 const sidebarStore = useSidebarStore()
 

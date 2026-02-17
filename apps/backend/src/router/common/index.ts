@@ -1,10 +1,19 @@
 import express, { type Router } from 'express'
 import type { Request, Response } from 'express'
 import CommonController from '@/controller/common'
+import * as SettingsController from '@/controller/settings'
 import { toResponse } from '@/utils'
 import { IUserLogin } from '@u-blog/model'
 
 const router = express.Router() as Router
+
+router.get('/settings', (req: Request, res: Response) => SettingsController.getSettings(req, res))
+router.put('/settings', (req: Request, res: Response) => SettingsController.putSettings(req, res))
+
+router.get('/site-overview', async (req: Request, res: Response) => {
+  const result = await CommonController.getSiteOverview(req, res)
+  toResponse(result, res)
+})
 
 router.post('/register', async (req: Request, res: Response) => {
   const result = await CommonController.register(req, res)

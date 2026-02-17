@@ -37,10 +37,10 @@ export interface UTooltipProps {
   placement?: Placement
 
   /**
-   * @description 是否显示
+   * @description 是否显示（受控，不传则由 trigger 控制）
    * @type {boolean}
    */
-  visible: boolean
+  visible?: boolean
 
   /**
    * @description 是否禁用
@@ -149,6 +149,18 @@ export interface UTooltipProps {
    * @type {number}
    */
   width?: number
+
+  /**
+   * @description 弹出框圆角（单位 rem，如 0.5 表示 0.5rem）
+   * @type {number}
+   */
+  borderRadius?: number
+
+  /**
+   * @description 弹出框字号（单位 rem，不传则使用 --u-font-size-sm）
+   * @type {number}
+   */
+  fontSize?: number
 
   /**
    * @description 过渡动画配置

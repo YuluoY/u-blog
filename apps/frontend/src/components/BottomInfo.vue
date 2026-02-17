@@ -16,7 +16,7 @@
           rel="noopener noreferrer"
           class="bottom-info__link"
         >
-          萌ICP备20251077号
+          {{ t('footer.icp') }}
         </u-button>
         <u-text class="bottom-info__separator">|</u-text>
         <u-button
@@ -35,7 +35,11 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useFooterStore } from '@/stores/footer'
+
+const { t } = useI18n()
+
 defineOptions({
   name: 'BottomInfo'
 })

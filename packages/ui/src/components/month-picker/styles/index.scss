@@ -1,0 +1,36 @@
+.u-month-picker {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+
+  /* 放大圆形按钮、缩小图标视觉占比，避免“图标大圆小” */
+  .u-month-picker__nav {
+    flex-shrink: 0;
+    min-width: 2.25rem;
+    min-height: 2.25rem;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0.5rem;
+  }
+
+  .u-month-picker__selects {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .u-month-picker__select {
+    flex: 1;
+    min-width: 4em;
+  }
+
+  .u-month-picker__sep {
+    flex-shrink: 0;
+    font-size: var(--u-font-size-sm, 1rem);
+    color: var(--u-text-3);
+  }
+}

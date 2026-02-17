@@ -6,19 +6,19 @@
       <u-text class="head-nav__site-name" :ellipsis="true">{{ siteName }}</u-text>
     </div>
     <!-- 中：路由导航 -->
-    <nav class="head-nav__nav" aria-label="主导航">
+    <nav class="head-nav__nav" :aria-label="t('headNav.ariaMainNav')">
       <u-menu>
         <template v-for="r in routes" :key="r.path">
           <u-sub-menu v-if="r.children?.length">
             <template #title>
-              <u-text>{{ r.meta?.title }}</u-text>
+              <u-text>{{ navTitle(r) }}</u-text>
             </template>
             <u-menu-item v-for="c in r.children" :key="c.path" :route="c.path">
-              <u-text>{{ c.meta?.title }}</u-text>
+              <u-text>{{ navTitle(c) }}</u-text>
             </u-menu-item>
           </u-sub-menu>
           <u-menu-item v-else :route="r.path">
-            <u-text>{{ r.meta?.title }}</u-text>
+            <u-text>{{ navTitle(r) }}</u-text>
           </u-menu-item>
         </template>
       </u-menu>
@@ -31,6 +31,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { UMenu, UMenuItem, USubMenu } from '@/components/Menu'
 import { useRouter, type RouteRecordRaw } from 'vue-router'
 import { useHeaderStore } from '@/stores/header'
@@ -43,6 +44,7 @@ defineOptions({
   name: 'HeadNav',
 })
 
+const { t } = useI18n({ useScope: 'global' })
 const headerStore = useHeaderStore()
 const appStore = useAppStore()
 const userStore = useUserStore()
@@ -52,10 +54,16 @@ const routes = computed(() =>
   appStore.routes?.filter((v: RouteRecordRaw) => v.name && v.meta?.isAffix)
 )
 
+function navTitle(route: { name?: string | symbol | null; meta?: { title?: string } }) {
+  const name = route.name != null ? String(route.name) : ''
+  const key = name && name !== 'NotFound' ? `nav.${name}` : ''
+  return key && t(key) !== key ? t(key) : (route.meta?.title ?? '')
+}
+
 const logo = computed(() => headerStore.logo)
-const siteName = computed(() => headerStore.siteName || '博客')
+const siteName = computed(() => headerStore.siteName || t('common.blog'))
 const name = computed(
-  () => userStore.user?.username ?? (headerStore.name || '游客')
+  () => userStore.user?.username ?? (headerStore.name || t('common.guest'))
 )
 const navHeight = computed(() => pxToRem(HEADER_HEIGHT_PX))
 </script>
@@ -115,6 +123,14 @@ const navHeight = computed(() => pxToRem(HEADER_HEIGHT_PX))
     :deep(.router-link-exact-active) {
       font-weight: 600;
       color: var(--u-primary-0);
+    }
+    /* 暗色主题下导航项悬浮用中性抬升背景，避免 primary-light-8 过暗 */
+    :root.dark & :deep(.u-menu-item:hover:not(.is-disabled)) {
+      background-color: var(--u-background-3);
+      color: var(--u-text-1);
+    }
+    :root.dark & :deep(.u-sub-menu .u-sub-menu__title:hover:not(.is-disabled)) {
+      background-color: var(--u-background-3);
     }
   }
 

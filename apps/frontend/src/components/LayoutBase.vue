@@ -18,7 +18,17 @@
         <aside class="layout-base__side-panel-wrap" :style="sidePanelWrapStyle">
           <SidePanel />
         </aside>
-        <main :class="['layout-base__main', { 'layout-base__main--chat': isChatRoute }]">
+        <main
+          :class="[
+            'layout-base__main',
+            {
+              'layout-base__main--chat': isChatRoute,
+              'layout-base__main--about': isAboutRoute,
+              'layout-base__main--sidebar-collapsed':
+              sidebarStore.collapsed && !isWriteRoute && !isChatRoute,
+            },
+          ]"
+        >
           <Suspense>
             <slot />
           </Suspense>
@@ -55,6 +65,8 @@ const route = useRoute()
 const sidebarStore = useSidebarStore()
 
 const isChatRoute = computed(() => route.name === 'chat')
+const isAboutRoute = computed(() => route.name === 'about')
+const isWriteRoute = computed(() => route.name === 'write')
 
 /** Icon Bar 固定宽度 */
 const iconBarWrapStyle = computed(() => ({
@@ -97,9 +109,10 @@ const bodyOffsetStyle = computed(() => ({
     }
   }
 
-  /* Body：填满 Header 与 Footer 之间 */
+  /* Body：填满 Header 与 Footer 之间，高度受限以便 main 内部可滚动 */
   &__body {
-    flex: 1;
+    flex: 1 1 0%;
+    height: 0;
     min-height: 0;
     display: flex;
     flex-direction: column;
@@ -129,17 +142,34 @@ const bodyOffsetStyle = computed(() => ({
     transition: width 0.2s ease, min-width 0.2s ease;
   }
 
-  /* Main：自适应填满剩余宽度，内容区居中并约束可读宽度 */
+  /* Main：根据侧边栏折叠状态切换宽度策略 */
   &__main {
-    flex: 1 1 0%;
     min-width: 0;
     overflow-y: auto;
     overflow-x: hidden;
     padding: 20px;
-    /* 内容宽度约束：正文行长 45-85 字符 ≈ 720-880px */
-    > * {
+    transition: flex 0.2s ease, width 0.2s ease, max-width 0.2s ease;
+
+    /* 侧边栏展开：占满剩余宽度 */
+    &:not(.layout-base__main--sidebar-collapsed) {
+      flex: 1 1 0%;
+      > * {
+        margin-left: auto;
+        margin-right: auto;
+      }
+    }
+
+    /* 侧边栏折叠：60% 宽度居中 */
+    &--sidebar-collapsed {
+      flex: 0 1 60%;
+      width: 60%;
+      max-width: 60%;
       margin-left: auto;
       margin-right: auto;
+      > * {
+        margin-left: auto;
+        margin-right: auto;
+      }
     }
 
     /* Chat 模式：去除 padding，让 ChatView 自行控制布局 */
@@ -152,6 +182,16 @@ const bodyOffsetStyle = computed(() => ({
         width: 100%;
       }
     }
+
+    /* 关于页：占满主内容区宽度，不居中收窄 */
+    &--about {
+      > * {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        width: 100% !important;
+        max-width: none !important;
+      }
+    }
   }
 
   /* Footer */
@@ -161,13 +201,18 @@ const bodyOffsetStyle = computed(() => ({
   }
 }
 
-/* 响应式：小屏隐藏 Side Panel，缩小 Main padding */
+/* 响应式：小屏隐藏 Side Panel，主区始终占满，缩小 padding */
 @media (max-width: 767px) {
   .layout-base__side-panel-wrap {
     display: none;
   }
   .layout-base__main {
     padding: 12px;
+    flex: 1 1 0% !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
   }
 }
 </style>

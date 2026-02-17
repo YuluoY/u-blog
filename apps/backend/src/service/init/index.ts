@@ -1,10 +1,10 @@
 import { DataSource } from 'typeorm'
-import { CTable } from '@u-blog/model'
+import { CTable, CPageBlockType, CUserRole, CArticleStatus } from '@u-blog/model'
 import { Users } from '@/module/schema/Users'
 import { Article } from '@/module/schema/Article'
 import { Category } from '@/module/schema/Category'
 import { Tag } from '@/module/schema/Tag'
-import { CUserRole, CArticleStatus } from '@u-blog/model'
+import { PageBlock } from '@/module/schema/PageBlock'
 import { encrypt } from '@/utils'
 import { getRandomString } from '@u-blog/utils'
 import { createCategory, createTag } from '@u-blog/model'
@@ -350,6 +350,181 @@ export async function initSeedData(dataSource: DataSource): Promise<void> {
     }
 
     console.log(`  ✅ 文章创建完成，共创建 ${createdCount} 篇`)
+
+    // 5. 关于页区块：若无 about 区块则插入示例；若有区块但缺少「我的介绍」则补插
+    const WHOAMI_CONTENT = `此人，常年出没于屏幕与书本之间。一读书就钻进去不肯出来，路遥、余华、马伯庸轮番上阵，读完了不写几行就心里堵；真动笔又常拖稿，心不静时像挤牙膏，权当和脑子里那头不肯睡觉的野兽签了长期共处协议。
+
+工作之外，和几个发小厮混了二十年：台球桌上互相嫌弃，大闸蟹桌上互相教学怎么啃腿，看比赛时一起骂街或一起沉默。一个人时也不闲着，会突然出门用脚丈量城市，美其名曰「抵抗一眼望到头的日子」。
+
+永远相信美好的事情即将发生。这里记点技术碎碎念和生活流水账，想到哪写到哪。`
+    const pageBlockRepo = dataSource.getRepository(PageBlock)
+    const aboutBlockCount = await pageBlockRepo.count({ where: { page: 'about' } })
+    if (aboutBlockCount === 0) {
+      console.log('  📄 创建关于页示例区块...')
+      const whoamiBlock = pageBlockRepo.create({
+        page: 'about',
+        sortOrder: 0,
+        type: CPageBlockType.WHOAMI,
+        title: '我的介绍',
+        content: WHOAMI_CONTENT,
+      })
+      await pageBlockRepo.save(whoamiBlock)
+      const introBlock = pageBlockRepo.create({
+        page: 'about',
+        sortOrder: 1,
+        type: CPageBlockType.INTRO,
+        title: '关于本站',
+        content: '欢迎来到本站。这里记录技术笔记与生活随想。\n\n- 使用 **Markdown** 书写\n- 支持时间线、简介等多种区块类型\n- 可在后台「关于页区块」中编辑',
+      })
+      await pageBlockRepo.save(introBlock)
+      const skillsBlock = pageBlockRepo.create({
+        page: 'about',
+        sortOrder: 2,
+        type: CPageBlockType.SKILLS,
+        title: '技术栈与熟练度',
+        content: '',
+        extra: {
+          groups: [
+            {
+              name: '前端',
+              items: [
+                { name: 'Vue 3', level: 4 },
+                { name: 'TypeScript', level: 4 },
+                { name: 'React', level: 3 },
+                { name: 'Vite / 工程化', level: 4 },
+              ],
+            },
+            {
+              name: 'JavaScript',
+              items: [{ name: 'JavaScript', level: 4 }],
+            },
+            {
+              name: '后端 / 运维',
+              items: [
+                { name: 'Node.js', level: 4 },
+                { name: 'NestJS', level: 3 },
+                { name: 'SQL / 数据库', level: 3 },
+                { name: 'Nginx / Linux', level: 3 },
+              ],
+            },
+            {
+              name: '工具与其它',
+              items: [
+                { name: 'Git', level: 4 },
+                { name: 'Docker', level: 3 },
+              ],
+            },
+            {
+              name: 'AI Coding',
+              items: [{ name: 'Cursor / Copilot 等', level: 4 }],
+            },
+            {
+              name: '文档',
+              items: [{ name: 'Markdown / 文档', level: 5 }],
+            },
+          ],
+        },
+      })
+      await pageBlockRepo.save(skillsBlock)
+      const timelineBlock = pageBlockRepo.create({
+        page: 'about',
+        sortOrder: 3,
+        type: CPageBlockType.TIMELINE,
+        title: '时间线',
+        content: '',
+        extra: {
+          items: [
+            { year: '2024', title: '博客上线', desc: '基于 U-Blog 搭建' },
+            { year: '2023', title: '学习与积累', desc: '持续输出技术文章' },
+          ],
+        },
+      })
+      await pageBlockRepo.save(timelineBlock)
+      console.log('    ✅ 关于页示例区块已创建（含「我的介绍」）')
+    } else {
+      const hasWhoami = await pageBlockRepo.findOne({
+        where: { page: 'about', type: CPageBlockType.WHOAMI },
+      })
+      if (!hasWhoami) {
+        console.log('  📄 关于页已有区块，补插「我的介绍」...')
+        await pageBlockRepo.increment({ page: 'about' }, 'sortOrder', 1)
+        const whoamiBlock = pageBlockRepo.create({
+          page: 'about',
+          sortOrder: 0,
+          type: CPageBlockType.WHOAMI,
+          title: '我的介绍',
+          content: WHOAMI_CONTENT,
+        })
+        await pageBlockRepo.save(whoamiBlock)
+        console.log('    ✅ 已补插「我的介绍」区块')
+      }
+      const hasSkills = await pageBlockRepo.findOne({
+        where: { page: 'about', type: CPageBlockType.SKILLS },
+      })
+      if (!hasSkills) {
+        console.log('  📄 关于页补插「技术栈与熟练度」...')
+        const aboutBlocks = await pageBlockRepo.find({
+          where: { page: 'about' },
+          order: { sortOrder: 'ASC' },
+        })
+        const insertOrder = 2
+        for (const b of aboutBlocks) {
+          if (b.sortOrder >= insertOrder)
+            await pageBlockRepo.update({ id: b.id }, { sortOrder: b.sortOrder + 1 })
+        }
+        const skillsBlock = pageBlockRepo.create({
+          page: 'about',
+          sortOrder: insertOrder,
+          type: CPageBlockType.SKILLS,
+          title: '技术栈与熟练度',
+          content: '',
+          extra: {
+            groups: [
+              {
+                name: '前端',
+                items: [
+                  { name: 'Vue 3', level: 4 },
+                  { name: 'TypeScript', level: 4 },
+                  { name: 'React', level: 3 },
+                  { name: 'Vite / 工程化', level: 4 },
+                ],
+              },
+              {
+                name: 'JavaScript',
+                items: [{ name: 'JavaScript', level: 4 }],
+              },
+              {
+                name: '后端 / 运维',
+                items: [
+                  { name: 'Node.js', level: 4 },
+                  { name: 'NestJS', level: 3 },
+                  { name: 'SQL / 数据库', level: 3 },
+                  { name: 'Nginx / Linux', level: 3 },
+                ],
+              },
+              {
+                name: '工具与其它',
+                items: [
+                  { name: 'Git', level: 4 },
+                  { name: 'Docker', level: 3 },
+                ],
+              },
+              {
+                name: 'AI Coding',
+                items: [{ name: 'Cursor / Copilot 等', level: 4 }],
+              },
+              {
+                name: '文档',
+                items: [{ name: 'Markdown / 文档', level: 5 }],
+              },
+            ],
+          },
+        })
+        await pageBlockRepo.save(skillsBlock)
+        console.log('    ✅ 已补插「技术栈与熟练度」区块')
+      }
+    }
+
     console.log('✨ 假数据初始化完成\n')
   } catch (error) {
     console.error('❌ 初始化假数据失败:', error)

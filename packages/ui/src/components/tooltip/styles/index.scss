@@ -1,5 +1,9 @@
+/* 参考 Element Plus popper：箭头用 px 保证可见，弹出框圆角内联 + 变量兜底 */
+$tooltip-arrow-size: 12px;
+$tooltip-arrow-radius: 2px;
+
 .u-tooltip {
-  display: inline-flex;  
+  display: inline-flex;
 
   .u-tooltip__trigger {
     width: 100%;
@@ -16,39 +20,98 @@
     }
   }
 
+  /* 圆角、字号：内联 style 直接设 borderRadius（px），变量兜底 8px */
   .u-tooltip__popper {
     position: relative;
     text-align: center;
     z-index: var(--u-z-index-tooltip);
-    font-size: var(--u-font-size-base);
-    border-radius: var(--u-border-radius-2);
+    font-size: var(--u-tooltip-font-size, var(--u-font-size-sm));
+    border-radius: var(--u-tooltip-popper-radius, 8px);
     border: var(--u-border-width-2) solid var(--u-border-1);
+    overflow: visible;
+
+    /* 箭头：12px 旋转方块 + 2px 圆角，z-index 1 避免被 popper 背景挡住 */
+    .u-tooltip__popper--arrow {
+      position: absolute;
+      width: $tooltip-arrow-size;
+      height: $tooltip-arrow-size;
+      z-index: 1;
+      pointer-events: none;
+
+      &::before {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: $tooltip-arrow-size;
+        height: $tooltip-arrow-size;
+        content: '';
+        transform: rotate(45deg);
+        box-sizing: border-box;
+      }
+    }
   }
 
   @mixin tooltip-styles($text-color, $bg-color) {
     color: $text-color;
     background-color: $bg-color;
   }
-  
+
+  /* 箭头 ::before 背景与各 placement 下的圆角（参考 Element Plus：仅圆与弹出框相接的一角） */
   @mixin renderTooltipArrow($bg-color) {
-    @each $direction, $polygon in (top: polygon(50% 100%, 0% 0%, 100% 0%), 
-                                   bottom: polygon(50% 0%, 0% 100%, 100% 100%), 
-                                   left: polygon(100% 50%, 0% 0%, 0% 100%), 
-                                   right: polygon(0% 50%, 100% 0%, 100% 100%)) {
-      &[data-popper-placement="#{$direction}"],
-      &[data-popper-placement="#{$direction}-start"],
-      &[data-popper-placement="#{$direction}-end"] {
-        .u-tooltip__popper--arrow {
-          clip-path: $polygon;
-          background-color: $bg-color;
-          width: 0.8rem;
-          height: 0.4rem;
-          #{$direction}: 100%;
-        }
+    .u-tooltip__popper--arrow::before {
+      background: $bg-color;
+    }
+    &[data-popper-placement='top'],
+    &[data-popper-placement='top-start'],
+    &[data-popper-placement='top-end'] {
+      .u-tooltip__popper--arrow {
+        bottom: -6px;
+      }
+      .u-tooltip__popper--arrow::before {
+        border-bottom-right-radius: $tooltip-arrow-radius;
+      }
+    }
+    &[data-popper-placement='bottom'],
+    &[data-popper-placement='bottom-start'],
+    &[data-popper-placement='bottom-end'] {
+      .u-tooltip__popper--arrow {
+        top: -6px;
+      }
+      .u-tooltip__popper--arrow::before {
+        border-top-left-radius: $tooltip-arrow-radius;
+      }
+    }
+    &[data-popper-placement='left'],
+    &[data-popper-placement='left-start'],
+    &[data-popper-placement='left-end'] {
+      .u-tooltip__popper--arrow {
+        right: -6px;
+      }
+      .u-tooltip__popper--arrow::before {
+        border-top-right-radius: $tooltip-arrow-radius;
+      }
+    }
+    &[data-popper-placement='right'],
+    &[data-popper-placement='right-start'],
+    &[data-popper-placement='right-end'] {
+      .u-tooltip__popper--arrow {
+        left: -6px;
+      }
+      .u-tooltip__popper--arrow::before {
+        border-bottom-left-radius: $tooltip-arrow-radius;
       }
     }
   }
-  
+
+  /* 跟随主题（浅色/深色切换） */
+  &.u-tooltip--default {
+    .u-tooltip__popper {
+      @include renderTooltipArrow(var(--u-background-2));
+      @include tooltip-styles(var(--u-text-1), var(--u-background-2));
+      box-shadow: var(--u-shadow-2, 0 2px 8px rgba(0, 0, 0, 0.08));
+    }
+  }
+
   &.u-tooltip--dark {
     @each $direction in (top, bottom, left, right) {
       #{$direction}: -0.1rem;
@@ -58,7 +121,7 @@
       @include tooltip-styles(var(--u-text-7), var(--u-background-dark-2));
     }
   }
-  
+
   &.u-tooltip--light {
     .u-tooltip__popper {
       @include renderTooltipArrow(var(--u-background-1));

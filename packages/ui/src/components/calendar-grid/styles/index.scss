@@ -1,0 +1,66 @@
+.u-calendar-grid {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+
+  .u-calendar-grid__cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+    font-size: 1.2rem;
+    box-sizing: border-box;
+
+    &--head {
+      color: var(--u-text-3);
+      font-weight: 500;
+      font-size: 1.1rem;
+    }
+
+    &--day {
+      position: relative;
+      border: none;
+      border-radius: var(--u-border-radius-3, 6px);
+      background: transparent;
+      color: var(--u-text-1);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      font-family: inherit;
+
+      &:hover {
+        background: var(--u-background-3);
+      }
+
+      /* 使用 primary-light-6，浅色主题下比 -7 更易辨认 */
+      &.has-posts {
+        font-weight: 600;
+        color: var(--u-primary-0);
+        background: var(--u-primary-light-6);
+      }
+
+      &.is-selected {
+        background: var(--u-primary-0);
+        color: var(--u-white);
+        border: none;
+        box-shadow: none;
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--u-primary-0);
+        outline-offset: 2px;
+      }
+    }
+  }
+
+  .u-calendar-grid__dot {
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+}

@@ -14,6 +14,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { MdEditor } from 'md-editor-v3'
 import 'md-editor-v3/lib/style.css'
 import { UDialogFn } from '@u-blog/ui'
@@ -24,6 +25,7 @@ defineOptions({
   name: 'WriteView'
 })
 
+const { t } = useI18n()
 const appStore = useAppStore()
 const editorTheme = computed(() => (appStore.theme === CTheme.DARK ? 'dark' : 'light'))
 
@@ -32,8 +34,8 @@ const text = ref<string>('')
 const handleSave = (_content: string) => {
   console.log(_content)
   UDialogFn({
-    title: '保存',
-    content: '确定保存吗？'
+    title: t('common.save'),
+    content: t('write.saveConfirm')
   })
 }
 </script>

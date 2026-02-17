@@ -1,4 +1,4 @@
-import { camelCase, capitalize, snakeCase } from '@u-blog/utils'
+import { snakeCase } from '@u-blog/utils'
 import type { CookieOptions, Request, Response } from 'express'
 import { DATABASE } from '@/constants'
 import { DataSource } from 'typeorm'
@@ -67,16 +67,21 @@ export const formatResponse = <T = any, E extends Error = Error>(
 }
 
 /**
- * 将表名称转换为模型名称
+ * 将表名称（snake_case）转换为 TypeORM 实体名（PascalCase）
  * @param 	{string} tableName
  * @returns 	{string}
  * @example
  * ```js
- * const Users = toModelName('users') // Users
- * const ArticleTag = toModelName('article_tag') // ArticleTag
+ * toModelName('users') // Users
+ * toModelName('article_tag') // ArticleTag
+ * toModelName('page_block') // PageBlock
  * ```
  */
-export const toModelName = (tableName: string): string => capitalize(camelCase(tableName))
+export const toModelName = (tableName: string): string =>
+  tableName
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join('')
 
 /**
  * 将模型名称转换为表名称

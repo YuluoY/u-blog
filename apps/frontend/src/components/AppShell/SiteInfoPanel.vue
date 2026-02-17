@@ -1,99 +1,91 @@
 <template>
   <div class="site-info-panel">
-    <u-text class="site-info-panel__title">网站概览</u-text>
-    <!-- 核心数字卡：来自 article 表聚合 -->
+    <u-text class="site-info-panel__title">{{ t('siteInfo.title') }}</u-text>
+    <u-text v-if="error" type="danger" class="site-info-panel__error">{{ error }}</u-text>
+    <template v-else-if="loading">
+      <u-text class="site-info-panel__loading">{{ t('siteInfo.loading') }}</u-text>
+    </template>
+    <template v-else>
     <div class="site-info-panel__cards">
       <div class="site-info-panel__card">
         <u-icon icon="fa-solid fa-eye" />
         <u-text class="site-info-panel__card-num">{{ totalViews }}</u-text>
-        <u-text class="site-info-panel__card-label">总浏览</u-text>
+        <u-text class="site-info-panel__card-label">{{ t('siteInfo.views') }}</u-text>
       </div>
       <div class="site-info-panel__card">
         <u-icon icon="fa-solid fa-heart" />
         <u-text class="site-info-panel__card-num">{{ totalLikes }}</u-text>
-        <u-text class="site-info-panel__card-label">总点赞</u-text>
+        <u-text class="site-info-panel__card-label">{{ t('siteInfo.likes') }}</u-text>
       </div>
       <div class="site-info-panel__card">
         <u-icon icon="fa-solid fa-comment" />
         <u-text class="site-info-panel__card-num">{{ totalComments }}</u-text>
-        <u-text class="site-info-panel__card-label">总评论</u-text>
+        <u-text class="site-info-panel__card-label">{{ t('siteInfo.comments') }}</u-text>
       </div>
     </div>
-    <!-- 明细：运行天数、内容量 -->
     <div class="site-info-panel__list">
       <div class="site-info-panel__row">
         <u-icon icon="fa-solid fa-rocket" />
-        <span>运行天数</span>
-        <span class="site-info-panel__val">{{ runningDays }} 天</span>
+        <span>{{ t('siteInfo.runningDays') }}</span>
+        <span class="site-info-panel__val">{{ runningDays }} {{ t('siteInfo.days') }}</span>
       </div>
       <div class="site-info-panel__row">
         <u-icon icon="fa-solid fa-file-lines" />
-        <span>文章</span>
+        <span>{{ t('siteInfo.articles') }}</span>
         <span class="site-info-panel__val">{{ articleCount }}</span>
       </div>
       <div class="site-info-panel__row">
         <u-icon icon="fa-solid fa-folder" />
-        <span>分类</span>
+        <span>{{ t('siteInfo.categories') }}</span>
         <span class="site-info-panel__val">{{ categoryCount }}</span>
       </div>
       <div class="site-info-panel__row">
         <u-icon icon="fa-solid fa-tags" />
-        <span>标签</span>
+        <span>{{ t('siteInfo.tags') }}</span>
         <span class="site-info-panel__val">{{ tagCount }}</span>
       </div>
       <div class="site-info-panel__row">
         <u-icon icon="fa-solid fa-calendar-check" />
-        <span>最后更新</span>
+        <span>{{ t('siteInfo.lastUpdate') }}</span>
         <span class="site-info-panel__val">{{ lastUpdate }}</span>
       </div>
     </div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useArticleStore } from '@/stores/model/article'
-import { useCategoryStore } from '@/stores/model/category'
-import { useTagStore } from '@/stores/model/tag'
-import { storeToRefs } from 'pinia'
+import { useI18n } from 'vue-i18n'
+import { getSiteOverview } from '@/api/siteOverview'
+import type { SiteOverviewData } from '@/api/siteOverview'
 
 defineOptions({ name: 'SiteInfoPanel' })
 
-const { articleList } = storeToRefs(useArticleStore())
-const { categoryList } = storeToRefs(useCategoryStore())
-const { tagList } = storeToRefs(useTagStore())
+const { t } = useI18n()
 
-const articleCount = computed(() => articleList.value.length)
-const categoryCount = computed(() => categoryList.value.length)
-const tagCount = computed(() => tagList.value.length)
+const overview = ref<SiteOverviewData | null>(null)
+const loading = ref(false)
+const error = ref<string | null>(null)
 
-/** 从 article 表的 viewCount/likeCount/commentCount 聚合 */
-const totalViews = computed(() =>
-  articleList.value.reduce((s, a) => s + (a.viewCount ?? 0), 0)
-)
-const totalLikes = computed(() =>
-  articleList.value.reduce((s, a) => s + (a.likeCount ?? 0), 0)
-)
-const totalComments = computed(() =>
-  articleList.value.reduce((s, a) => s + (a.commentCount ?? 0), 0)
-)
+const totalViews = computed(() => overview.value?.totalViews ?? 0)
+const totalLikes = computed(() => overview.value?.totalLikes ?? 0)
+const totalComments = computed(() => overview.value?.totalComments ?? 0)
+const runningDays = computed(() => overview.value?.runningDays ?? 0)
+const articleCount = computed(() => overview.value?.articleCount ?? 0)
+const categoryCount = computed(() => overview.value?.categoryCount ?? 0)
+const tagCount = computed(() => overview.value?.tagCount ?? 0)
+const lastUpdate = computed(() => overview.value?.lastUpdate ?? '--')
 
-/** 运行天数：以最早文章 createdAt 为起点 */
-const runningDays = computed(() => {
-  if (!articleList.value.length) return 0
-  const earliest = articleList.value.reduce((a, b) =>
-    new Date(a.createdAt).getTime() < new Date(b.createdAt).getTime() ? a : b
-  )
-  return Math.max(1, Math.floor((Date.now() - new Date(earliest.createdAt).getTime()) / 86400000))
-})
-
-/** 最后更新日期 */
-const lastUpdate = computed(() => {
-  if (!articleList.value.length) return '--'
-  const latest = articleList.value.reduce((a, b) =>
-    new Date(b.updatedAt).getTime() > new Date(a.updatedAt).getTime() ? b : a
-  )
-  const d = new Date(latest.updatedAt)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+onMounted(async () => {
+  loading.value = true
+  error.value = null
+  try {
+    overview.value = await getSiteOverview()
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : '获取失败'
+  } finally {
+    loading.value = false
+  }
 })
 </script>
 
@@ -109,6 +101,16 @@ const lastUpdate = computed(() => {
     font-size: 1.6rem;
     color: var(--u-text-1);
     display: block;
+  }
+
+  &__error,
+  &__loading {
+    display: block;
+    font-size: 1.2rem;
+    margin-top: 8px;
+  }
+  &__loading {
+    color: var(--u-text-3);
   }
 
   /* 三个数字卡片并排 */

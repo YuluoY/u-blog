@@ -2,79 +2,43 @@
 
 const { spawn } = require('child_process');
 const path = require('path');
+const net = require('node:net');
 const gulp = require('gulp');
-const fs = require('node:fs')
+const fs = require('node:fs');
 
-const root = path.dirname(__dirname)
+const root = path.dirname(__dirname);
 
-const packages = [
-  {
-    name: 'model',
-    root: path.join(root, 'packages', 'model'),  // 包根目录
-    src: path.join(root, 'packages', 'model', 'src'),  // 源码目录
-    watch: ['**/*.ts'],
-    command: 'pnpm',
-    argv: ['run', 'build']
-  },
-  {
-    name: 'ui',
-    root: path.join(root, 'packages', 'ui'),
-    src: path.join(root, 'packages', 'ui', 'src'),
-    watch: ['**/*.ts', '**/*.vue'],
-    command: 'pnpm',
-    argv: ['run', 'build:es']
-  },
-  {
-    entry: 'index.ts',
-    name: 'utils',
-    root: path.join(root, 'packages', 'utils'),
-    src: path.join(root, 'packages', 'utils', 'src'),
-    watch: ['**/*.ts'],
-    command: 'pnpm',
-    argv: ['run', 'build']
-  },
-  {
-    name: 'helper',
-    root: path.join(root, 'packages', 'helper'),
-    src: path.join(root, 'packages', 'helper', 'src'),
-    watch: ['**/*.ts'],
-    command: 'pnpm',
-    argv: ['run', 'build']
-  },
-  {
-    name: 'composables',
-    root: path.join(root, 'packages', 'composables'),
-    src: path.join(root, 'packages', 'composables', 'src'),
-    watch: ['**/*.ts'],
-    command: 'pnpm',
-    argv: ['run', 'build']
-  },
-  {
-    name: 'types',
-    root: path.join(root, 'packages', 'types'),
-    src: path.join(root, 'packages', 'types', 'src'),
-    watch: ['**/*.ts'],
-    command: 'pnpm',
-    argv: ['run', 'build']
-  },
-  {
-    name: 'frontend',
-    root: path.join(root, 'apps', 'frontend'),
-    src: path.join(root, 'apps', 'frontend', 'src'),
-    command: 'pnpm',
-    argv: ['run', 'dev'],
-    // 不配置 watch，保持 Vite Dev Server 常驻运行
-    logging: true
-  },
-  {
-    name: 'backend',
-    root: path.join(root, 'apps', 'backend'),
-    src: path.join(root, 'apps', 'backend', 'src'),
-    command: 'pnpm',
-    argv: ['run', 'dev'],
-    logging: true
-  }
-]
+/** 后端监听端口，与 apps/backend 配置一致 */
+const BACKEND_PORT = 3000;
+
+/** 仅构建的包（有 watch） */
+const buildPackages = [
+  { name: 'model', root: path.join(root, 'packages', 'model'), src: path.join(root, 'packages', 'model', 'src'), watch: ['**/*.ts'], command: 'pnpm', argv: ['run', 'build'] },
+  { name: 'ui', root: path.join(root, 'packages', 'ui'), src: path.join(root, 'packages', 'ui', 'src'), watch: ['**/*.ts', '**/*.vue'], command: 'pnpm', argv: ['run', 'build:es'] },
+  { name: 'utils', root: path.join(root, 'packages', 'utils'), src: path.join(root, 'packages', 'utils', 'src'), watch: ['**/*.ts'], command: 'pnpm', argv: ['run', 'build'] },
+  { name: 'helper', root: path.join(root, 'packages', 'helper'), src: path.join(root, 'packages', 'helper', 'src'), watch: ['**/*.ts'], command: 'pnpm', argv: ['run', 'build'] },
+  { name: 'composables', root: path.join(root, 'packages', 'composables'), src: path.join(root, 'packages', 'composables', 'src'), watch: ['**/*.ts'], command: 'pnpm', argv: ['run', 'build'] },
+  { name: 'types', root: path.join(root, 'packages', 'types'), src: path.join(root, 'packages', 'types', 'src'), watch: ['**/*.ts'], command: 'pnpm', argv: ['run', 'build'] },
+];
+
+/** 后端：先启动，等端口就绪后再启动前端/后台 */
+const backendPackage = {
+  name: 'backend',
+  root: path.join(root, 'apps', 'backend'),
+  src: path.join(root, 'apps', 'backend', 'src'),
+  command: 'pnpm',
+  argv: ['run', 'dev'],
+  logging: true,
+};
+
+/** 前端与后台（等后端就绪后并行启动） */
+const appPackages = [
+  { name: 'frontend', root: path.join(root, 'apps', 'frontend'), src: path.join(root, 'apps', 'frontend', 'src'), command: 'pnpm', argv: ['run', 'dev'], logging: true },
+  { name: 'admin', root: path.join(root, 'apps', 'admin'), src: path.join(root, 'apps', 'admin', 'src'), command: 'pnpm', argv: ['run', 'dev'], logging: true },
+];
+
+/** 合并为 packages，供下方 watch/clean 等逻辑使用 */
+const packages = [...buildPackages, backendPackage, ...appPackages];
 
 const Icons = {
   '✅': '✅', // 成功
@@ -92,9 +56,62 @@ const Icons = {
   '🚫': '🚫'  // 禁止
 }
 
-const building = new Map()
-const buildTimers = new Map()
-const buildDones = new Map()
+const building = new Map();
+const buildTimers = new Map();
+const buildDones = new Map();
+const serverProcesses = new Map();
+
+/**
+ * 等待端口可连接（用于后端就绪后再启动前端/后台）
+ * @param {number} port
+ * @param {number} timeoutMs
+ * @returns {Promise<void>}
+ */
+function waitForPort(port, timeoutMs = 60000) {
+  const step = 500;
+  const start = Date.now();
+  return new Promise((resolve, reject) => {
+    function tryConnect() {
+      if (Date.now() - start > timeoutMs) {
+        reject(new Error(`等待 localhost:${port} 就绪超时（${timeoutMs}ms）`));
+        return;
+      }
+      const socket = net.createConnection(port, '127.0.0.1', () => {
+        socket.destroy();
+        resolve();
+      });
+      socket.on('error', () => {
+        socket.destroy();
+        setTimeout(tryConnect, step);
+      });
+    }
+    tryConnect();
+  });
+}
+
+/**
+ * 启动常驻进程（后端/前端/admin），不参与 watch 构建
+ */
+function runServer(pkg) {
+  const child = spawn(pkg.command, pkg.argv, {
+    cwd: pkg.root,
+    stdio: pkg.logging ? 'inherit' : 'pipe',
+    shell: false,
+  });
+  serverProcesses.set(pkg.name, child);
+  child.on('exit', (code, signal) => {
+    serverProcesses.delete(pkg.name);
+    if (code !== 0 && code != null) {
+      console.error(`❌ ${pkg.name} 进程退出，code=${code} signal=${signal}`);
+    }
+  });
+  child.on('error', (err) => {
+    console.error(`❌ ${pkg.name} 启动失败: ${err.message}`);
+    serverProcesses.delete(pkg.name);
+  });
+  console.log(`✅ ${pkg.name} 已启动`);
+  return child;
+}
 
 function clean(pkg) {
   if (pkg) {
@@ -241,44 +258,48 @@ function debouncedBuild(pkg, done) {
   buildDones.set(pkg, done)
 }
 
-// 关键：为每个包创建独立的 watch，使用绝对路径
-const watchers = packages.map(pkg => {
-  if (!pkg.watch)
-  {
-    debouncedBuild(pkg, _ => {
-      console.log(`✅ ${pkg.name} 已启动`)
-    })
-    return null
-  }
-  const watchPaths = pkg.watch.map(pattern => {
-    const fullPath = path.resolve(pkg.src, pattern)
-    return fullPath
-  })
-  
-  console.log(`👀 监听 ${pkg.name}`)
-  console.log(`   📂 根目录: ${pkg.root}`)
-  console.log(`   📝 监听模式: ${pkg.watch.join(', ')}`)
-  console.log(`   🔗 绝对路径: ${watchPaths.join(', ')}`)
-  
+// 1) 仅为「构建包」创建 watch
+const watchers = buildPackages.map((pkg) => {
+  const watchPaths = pkg.watch.map((pattern) => path.resolve(pkg.src, pattern));
+  console.log(`👀 监听 ${pkg.name}   📂 ${pkg.root}`);
   const watcher = gulp.watch(watchPaths, (done) => {
-    console.log(`📝 检测到 ${pkg.name} 目录下的文件变化`)
-    debouncedBuild(pkg, done)
-  })
-  
-  watcher.on('ready', () => {
-    console.log(`✅ ${pkg.name} 监听器已就绪`)
-  })
-  
+    console.log(`📝 检测到 ${pkg.name} 目录下的文件变化`);
+    debouncedBuild(pkg, done);
+  });
+  watcher.on('ready', () => console.log(`✅ ${pkg.name} 监听器已就绪`));
   watcher.on('change', (filePath) => {
-    console.log(`📝 ${pkg.name} 文件变化: ${filePath}`)
-    debouncedBuild(pkg, null)
-  })
-  
-  watcher.on('error', (err) => {
-    console.error(`❌ ${pkg.name} 监听器错误:`, err)
-  })
-  
-  return watcher
-})
+    console.log(`📝 ${pkg.name} 文件变化: ${filePath}`);
+    debouncedBuild(pkg, null);
+  });
+  watcher.on('error', (err) => console.error(`❌ ${pkg.name} 监听器错误:`, err));
+  return watcher;
+});
 
-console.log(`\n🎯 共创建 ${watchers.length} 个文件监听器\n`)
+console.log(`\n🎯 共创建 ${watchers.length} 个文件监听器\n`);
+
+// 2) 先启动后端，等端口就绪后再启动前端、后台
+(async () => {
+  console.log('🔨 正在启动后端...');
+  runServer(backendPackage);
+  try {
+    await waitForPort(BACKEND_PORT);
+    console.log(`✅ 后端已就绪 (localhost:${BACKEND_PORT})，启动前端与后台...\n`);
+    appPackages.forEach((pkg) => runServer(pkg));
+  } catch (err) {
+    console.error('🚨', err.message);
+    console.error('   请确认后端已能正常启动并监听端口', BACKEND_PORT);
+  }
+})();
+
+// Ctrl+C 时结束所有已启动的后端/前端/admin 进程
+function killServerProcesses() {
+  serverProcesses.forEach((child, name) => {
+    if (child && !child.killed) {
+      child.kill();
+      console.log(`🛑 ${name} 已终止`);
+    }
+  });
+  serverProcesses.clear();
+}
+process.on('SIGINT', killServerProcesses);
+process.on('SIGTERM', killServerProcesses);

@@ -2,7 +2,8 @@
   <div class="home" ref="homeRef">
     <div class="home__list">
       <component
-        :is="ArticleListStyles[appStore.articleListType]"
+        :is="listComponent"
+        :key="articleListType"
         :data="articleStore.articleList"
         @jump="handleJump"
       />
@@ -11,20 +12,23 @@
     <div class="home__footer" ref="sentinelRef">
       <template v-if="articleStore.loading">
         <u-icon icon="fa-solid fa-spinner" spin />
-        <u-text>加载中...</u-text>
+        <u-text>{{ t('common.loading') }}</u-text>
       </template>
       <template v-else-if="!articleStore.hasMore">
-        <u-text class="home__footer-end">— 已加载全部文章 —</u-text>
+        <u-text class="home__footer-end">{{ t('home.loadedAll') }}</u-text>
       </template>
       <template v-else>
-        <u-button plain size="small" @click="articleStore.loadMore()">加载更多</u-button>
+        <u-button plain size="small" @click="articleStore.loadMore()">{{ t('home.loadMore') }}</u-button>
       </template>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+import { storeToRefs } from 'pinia'
 import ArticleListStyles from '@/components/ArticleListStyles'
+import { CArticleList } from '@/types/const'
 import { useAppStore } from '@/stores/app'
 import { useArticleStore } from '@/stores/model/article'
 
@@ -32,9 +36,16 @@ defineOptions({
   name: 'HomeView'
 })
 
+const { t } = useI18n()
 const appStore = useAppStore()
+const { articleListType } = storeToRefs(appStore)
 const articleStore = useArticleStore()
 const router = useRouter()
+
+/** 当前列表组件（显式依赖 articleListType，兜底 base） */
+const listComponent = computed(
+  () => ArticleListStyles[articleListType.value || CArticleList.BASE] ?? ArticleListStyles.base
+)
 
 const handleJump = (id: string) => router.push(`/read/${id}`)
 

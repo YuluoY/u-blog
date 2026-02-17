@@ -26,10 +26,10 @@ export class Tag {
 	@MaxLength(255, { message: '标签描述最多255个字符' })
 	desc?: string | null
 
-	@Column({ type: 'varchar', length: 50, nullable: true, comment: '标签颜色' })
+	@Column({ type: 'varchar', length: 512, nullable: true, comment: '标签颜色：hex 或 CSS 渐变' })
 	@IsOptional()
 	@IsString({ message: '标签颜色必须为字符串' })
-	@MaxLength(50, { message: '标签颜色最多50个字符' })
+	@MaxLength(512, { message: '标签颜色最多512个字符' })
 	color?: string | null
 
 	@Column({ name: 'userId', type: 'int', comment: '用户id' })

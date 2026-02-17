@@ -14,7 +14,11 @@ class RestController
 
   async del(req: Request): ControllerReturn
   {
-    const tryData = await tryit<any, Error>(() => Promise.resolve(null))
+    const id = Number(req.body?.id ?? req.query?.id)
+    if (!id || Number.isNaN(id)) {
+      return formatResponse([new Error('id 必填') as any, null], req.__('rest.delSuccess'), req.__('rest.delFail'))
+    }
+    const tryData = await tryit<void, Error>(() => RestService.del(req.model, id))
     return formatResponse(tryData, req.__('rest.delSuccess'), req.__('rest.delFail'))
   }
 
@@ -42,7 +46,12 @@ class RestController
 
   async update(req: Request): ControllerReturn
   {
-    const tryData = await tryit<any, Error>(() => Promise.resolve(null))
+    const { id, ...rest } = req.body || {}
+    const numId = Number(id)
+    if (!numId || Number.isNaN(numId)) {
+      return formatResponse([new Error('id 必填') as any, null], req.__('rest.updateSuccess'), req.__('rest.updateFail'))
+    }
+    const tryData = await tryit<any, Error>(() => RestService.update(req.model, numId, rest))
     return formatResponse(tryData, req.__('rest.updateSuccess'), req.__('rest.updateFail'))
   }
 }

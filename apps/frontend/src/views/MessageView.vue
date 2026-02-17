@@ -3,13 +3,13 @@
         <!-- 页面 Hero -->
         <header class="message-page__hero">
           <div class="message-page__hero-content">
-            <h1 class="message-page__title">留言板</h1>
-            <p class="message-page__desc">分享你的想法，留下你的足迹</p>
+            <h1 class="message-page__title">{{ t('message.title') }}</h1>
+            <p class="message-page__desc">{{ t('message.desc') }}</p>
           </div>
           <div class="message-page__stats">
             <div class="message-page__stat">
               <span class="message-page__stat-num">{{ list.length }}</span>
-              <span class="message-page__stat-label">条留言</span>
+              <span class="message-page__stat-label">{{ t('message.count') }}</span>
             </div>
           </div>
         </header>
@@ -33,9 +33,9 @@
             </div>
             <u-comment-input
               v-model="content"
-              placeholder="说点什么吧..."
+              :placeholder="t('message.placeholder')"
               :max-length="500"
-              submit-text="发表留言"
+              :submit-text="t('message.submit')"
               :loading="submitting"
               :emoji-picker-theme="appStore.theme === CTheme.DARK ? 'dark' : 'light'"
               @insert="content += $event"
@@ -44,7 +44,7 @@
           </template>
           <div v-else class="message-page__login-hint">
             <u-icon icon="fa-regular fa-user" />
-            <span>登录后可发表留言</span>
+            <span>{{ t('message.loginToComment') }}</span>
           </div>
         </section>
 
@@ -53,7 +53,7 @@
           <u-comment-list
             :list="list as unknown as UCommentItemData[]"
             :loading="loading"
-            empty-text="暂无留言，快来抢沙发吧～"
+            :empty-text="t('message.empty')"
             :plain-content="false"
             :replying-id="replyingId"
             :reply-content="replyContent"
@@ -70,6 +70,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/model/user'
 import { useAppStore } from '@/stores/app'
 import api from '@/api'
@@ -78,6 +79,7 @@ import type { IComment } from '@u-blog/model'
 import type { UCommentItemData } from '@u-blog/ui'
 import { storeToRefs } from 'pinia'
 
+const { t } = useI18n()
 const appStore = useAppStore()
 
 defineOptions({ name: 'MessageView' })
@@ -98,7 +100,7 @@ const replySubmitting = ref(false)
 /** 当前用户显示名 */
 const displayCurrentUser = computed(() => {
   const u = user.value as { namec?: string; username?: string } | undefined
-  return u?.namec ?? u?.username ?? '用户'
+  return u?.namec ?? u?.username ?? t('profile.roleUser')
 })
 
 /** 获取留言列表，可选保持滚动位置（发表/回复后不跳回顶部） */

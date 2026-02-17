@@ -2,6 +2,8 @@
 export const CTooltipContainerId = 'u-popper-container'
 
 export const CTooltipEffect = {
+  /** 跟随页面主题（浅色/深色切换） */
+  DEFAULT: 'default',
   DARK: 'dark',
   LIGHT: 'light'
 } as const

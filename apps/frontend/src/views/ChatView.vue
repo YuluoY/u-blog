@@ -12,8 +12,8 @@
               </div>
               <div class="chat-empty__glow"></div>
             </div>
-            <u-text class="chat-empty__title">小惠</u-text>
-            <u-text class="chat-empty__desc">有什么可以帮助你的吗？</u-text>
+            <u-text class="chat-empty__title">{{ t('chat.title') }}</u-text>
+            <u-text class="chat-empty__desc">{{ t('chat.emptyDesc') }}</u-text>
             <div class="chat-empty__suggestions">
               <div
                 v-for="(suggestion, idx) in suggestions"
@@ -40,7 +40,7 @@
             </div>
             <div class="chat-message__content">
               <div class="chat-message__meta">
-                <span class="chat-message__name">{{ message.role === 'user' ? '你' : '小惠' }}</span>
+                <span class="chat-message__name">{{ message.role === 'user' ? t('chat.you') : t('chat.title') }}</span>
                 <span class="chat-message__time">{{ formatTime(message.timestamp) }}</span>
               </div>
               <div class="chat-message__bubble">
@@ -54,7 +54,7 @@
             </div>
             <div class="chat-message__content">
               <div class="chat-message__meta">
-                <span class="chat-message__name">小惠</span>
+                <span class="chat-message__name">{{ t('chat.title') }}</span>
               </div>
               <div class="chat-message__bubble chat-message__bubble--loading">
                 <div class="typing-indicator">
@@ -75,7 +75,7 @@
             name="chat-message"
             v-model="inputText"
             class="chat-input-bar__textarea"
-            placeholder="输入消息，Enter 发送，Shift+Enter 换行"
+            :placeholder="t('chat.placeholder')"
             :disabled="loading"
             rows="1"
             @keydown="handleInputKeydown"
@@ -91,7 +91,7 @@
             <u-icon v-else icon="fa-solid fa-circle-notch" class="spin" />
           </button>
         </div>
-        <div class="chat-input-hint">AI 生成的内容可能不准确，请核对重要信息。</div>
+        <div class="chat-input-hint">{{ t('chat.hint') }}</div>
       </div>
     </div>
 
@@ -99,7 +99,7 @@
     <button
       class="sidebar-toggle"
       @click="sidebarVisible = !sidebarVisible"
-      :title="sidebarVisible ? '收起侧栏' : '展开侧栏'"
+      :title="sidebarVisible ? t('chat.collapseSidebar') : t('chat.expandSidebar')"
     >
       <u-icon :icon="sidebarVisible ? 'fa-solid fa-chevron-right' : 'fa-solid fa-chevron-left'" />
     </button>
@@ -109,9 +109,9 @@
         <div class="chat-sidebar__header">
           <div class="chat-sidebar__title-area">
             <u-icon icon="fa-solid fa-history" />
-            <span>历史会话</span>
+            <span>{{ t('chat.history') }}</span>
           </div>
-          <button class="chat-new-btn" @click="handleNewSession" title="新对话">
+          <button class="chat-new-btn" @click="handleNewSession" :title="t('chat.newChat')">
             <u-icon icon="fa-solid fa-plus" />
           </button>
         </div>
@@ -120,7 +120,7 @@
           <template v-if="chatStore.sortedSessions.length === 0">
             <div class="chat-sidebar__empty">
               <u-icon icon="fa-solid fa-comments" class="chat-sidebar__empty-icon" />
-              <span>暂无历史会话</span>
+              <span>{{ t('chat.noHistory') }}</span>
             </div>
           </template>
           <div v-else class="session-list">
@@ -148,12 +148,12 @@
               </div>
               <!-- 预览行 + 内置操作 -->
               <div class="session-item__foot">
-                <span class="session-item__preview">{{ getLastMessage(session) || '新对话' }}</span>
+                <span class="session-item__preview">{{ getLastMessage(session) || t('chat.newSession') }}</span>
                 <div class="session-item__actions" @click.stop>
-                  <button class="session-action-btn" title="重命名" @click="startEditing(session)">
+                  <button class="session-action-btn" :title="t('chat.rename')" @click="startEditing(session)">
                     <u-icon icon="fa-solid fa-pen" />
                   </button>
-                  <button class="session-action-btn session-action-btn--danger" title="删除" @click="requestDelete(session.id)">
+                  <button class="session-action-btn session-action-btn--danger" :title="t('common.delete')" @click="requestDelete(session.id)">
                     <u-icon icon="fa-solid fa-trash" />
                   </button>
                 </div>
@@ -166,7 +166,7 @@
     <!-- 删除确认对话框 -->
     <u-dialog
       v-model="showDeleteDialog"
-      title="删除会话"
+      :title="t('chat.deleteSession')"
       :width="400"
       :height="200"
       modal
@@ -178,8 +178,8 @@
           <u-icon icon="fa-solid fa-trash-alt" />
         </div>
         <div class="delete-confirm__body">
-          <h3>确认删除？</h3>
-          <p>删除后该会话将无法恢复，请谨慎操作。</p>
+          <h3>{{ t('chat.confirmDelete') }}</h3>
+          <p>{{ t('chat.deleteWarning') }}</p>
         </div>
       </div>
     </u-dialog>
@@ -187,12 +187,14 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { sendChatMessage } from '@/api/chat'
 import { STORAGE_KEYS } from '@/constants/storage'
 import { useChatStore } from '@/stores/chat'
 
 defineOptions({ name: 'ChatView' })
 
+const { t } = useI18n()
 const chatStore = useChatStore()
 const inputText = ref('')
 const inputRef = ref<HTMLTextAreaElement | null>(null)
@@ -218,12 +220,12 @@ watch(sidebarVisible, (val) => {
   } catch { /* ignore */ }
 }, { immediate: true })
 
-const suggestions = [
-  { icon: 'fa-solid fa-pen-nib', text: '帮我写一篇文章' },
-  { icon: 'fa-solid fa-code', text: '解释一段代码' },
-  { icon: 'fa-solid fa-language', text: '翻译一段文字' },
-  { icon: 'fa-solid fa-brain', text: '头脑风暴' },
-]
+const suggestions = computed(() => [
+  { icon: 'fa-solid fa-pen-nib', text: t('chat.promptWrite') },
+  { icon: 'fa-solid fa-code', text: t('chat.promptCode') },
+  { icon: 'fa-solid fa-language', text: t('chat.promptTranslate') },
+  { icon: 'fa-solid fa-brain', text: t('chat.promptBrainstorm') },
+])
 
 onMounted(() => {
   if (!chatStore.currentSessionId && chatStore.sortedSessions.length === 0) {
@@ -319,7 +321,7 @@ async function handleSend() {
     const reply = await sendChatMessage(text)
     chatStore.addMessage('assistant', reply)
   } catch (e) {
-    chatStore.addMessage('assistant', `抱歉，请求失败：${e instanceof Error ? e.message : '未知错误'}`)
+    chatStore.addMessage('assistant', `${t('chat.requestFailed')}: ${e instanceof Error ? e.message : t('chat.unknownError')}`)
   } finally {
     loading.value = false
     nextTick(scrollToBottom)
@@ -355,17 +357,17 @@ function scrollToBottom() {
 
 function formatTime(timestamp: number | undefined | null): string {
   const t = timestamp != null ? Number(timestamp) : NaN
-  if (!Number.isFinite(t)) return '刚刚'
+  if (!Number.isFinite(t)) return t('common.justNow')
   const now = Date.now()
   const diff = now - t
   const minute = 60_000
   const hour = 3_600_000
   const day = 86_400_000
-  if (diff < minute) return '刚刚'
+  if (diff < minute) return t('common.justNow')
   if (diff < hour) return `${Math.floor(diff / minute)}m`
   if (diff < day) return `${Math.floor(diff / hour)}h`
   const date = new Date(t)
-  if (Number.isNaN(date.getTime())) return '刚刚'
+  if (Number.isNaN(date.getTime())) return t('common.justNow')
   const nowDate = new Date(now)
   if (date.getDate() === nowDate.getDate()) {
     return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`

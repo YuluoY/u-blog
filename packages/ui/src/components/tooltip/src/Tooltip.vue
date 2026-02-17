@@ -105,18 +105,28 @@ const props = withDefaults(defineProps<UTooltipProps>(), {
   padding: 14,
   placement: 'bottom',
   trigger: 'hover',
-  effect: 'dark',
+  effect: 'default',
   transition: 'fade',
   showTimeout: 0,
   hideTimeout: 300,
+  borderRadius: 0.5,
   popperOptions: () => ({}),
 })
 const emits = defineEmits<UTooltipEmits>()
 
-const popperStyles = computed(() => ({
-  width: props.width ? pxToRem<string>(props.width) : 'auto',
-  padding: pxToRem<string>(props.padding),
-}))
+const popperStyles = computed(() => {
+  const r = props.borderRadius ?? 0.5
+  const radiusPx = `${Math.round(r * 16)}px`
+  const base: Record<string, string> = {
+    width: props.width != null && props.width > 0 ? pxToRem<string>(props.width) : 'auto',
+    padding: pxToRem<string>(props.padding),
+    borderRadius: radiusPx,
+    '--u-tooltip-popper-radius': radiusPx,
+  }
+  if (props.fontSize != null && props.fontSize > 0)
+    base['--u-tooltip-font-size'] = pxToRem<string>(props.fontSize)
+  return base
+})
 const visible = ref<boolean>(!!props.visible)
 
 const containerRef = ref<HTMLDivElement | null>(null)
@@ -143,14 +153,15 @@ const dropdownEvents: IEvent = ref({})
 
 const popperOptions = computed<Partial<Options>>(() =>
 {
-  const defOpts = {
+  const modifiers: Options['modifiers'] = [
+    { name: 'offset', options: { offset: [0, 9] } },
+    ...(props.showArrow ? [{ name: 'arrow', options: { padding: 8 } }] : []),
+  ]
+  const defOpts: Partial<Options> = {
     placement: props.placement,
-    modifiers: {
-      name: 'offset',
-      options: { offset: [0, 9] },
-    },
+    modifiers,
   }
-  return mergeProps(defOpts, props.popperOptions || {})
+  return mergeProps(defOpts, props.popperOptions || {}) as Partial<Options>
 })
 
 let onOpenDebounce: DebouncedFunc<() => void>

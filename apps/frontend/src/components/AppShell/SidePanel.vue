@@ -17,6 +17,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useSidebarStore } from '@/stores/sidebar'
 import { PANEL_ID, SIDE_PANEL_WIDTH_PX } from '@/constants/layout'
 import { pxToRem } from '@u-blog/utils'
@@ -28,22 +29,23 @@ import SiteInfoPanel from './SiteInfoPanel.vue'
 
 defineOptions({ name: 'SidePanel' })
 
+const { t } = useI18n()
 const sidebarStore = useSidebarStore()
 
-/** dock 时且有打开的面板则显示 */
 const isVisible = computed(
   () => !sidebarStore.collapsed && sidebarStore.activePanel != null
 )
 
 const panelTitle = computed(() => {
-  const t: Record<string, string> = {
-    [PANEL_ID.PROFILE]: '站长信息',
-    [PANEL_ID.CALENDAR]: '发布记录',
-    [PANEL_ID.SEARCH]: '搜索',
-    [PANEL_ID.TAGS]: '标签',
-    [PANEL_ID.SITE_INFO]: '网站信息',
+  const keyMap: Record<string, string> = {
+    [PANEL_ID.PROFILE]: 'sidebar.profile',
+    [PANEL_ID.CALENDAR]: 'sidebar.calendar',
+    [PANEL_ID.SEARCH]: 'sidebar.search',
+    [PANEL_ID.TAGS]: 'sidebar.tags',
+    [PANEL_ID.SITE_INFO]: 'sidebar.siteInfo',
   }
-  return t[sidebarStore.activePanel ?? ''] ?? '侧边面板'
+  const key = keyMap[sidebarStore.activePanel ?? '']
+  return key ? t(key) : t('sidebar.sidePanel')
 })
 
 const panelStyle = computed(() => ({
@@ -61,7 +63,7 @@ const panelStyle = computed(() => ({
   background: var(--u-background-1);
   border-right: 1px solid var(--u-border-1);
   overflow: hidden;
-  z-index: 99;
+  z-index: 8;
 
   &__inner {
     flex: 1;

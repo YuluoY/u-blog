@@ -32,7 +32,7 @@
       </div>
       <div v-if="user?.createdAt" class="profile-panel__meta-item">
         <u-icon icon="fa-solid fa-clock" />
-        <span>注册于 {{ formatDate(user.createdAt) }}</span>
+        <span>{{ t('profile.registeredAt') }} {{ formatDate(user.createdAt) }}</span>
       </div>
     </div>
     <!-- 社交链接（来自 users.socials jsonb） -->
@@ -65,20 +65,22 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/model/user'
 import { storeToRefs } from 'pinia'
 
 defineOptions({ name: 'ProfilePanel' })
 
+const { t } = useI18n()
 const { user } = storeToRefs(useUserStore())
 
-const displayName = computed(() => user.value?.namec || user.value?.username || '站长')
+const displayName = computed(() => user.value?.namec || user.value?.username || t('profile.owner'))
 
 const roleLabel = computed(() => {
   const map: Record<string, string> = {
-    super_admin: '超级管理员',
-    admin: '管理员',
-    user: '用户',
+    super_admin: t('profile.roleSuperAdmin'),
+    admin: t('profile.roleAdmin'),
+    user: t('profile.roleUser'),
   }
   return map[user.value?.role as string] ?? user.value?.role ?? ''
 })
@@ -96,7 +98,7 @@ const websiteUrl = computed(() => {
 
 const websiteTitle = computed(() => {
   const w = user.value?.website as any
-  return w?.title || w?.url || '个人网站'
+  return w?.title || w?.url || t('profile.website')
 })
 
 function formatDate(v: string | Date): string {

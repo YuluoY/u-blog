@@ -11,11 +11,32 @@ class RestService {
     // 创建查询构建器，TypeORM 会自动处理软删除（deletedAt）
     const queryBuilder = model.createQueryBuilder(alias)
     
-    // 处理关联加载（如 category、tags、user）
+    // 处理关联加载（如 category、tags、user、parent、parent.user 等嵌套）
+    // 同一 alias 只 join 一次，避免 "table name specified more than once"
     if (Array.isArray(relations) && relations.length > 0) {
-      for (const relName of relations) {
+      const joinedAliases = new Set<string>()
+      for (const relPath of relations) {
+        const parts = String(relPath).split('.')
+        const relName = parts[0]
         const relation = metadata.relations.find((r: { propertyName: string }) => r.propertyName === relName)
-        if (relation) queryBuilder.leftJoinAndSelect(`${alias}.${relName}`, relName)
+        if (!relation) continue
+        if (parts.length === 1) {
+          if (!joinedAliases.has(relName)) {
+            queryBuilder.leftJoinAndSelect(`${alias}.${relName}`, relName)
+            joinedAliases.add(relName)
+          }
+        } else {
+          const subRel = parts.slice(1).join('.')
+          const joinAlias = relPath.replace(/\./g, '_')
+          if (!joinedAliases.has(relName)) {
+            queryBuilder.leftJoinAndSelect(`${alias}.${relName}`, relName)
+            joinedAliases.add(relName)
+          }
+          if (!joinedAliases.has(joinAlias)) {
+            queryBuilder.leftJoinAndSelect(`${relName}.${subRel}`, joinAlias)
+            joinedAliases.add(joinAlias)
+          }
+        }
       }
     }
     
@@ -85,6 +106,25 @@ class RestService {
     if (ret)
       return result
     return Array.isArray(result) ? result.map(v => ({ id: v.id })) : { id: result.id }
+  }
+
+  /** 按 id 更新实体，body 中 id 必传，其余为要更新的字段 */
+  async update<T>(model: Repository<T>, id: number, partial: DeepPartial<T>): Promise<T> {
+    const existing = await model.findOne({ where: { id } as any })
+    if (!existing) throw new Error('记录不存在')
+    Object.assign(existing, partial)
+    return model.save(existing) as Promise<T>
+  }
+
+  /** 按 id 软删除（有 deletedAt 的实体）或物理删除 */
+  async del<T>(model: Repository<T>, id: number): Promise<void> {
+    const meta = model.metadata
+    const hasDeletedAt = meta.columns.some((c: { propertyName: string }) => c.propertyName === 'deletedAt')
+    if (hasDeletedAt) {
+      await model.softDelete(id)
+    } else {
+      await model.delete(id)
+    }
   }
 }
 

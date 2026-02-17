@@ -1,8 +1,8 @@
 <template>
   <div class="search-panel">
-    <u-text class="search-panel__title">搜索</u-text>
+    <u-text class="search-panel__title">{{ t('search.title') }}</u-text>
     <div class="search-panel__input-wrap">
-      <u-input v-model="keyword" placeholder="输入标题关键词" clearable size="large" />
+      <u-input v-model="keyword" :placeholder="t('search.placeholder')" clearable size="large" />
     </div>
     <div class="search-panel__result">
       <template v-if="keyword.trim()">
@@ -17,18 +17,21 @@
             {{ a.title }}
           </router-link>
         </template>
-        <u-text v-else class="search-panel__empty">无匹配文章</u-text>
+        <u-text v-else class="search-panel__empty">{{ t('search.empty') }}</u-text>
       </template>
-      <u-text v-else class="search-panel__hint">输入关键词即时搜索</u-text>
+      <u-text v-else class="search-panel__hint">{{ t('search.hint') }}</u-text>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useArticleStore } from '@/stores/model/article'
 import { storeToRefs } from 'pinia'
 
 defineOptions({ name: 'SearchPanel' })
+
+const { t } = useI18n()
 
 const props = defineProps<{ onClose?: () => void }>()
 

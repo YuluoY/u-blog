@@ -13,33 +13,33 @@
               </div>
               <div class="read-view__meta-byline">
                 <span v-if="article.user" class="read-view__meta-author">{{ article.user.namec || article.user.username }}</span>
-                <time v-if="article.publishedAt" class="read-view__meta-date" :datetime="toIso(article.publishedAt)">发布于 {{ formatDate(article.publishedAt) }}</time>
-                <time v-if="article.updatedAt" class="read-view__meta-date" :datetime="toIso(article.updatedAt)">更新于 {{ formatDate(article.updatedAt) }}</time>
+                <time v-if="article.publishedAt" class="read-view__meta-date" :datetime="toIso(article.publishedAt)">{{ t('read.publishedAt') }} {{ formatDate(article.publishedAt) }}</time>
+                <time v-if="article.updatedAt" class="read-view__meta-date" :datetime="toIso(article.updatedAt)">{{ t('read.updatedAt') }} {{ formatDate(article.updatedAt) }}</time>
               </div>
             </div>
             <dl class="read-view__meta-stats">
-              <div class="read-view__meta-stat"><dt>字数</dt><dd>{{ wordCount }}</dd></div>
-              <div class="read-view__meta-stat"><dt>阅读</dt><dd>约 {{ readingMinutes }} 分钟</dd></div>
-              <div v-if="article.viewCount != null" class="read-view__meta-stat"><dt>阅读量</dt><dd>{{ article.viewCount }}</dd></div>
-              <div v-if="article.likeCount != null" class="read-view__meta-stat"><dt>点赞</dt><dd>{{ article.likeCount }}</dd></div>
-              <div v-if="article.commentCount != null" class="read-view__meta-stat"><dt>评论</dt><dd>{{ article.commentCount }}</dd></div>
+              <div class="read-view__meta-stat"><dt>{{ t('read.words') }}</dt><dd>{{ wordCount }}</dd></div>
+              <div class="read-view__meta-stat"><dt>{{ t('read.read') }}</dt><dd>~ {{ readingMinutes }} {{ t('read.minutes') }}</dd></div>
+              <div v-if="article.viewCount != null" class="read-view__meta-stat"><dt>{{ t('read.viewCount') }}</dt><dd>{{ article.viewCount }}</dd></div>
+              <div v-if="article.likeCount != null" class="read-view__meta-stat"><dt>{{ t('read.like') }}</dt><dd>{{ article.likeCount }}</dd></div>
+              <div v-if="article.commentCount != null" class="read-view__meta-stat"><dt>{{ t('read.comment') }}</dt><dd>{{ article.commentCount }}</dd></div>
             </dl>
           </header>
           <component v-if="Preview && articleContent" :is="Preview" :key="route.params.id" />
           <nav v-if="prevArticle || nextArticle" class="read-view__nav" aria-label="上下篇">
             <router-link v-if="prevArticle" :to="`/read/${prevArticle.id}`" class="read-view__nav-link read-view__nav-link--prev">
-              <span class="read-view__nav-label">上一篇</span>
+              <span class="read-view__nav-label">{{ t('read.prev') }}</span>
               <span class="read-view__nav-title">{{ prevArticle.title }}</span>
             </router-link>
             <span v-else class="read-view__nav-placeholder" />
             <router-link v-if="nextArticle" :to="`/read/${nextArticle.id}`" class="read-view__nav-link read-view__nav-link--next">
-              <span class="read-view__nav-label">下一篇</span>
+              <span class="read-view__nav-label">{{ t('read.next') }}</span>
               <span class="read-view__nav-title">{{ nextArticle.title }}</span>
             </router-link>
             <span v-else class="read-view__nav-placeholder" />
           </nav>
         </div>
-        <aside class="read-view__catalog" aria-label="文章目录">
+        <aside class="read-view__catalog" :aria-label="t('read.catalog')">
           <component
             v-if="Catalog"
             :is="Catalog"
@@ -53,6 +53,7 @@
 </template>
 
 <script lang="ts" setup>
+import { useI18n } from 'vue-i18n'
 import { usePreviewMd } from '@/composables/usePreviewMd'
 import { useArticleStore } from '@/stores/model/article'
 import { storeToRefs } from 'pinia'
@@ -62,6 +63,7 @@ defineOptions({
   name: 'ReadView'
 })
 
+const { t } = useI18n()
 const route = useRoute()
 const articleStore = useArticleStore()
 const { currentArticle, articleList } = storeToRefs(articleStore)

@@ -4,7 +4,7 @@
       <template v-if="articleStore.archiveLoading">
         <div class="archive-loading">
           <u-icon icon="fa-solid fa-spinner" spin />
-          <u-text>加载归档中...</u-text>
+          <u-text>{{ t('archive.loading') }}</u-text>
         </div>
       </template>
       <u-timeline v-else :data="archiveTimelineData">
@@ -47,8 +47,11 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useArticleStore } from '@/stores/model/article'
 import { formatDateTime } from '@/utils/date'
+
+const { t } = useI18n()
 
 defineOptions({
   name: 'ArchiveView'

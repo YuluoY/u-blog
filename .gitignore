@@ -7,6 +7,16 @@ dist/
 build/
 out/
 
+# Source maps & TS build cache
+*.map
+*.tsbuildinfo
+
+# TypeScript 编译到 src 下的产物（与 .ts 同目录的 .js / .d.ts，避免误提交）
+apps/*/src/**/*.js
+apps/*/src/**/*.d.ts
+packages/*/src/**/*.js
+packages/*/src/**/*.d.ts
+
 # Environment variables
 .env.local
 .env.development.local
@@ -14,6 +24,7 @@ out/
 .env.production.local
 
 # IDE
+.cursor/
 .vscode/
 .idea/
 *.swp
