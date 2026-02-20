@@ -11,7 +11,11 @@
         <img :src="item.cover" :alt="item.title" />
       </div>
       <div class="article-compact__main">
-        <h3 class="article-compact__title">{{ item.title }}</h3>
+        <div class="article-compact__title-row">
+          <h3 class="article-compact__title">{{ item.title }}</h3>
+          <span v-if="item.isTop" class="article-compact__badge article-compact__badge--pinned">{{ t('article.pinned') }}</span>
+          <span v-if="isHot(item)" class="article-compact__badge article-compact__badge--hot">{{ t('article.hot') }}</span>
+        </div>
         <div class="article-compact__meta">
           <span v-if="item.user" class="article-compact__author">
             {{ item.user.namec || item.user.username }}
@@ -30,14 +34,19 @@
 import { useI18n } from 'vue-i18n'
 import type { IArticle } from '@u-blog/model'
 import { formatDateTime } from '@/utils/date'
+import { ARTICLE_HOT_VIEW_THRESHOLD } from '@/constants/settings'
 
 defineOptions({ name: 'ArticleCompact' })
 
 const { t } = useI18n()
 
-defineProps<{
+function isHot(article: IArticle): boolean {
+  return (article.viewCount ?? 0) >= ARTICLE_HOT_VIEW_THRESHOLD
+}
+
+const props = withDefaults(defineProps<{
   data: IArticle[]
-}>({
+}>(), {
   data: () => []
 })
 
@@ -104,15 +113,44 @@ const emit = defineEmits<{
     min-width: 0;
   }
 
+  &__title-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    min-width: 0;
+    margin-bottom: 4px;
+  }
+
   &__title {
+    flex: 1;
+    min-width: 0;
     font-size: 1.5rem;
     font-weight: 500;
     color: var(--u-text-1);
-    margin: 0 0 4px 0;
+    margin: 0;
     line-height: 1.35;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  &__badge {
+    flex-shrink: 0;
+    font-size: 1rem;
+    padding: 1px 6px;
+    border-radius: var(--u-border-radius-4, 4px);
+    font-weight: 500;
+
+    &--pinned {
+      background: var(--u-primary-2, #e8f4ff);
+      color: var(--u-primary-0, #1890ff);
+    }
+
+    &--hot {
+      background: #fff1f0;
+      color: #ff4d4f;
+    }
   }
 
   &__meta {

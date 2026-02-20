@@ -126,6 +126,9 @@
   font-size: 1rem;
   color: var(--u-text-1);
   transition: background 0.15s;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 
   &:hover {
     background: var(--u-background-3);

@@ -1,5 +1,6 @@
 @charset "UTF-8";
-@use './blue/index.scss';
+@use './blue/index.scss' as blueTheme;
+@use './glass/index.scss' as glassTheme;
 @use './reset.scss';
 @use './uncss.scss';
 :root {
@@ -109,7 +110,7 @@
   /* 其他 */
   --u-z-index-message: 1080; /* 消息的 z-index */
   --u-z-index-modal: 1050; /* 模态框的 z-index */
-  --u-z-index-tooltip: 1060; /* 工具提示的 z-index */
+  --u-z-index-tooltip: 2100; /* 工具提示的 z-index，需高于抽屉(2000)以便在抽屉内悬浮时可见 */
   --u-z-index-popover: 1070; /* 弹出框的 z-index */
   --u-z-index-backdrop: 1040; /* 背景遮罩的 z-index */
   --u-z-index-dropdown: 1000; /* 下拉菜单的 z-index */

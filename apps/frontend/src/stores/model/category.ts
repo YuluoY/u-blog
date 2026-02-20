@@ -13,11 +13,6 @@ export const useCategoryStore = defineStore('category', () =>
     setCategoryList(categoryList)
   }
 
-  onBeforeMount(() =>
-  {
-    qryCategoryList()
-  })
-
   return {
     categoryList,
     setCategoryList,

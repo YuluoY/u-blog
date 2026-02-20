@@ -26,6 +26,7 @@
     "@u-blog/utils": "workspace:*"
   },
   "dependencies": {
+    "@u-blog/snowfall": "workspace:*",
     "animate.css": "^4.1.1",
     "axios": "^1.7.2",
     "lodash-es": "^4.17.21",
@@ -36,7 +37,8 @@
     "vue": "^3.5.22",
     "vue-i18n": "^9.13.1",
     "vue-router": "4",
-    "vue3-calendar-heatmap": "^2.0.5"
+    "vue3-calendar-heatmap": "^2.0.5",
+    "vuewordcloud": "^19.0.0"
   },
   "lint-staged": {
     "*.{js,jsx,vue,ts,tsx}": []

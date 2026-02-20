@@ -15,3 +15,5 @@ export * from './schema/tag'
 export * from './schema/user'
 export * from './schema/pageBlock'
 export * from './base'
+
+export { CVisualStyle, type VisualStyle } from './base'

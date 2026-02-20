@@ -12,7 +12,10 @@
   "exports": {
     ".": {
       "types": "./dist/index.browser.d.ts",
-      "import": "./dist/index.browser.mjs",
+      "import": {
+        "node": "./dist/index.node.mjs",
+        "default": "./dist/index.browser.mjs"
+      },
       "require": "./dist/index.node.cjs"
     },
     "./browser": {

@@ -21,6 +21,7 @@ import {
   UPopconfirm,
   UCodeEditor,
   USlider,
+  UStatsBar,
   UDialog,
   UTop,
   UBadge,
@@ -42,7 +43,12 @@ import {
   UMessageFn,
   UDialogFn,
   UReadProgressFn,
-  UNotificationFn
+  UNotificationFn,
+  UDrawer,
+  UExpandableRow,
+  UFilterChips,
+  UTabs,
+  UTabPane
 } from '@/components'
 
 export default [
@@ -67,7 +73,13 @@ export default [
   UPopconfirm,
   UCodeEditor,
   USlider,
+  UStatsBar,
   UDialog,
+  UDrawer,
+  UExpandableRow,
+  UFilterChips,
+  UTabs,
+  UTabPane,
   UTop,
   UBadge,
   UReadProgress,

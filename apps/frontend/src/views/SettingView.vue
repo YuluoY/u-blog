@@ -79,6 +79,49 @@
               </u-button>
             </div>
           </div>
+
+          <div class="setting-item">
+            <div class="setting-item__info">
+              <span class="setting-item__label">{{ t('settings.homeSort') }}</span>
+              <span class="setting-item__hint">{{ t('settings.homeSortHint') }}</span>
+            </div>
+            <div class="setting-item__control">
+              <u-button
+                v-for="opt in homeSortOptions"
+                :key="opt.value"
+                :type="currentHomeSort === opt.value ? 'primary' : 'info'"
+                size="small"
+                @click="handleHomeSortChange(opt.value)"
+              >
+                {{ opt.label }}
+              </u-button>
+            </div>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-item__info">
+              <span class="setting-item__label">{{ t('settings.visualStyle') }}</span>
+              <span class="setting-item__hint">{{ t('settings.visualStyleHint') }}</span>
+            </div>
+            <div class="setting-item__control">
+              <u-button
+                :type="visualStyle === 'default' ? 'primary' : 'info'"
+                size="small"
+                @click="appStore.setVisualStyle('default')"
+              >
+                <u-icon icon="fa-solid fa-square" />
+                {{ t('settings.visualDefault') }}
+              </u-button>
+              <u-button
+                :type="visualStyle === 'glass' ? 'primary' : 'info'"
+                size="small"
+                @click="appStore.setVisualStyle('glass')"
+              >
+                <u-icon icon="fa-solid fa-glass-water" />
+                {{ t('settings.visualGlass') }}
+              </u-button>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -189,16 +232,22 @@ import { reactive, ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useAppStore } from '@/stores/app'
+import { useArticleStore } from '@/stores/model/article'
 import { CArticleList } from '@/types/const'
 import type { ArticleList } from '@/types'
+import { CVisualStyle } from '@u-blog/model'
+import type { VisualStyle } from '@u-blog/model'
 import { getSettings, updateSettings } from '@/api/settings'
 import { SETTING_KEYS, MASKED_SETTING_KEYS } from '@/constants/settings'
+import type { HomeSortType } from '@/api/article'
+import { HOME_SORT_DEFAULT } from '@/api/article'
 
 defineOptions({ name: 'SettingView' })
 
 const { t } = useI18n()
 const appStore = useAppStore()
-const { theme, language, articleListType } = storeToRefs(appStore)
+const articleStore = useArticleStore()
+const { theme, language, visualStyle, articleListType, homeSort } = storeToRefs(appStore)
 
 /** 当前选择的列表样式（用于回显） */
 const currentListType = ref<ArticleList>(CArticleList.BASE)
@@ -214,6 +263,23 @@ const listTypeOptions = computed(() => [
 async function handleListTypeChange(value: ArticleList) {
   currentListType.value = value
   appStore.setArticleListType(value)
+}
+
+/** 当前首页排序（用于回显） */
+const currentHomeSort = ref<HomeSortType>(HOME_SORT_DEFAULT)
+
+const homeSortOptions = computed(() => [
+  { value: 'date' as HomeSortType, label: t('settings.homeSortDate') },
+  { value: 'hot' as HomeSortType, label: t('settings.homeSortHot') },
+  { value: 'likes' as HomeSortType, label: t('settings.homeSortLikes') },
+  { value: 'trending' as HomeSortType, label: t('settings.homeSortTrending') },
+])
+
+/** 切换首页文章排序并刷新列表 */
+function handleHomeSortChange(value: HomeSortType) {
+  currentHomeSort.value = value
+  appStore.setHomeSort(value)
+  articleStore.qryArticleList()
 }
 
 /** 服务端设置表单（仅用于展示与提交，敏感项不预填） */
@@ -235,6 +301,8 @@ async function loadServerSettings() {
     SETTING_KEYS.THEME,
     SETTING_KEYS.LANGUAGE,
     SETTING_KEYS.ARTICLE_LIST_TYPE,
+    SETTING_KEYS.HOME_SORT,
+    SETTING_KEYS.VISUAL_STYLE,
     SETTING_KEYS.OPENAI_API_KEY,
     SETTING_KEYS.OPENAI_BASE_URL,
     SETTING_KEYS.OPENAI_MODEL,
@@ -249,6 +317,13 @@ async function loadServerSettings() {
   const listTypeVal = data[SETTING_KEYS.ARTICLE_LIST_TYPE]?.value
   if (listTypeVal && typeof listTypeVal === 'string') {
     currentListType.value = listTypeVal as ArticleList
+  }
+  // 回显首页排序（服务端无则用 appStore 当前值）
+  const homeSortVal = data[SETTING_KEYS.HOME_SORT]?.value
+  if (homeSortVal && typeof homeSortVal === 'string' && ['date', 'hot', 'likes', 'trending'].includes(homeSortVal)) {
+    currentHomeSort.value = homeSortVal as HomeSortType
+  } else {
+    currentHomeSort.value = appStore.homeSort ?? HOME_SORT_DEFAULT
   }
 
   const formKeys = [

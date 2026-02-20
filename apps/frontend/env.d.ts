@@ -33,6 +33,13 @@ interface Window {
   __debugAddComment?: (data: { content: string; path: string; userId: number; pid?: number | null }) => Promise<{ id: number }>
 }
 
+/** 词云组件无官方类型 */
+declare module 'vuewordcloud' {
+  import type { DefineComponent } from 'vue'
+  const VueWordCloud: DefineComponent<Record<string, unknown>, Record<string, unknown>, unknown>
+  export default VueWordCloud
+}
+
 /** workspace 包类型未解析时的回退声明 */
 declare module '@u-blog/utils' {
   export function watchFn<T>(

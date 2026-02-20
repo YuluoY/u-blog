@@ -37,12 +37,13 @@
   }
 
   
+  /* 内容与关闭按钮间距：0.25rem = 4px@16px，避免 0.2rem 过小 */
   [class*=u-tag__content]+.u-tag__close--default,
   [class*=u-tag__content]+.u-tag__close--right{
-    margin-left: 0.2rem;
+    margin-left: 0.25rem;
   }
   [class*=u-tag__close--left]+.u-tag__content{
-    margin-left: 0.2rem;
+    margin-left: 0.25rem;
   }
 
   &.u-tag--primary {

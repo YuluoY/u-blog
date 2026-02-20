@@ -31,11 +31,6 @@ export const useUserStore = defineStore('user', () =>
     } catch { /* ignore */ }
   }
 
-  onBeforeMount(() =>
-  {
-    qryUser()
-  })
-
   return {
     user,
     setUser,

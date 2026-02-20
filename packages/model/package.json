@@ -7,7 +7,7 @@
   "types": "dist/index.d.ts",
   "type": "module",
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && node patch-dts.mjs",
     "dev": "tsup --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

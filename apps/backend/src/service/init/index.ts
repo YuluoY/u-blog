@@ -88,11 +88,11 @@ const DEFAULT_USERS_DATA = [
       avatar: 'https://avatars.githubusercontent.com/u/29045874'
     },
     socials: [
-      {
-        name: 'GitHub',
-        icon: 'https://github.com/favicon.ico',
-        url: 'https://github.com/u-blog'
-      }
+      { name: 'GitHub', icon: 'https://github.com/favicon.ico', url: 'https://github.com/u-blog' },
+      { name: 'X', icon: '', url: 'https://x.com/u-blog' },
+      { name: 'Weibo', icon: '', url: 'https://weibo.com/u-blog' },
+      { name: 'Zhihu', icon: '', url: 'https://www.zhihu.com/people/u-blog' },
+      { name: 'LinkedIn', icon: '', url: 'https://www.linkedin.com/company/u-blog' },
     ]
   },
   {
@@ -112,11 +112,9 @@ const DEFAULT_USERS_DATA = [
       avatar: 'https://avatars.githubusercontent.com/u/4220937'
     },
     socials: [
-      {
-        name: 'Twitter',
-        icon: 'https://twitter.com/favicon.ico',
-        url: 'https://twitter.com/admin'
-      }
+      { name: 'GitHub', icon: 'https://github.com/favicon.ico', url: 'https://github.com/admin' },
+      { name: 'X', icon: '', url: 'https://x.com/admin' },
+      { name: 'Weibo', icon: '', url: 'https://weibo.com/admin' },
     ]
   },
   {

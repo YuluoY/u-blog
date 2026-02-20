@@ -13,6 +13,10 @@
             document.documentElement.setAttribute('theme', t);
             document.documentElement.classList.toggle('dark', t === 'dark');
           }
+          var v = localStorage.getItem('u-blog-visual-style');
+          if (v === 'glass') {
+            document.documentElement.setAttribute('theme-style', 'glass');
+          }
         } catch (e) {}
       })();
     </script>

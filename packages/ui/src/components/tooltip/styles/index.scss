@@ -20,7 +20,7 @@ $tooltip-arrow-radius: 2px;
     }
   }
 
-  /* 圆角、字号：内联 style 直接设 borderRadius（px），变量兜底 8px */
+  /* 圆角、字号：内联 style 直接设 borderRadius（px），变量兜底 8px；父容器 #u-popper-container 为 pointer-events:none，此处恢复以便下拉选项可点击 */
   .u-tooltip__popper {
     position: relative;
     text-align: center;
@@ -29,6 +29,7 @@ $tooltip-arrow-radius: 2px;
     border-radius: var(--u-tooltip-popper-radius, 8px);
     border: var(--u-border-width-2) solid var(--u-border-1);
     overflow: visible;
+    pointer-events: auto;
 
     /* 箭头：12px 旋转方块 + 2px 圆角，z-index 1 避免被 popper 背景挡住 */
     .u-tooltip__popper--arrow {

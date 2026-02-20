@@ -3,23 +3,20 @@
     <!-- 顶部：折叠/展开 -->
     <div class="icon-bar__top">
       <u-tooltip
-        :content="sidebarStore.collapsed ? t('sidebar.expand') : t('sidebar.collapse')"
+        :content="isPanelVisible ? t('sidebar.collapse') : t('sidebar.expand')"
         placement="right"
         trigger="hover"
         :width="0"
         show-arrow
       >
-        <button
-          type="button"
+        <u-button
           class="icon-bar__item"
-          :aria-label="sidebarStore.collapsed ? t('sidebar.expandSidebar') : t('sidebar.collapseSidebar')"
+          circle
+          :aria-label="isPanelVisible ? t('sidebar.collapseSidebar') : t('sidebar.expandSidebar')"
+          :icon="isPanelVisible ? 'fa-solid fa-angles-left' : 'fa-solid fa-angles-right'"
+          :icon-props="{ icon: '', size: 'md' }"
           @click="sidebarStore.toggleCollapsed()"
-        >
-          <u-icon
-            :icon="sidebarStore.collapsed ? 'fa-solid fa-angles-right' : 'fa-solid fa-angles-left'"
-            size="lg"
-          />
-        </button>
+        />
       </u-tooltip>
     </div>
 
@@ -28,59 +25,59 @@
     <!-- 面板型工具入口 -->
     <div class="icon-bar__tools">
       <u-tooltip :content="t('sidebar.profile')" placement="right" trigger="hover" :width="0" show-arrow>
-        <button
-          type="button"
+        <u-button
           class="icon-bar__item"
           :class="{ 'is-active': sidebarStore.activePanel === PANEL_ID.PROFILE }"
+          circle
           :aria-label="t('sidebar.profile')"
+          icon="fa-solid fa-user"
+          :icon-props="{ icon: '', size: 'md' }"
           @click="toggle(PANEL_ID.PROFILE)"
-        >
-          <u-icon icon="fa-solid fa-user" size="lg" />
-        </button>
+        />
       </u-tooltip>
       <u-tooltip :content="t('sidebar.calendar')" placement="right" trigger="hover" :width="0" show-arrow>
-        <button
-          type="button"
+        <u-button
           class="icon-bar__item"
           :class="{ 'is-active': sidebarStore.activePanel === PANEL_ID.CALENDAR }"
+          circle
           :aria-label="t('sidebar.calendar')"
+          icon="fa-solid fa-calendar-days"
+          :icon-props="{ icon: '', size: 'md' }"
           @click="toggle(PANEL_ID.CALENDAR)"
-        >
-          <u-icon icon="fa-solid fa-calendar-days" size="lg" />
-        </button>
+        />
       </u-tooltip>
       <u-tooltip :content="t('sidebar.search')" placement="right" trigger="hover" :width="0" show-arrow>
-        <button
-          type="button"
+        <u-button
           class="icon-bar__item"
           :class="{ 'is-active': sidebarStore.activePanel === PANEL_ID.SEARCH }"
+          circle
           :aria-label="t('sidebar.search')"
+          icon="fa-solid fa-magnifying-glass"
+          :icon-props="{ icon: '', size: 'md' }"
           @click="toggle(PANEL_ID.SEARCH)"
-        >
-          <u-icon icon="fa-solid fa-magnifying-glass" size="lg" />
-        </button>
+        />
       </u-tooltip>
-      <u-tooltip :content="t('sidebar.tags')" placement="right" trigger="hover" :width="0" show-arrow>
-        <button
-          type="button"
+      <u-tooltip :content="t('sidebar.categoriesAndTags')" placement="right" trigger="hover" :width="0" show-arrow>
+        <u-button
           class="icon-bar__item"
           :class="{ 'is-active': sidebarStore.activePanel === PANEL_ID.TAGS }"
-          :aria-label="t('sidebar.tags')"
+          circle
+          :aria-label="t('sidebar.categoriesAndTags')"
+          icon="fa-solid fa-tags"
+          :icon-props="{ icon: '', size: 'md' }"
           @click="toggle(PANEL_ID.TAGS)"
-        >
-          <u-icon icon="fa-solid fa-tags" size="lg" />
-        </button>
+        />
       </u-tooltip>
       <u-tooltip :content="t('sidebar.siteInfo')" placement="right" trigger="hover" :width="0" show-arrow>
-        <button
-          type="button"
+        <u-button
           class="icon-bar__item"
           :class="{ 'is-active': sidebarStore.activePanel === PANEL_ID.SITE_INFO }"
+          circle
           :aria-label="t('sidebar.siteInfo')"
+          icon="fa-solid fa-chart-simple"
+          :icon-props="{ icon: '', size: 'md' }"
           @click="toggle(PANEL_ID.SITE_INFO)"
-        >
-          <u-icon icon="fa-solid fa-chart-simple" size="lg" />
-        </button>
+        />
       </u-tooltip>
     </div>
 
@@ -89,14 +86,14 @@
     <!-- 底部：语言切换 + 主题切换 -->
     <div class="icon-bar__bottom">
       <u-tooltip :content="t('sidebar.langSwitch')" placement="right" trigger="hover" :width="0" show-arrow>
-        <button
-          type="button"
+        <u-button
           class="icon-bar__item"
+          circle
           :aria-label="t('sidebar.langSwitchAria')"
           @click="toggleLanguage"
         >
-          <u-text class="icon-bar__lang-text">{{ appStore.language === 'en' ? '中' : 'En' }}</u-text>
-        </button>
+          <u-text class="icon-bar__lang-text">{{ language === CLanguage.EN ? '中' : 'En' }}</u-text>
+        </u-button>
       </u-tooltip>
       <u-tooltip
         :content="isDark ? t('sidebar.themeLight') : t('sidebar.themeDark')"
@@ -105,20 +102,31 @@
         :width="0"
         show-arrow
       >
-        <button
-          type="button"
+        <u-button
           class="icon-bar__item"
+          circle
           :aria-label="isDark ? t('sidebar.themeLightAria') : t('sidebar.themeDarkAria')"
+          :icon="isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon'"
+          :icon-props="{ icon: '', size: 'md' }"
           @click="appStore.toggleTheme($event)"
-        >
-          <u-icon :icon="isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon'" size="lg" />
-        </button>
+        />
+      </u-tooltip>
+      <u-tooltip :content="t('sidebar.settings')" placement="right" trigger="hover" :width="0" show-arrow>
+        <u-button
+          class="icon-bar__item"
+          circle
+          :aria-label="t('sidebar.settings')"
+          icon="fa-solid fa-gear"
+          :icon-props="{ icon: '', size: 'md' }"
+          @click="appStore.setSettingsDrawerVisible(true)"
+        />
       </u-tooltip>
     </div>
   </aside>
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useSidebarStore } from '@/stores/sidebar'
 import { useAppStore } from '@/stores/app'
@@ -132,16 +140,23 @@ defineOptions({ name: 'IconBar' })
 const { t } = useI18n({ useScope: 'global' })
 const sidebarStore = useSidebarStore()
 const appStore = useAppStore()
+const { language, theme } = storeToRefs(appStore)
 
-const isDark = computed(() => appStore.theme === CTheme.DARK)
+const isDark = computed(() => String(theme.value ?? '') === CTheme.DARK)
 
 function toggle(id: PanelId) {
   sidebarStore.setActivePanel(id)
 }
 
 function toggleLanguage() {
-  appStore.setLanguage(appStore.language === CLanguage.EN ? CLanguage.ZH : CLanguage.EN)
+  const next = language.value === CLanguage.EN ? CLanguage.ZH : CLanguage.EN
+  appStore.setLanguage(next)
 }
+
+/** 侧栏内容（dock 面板）是否可见：未折叠且有激活面板时为 true；折叠或无面板时为 false，折叠按钮显示“展开” */
+const isPanelVisible = computed(
+  () => !sidebarStore.collapsed && sidebarStore.activePanel != null
+)
 
 const barStyle = computed(() => ({
   width: pxToRem(ICON_BAR_WIDTH_PX),
@@ -200,24 +215,23 @@ const barStyle = computed(() => ({
     color: var(--u-text-3);
   }
 
-  /* ghost icon：无边框透明底，hover 微弱底色，active 蓝色 + 左侧指示条 */
-  &__item {
+  /* UButton 用作 ghost 图标按钮：无边框透明底，hover 微弱底色，active 蓝色 + 左侧指示条 */
+  &__item.u-button {
     position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     width: 44px;
     height: 44px;
+    min-width: 44px;
+    padding: 0;
     border: none;
     border-radius: 8px;
     background: transparent;
     color: var(--u-text-3);
-    cursor: pointer;
     transition: background 0.15s, color 0.15s;
 
     &:hover:not(.is-disabled) {
       background: var(--u-background-2);
       color: var(--u-text-1);
+      border-color: transparent;
     }
 
     &:focus-visible {
@@ -228,6 +242,7 @@ const barStyle = computed(() => ({
     &.is-active {
       color: var(--u-primary-0);
       background: var(--u-primary-light-7);
+      border-color: transparent;
       &::before {
         content: '';
         position: absolute;

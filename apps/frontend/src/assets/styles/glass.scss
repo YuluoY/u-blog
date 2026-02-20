@@ -1,0 +1,281 @@
+/**
+ * 玻璃风格视觉样式覆盖
+ * 与亮色/暗色主题正交组合：[theme-style="glass"]
+ */
+
+/* 亮色模式玻璃变量 */
+html[theme-style="glass"] {
+  --u-glass-bg: rgba(255, 255, 255, 0.65);
+  --u-glass-bg-light: rgba(255, 255, 255, 0.75);
+  --u-glass-border: rgba(255, 255, 255, 0.2);
+  --u-glass-blur: blur(20px) saturate(180%);
+}
+
+html[theme-style="glass"].dark {
+  --u-glass-bg: rgba(30, 30, 30, 0.65);
+  --u-glass-bg-light: rgba(40, 40, 40, 0.75);
+  --u-glass-border: rgba(255, 255, 255, 0.08);
+}
+
+/* ========================================
+ * 固定界面元素 - 玻璃效果
+ * ======================================== */
+
+html[theme-style="glass"] .head-nav {
+  background-color: rgba(255, 255, 255, 0.65) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+}
+
+html[theme-style="glass"].dark .head-nav {
+  background-color: rgba(30, 30, 30, 0.65) !important;
+}
+
+html[theme-style="glass"] .icon-bar {
+  background-color: rgba(255, 255, 255, 0.65) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+}
+
+html[theme-style="glass"].dark .icon-bar {
+  background-color: rgba(30, 30, 30, 0.65) !important;
+}
+
+html[theme-style="glass"] .side-panel {
+  background-color: rgba(255, 255, 255, 0.65) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+}
+
+html[theme-style="glass"].dark .side-panel {
+  background-color: rgba(30, 30, 30, 0.65) !important;
+}
+
+html[theme-style="glass"] .bottom-info {
+  background-color: rgba(255, 255, 255, 0.65) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+}
+
+html[theme-style="glass"].dark .bottom-info {
+  background-color: rgba(30, 30, 30, 0.65) !important;
+}
+
+/* ========================================
+ * 浮层组件
+ * ======================================== */
+
+html[theme-style="glass"] .u-drawer {
+  background-color: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+}
+
+html[theme-style="glass"].dark .u-drawer {
+  background-color: rgba(40, 40, 40, 0.75) !important;
+}
+
+html[theme-style="glass"] .u-drawer-overlay.is-overlay {
+  background-color: rgba(0, 0, 0, 0.3) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+
+html[theme-style="glass"] .u-dialog {
+  background-color: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+}
+
+html[theme-style="glass"].dark .u-dialog {
+  background-color: rgba(40, 40, 40, 0.75) !important;
+}
+
+html[theme-style="glass"] .u-dialog-overlay.is-overlay {
+  background-color: rgba(0, 0, 0, 0.3) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+
+html[theme-style="glass"] .u-dropdown-menu,
+html[theme-style="glass"] .u-menu {
+  background-color: rgba(255, 255, 255, 0.65) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+}
+
+html[theme-style="glass"].dark .u-dropdown-menu,
+html[theme-style="glass"].dark .u-menu {
+  background-color: rgba(30, 30, 30, 0.65) !important;
+}
+
+html[theme-style="glass"] .u-tooltip__popper {
+  background-color: rgba(255, 255, 255, 0.65) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+}
+
+html[theme-style="glass"] .u-select__popper {
+  background-color: rgba(255, 255, 255, 0.65) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+}
+
+html[theme-style="glass"] .u-notification {
+  background-color: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+}
+
+html[theme-style="glass"] .u-message {
+  background-color: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+}
+
+/* ========================================
+ * 文章卡片
+ * ======================================== */
+
+html[theme-style="glass"] .article-card-list__item {
+  background-color: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+}
+
+html[theme-style="glass"].dark .article-card-list__item {
+  background-color: rgba(40, 40, 40, 0.75) !important;
+}
+
+html[theme-style="glass"] .article-item__card {
+  background-color: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+}
+
+html[theme-style="glass"] .article-base-list__item {
+  background-color: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+}
+
+html[theme-style="glass"].dark .article-base-list__item {
+  background-color: rgba(40, 40, 40, 0.75) !important;
+}
+
+html[theme-style="glass"] .article-timeline__card {
+  background-color: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(12px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(150%) !important;
+}
+
+html[theme-style="glass"] .article-waterfall__item {
+  background-color: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+}
+
+/* ========================================
+ * 聊天界面
+ * ======================================== */
+
+html[theme-style="glass"] .chat-input-bar {
+  background-color: rgba(255, 255, 255, 0.65) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+}
+
+html[theme-style="glass"].dark .chat-input-bar {
+  background-color: rgba(30, 30, 30, 0.65) !important;
+}
+
+html[theme-style="glass"] .chat-message__bubble {
+  background-color: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(12px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(150%) !important;
+}
+
+html[theme-style="glass"].dark .chat-message__bubble {
+  background-color: rgba(40, 40, 40, 0.75) !important;
+}
+
+html[theme-style="glass"] .session-item {
+  background-color: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(12px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(150%) !important;
+}
+
+html[theme-style="glass"].dark .session-item {
+  background-color: rgba(40, 40, 40, 0.75) !important;
+}
+
+html[theme-style="glass"] .chat-sidebar {
+  background-color: rgba(255, 255, 255, 0.65) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+}
+
+/* ========================================
+ * 归档页面
+ * ======================================== */
+
+html[theme-style="glass"] .archive-page__item {
+  background-color: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(12px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(150%) !important;
+}
+
+html[theme-style="glass"].dark .archive-page__item {
+  background-color: rgba(40, 40, 40, 0.75) !important;
+}
+
+/* ========================================
+ * 关于页面
+ * ======================================== */
+
+html[theme-style="glass"] .about-page__block {
+  background-color: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+}
+
+html[theme-style="glass"].dark .about-page__block {
+  background-color: rgba(40, 40, 40, 0.75) !important;
+}
+
+/* ========================================
+ * 阅读页面
+ * ======================================== */
+
+html[theme-style="glass"] .read-view__content {
+  background-color: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+}
+
+html[theme-style="glass"].dark .read-view__content {
+  background-color: rgba(40, 40, 40, 0.75) !important;
+}
+
+/* ========================================
+ * UI组件
+ * ======================================== */
+
+html[theme-style="glass"] .u-card {
+  background-color: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+}
+
+html[theme-style="glass"] .u-tag {
+  background-color: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(8px) saturate(120%) !important;
+  -webkit-backdrop-filter: blur(8px) saturate(120%) !important;
+}
+
+html[theme-style="glass"] .u-input__inner,
+html[theme-style="glass"] .u-input {
+  background-color: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(8px) saturate(120%) !important;
+  -webkit-backdrop-filter: blur(8px) saturate(120%) !important;
+}

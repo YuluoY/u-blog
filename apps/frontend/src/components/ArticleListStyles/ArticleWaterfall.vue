@@ -10,7 +10,11 @@
         <img :src="item.cover" :alt="item.title" />
       </div>
       <div class="article-waterfall__body">
-        <h3 class="article-waterfall__title">{{ item.title }}</h3>
+        <div class="article-waterfall__title-row">
+          <h3 class="article-waterfall__title">{{ item.title }}</h3>
+          <span v-if="item.isTop" class="article-waterfall__badge article-waterfall__badge--pinned">{{ t('article.pinned') }}</span>
+          <span v-if="isHot(item)" class="article-waterfall__badge article-waterfall__badge--hot">{{ t('article.hot') }}</span>
+        </div>
         <div v-if="item.tags?.length" class="article-waterfall__tags">
           <u-tag
             v-for="tag in item.tags.slice(0, 4)"
@@ -37,14 +41,19 @@
 import { useI18n } from 'vue-i18n'
 import type { IArticle } from '@u-blog/model'
 import { formatDateTime } from '@/utils/date'
+import { ARTICLE_HOT_VIEW_THRESHOLD } from '@/constants/settings'
 
 defineOptions({ name: 'ArticleWaterfall' })
 
 const { t } = useI18n()
 
-defineProps<{
+function isHot(article: IArticle): boolean {
+  return (article.viewCount ?? 0) >= ARTICLE_HOT_VIEW_THRESHOLD
+}
+
+const props = withDefaults(defineProps<{
   data: IArticle[]
-}>({
+}>(), {
   data: () => []
 })
 
@@ -100,16 +109,45 @@ const emit = defineEmits<{
     padding: 14px;
   }
 
+  &__title-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    min-width: 0;
+    margin-bottom: 8px;
+  }
+
   &__title {
+    flex: 1;
+    min-width: 0;
     font-size: 1.5rem;
     font-weight: 600;
     color: var(--u-text-1);
-    margin: 0 0 8px 0;
+    margin: 0;
     line-height: 1.4;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  &__badge {
+    flex-shrink: 0;
+    font-size: 1.05rem;
+    padding: 2px 6px;
+    border-radius: var(--u-border-radius-4, 4px);
+    font-weight: 500;
+
+    &--pinned {
+      background: var(--u-primary-2, #e8f4ff);
+      color: var(--u-primary-0, #1890ff);
+    }
+
+    &--hot {
+      background: #fff1f0;
+      color: #ff4d4f;
+    }
   }
 
   &__tags {

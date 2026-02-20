@@ -13,11 +13,6 @@ export const useTagStore = defineStore('tag', () =>
     setTagList(tagList)
   }
 
-  onBeforeMount(() =>
-  {
-    qryTagList()
-  })
-
   return {
     tagList,
     setTagList,

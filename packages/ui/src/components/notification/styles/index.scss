@@ -23,7 +23,7 @@
   }
 
   &__close {
-    padding: 0.2rem;
+    padding: 0.25rem; /* 4px@16px，点击区不宜过小 */
     border: none;
     background: transparent;
     color: var(--u-text-4);

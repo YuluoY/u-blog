@@ -40,6 +40,8 @@
       :style="thumbStyle"
       @mousedown.stop="onMousedown"
       @touchstart.stop="onMousedown"
+      @mouseenter="onThumbEnter"
+      @mouseleave="onThumbLeave"
     >
       <div class="u-slider__thumb">
         <u-tooltip
@@ -47,6 +49,7 @@
           ref="tooltipRef"
           :class="tooltipClass"
           :placement="placement"
+          manual
           :visible="tooltipVisible"
           v-bind="_popperOptions"
           :content="formatValue(internalValue)"
@@ -106,7 +109,12 @@ const isPressed = ref(false)
 const sliderRef = ref<HTMLElement | null>(null)
 const tooltipRef = ref<InstanceType<typeof UTooltip> | null>(null)
 
-const _popperOptions = computed(() => ({ width: 0, ...props.popperOptions }))
+/** 与 thumb 拉开距离，避免 tooltip 与控制点重叠（placement 默认 top，distance 为上方间距） */
+const _popperOptions = computed(() => ({
+  width: 0,
+  modifiers: [{ name: 'offset', options: { offset: [0, 14] } }],
+  ...props.popperOptions,
+}))
 
 const progressStyle = computed<CSSProperties>(() => {
   const percent = valueToPercent(internalValue.value)
@@ -165,6 +173,20 @@ function formatValue(val: number): string {
     return String(props.formatTooltip(val))
   }
   return String(Math.round(val))
+}
+
+/** 悬浮在控制点上时显示当前值 */
+function onThumbEnter() {
+  if (props.disabled || !props.showTooltip || isPressed.value) return
+  tooltipVisible.value = true
+  tooltipRef.value?.onOpen()
+}
+
+function onThumbLeave() {
+  if (!isPressed.value) {
+    tooltipVisible.value = false
+    tooltipRef.value?.onClose()
+  }
 }
 
 function onMousedown(e: MouseEvent | TouchEvent) {

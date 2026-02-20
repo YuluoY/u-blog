@@ -328,7 +328,7 @@ async function handleSend() {
   }
 }
 
-function handleSuggestionClick(suggestion: typeof suggestions[0]) {
+function handleSuggestionClick(suggestion: { icon: string; text: string }) {
   inputText.value = suggestion.text
   handleSend()
 }
@@ -356,17 +356,17 @@ function scrollToBottom() {
 }
 
 function formatTime(timestamp: number | undefined | null): string {
-  const t = timestamp != null ? Number(timestamp) : NaN
-  if (!Number.isFinite(t)) return t('common.justNow')
+  const ts = timestamp != null ? Number(timestamp) : NaN
+  if (!Number.isFinite(ts)) return t('common.justNow')
   const now = Date.now()
-  const diff = now - t
+  const diff = now - ts
   const minute = 60_000
   const hour = 3_600_000
   const day = 86_400_000
   if (diff < minute) return t('common.justNow')
   if (diff < hour) return `${Math.floor(diff / minute)}m`
   if (diff < day) return `${Math.floor(diff / hour)}h`
-  const date = new Date(t)
+  const date = new Date(ts)
   if (Number.isNaN(date.getTime())) return t('common.justNow')
   const nowDate = new Date(now)
   if (date.getDate() === nowDate.getDate()) {

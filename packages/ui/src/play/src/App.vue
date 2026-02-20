@@ -1,70 +1,50 @@
 <template>
-  <div>
-    <u-button @click="handleChangeDirection">切换布局</u-button>
-    <u-button @click="handleChangeDotPosition">随机排序dot位置</u-button>
-  </div>
-  <div style="width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;">
-    <!-- <u-timeline style="width: 40%;" :data="data" :direction="'vertical'"></u-timeline> -->
-    <u-card style="width: 80%;" shadow="hover" @click="handleCardClick">
-      <u-timeline :data="data" :direction="direction">
-        <u-timeline-item v-for="item in data" :key="item.date?.toString()" v-bind="item" @dot-click="handleDotClick"></u-timeline-item>
-      </u-timeline>
-    </u-card>
-  </div>
+  <div class="drawer-test-container">
+    <h2>Drawer 组件动画测试</h2>
+    <div class="button-group">
+      <u-button type="primary" @click="openDrawer('right')">右侧抽屉</u-button>
+      <u-button type="success" @click="openDrawer('left')">左侧抽屉</u-button>
+      <u-button type="warning" @click="openDrawer('top')">顶部抽屉</u-button>
+      <u-button type="danger" @click="openDrawer('bottom')">底部抽屉</u-button>
+    </div>
 
+    <u-drawer
+      v-model="visible"
+      :title="`抽屉标题 (${currentPlacement})`"
+      :placement="currentPlacement"
+      :width="400"
+      :height="300"
+      @open="handleOpen"
+      @close="handleClose"
+    >
+      <div class="drawer-content">
+        <p>这是一个从 <strong>{{ currentPlacement }}</strong> 方向滑出的抽屉组件</p>
+        <p>进入和退出都应该有平滑的滑动动画</p>
+        <u-button @click="visible = false">关闭抽屉</u-button>
+      </div>
+    </u-drawer>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { faker } from '@faker-js/faker'
-import type { UTimelineItemProps } from '@ucc-ui/components'
-import { UDialogFn } from 'ucc-ui'
-import { reactive, ref } from 'vue'
-const data = reactive(Array.from({ length: 5 }, () => ({
-  content: faker.lorem.paragraph(),
-  // YYYY-MM-DD
-  date: faker.date.recent().toISOString().split('T')[0],
-  type: faker.helpers.arrayElement(['primary', 'success', 'warning', 'danger', 'info']),
-  size: faker.helpers.arrayElement(['normal', 'large']),
-  placement: faker.helpers.arrayElement(['top', 'bottom']),
-  position: faker.helpers.arrayElement(['left', 'right', 'center']),
-  hollow: faker.helpers.arrayElement([true, false])
-})) as UTimelineItemProps[])
+import { ref } from 'vue'
 
-const handleDotClick = (evt: MouseEvent, item: UTimelineItemProps) =>
-{
-  console.log(evt, item)
+type DrawerPlacement = 'left' | 'right' | 'top' | 'bottom'
+
+const visible = ref(false)
+const currentPlacement = ref<DrawerPlacement>('right')
+
+const openDrawer = (placement: DrawerPlacement) => {
+  currentPlacement.value = placement
+  visible.value = true
 }
 
-const direction = ref<'horizontal' | 'vertical'>('horizontal')
-const handleChangeDirection = () =>
-{
-  direction.value = direction.value === 'horizontal' ? 'vertical' : 'horizontal'
-
-  setTimeout(() =>
-  {
-    data.push({
-      content: faker.lorem.paragraph(),
-      date: faker.date.recent().toISOString().split('T')[0],
-      type: faker.helpers.arrayElement(['primary', 'success', 'warning', 'danger', 'info']),
-      size: faker.helpers.arrayElement(['normal', 'large']),
-    })
-  }, 2000)
+const handleOpen = () => {
+  console.log('Drawer opened')
 }
 
-const handleChangeDotPosition = () =>
-{
-  data.forEach(item =>
-  {
-    item.position = faker.helpers.arrayElement(['left', 'right', 'center'])
-    item.icon = faker.helpers.arrayElement(['', 'fas fa-home', 'fas fa-user', 'fas fa-search', 'fas fa-star', 'fas fa-heart'])
-  })
-}
-
-const handleCardClick = () =>
-{
-  UDialogFn({
-    title: 'asdasdas'
-  })
+const handleClose = () => {
+  console.log('Drawer closed')
 }
 </script>
 
@@ -75,24 +55,24 @@ const handleCardClick = () =>
   overflow: hidden;
 }
 
-.red {
-  background-color: red;
-  color: white;
+.drawer-test-container {
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
 }
-.blue {
-  background-color: blue;
-  color: white;
+
+.button-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
-.green {
-  background-color: green;
-  color: white;
-}
-.yellow {
-  background-color: yellow;
-  color: white;
-}
-.purple {
-  background-color: purple;
-  color: white;
+
+.drawer-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 </style>

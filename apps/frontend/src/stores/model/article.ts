@@ -3,9 +3,11 @@ import { CTable, type IArticle } from '@u-blog/model'
 import { useState } from '@u-blog/composables'
 import { defineStore } from 'pinia'
 import { PAGE_SIZE } from '@/api/article'
+import { useAppStore } from '@/stores/app'
 
 export const useArticleStore = defineStore('article', () =>
 {
+  const appStore = useAppStore()
   const [articleList, setArticleList] = useState<IArticle[]>([])
   /** 归档页时间线用（来自接口） */
   const [archiveList, setArchiveList] = useState<IArticle[]>([])
@@ -15,14 +17,15 @@ export const useArticleStore = defineStore('article', () =>
   const [hasMore, setHasMore] = useState(true)
   const [archiveLoading, setArchiveLoading] = useState(false)
 
-  /** 加载第一页（重置列表） */
+  /** 加载第一页（重置列表），排序依 appStore.homeSort */
   const qryArticleList = async() =>
   {
     setLoading(true)
     setPage(1)
     setHasMore(true)
     try {
-      const list = await api(CTable.ARTICLE).getArticleList(1, PAGE_SIZE)
+      const sort = appStore.homeSort ?? 'date'
+      const list = await api(CTable.ARTICLE).getArticleList(1, PAGE_SIZE, sort)
       setArticleList(list)
       if (list.length < PAGE_SIZE) setHasMore(false)
     } finally {
@@ -30,14 +33,15 @@ export const useArticleStore = defineStore('article', () =>
     }
   }
 
-  /** 加载更多（追加到列表末尾） */
+  /** 加载更多（追加到列表末尾），排序依 appStore.homeSort */
   const loadMore = async() =>
   {
     if (loading.value || !hasMore.value) return
     setLoading(true)
     const nextPage = page.value + 1
     try {
-      const list = await api(CTable.ARTICLE).getArticleList(nextPage, PAGE_SIZE)
+      const sort = appStore.homeSort ?? 'date'
+      const list = await api(CTable.ARTICLE).getArticleList(nextPage, PAGE_SIZE, sort)
       if (list.length > 0) {
         setArticleList([...articleList.value, ...list])
         setPage(nextPage)
@@ -74,11 +78,6 @@ export const useArticleStore = defineStore('article', () =>
     const numId = parseInt(id, 10)
     return articleList.value.find(article => article.id === numId || String(article.id) === id)
   }
-
-  onBeforeMount(() =>
-  {
-    qryArticleList()
-  })
 
   return {
     articleList,

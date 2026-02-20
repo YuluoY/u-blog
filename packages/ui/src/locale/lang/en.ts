@@ -117,7 +117,7 @@ export const en = {
         'Deprecated usages detected, please refer to the el-pagination documentation for more details',
     },
     drawer: {
-      close: 'Close this dialog',
+      close: 'Close this drawer',
     },
     messagebox: {
       title: 'Message',

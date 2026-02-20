@@ -221,7 +221,7 @@
     color: var(--u-primary-1);
     background-color: transparent;
     border: none;
-    padding: 0.16rem 0 !important;
+    padding: 0.25rem 0 !important; /* 4px@16px，0.16rem 过小 */
     &:hover {
       color: var(--u-primary);
       background-color: transparent;

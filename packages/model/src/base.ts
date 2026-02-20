@@ -4,6 +4,11 @@ export const CTheme = {
   DARK: 'dark'
 } as const
 
+export const CVisualStyle = {
+  DEFAULT: 'default',
+  GLASS: 'glass'
+} as const
+
 export const CTable = {
   USER: 'users',
   ARTICLE: 'article',
@@ -45,6 +50,7 @@ export const CCustomType = {
 export const PAYLOAD_FIELD = ['id', 'username', 'role'] as const
 
 export type Theme = typeof CTheme[keyof typeof CTheme]
+export type VisualStyle = typeof CVisualStyle[keyof typeof CVisualStyle]
 export type Table = typeof CTable[keyof typeof CTable]
 export type Language = typeof CLanguage[keyof typeof CLanguage]
 export type CustomType = typeof CCustomType[keyof typeof CCustomType]

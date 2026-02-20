@@ -19,8 +19,8 @@ export const HEADER_HEIGHT_PX = 60
 /** Footer 高度（40-56px，底部信息条） */
 export const FOOTER_HEIGHT_PX = 48
 
-/** Icon Bar 宽度（64-80px） */
-export const ICON_BAR_WIDTH_PX = 72
+/** Icon Bar 宽度（紧凑约 56px，原 72px） */
+export const ICON_BAR_WIDTH_PX = 56
 
 /** Side Panel 宽度（224-360px，默认 280-320） */
 export const SIDE_PANEL_WIDTH_PX = 300

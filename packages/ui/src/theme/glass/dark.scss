@@ -1,0 +1,12 @@
+[theme-style="glass"].dark,
+[theme-style="glass"]:root.dark {
+  --u-glass-background: rgba(30, 30, 30, 0.65);
+  --u-glass-background-light: rgba(40, 40, 40, 0.75);
+  --u-glass-border: rgba(255, 255, 255, 0.08);
+  --u-glass-border-light: rgba(255, 255, 255, 0.12);
+  --u-glass-backdrop-filter: blur(20px) saturate(180%);
+  --u-glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+  --u-glass-shadow-light: 0 2px 12px rgba(0, 0, 0, 0.15);
+  --u-glass-overlay-background: rgba(0, 0, 0, 0.5);
+  --u-glass-overlay-blur: blur(8px);
+}

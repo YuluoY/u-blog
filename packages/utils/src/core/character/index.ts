@@ -1,3 +1,4 @@
+export { default as snakeCase } from 'lodash-es/snakeCase'
 export * from './addQuotesToProps'
 export * from './camelToWords'
 export * from './chunkString'

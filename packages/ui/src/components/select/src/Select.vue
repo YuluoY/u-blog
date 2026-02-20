@@ -65,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject, nextTick, ref, useId } from 'vue'
+import { computed, inject, nextTick, onBeforeUnmount, ref, useId, watch } from 'vue'
 import type { SelectOption, USelectEmits, USelectProps } from '../types'
 import { FORM_ITEM_SIZE_INJECTION_KEY } from '@/components/form'
 import { UTooltip } from '@/components/tooltip'
@@ -77,7 +77,8 @@ defineOptions({
 
 const props = withDefaults(defineProps<USelectProps>(), {
   options: () => [],
-  size: 'default'
+  size: 'default',
+  fitInputWidth: true
 })
 
 const emits = defineEmits<USelectEmits>()
@@ -93,9 +94,12 @@ const triggerRef = ref<HTMLDivElement | null>(null)
 const dropdownVisible = ref(false)
 const triggerWidth = ref(0)
 
-const dropdownStyle = computed(() =>
-  triggerWidth.value > 0 ? { minWidth: `${triggerWidth.value}px` } : undefined
-)
+/** 参考 Element Plus select-dropdown：fitInputWidth 时用 width 严格对齐触发器，否则用 minWidth 允许下拉被内容撑开 */
+const dropdownStyle = computed(() => {
+  if (triggerWidth.value <= 0) return undefined
+  const key = props.fitInputWidth ? 'width' : 'minWidth'
+  return { [key]: `${triggerWidth.value}px` }
+})
 
 const popperOptions = computed(() => ({
   modifiers: [
@@ -125,17 +129,37 @@ const normalizedOptions = computed((): SelectOption[] => {
   return (list as (string | number)[]).map((v) => ({ value: v, label: String(v) }))
 })
 
+function updateTriggerWidth() {
+  const w = triggerRef.value?.offsetWidth
+  if (w != null) triggerWidth.value = w
+}
+
 function onVisibleChange(visible: boolean) {
   dropdownVisible.value = visible
   if (visible) {
-    nextTick(() => {
-      triggerWidth.value = triggerRef.value?.offsetWidth ?? 0
-    })
+    nextTick(updateTriggerWidth)
     emits('focus', new FocusEvent('focus'))
   } else {
     emits('blur', new FocusEvent('blur'))
   }
 }
+
+/** 参考 Element Plus：触发器尺寸变化时同步下拉宽度 */
+let resizeObserver: ResizeObserver | null = null
+watch(triggerRef, (el) => {
+  if (resizeObserver) {
+    resizeObserver.disconnect()
+    resizeObserver = null
+  }
+  if (el) {
+    resizeObserver = new ResizeObserver(updateTriggerWidth)
+    resizeObserver.observe(el)
+    updateTriggerWidth()
+  }
+}, { immediate: true })
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect()
+})
 
 function selectOption(opt: SelectOption) {
   emits('update:modelValue', opt.value)

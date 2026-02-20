@@ -19,7 +19,7 @@ export default defineConfig({
   },
   
   // 是否清理输出目录
-  clean: true,
+  clean: false,
   
   // 是否生成 source map
   sourcemap: true,

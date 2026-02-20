@@ -4,6 +4,8 @@ import { tryit } from '@u-blog/utils'
 import { formatResponse, getDataSource } from '@/utils'
 import CommonService from '@/service/common'
 import * as SiteOverviewService from '@/service/siteOverview'
+import * as CloudWeightsService from '@/service/cloudWeights'
+import * as ArticleSearchService from '@/service/articleSearch'
 import { Users } from '@/module/schema/Users'
 import { Repository } from 'typeorm'
 import { IUserLogin } from '@u-blog/model'
@@ -44,6 +46,23 @@ class CommonController {
   {
     const tryData = await tryit(() => SiteOverviewService.getSiteOverview(req))
     return formatResponse(tryData, 'ok', '获取网站概览失败')
+  }
+
+  /** 类别/标签权重与声噪，供前端词云等可视化 */
+  async getCloudWeights(req: Request, _res: Response): ControllerReturn<Awaited<ReturnType<typeof CloudWeightsService.getCloudWeights>>>
+  {
+    const tryData = await tryit(() => CloudWeightsService.getCloudWeights(req))
+    return formatResponse(tryData, 'ok', '获取词云权重失败')
+  }
+
+  /** 文章全文搜索：对标题、正文、描述 ILIKE 匹配，仅已发布，返回列表与片段 */
+  async searchArticles(req: Request, _res: Response): ControllerReturn<Awaited<ReturnType<typeof ArticleSearchService.searchArticles>>>
+  {
+    const keyword = (req.query.keyword ?? req.body?.keyword ?? '') as string
+    const scope = (req.query.scope ?? req.body?.scope ?? 'all') as ArticleSearchService.SearchScope
+    const limit = Math.min(50, Math.max(1, Number(req.query.limit ?? req.body?.limit ?? 20) || 20))
+    const tryData = await tryit(() => ArticleSearchService.searchArticles(req, keyword, scope, limit))
+    return formatResponse(tryData, 'ok', '搜索失败')
   }
 
   /** 博客 AI 助手：接收用户消息，返回回复（可扩展接入 OpenAI 等） */

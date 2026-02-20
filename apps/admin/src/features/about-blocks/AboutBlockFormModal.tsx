@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Modal, Form, Input, InputNumber, Select, Tabs } from 'antd'
+import { Drawer, Form, Input, InputNumber, Select, Tabs, Button, Space } from 'antd'
 import MDEditor from '@uiw/react-md-editor'
 import { useTheme } from '../../contexts/ThemeContext'
 import { CPageBlockType } from '@u-blog/model'
@@ -106,14 +106,20 @@ export function AboutBlockFormModal({
   const title = Form.useWatch('title', form) ?? ''
 
   return (
-    <Modal
+    <Drawer
       title={initial ? '编辑区块' : '新增区块'}
       open={open}
-      onOk={handleOk}
-      onCancel={handleCancel}
-      confirmLoading={loading}
-      destroyOnHidden={false}
+      onClose={handleCancel}
       width={720}
+      destroyOnClose={false}
+      footer={
+        <Space>
+          <Button onClick={handleCancel}>取消</Button>
+          <Button type="primary" onClick={handleOk} loading={loading}>
+            确定
+          </Button>
+        </Space>
+      }
     >
       <Tabs
         activeKey={activeTab}
@@ -143,7 +149,7 @@ export function AboutBlockFormModal({
                 <Form.Item
                   name="extraJson"
                   label="扩展数据 (JSON)"
-                  tooltip="时间线类型请填写 { \"items\": [ { \"year\": \"2020\", \"title\": \"标题\", \"desc\": \"描述\" } ] }"
+                  tooltip='时间线类型请填写 { "items": [ { "year": "2020", "title": "标题", "desc": "描述" } ] }'
                 >
                   <Input.TextArea rows={4} placeholder='{"items": [{"year": "2020", "title": "...", "desc": "..."}]}' />
                 </Form.Item>
@@ -162,6 +168,6 @@ export function AboutBlockFormModal({
           },
         ]}
       />
-    </Modal>
+    </Drawer>
   )
 }

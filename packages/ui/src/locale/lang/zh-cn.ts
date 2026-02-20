@@ -115,7 +115,7 @@ export const zhCn = {
         '你使用了一些已被废弃的用法，请参考 el-pagination 的官方文档',
     },
     drawer: {
-      close: '关闭此对话框',
+      close: '关闭此抽屉',
     },
     messagebox: {
       title: '提示',

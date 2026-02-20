@@ -30,8 +30,11 @@ const props = withDefaults(defineProps<UIconProps>(), {
 })
 // 未显式设置时：无 ariaLabel 且无 title 则视为装饰性
 const decorative = computed(() => props.decorative ?? !(props.ariaLabel ?? props.title))
-// 传给 FontAwesomeIcon 的 props，排除本组件单独处理的字段
-const filterProps = computed<any>(() => omit(props, ['type', 'color', 'ariaLabel', 'decorative']))
+// 传给 FontAwesomeIcon 的 props；FontAwesomeIcon 的 size 校验不包含 'md'（见 FortAwesome/vue-fontawesome#493），将 'md' 映射为 '1x'
+const filterProps = computed<any>(() => {
+  const rest = omit(props, ['type', 'color', 'ariaLabel', 'decorative'])
+  return { ...rest, size: rest.size === 'md' ? '1x' : rest.size }
+})
 const iconStyles = computed<CSSProperties>(() => ({ color: props.color ?? void 0 }))
 
 </script>

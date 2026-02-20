@@ -22,6 +22,11 @@ export interface USelectProps {
   disabled?: boolean
   /** 占位文案（无选中时展示） */
   placeholder?: string
+  /**
+   * 下拉框宽度是否严格贴合触发器（true：width=触发器，选项过长省略号；false：minWidth=触发器，选项可撑开）
+   * 参考 Element Plus fitInputWidth，默认 true
+   */
+  fitInputWidth?: boolean
   /** 原生 id，用于 label[for] 与无障碍 */
   id?: string
   /** 原生 name */

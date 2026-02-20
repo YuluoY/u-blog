@@ -15,6 +15,16 @@ router.get('/site-overview', async (req: Request, res: Response) => {
   toResponse(result, res)
 })
 
+router.get('/cloud-weights', async (req: Request, res: Response) => {
+  const result = await CommonController.getCloudWeights(req, res)
+  toResponse(result, res)
+})
+
+router.get('/article-search', async (req: Request, res: Response) => {
+  const result = await CommonController.searchArticles(req, res)
+  toResponse(result, res)
+})
+
 router.post('/register', async (req: Request, res: Response) => {
   const result = await CommonController.register(req, res)
   toResponse(result, res)

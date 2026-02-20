@@ -109,7 +109,7 @@ async function fetchList(restoreScroll = false) {
   const scrollTop = main ? main.scrollTop : 0
   loading.value = true
   try {
-    list.value = await api(CTable.COMMENT).getCommentList(MESSAGE_PATH)
+    list.value = await api(CTable.COMMENT).getCommentList(MESSAGE_PATH, 1, 200)
   } finally {
     loading.value = false
   }

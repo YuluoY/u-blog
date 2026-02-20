@@ -1,6 +1,9 @@
 {
   "watch": ["src"],
   "ext": "ts",
-  "exec": "tsx src/main.ts",
-  "ignore": ["node_modules", "dist"]
+  "exec": "npx tsx --tsconfig tsconfig.json src/main.ts",
+  "ignore": ["node_modules", "dist"],
+  "env": {
+    "NODE_ENV": "development"
+  }
 }

@@ -1,8 +1,25 @@
 import { lazy, Suspense } from 'react'
-import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
-import { Spin } from 'antd'
+import { createBrowserRouter, Navigate, RouterProvider, useRouteError } from 'react-router-dom'
+import { Button, Result, Spin } from 'antd'
 import ProtectedRoute from '../features/auth/ProtectedRoute'
 import AdminLayout from '../layouts/AdminLayout'
+
+/** 路由级错误展示，避免白屏 */
+function RouteErrorBoundary() {
+  const error = useRouteError() as Error
+  return (
+    <Result
+      status="error"
+      title="页面出错"
+      subTitle={error?.message ?? '未知错误'}
+      extra={
+        <Button type="primary" onClick={() => window.location.reload()}>
+          刷新页面
+        </Button>
+      }
+    />
+  )
+}
 
 const LoginPage = lazy(() => import('../features/auth/LoginPage'))
 const DashboardPage = lazy(() => import('../features/dashboard/DashboardPage'))
@@ -27,6 +44,7 @@ const router = createBrowserRouter([
         <LoginPage />
       </Lazy>
     ),
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: '/',
@@ -35,6 +53,7 @@ const router = createBrowserRouter([
         <AdminLayout />
       </ProtectedRoute>
     ),
+    errorElement: <RouteErrorBoundary />,
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: 'dashboard', element: <Lazy><DashboardPage /></Lazy> },

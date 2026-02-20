@@ -35,32 +35,25 @@
         <span>{{ t('profile.registeredAt') }} {{ formatDate(user.createdAt) }}</span>
       </div>
     </div>
-    <!-- 社交链接（来自 users.socials jsonb） -->
-    <div v-if="socialLinks.length" class="profile-panel__socials">
-      <a
-        v-for="s in socialLinks"
-        :key="s.name"
-        :href="s.url"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="profile-panel__social"
-        :title="s.name"
-      >
-        <img v-if="s.icon" :src="s.icon" class="profile-panel__social-icon" :alt="s.name" />
-        <span>{{ s.name }}</span>
-      </a>
+    <!-- 社交链接（来自 users.socials，常见平台用 FA 图标） -->
+    <div v-if="socialLinks.length" class="profile-panel__socials-wrap">
+      <div class="profile-panel__socials">
+        <a
+          v-for="s in socialLinks"
+          :key="s.name + s.url"
+          :href="s.url"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="profile-panel__social"
+          :title="s.name"
+        >
+          <u-icon v-if="socialIcon(s)" :icon="socialIcon(s)!" class="profile-panel__social-fa" />
+          <img v-else-if="s.icon" :src="s.icon" class="profile-panel__social-icon" :alt="s.name" />
+          <u-icon v-else icon="fa-solid fa-link" class="profile-panel__social-fa" />
+          <span class="profile-panel__social-label">{{ s.name }}</span>
+        </a>
+      </div>
     </div>
-    <!-- 个人网站（来自 users.website jsonb） -->
-    <a
-      v-if="websiteUrl"
-      :href="websiteUrl"
-      target="_blank"
-      rel="noopener noreferrer"
-      class="profile-panel__website"
-    >
-      <u-icon icon="fa-solid fa-globe" />
-      <span>{{ websiteTitle }}</span>
-    </a>
   </div>
 </template>
 
@@ -91,15 +84,25 @@ const socialLinks = computed(() => {
   return raw.filter((s: any) => s?.url && s?.name)
 })
 
-const websiteUrl = computed(() => {
-  const w = user.value?.website as any
-  return w?.url ?? null
-})
+/** 常见平台名 -> Font Awesome 品牌图标，无则用后端 icon 或默认 link */
+const SOCIAL_FA_ICONS: Record<string, string> = {
+  github: 'fa-brands fa-github',
+  twitter: 'fa-brands fa-x-twitter',
+  x: 'fa-brands fa-x-twitter',
+  weibo: 'fa-brands fa-weibo',
+  zhihu: 'fa-brands fa-zhihu',
+  linkedin: 'fa-brands fa-linkedin',
+  bilibili: 'fa-brands fa-bilibili',
+  youtube: 'fa-brands fa-youtube',
+  telegram: 'fa-brands fa-telegram',
+  discord: 'fa-brands fa-discord',
+  rss: 'fa-solid fa-rss',
+}
 
-const websiteTitle = computed(() => {
-  const w = user.value?.website as any
-  return w?.title || w?.url || t('profile.website')
-})
+function socialIcon(s: { name: string }): string | undefined {
+  const key = (s.name ?? '').toLowerCase().replace(/\s+/g, '')
+  return SOCIAL_FA_ICONS[key]
+}
 
 function formatDate(v: string | Date): string {
   const d = typeof v === 'string' ? new Date(v) : v
@@ -178,18 +181,21 @@ function formatDate(v: string | Date): string {
   }
 
   /* 社交链接 */
-  &__socials {
+  &__socials-wrap {
     width: 100%;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
     margin-top: 4px;
     padding-top: 12px;
     border-top: 1px solid var(--u-border-1);
   }
 
-  &__social {
+  &__socials {
     display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  &__social {
+    display: inline-flex;
     align-items: center;
     gap: 6px;
     padding: 6px 10px;
@@ -198,36 +204,28 @@ function formatDate(v: string | Date): string {
     color: var(--u-text-2);
     text-decoration: none;
     background: var(--u-background-2);
-    transition: background 0.15s;
+    transition: background 0.15s, color 0.15s;
     &:hover {
       background: var(--u-primary-light-7);
       color: var(--u-primary-0);
     }
   }
 
-  &__social-icon {
-    width: 14px;
-    height: 14px;
-    border-radius: 2px;
+  &__social-fa {
+    width: 1.6rem;
+    text-align: center;
+    font-size: 1.4rem;
   }
 
-  /* 个人网站 */
-  &__website {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 8px;
-    border-radius: 6px;
-    font-size: 1.3rem;
-    color: var(--u-primary-0);
-    text-decoration: none;
-    border: 1px solid var(--u-border-1);
-    transition: background 0.15s;
-    &:hover {
-      background: var(--u-primary-light-7);
-    }
+  &__social-icon {
+    width: 16px;
+    height: 16px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  &__social-label {
+    white-space: nowrap;
   }
 }
 </style>

@@ -1,0 +1,11 @@
+.u-stats-bar {
+  display: flex;
+  height: var(--u-stats-bar-height, 6px);
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--u-stats-bar-track);
+
+  .u-stats-bar__seg {
+    transition: flex 0.3s ease;
+  }
+}

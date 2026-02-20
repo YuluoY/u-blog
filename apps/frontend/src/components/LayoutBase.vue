@@ -39,6 +39,12 @@
     <!-- 折叠态：Popover 展示面板内容 -->
     <PopoverPanel />
 
+    <!-- 设置抽屉（从右侧滑出） -->
+    <SettingsDrawer
+      :model-value="appStore.settingsDrawerVisible"
+      @update:model-value="appStore.setSettingsDrawerVisible"
+    />
+
     <!-- 底部：Footer -->
     <u-region region="bottom" class="layout-base__bottom">
       <BottomInfo />
@@ -53,7 +59,9 @@ import BottomInfo from '@/components/BottomInfo.vue'
 import IconBar from '@/components/AppShell/IconBar.vue'
 import SidePanel from '@/components/AppShell/SidePanel.vue'
 import PopoverPanel from '@/components/AppShell/PopoverPanel.vue'
+import SettingsDrawer from '@/components/AppShell/SettingsDrawer.vue'
 import { useSidebarStore } from '@/stores/sidebar'
+import { useAppStore } from '@/stores/app'
 import { HEADER_HEIGHT_PX, FOOTER_HEIGHT_PX, ICON_BAR_WIDTH_PX, SIDE_PANEL_WIDTH_PX } from '@/constants/layout'
 import { useRoute } from 'vue-router'
 
@@ -63,6 +71,7 @@ defineOptions({
 
 const route = useRoute()
 const sidebarStore = useSidebarStore()
+const appStore = useAppStore()
 
 const isChatRoute = computed(() => route.name === 'chat')
 const isAboutRoute = computed(() => route.name === 'about')

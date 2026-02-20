@@ -1,8 +1,9 @@
 import type { Request } from 'express'
 import type { ControllerReturn } from '@u-blog/types'
-import { formatResponse, getClientIp, parseUserAgent, resolveIpLocation } from '@/utils'
+import { formatResponse, getClientIp, getDataSource, parseUserAgent, resolveIpLocation } from '@/utils'
 import { tryit } from '@u-blog/utils'
 import RestService from '@/service/rest'
+import { Article } from '@/module/schema/Article'
 
 class RestController
 {
@@ -41,6 +42,14 @@ class RestController
       })
     }
     const tryData = await tryit<any, Error>(() => RestService.add(req.model, data, ret))
+    // 评论发表成功后，若有 articleId 则同步增加文章评论数
+    if (isComment && tryData[0] == null && data?.articleId != null) {
+      const articleId = Number(data.articleId)
+      if (!Number.isNaN(articleId)) {
+        const articleRepo = getDataSource(req).getRepository(Article)
+        await articleRepo.increment({ id: articleId }, 'commentCount', 1)
+      }
+    }
     return formatResponse(tryData, req.__('rest.addSuccess'), req.__('rest.addFail'))
   }
 

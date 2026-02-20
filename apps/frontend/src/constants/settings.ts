@@ -8,11 +8,15 @@ export const SETTING_KEYS = {
   LANGUAGE: 'language',
   /** 外观：首页文章列表样式 base / card / waterfall / compact */
   ARTICLE_LIST_TYPE: 'article_list_type',
+  /** 外观：首页文章排序 date / hot / likes / trending */
+  HOME_SORT: 'home_sort',
+  /** 外观：视觉样式 default / glass */
+  VISUAL_STYLE: 'visual_style',
   /** OpenAI API Key */
   OPENAI_API_KEY: 'openai_api_key',
   /** OpenAI Base URL（可换代理） */
   OPENAI_BASE_URL: 'openai_base_url',
-  /** 对话模型名称，如 gpt-4o、gpt-3.5-turbo */
+  /** 对话模型名称，如 deepseek-chat、qwen-turbo、glm-4 */
   OPENAI_MODEL: 'openai_model',
   /** 站点名称 */
   SITE_NAME: 'site_name',
@@ -27,3 +31,6 @@ export const MASKED_SETTING_KEYS: Set<string> = new Set([
   SETTING_KEYS.OPENAI_API_KEY,
   SETTING_KEYS.OPENAI_BASE_URL,
 ])
+
+/** 文章「火热」标识：浏览量不低于此值则显示火热角标 */
+export const ARTICLE_HOT_VIEW_THRESHOLD = 100

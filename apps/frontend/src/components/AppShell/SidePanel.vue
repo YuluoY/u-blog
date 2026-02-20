@@ -41,7 +41,7 @@ const panelTitle = computed(() => {
     [PANEL_ID.PROFILE]: 'sidebar.profile',
     [PANEL_ID.CALENDAR]: 'sidebar.calendar',
     [PANEL_ID.SEARCH]: 'sidebar.search',
-    [PANEL_ID.TAGS]: 'sidebar.tags',
+    [PANEL_ID.TAGS]: 'sidebar.categoriesAndTags',
     [PANEL_ID.SITE_INFO]: 'sidebar.siteInfo',
   }
   const key = keyMap[sidebarStore.activePanel ?? '']

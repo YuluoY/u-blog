@@ -100,7 +100,7 @@ defineOptions({
 const instance = getCurrentInstance()
 
 const props = withDefaults(defineProps<UTooltipProps>(), {
-  width: 200,
+  width: 0, // 0 表示由内容撑开（max-content），固定宽度请传正整数
   rawContent: false,
   padding: 14,
   placement: 'bottom',
@@ -117,8 +117,9 @@ const emits = defineEmits<UTooltipEmits>()
 const popperStyles = computed(() => {
   const r = props.borderRadius ?? 0.5
   const radiusPx = `${Math.round(r * 16)}px`
+  const useAutoWidth = props.width == null || props.width <= 0
   const base: Record<string, string> = {
-    width: props.width != null && props.width > 0 ? pxToRem<string>(props.width) : 'auto',
+    width: useAutoWidth ? 'max-content' : pxToRem<string>(props.width),
     padding: pxToRem<string>(props.padding),
     borderRadius: radiusPx,
     '--u-tooltip-popper-radius': radiusPx,
