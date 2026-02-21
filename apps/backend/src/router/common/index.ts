@@ -3,13 +3,15 @@ import type { Request, Response } from 'express'
 import CommonController from '@/controller/common'
 import * as SettingsController from '@/controller/settings'
 import { UploadHandler } from '@/middleware/UploadHandler'
+import { requireAuth } from '@/middleware/AuthGuard'
+import { requireRole } from '@/middleware/RoleGuard'
 import { toResponse } from '@/utils'
-import { IUserLogin } from '@u-blog/model'
+import { IUserLogin, CUserRole } from '@u-blog/model'
 
 const router = express.Router() as Router
 
 router.get('/settings', (req: Request, res: Response) => SettingsController.getSettings(req, res))
-router.put('/settings', (req: Request, res: Response) => SettingsController.putSettings(req, res))
+router.put('/settings', requireAuth, requireRole(CUserRole.ADMIN), (req: Request, res: Response) => SettingsController.putSettings(req, res))
 
 router.get('/site-overview', async (req: Request, res: Response) => {
   const result = await CommonController.getSiteOverview(req, res)
@@ -31,6 +33,12 @@ router.post('/register', async (req: Request, res: Response) => {
   toResponse(result, res)
 })
 
+/** 发送邮箱验证码（注册前调用） */
+router.post('/send-email-code', async (req: Request, res: Response) => {
+  const result = await CommonController.sendEmailCode(req, res)
+  toResponse(result, res)
+})
+
 router.post('/login', async (req: Request, res: Response) => {
   const result = await CommonController.login<IUserLogin>(req, res)
   toResponse(result, res)
@@ -41,18 +49,23 @@ router.post('/refresh', async (req: Request, res: Response) => {
   toResponse(result, res)
 })
 
+router.post('/logout', requireAuth, async (req: Request, res: Response) => {
+  const result = await CommonController.logout(req, res)
+  toResponse(result, res)
+})
+
 router.post('/chat', async (req: Request, res: Response) => {
   const result = await CommonController.chat(req, res)
   toResponse(result, res)
 })
 
-/* ---------- 文件上传 ---------- */
-router.post('/upload', UploadHandler('file'), async (req: Request, res: Response) => {
+/* ---------- 文件上传（需要登录） ---------- */
+router.post('/upload', requireAuth, UploadHandler('file'), async (req: Request, res: Response) => {
   const result = await CommonController.upload(req, res)
   toResponse(result, res)
 })
 
-router.delete('/media', async (req: Request, res: Response) => {
+router.delete('/media', requireAuth, async (req: Request, res: Response) => {
   const result = await CommonController.deleteMedia(req, res)
   toResponse(result, res)
 })

@@ -11,7 +11,8 @@ const dynamicRoutes: readonly RouteRecordRaw[] = [
     meta: {
       title: '撰写',
       isAffix: true,
-      index: 7
+      index: 7,
+      requiresAuth: true
     }
   },
   {
@@ -21,7 +22,8 @@ const dynamicRoutes: readonly RouteRecordRaw[] = [
     meta: {
       title: '发布成功',
       isAffix: false,
-      isHidden: true
+      isHidden: true,
+      requiresAuth: true
     }
   }
 ]

@@ -20,6 +20,7 @@ import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import appCfg from '@/app'
+import { createTransporter, sendMail } from '@/plugin/mailer'
 
 /* ========== 类型定义 ========== */
 
@@ -156,18 +157,100 @@ const BASE64_IMAGE_REGEX = /!\[([^\]]*)\]\((data:image\/[^;]+;base64,[^)]+)\)/g
 const BASE64_IMAGE_REGEX_ALT = /<img[^>]+src="(data:image\/[^;]+;base64,[^"]+)"[^>]*>/g
 const UPLOAD_DIR = 'uploads'
 
+/* ========== 邮箱验证码缓存（内存） ========== */
+
+interface VerifyCodeEntry {
+  code: string
+  expiresAt: number
+}
+
+/** 邮箱 → 验证码条目映射；TTL = appCfg.emailExpired (5 min) */
+const emailCodeCache = new Map<string, VerifyCodeEntry>()
+
+/** 定期清理过期条目（每 60 秒） */
+setInterval(() => {
+  const now = Date.now()
+  for (const [key, entry] of emailCodeCache) {
+    if (entry.expiresAt <= now) emailCodeCache.delete(key)
+  }
+}, 60_000)
+
 /* ========== CommonService 类 ========== */
 
 class CommonService {
+
+  /* ---------- 邮箱验证码 ---------- */
+
+  /**
+   * 发送邮箱验证码：生成 6 位随机数 → 写入缓存 → 通过 nodemailer 发送
+   * 同一邮箱 60 秒内不可重复发送（防刷）
+   */
+  async sendEmailCode(email: string, userRepo: Repository<Users>) {
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new Error('邮箱格式不正确')
+    }
+
+    // 防刷：60 秒内已发送过
+    const existing = emailCodeCache.get(email)
+    if (existing && existing.expiresAt - appCfg.emailExpired + 60_000 > Date.now()) {
+      throw new Error('验证码已发送，请 60 秒后再试')
+    }
+
+    // 检查邮箱是否已被注册
+    const exist = await userRepo.findOne({ where: { email } })
+    if (exist) {
+      throw new Error('该邮箱已被注册')
+    }
+
+    // 生成 6 位验证码
+    const code = String(Math.floor(100000 + Math.random() * 900000))
+
+    // 写入缓存
+    emailCodeCache.set(email, {
+      code,
+      expiresAt: Date.now() + appCfg.emailExpired,
+    })
+
+    // 发送邮件
+    const transporter = createTransporter()
+    await sendMail(transporter, { to: email, code })
+
+    return { message: '验证码已发送' }
+  }
+
+  /**
+   * 校验邮箱验证码（注册时内部调用）
+   * @returns true 已验证通过；会清除已使用的验证码
+   */
+  verifyEmailCode(email: string, code: string): boolean {
+    const entry = emailCodeCache.get(email)
+    if (!entry) return false
+    if (Date.now() > entry.expiresAt) {
+      emailCodeCache.delete(email)
+      return false
+    }
+    if (entry.code !== code) return false
+    // 验证通过后删除
+    emailCodeCache.delete(email)
+    return true
+  }
 
   /* ---------- 认证相关 ---------- */
 
   async register(
     req: Request,
     userRepo: Repository<Users>,
-    data: IUserRegisterDto,
+    data: IUserRegisterDto & { emailCode?: string },
     ret: number = 0,
   ) {
+    // 0、校验邮箱验证码
+    if (!data.emailCode) {
+      throw new Error('请输入邮箱验证码')
+    }
+    if (!this.verifyEmailCode(data.email, data.emailCode)) {
+      throw new Error('验证码无效或已过期')
+    }
+
     // 1、判断用户是否存在
     const exist = await userRepo.findOne({ where: [{ email: data.email }, { username: data.username }] })
     if (exist)
@@ -324,6 +407,14 @@ class CommonService {
 
     const { rthash: _, ...userInfo } = user
     return { ...userInfo, token, rt: newRt }
+  }
+
+  /**
+   * 登出：清除用户的 token 和 rthash，使令牌失效
+   */
+  async logout(req: Request, userRepo: Repository<Users>) {
+    if (!req.user?.id) throw new Error('未登录')
+    await userRepo.update(req.user.id, { token: null, rthash: null })
   }
 
   /* ---------- 文件上传 / 媒体管理 ---------- */

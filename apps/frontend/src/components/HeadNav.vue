@@ -8,7 +8,7 @@
     <!-- 中：路由导航 -->
     <nav class="head-nav__nav" :aria-label="t('headNav.ariaMainNav')">
       <u-menu>
-        <template v-for="r in routes" :key="r.path">
+        <template v-for="r in visibleRoutes" :key="r.path">
           <u-sub-menu v-if="r.children?.length">
             <template #title>
               <u-text>{{ navTitle(r) }}</u-text>
@@ -23,9 +23,28 @@
         </template>
       </u-menu>
     </nav>
-    <!-- 右：用户信息 -->
+    <!-- 右：认证区 -->
     <div class="head-nav__actions">
-      <u-text class="head-nav__user" :ellipsis="true" :title="name">{{ name }}</u-text>
+      <!-- 已登录：头像 + 用户名 + 登出 -->
+      <template v-if="isLoggedIn">
+        <img
+          v-if="userStore.user?.avatar"
+          class="head-nav__avatar"
+          :src="userStore.user.avatar"
+          :alt="name"
+        />
+        <u-icon v-else class="head-nav__avatar-icon" icon="fa-solid fa-circle-user" />
+        <u-text class="head-nav__user" :ellipsis="true" :title="name">{{ name }}</u-text>
+        <u-button class="head-nav__logout" size="small" @click="handleLogout">
+          {{ t('auth.logout') }}
+        </u-button>
+      </template>
+      <!-- 未登录：登录/注册按钮 -->
+      <template v-else>
+        <u-button class="head-nav__login-btn" size="small" type="primary" @click="router.push('/login')">
+          {{ t('auth.login') }}
+        </u-button>
+      </template>
     </div>
   </header>
 </template>
@@ -50,8 +69,15 @@ const appStore = useAppStore()
 const userStore = useUserStore()
 const router = useRouter()
 
-const routes = computed(() =>
-  appStore.routes?.filter((v: RouteRecordRaw) => v.name && v.meta?.isAffix)
+const isLoggedIn = computed(() => userStore.isLoggedIn)
+
+/** 已登录时显示全部导航；未登录时隐藏需要认证的路由（如撰写） */
+const visibleRoutes = computed(() =>
+  appStore.routes?.filter((v: RouteRecordRaw) => {
+    if (!v.name || !v.meta?.isAffix) return false
+    if (v.meta?.requiresAuth && !isLoggedIn.value) return false
+    return true
+  })
 )
 
 function navTitle(route: { name?: string | symbol | null; meta?: { title?: string } }) {
@@ -63,9 +89,14 @@ function navTitle(route: { name?: string | symbol | null; meta?: { title?: strin
 const logo = computed(() => headerStore.logo)
 const siteName = computed(() => headerStore.siteName || t('common.blog'))
 const name = computed(
-  () => userStore.user?.username ?? (headerStore.name || t('common.guest'))
+  () => userStore.user?.namec || userStore.user?.username || t('common.guest')
 )
 const navHeight = computed(() => pxToRem(HEADER_HEIGHT_PX))
+
+async function handleLogout() {
+  await userStore.logout()
+  router.push('/home')
+}
 </script>
 
 <style lang="scss" scoped>
@@ -134,11 +165,24 @@ const navHeight = computed(() => pxToRem(HEADER_HEIGHT_PX))
     }
   }
 
-  /* 右：用户区 */
+  /* 右：用户/认证区 */
   &__actions {
     flex-shrink: 0;
     display: flex;
     align-items: center;
+    gap: 0.8rem;
+  }
+
+  &__avatar {
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  &__avatar-icon {
+    font-size: 2.4rem;
+    color: var(--u-text-3);
   }
 
   &__user {
@@ -146,6 +190,14 @@ const navHeight = computed(() => pxToRem(HEADER_HEIGHT_PX))
     color: var(--u-text-2);
     max-width: 8rem;
     display: block;
+  }
+
+  &__logout {
+    font-size: 1.2rem;
+  }
+
+  &__login-btn {
+    font-size: 1.3rem;
   }
 }
 </style>

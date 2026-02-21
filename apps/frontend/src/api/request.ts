@@ -1,4 +1,18 @@
 import axios from 'axios'
+import type { IUserLogin, IUserRegisterDto, IUserLoginDto } from '@u-blog/model'
+
+/** 内存中保存的 access token（不持久化，刷新页面后通过 /refresh 恢复） */
+let accessToken: string | null = null
+
+/** 获取当前 access token */
+export function getAccessToken(): string | null {
+  return accessToken
+}
+
+/** 设置 access token（登录/刷新成功后调用） */
+export function setAccessToken(token: string | null) {
+  accessToken = token
+}
 
 const instance = axios.create({
   baseURL: '/api',
@@ -8,6 +22,25 @@ const instance = axios.create({
     'Content-Type': 'application/json'
   }
 })
+
+/* ---------- 请求拦截器：自动附带 Authorization 头 ---------- */
+instance.interceptors.request.use((config) => {
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`
+  }
+  return config
+})
+
+/* ---------- 响应拦截器：401 时清除 token ---------- */
+instance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      accessToken = null
+    }
+    return Promise.reject(error)
+  }
+)
 
 export interface BackendResponse<T = unknown> {
   code: number
@@ -140,6 +173,65 @@ export async function recordSiteVisit(): Promise<{ todayUv: number }> {
     throw new Error(payload.message || '记录访问失败')
   }
   return payload.data
+}
+
+/* ---------- 认证相关 ---------- */
+
+/**
+ * 用户登录
+ * @param data 用户名/邮箱 + 密码
+ * @returns 用户信息 + access token（rt 由后端 set-cookie 自动设置）
+ */
+export async function loginApi(data: IUserLoginDto): Promise<IUserLogin> {
+  const res = await instance.post<BackendResponse<IUserLogin>>('/login', data)
+  const payload = res.data
+  if (payload.code !== 0) {
+    throw new Error(payload.message || '登录失败')
+  }
+  // 存储 access token 到内存
+  if (payload.data?.token) {
+    setAccessToken(payload.data.token)
+  }
+  return payload.data
+}
+
+/**
+ * 用户注册
+ * @param data 注册表单数据（含 emailCode 验证码）
+ * @returns 注册结果（含 token）
+ */
+export async function registerApi(data: IUserRegisterDto & { emailCode: string }): Promise<IUserLogin> {
+  const res = await instance.post<BackendResponse<IUserLogin>>('/register', { ...data, ret: 1 })
+  const payload = res.data
+  if (payload.code !== 0) {
+    throw new Error(payload.message || '注册失败')
+  }
+  if (payload.data?.token) {
+    setAccessToken(payload.data.token)
+  }
+  return payload.data
+}
+
+/**
+ * 发送邮箱验证码
+ * @param email 注册邮箱
+ */
+export async function sendEmailCodeApi(email: string): Promise<void> {
+  const res = await instance.post<BackendResponse<unknown>>('/send-email-code', { email })
+  const payload = res.data
+  if (payload.code !== 0) {
+    throw new Error(payload.message || '发送验证码失败')
+  }
+}
+
+/**
+ * 用户登出
+ */
+export async function logoutApi(): Promise<void> {
+  try {
+    await instance.post<BackendResponse<unknown>>('/logout')
+  } catch { /* ignore */ }
+  setAccessToken(null)
 }
 
 export default instance

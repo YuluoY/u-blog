@@ -9,6 +9,7 @@ const ArchiveView = () => import('@/views/ArchiveView.vue')
 const ReadView = () => import('@/views/ReadView.vue')
 const MessageView = () => import('@/views/MessageView.vue')
 const ChatView = () => import('@/views/ChatView.vue')
+const LoginView = () => import('@/views/LoginView.vue')
 
 const routes: RouteRecordRaw[] = [
   {
@@ -76,6 +77,17 @@ const routes: RouteRecordRaw[] = [
     meta: {
       title: '阅读',
       isAffix: false
+    }
+  },
+  {
+    path: '/login',
+    name: 'login',
+    component: LoginView,
+    meta: {
+      title: '登录',
+      isAffix: false,
+      isHidden: true,
+      guestOnly: true
     }
   },
   {

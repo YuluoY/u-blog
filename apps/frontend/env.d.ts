@@ -1,6 +1,26 @@
 // eslint-disable-next-line spaced-comment
 /// <reference types="vite/client" />
 
+import type { UserRole } from '@u-blog/model'
+
+/** 扩展 vue-router RouteMeta */
+declare module 'vue-router' {
+  interface RouteMeta {
+    title?: string
+    isAffix?: boolean
+    index?: number
+    isLeftSide?: boolean
+    isRightSide?: boolean
+    isHidden?: boolean
+    /** 需要登录才能访问 */
+    requiresAuth?: boolean
+    /** 仅游客可访问（已登录则跳转首页） */
+    guestOnly?: boolean
+    /** 允许访问的最低角色 */
+    minRole?: UserRole
+  }
+}
+
 declare module '*.vue' {
   import { DefineComponent } from 'vue'
 

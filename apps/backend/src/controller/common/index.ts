@@ -9,6 +9,15 @@ import { IUserLogin } from '@u-blog/model'
 import appCfg from '@/app'
 
 class CommonController {
+  /** 发送邮箱验证码 */
+  async sendEmailCode(req: Request, _res: Response): ControllerReturn
+  {
+    const { email } = req.body || {}
+    const userRepo = getDataSource(req).getRepository(Users) as Repository<Users>
+    const tryData = await tryit<any, Error>(() => CommonService.sendEmailCode(email, userRepo))
+    return formatResponse(tryData, '验证码已发送', '发送验证码失败')
+  }
+
   async register(req: Request, res: Response): ControllerReturn
   {
     const { ret = 0, ...data } = req.body
@@ -36,6 +45,16 @@ class CommonController {
     if (tryData[1])
       this.setCookie(res, tryData[1])
     return formatResponse(tryData, req.__('common.refreshTokenSuccess'), req.__('common.refreshTokenFail'), undefined, { skipErrorLog: true })
+  }
+
+  /** 登出：清除服务端令牌 + 删除 rt cookie */
+  async logout(req: Request, res: Response): ControllerReturn
+  {
+    const userRepo = getDataSource(req).getRepository(Users) as Repository<Users>
+    const tryData = await tryit<any, Error>(() => CommonService.logout(req, userRepo))
+    // 无论数据库操作是否成功都清除 cookie
+    res.clearCookie('rt', { httpOnly: true, path: '/', sameSite: 'lax' })
+    return formatResponse(tryData, '登出成功', '登出失败')
   }
 
   /** 网站概览统计（文章/分类/标签数、浏览/点赞/评论、运行天数、最后更新） */

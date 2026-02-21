@@ -1,17 +1,24 @@
 <template>
-  <LayoutBase>
-    <RouterView v-slot="{ Component }">
-      <!-- 撰写页保持挂载，避免切换回来时 MdEditor 重新渲染、内容不丢失 -->
-      <KeepAlive :include="['WriteView']">
-        <component :is="Component" />
-      </KeepAlive>
-    </RouterView>
-  </LayoutBase>
+  <!-- 登录页独立全屏渲染，不使用 LayoutBase -->
+  <template v-if="isFullscreenRoute">
+    <RouterView />
+  </template>
+  <template v-else>
+    <LayoutBase>
+      <RouterView v-slot="{ Component }">
+        <!-- 撰写页保持挂载，避免切换回来时 MdEditor 重新渲染、内容不丢失 -->
+        <KeepAlive :include="['WriteView']">
+          <component :is="Component" />
+        </KeepAlive>
+      </RouterView>
+    </LayoutBase>
+  </template>
   <Snowfall v-if="showSnowfall" :options="appStore.snowfallOptions" />
 </template>
 
 <script setup lang="ts">
 import { watch, onMounted, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import LayoutBase from '@/components/LayoutBase.vue'
 import { useAppStore } from '@/stores/app'
 import { fetchTodayHasSnowByIP } from '@/api/snowfallWeather'
@@ -25,6 +32,11 @@ import { recordSiteVisit } from '@/api/request'
 import { SETTING_KEYS } from '@/constants/settings'
 
 const appStore = useAppStore()
+const route = useRoute()
+
+/** 需要独立全屏渲染的路由（不包裹 LayoutBase） */
+const FULLSCREEN_ROUTES = new Set(['login'])
+const isFullscreenRoute = computed(() => FULLSCREEN_ROUTES.has(route.name as string))
 
 const showSnowfall = computed(() => {
   if (appStore.snowfallMode === 'off') return false

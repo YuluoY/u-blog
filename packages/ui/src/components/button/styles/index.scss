@@ -259,21 +259,24 @@
   }
 
   &.u-button--large {
-    padding: 1.8rem 1.2rem;
-    height: 2.4rem;
+    height: var(--u-component-size-lg);
+    padding: 0 2rem;
     font-size: var(--u-font-size-lg);
+    border-radius: var(--u-border-radius-8);
   }
 
   &.u-button--default {
-    padding: 1.4rem 1rem;
-    height: 2rem;
+    height: var(--u-component-size-default);
+    padding: 0 1.6rem;
     font-size: var(--u-font-size-base);
+    border-radius: var(--u-border-radius-6);
   }
 
   &.u-button--small {
-    padding: 1rem 0.8rem;
-    height: 1.6rem;
+    height: var(--u-component-size-sm);
+    padding: 0 1.2rem;
     font-size: var(--u-font-size-md);
+    border-radius: var(--u-border-radius-4);
   }
 
   &.is-round {
@@ -285,16 +288,16 @@
     border-radius: var(--u-border-radius-circle);
 
     &.u-button--large {
-      width: 2.5rem;
-      padding: 0.8rem;
+      width: var(--u-component-size-lg);
+      padding: 0;
     }
     &.u-button--default {
-      width: 2rem;
-      padding: 0.6rem;
+      width: var(--u-component-size-default);
+      padding: 0;
     }
     &.u-button--small {
-      width: 1.5rem;
-      padding: 0.4rem;
+      width: var(--u-component-size-sm);
+      padding: 0;
     }
   }
 }
