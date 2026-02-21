@@ -21,6 +21,7 @@ import { useArticleStore } from '@/stores/model/article'
 import { useUserStore } from '@/stores/model/user'
 import { i18n } from '@/locales'
 import { getSettings } from '@/api/settings'
+import { recordSiteVisit } from '@/api/request'
 import { SETTING_KEYS } from '@/constants/settings'
 
 const appStore = useAppStore()
@@ -60,5 +61,8 @@ onMounted(() => {
   useTagStore().qryTagList()
   useArticleStore().qryArticleList()
   useUserStore().fetchUser()
+
+  // 记录站点访问（后端按 IP 每日去重）
+  recordSiteVisit().catch(() => {})
 })
 </script>

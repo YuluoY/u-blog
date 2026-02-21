@@ -25,3 +25,6 @@ dist-ssr
 *.sln
 *.sw?
 pnpm-lock.yaml
+
+# Uploaded files
+uploads/

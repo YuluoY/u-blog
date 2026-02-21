@@ -12,23 +12,24 @@ export type HomeSortType = 'date' | 'hot' | 'likes' | 'trending'
 /** 首页排序默认值 */
 export const HOME_SORT_DEFAULT: HomeSortType = 'date'
 
-/** 文章列表排序：按卡片展示的发布日倒序（新在前） */
-export const ARTICLE_LIST_ORDER = { publishedAt: 'DESC' } as const
+/** 文章列表排序：按创建日期倒序（新在前） */
+export const ARTICLE_LIST_ORDER = { createdAt: 'DESC' } as const
 
 type OrderSpec = Record<string, 'ASC' | 'DESC'>
 
-/** 根据首页排序方式得到 order 对象（置顶优先 + 第二排序键） */
+/** 根据首页排序方式得到 order 对象（置顶优先 + 第二排序键 + createdAt 兜底） */
 export function getArticleListOrder(sort: HomeSortType): OrderSpec {
   const base: OrderSpec = { isTop: 'DESC' }
   switch (sort) {
     case 'hot':
-      return { ...base, viewCount: 'DESC' }
+      return { ...base, viewCount: 'DESC', createdAt: 'DESC' }
     case 'likes':
-      return { ...base, likeCount: 'DESC' }
+      return { ...base, likeCount: 'DESC', createdAt: 'DESC' }
     case 'trending':
-      return { ...base, viewCount: 'DESC', likeCount: 'DESC' }
+      return { ...base, viewCount: 'DESC', likeCount: 'DESC', createdAt: 'DESC' }
     default:
-      return { ...base, publishedAt: 'DESC' }
+      // 按创建日期排序，新文章始终在最上面
+      return { ...base, createdAt: 'DESC' }
   }
 }
 

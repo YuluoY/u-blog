@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express'
 import { tryit } from '@u-blog/utils'
 import { formatResponse, toResponse } from '@/utils'
-import * as SettingsService from '@/service/settings'
+import CommonService from '@/service/common'
 
 /**
  * GET /settings?keys=key1,key2
@@ -11,7 +11,7 @@ export async function getSettings(req: Request, res: Response): Promise<void> {
   const keysParam = (req.query.keys as string) || ''
   const keys = keysParam ? keysParam.split(',').map(k => k.trim()).filter(Boolean) : undefined
   const result = await tryit<Record<string, { value: unknown; desc?: string | null; masked?: boolean }>, Error>(
-    () => SettingsService.getSettings(req, keys)
+    () => CommonService.getSettings(req, keys)
   )
   const data = formatResponse(result, 'ok', '获取设置失败')
   toResponse(data, res)
@@ -44,7 +44,7 @@ export async function putSettings(req: Request, res: Response): Promise<void> {
       }
     }
   }
-  const result = await tryit<void, Error>(() => SettingsService.setSettings(req, record))
+  const result = await tryit<void, Error>(() => CommonService.setSettings(req, record))
   const data = formatResponse(result, '保存成功', '保存设置失败')
   toResponse(data, res)
 }

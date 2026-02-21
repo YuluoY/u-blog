@@ -11,11 +11,20 @@ export type SelectOptions = SelectOption[] | (string | number)[]
 
 export type USelectSize = (typeof CSelectSize)[keyof typeof CSelectSize]
 
+/** 单选值 或 多选值数组 */
+export type SelectModelValue = string | number | (string | number)[]
+
 export interface USelectProps {
   /** 选项列表 */
   options?: SelectOptions
-  /** 当前选中值（受控） */
-  modelValue?: string | number
+  /** 当前选中值（单选为 string|number，多选为 (string|number)[]） */
+  modelValue?: SelectModelValue
+  /** 是否开启多选模式 */
+  multiple?: boolean
+  /** 多选时触发器区域最多展示的 tag 数量，超出部分显示 +N（0 = 不限） */
+  maxTagCount?: number
+  /** 多选 tag 是否可关闭（默认 true） */
+  tagClosable?: boolean
   /** 尺寸 */
   size?: USelectSize
   /** 是否禁用 */
@@ -33,11 +42,17 @@ export interface USelectProps {
   name?: string
   /** 无障碍标签 */
   ariaLabel?: string
+  /** 是否可清空（鼠标悬停时显示清除按钮） */
+  clearable?: boolean
 }
 
 export interface USelectEmits {
-  (e: 'update:modelValue', value: string | number): void
-  (e: 'change', value: string | number): void
+  (e: 'update:modelValue', value: SelectModelValue): void
+  (e: 'change', value: SelectModelValue): void
   (e: 'focus', evt: FocusEvent): void
   (e: 'blur', evt: FocusEvent): void
+  /** 多选模式下移除某个 tag 时触发 */
+  (e: 'remove-tag', value: string | number): void
+  /** 点击清除按钮时触发 */
+  (e: 'clear'): void
 }

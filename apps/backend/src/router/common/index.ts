@@ -2,6 +2,7 @@ import express, { type Router } from 'express'
 import type { Request, Response } from 'express'
 import CommonController from '@/controller/common'
 import * as SettingsController from '@/controller/settings'
+import { UploadHandler } from '@/middleware/UploadHandler'
 import { toResponse } from '@/utils'
 import { IUserLogin } from '@u-blog/model'
 
@@ -42,6 +43,31 @@ router.post('/refresh', async (req: Request, res: Response) => {
 
 router.post('/chat', async (req: Request, res: Response) => {
   const result = await CommonController.chat(req, res)
+  toResponse(result, res)
+})
+
+/* ---------- 文件上传 ---------- */
+router.post('/upload', UploadHandler('file'), async (req: Request, res: Response) => {
+  const result = await CommonController.upload(req, res)
+  toResponse(result, res)
+})
+
+router.delete('/media', async (req: Request, res: Response) => {
+  const result = await CommonController.deleteMedia(req, res)
+  toResponse(result, res)
+})
+
+/* ---------- 浏览量统计 ---------- */
+
+/** 文章浏览计数（同 IP 10 分钟去重） */
+router.post('/article-view', async (req: Request, res: Response) => {
+  const result = await CommonController.recordArticleView(req, res)
+  toResponse(result, res)
+})
+
+/** 站点访问记录（同 IP 每日去重） */
+router.post('/site-visit', async (req: Request, res: Response) => {
+  const result = await CommonController.recordSiteVisit(req, res)
   toResponse(result, res)
 })
 

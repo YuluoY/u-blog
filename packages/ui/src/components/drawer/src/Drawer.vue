@@ -19,7 +19,6 @@
           aria-modal="true"
           :aria-label="title || undefined"
           :style="panelStyle"
-          @click.stop
         >
           <header v-if="title || showCloseIcon || $slots.title" class="u-drawer__header">
             <slot name="title">
@@ -38,6 +37,9 @@
           <div class="u-drawer__body">
             <slot />
           </div>
+          <footer v-if="$slots.footer" class="u-drawer__footer">
+            <slot name="footer" />
+          </footer>
         </div>
       </div>
     </Transition>

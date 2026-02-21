@@ -4,7 +4,7 @@ import { In } from 'typeorm'
 import { formatResponse, getClientIp, getDataSource, parseUserAgent, resolveIpLocation } from '@/utils'
 import { tryit } from '@u-blog/utils'
 import RestService from '@/service/rest'
-import { processArticleContent } from '@/service/articleContent'
+import CommonService from '@/service/common'
 import { Article } from '@/module/schema/Article'
 import { Tag } from '@/module/schema/Tag'
 
@@ -49,7 +49,7 @@ class RestController
     let payload: typeof data = data
     if (isArticle && data && typeof data === 'object' && !Array.isArray(data)) {
       const { tags: tagIds, content, ...rest } = data as Record<string, unknown>
-      const processedContent = typeof content === 'string' ? processArticleContent(content) : content
+      const processedContent = typeof content === 'string' ? CommonService.processArticleContent(content) : content
       payload = { ...rest, content: processedContent } as typeof data
     }
 

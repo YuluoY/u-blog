@@ -1,36 +1,7 @@
 <template>
   <u-layout class="write-view-layout">
     <u-region region="center" class="write-view__center">
-      <!-- 可折叠表单区：折叠时仅占一行，不压缩编辑器高度 -->
-      <div class="write-view__form" :class="[`write-view__form--${formLayout}`, { 'write-view__form--collapsed': !formExpanded }]">
-        <div class="write-view__form-header" @click="formExpanded = !formExpanded">
-          <span class="write-view__form-title">{{ t('write.formPanel') }}</span>
-          <div v-if="formExpanded && showLayoutSwitch" class="write-view__form-layout-wrap" @click.stop>
-            <label for="write-view-form-layout-select" class="write-view__form-layout-label">
-              {{ t('write.formLayout') }}
-            </label>
-            <u-select
-              id="write-view-form-layout-select"
-              v-model="formLayout"
-              :options="formLayoutOptions"
-              class="write-view__form-layout-select"
-            />
-          </div>
-          <u-button plain size="small" class="write-view__form-toggle" :aria-label="formExpanded ? t('write.collapseForm') : t('write.expandForm')">
-            <u-icon :icon="formExpanded ? ['fas', 'chevron-up'] : ['fas', 'chevron-down']" />
-          </u-button>
-        </div>
-        <div v-show="formExpanded" class="write-view__form-body">
-          <WriteSaveForm
-            :content="draft"
-            :user-id="unref(user)?.id ?? null"
-            :loading="saveLoading"
-            :layout="formLayout"
-            inline
-            @submit="onSaveSubmit"
-          />
-        </div>
-      </div>
+      <!-- 编辑器区域（全宽） -->
       <div class="write-view__editor-wrap">
         <WriteEditor
           ref="writeEditorRef"
@@ -40,13 +11,51 @@
           @save="handleSave"
         />
       </div>
+
+      <!-- 右下角浮动发布按钮 -->
+      <button
+        class="write-view__publish-fab"
+        :class="{ 'is-hidden': panelVisible }"
+        @click="panelVisible = true"
+        :aria-label="t('write.publishArticle')"
+      >
+        <u-icon :icon="['fas', 'paper-plane']" />
+        <span class="write-view__publish-fab-text">{{ t('write.publish') }}</span>
+      </button>
     </u-region>
   </u-layout>
+
+  <!-- 发布抽屉（使用 UI 组件库 UDrawer） -->
+  <u-drawer
+    v-model="panelVisible"
+    :title="t('write.publishArticle')"
+    :width="400"
+    placement="right"
+  >
+    <WriteSaveForm
+      ref="saveFormRef"
+      :content="draft"
+      :user-id="unref(user)?.id ?? null"
+      @submit="onSaveSubmit"
+    />
+    <template #footer>
+      <u-button plain @click="panelVisible = false">{{ t('common.cancel') }}</u-button>
+      <u-button
+        type="primary"
+        :loading="saveLoading"
+        :disabled="!saveFormRef?.canSubmit"
+        @click="saveFormRef?.submit()"
+      >
+        {{ saveFormRef?.submitLabel || t('write.publish') }}
+      </u-button>
+    </template>
+  </u-drawer>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, unref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { UNotificationFn } from '@u-blog/ui'
 import { useAppStore } from '@/stores/app'
 import { useUserStore } from '@/stores/model/user'
@@ -56,12 +65,14 @@ import WriteEditor from '@/components/WriteEditor.vue'
 import WriteSaveForm from '@/components/WriteSaveForm.vue'
 import { storeToRefs } from 'pinia'
 import api from '@/api'
+import { putDraft } from '@/utils/writeDraftDb'
 
 defineOptions({
   name: 'WriteView'
 })
 
 const { t } = useI18n()
+const router = useRouter()
 const appStore = useAppStore()
 const userStore = useUserStore()
 const { user } = storeToRefs(userStore)
@@ -70,24 +81,16 @@ const editorTheme = computed(() => (appStore.theme === CTheme.DARK ? 'dark' : 'l
 const { draft, flushDraft } = useWriteDraft(250)
 
 const writeEditorRef = ref<InstanceType<typeof WriteEditor> | null>(null)
+const saveFormRef = ref<InstanceType<typeof WriteSaveForm> | null>(null)
 const saveLoading = ref(false)
-/** 表单折叠状态：默认折叠，避免占用编辑器高度 */
-const formExpanded = ref(false)
-/** 表单布局：card | compact | grid | minimal，见 WriteViewFormLayouts.md */
-const formLayout = ref<'card' | 'compact' | 'grid' | 'minimal'>('card')
-const showLayoutSwitch = true
-const formLayoutOptions = computed(() => [
-  { value: 'card', label: t('write.layoutCard') },
-  { value: 'compact', label: t('write.layoutCompact') },
-  { value: 'grid', label: t('write.layoutGrid') },
-  { value: 'minimal', label: t('write.layoutMinimal') }
-])
+/** 发布面板是否展示 */
+const panelVisible = ref(false)
 
 function onEditorContent(v: string) {
   draft.value = v
 }
 
-/** 内置保存（Ctrl+S / 工具栏保存按钮）：同步草稿到 draft，表单已在上方内嵌 */
+/** 内置保存（Ctrl+S / 工具栏保存按钮）：同步草稿到 draft */
 async function handleSave(value?: string) {
   const content = value ?? writeEditorRef.value?.getContent() ?? draft.value
   draft.value = content
@@ -111,12 +114,26 @@ async function onSaveSubmit(payload: {
   const content = writeEditorRef.value?.getContent() ?? payload.content ?? draft.value
   saveLoading.value = true
   try {
-    await api(CTable.ARTICLE).createArticle({
+    const article = await api(CTable.ARTICLE).createArticle({
       ...payload,
       content,
       userId
     })
-    UNotificationFn({ message: t('write.saveSuccess'), type: 'success' })
+    panelVisible.value = false
+
+    // 清理编辑器草稿 + 发布配置缓存
+    draft.value = ''
+    await putDraft('')
+    saveFormRef.value?.clearCache()
+
+    // 跳转到发布成功页
+    router.push({
+      name: 'writeSuccess',
+      query: {
+        id: String(article.id),
+        title: encodeURIComponent(payload.title)
+      }
+    })
   } catch (e) {
     UNotificationFn({
       message: (e instanceof Error ? e.message : t('write.saveFail')),
@@ -129,7 +146,6 @@ async function onSaveSubmit(payload: {
 </script>
 
 <style lang="scss" scoped>
-/* 与 LayoutBase、ReadView、SidePanel 等一致：u-layout/u-region 需 min-height:0 + 滚动区 overflow-y:auto 才有滚动条 */
 .write-view-layout {
   min-height: 100%;
   :deep(.u-layout__body) {
@@ -140,82 +156,58 @@ async function onSaveSubmit(payload: {
     min-height: 0;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: hidden;
+    position: relative;
   }
 }
 
-.write-view__form {
-  flex-shrink: 0;
-  border-radius: 8px;
-  border: 1px solid var(--u-border-1, #dcdfe6);
-  background: var(--u-background-1, #fff);
-  margin-bottom: 0.75rem;
-  overflow: hidden;
-}
-
-.write-view__form-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  user-select: none;
-  min-height: 2.5rem;
-  box-sizing: border-box;
-}
-
-.write-view__form--collapsed .write-view__form-header {
-  margin-bottom: 0;
-}
-
-.write-view__form-title {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--u-text-2, #606266);
-}
-
-.write-view__form-toggle {
-  margin-left: auto;
-}
-
-.write-view__form-body {
-  padding: 0 1rem 1rem;
-  border-top: 1px solid var(--u-border-1, #ebeef5);
-}
-
-.write-view__form-layout-wrap {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.write-view__form-layout-label {
-  font-size: 0.875rem;
-  color: var(--u-text-3, #666);
-}
-
-.write-view__form-layout-select {
-  width: 140px;
-}
-
-.write-view__form--card .write-view__form-body {
-  display: block;
-}
-
+/* ---------- 编辑器区域 ---------- */
 .write-view__editor-wrap {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  border-radius: 8px;
-  border: 1px solid var(--u-border-1, #dcdfe6);
   overflow: hidden;
   background: var(--u-background-1, #fff);
 }
 
-.write-view__editor {
-  flex: 1;
-  min-height: 320px;
+/* ---------- 浮动发布按钮 ---------- */
+.write-view__publish-fab {
+  position: absolute;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border: none;
+  border-radius: 2rem;
+  background: var(--u-primary, #007bff);
+  color: #fff;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 123, 255, 0.3);
+  transition: transform 0.2s, box-shadow 0.2s, opacity 0.25s;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &.is-hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(8px);
+  }
+}
+
+.write-view__publish-fab-text {
+  white-space: nowrap;
 }
 </style>

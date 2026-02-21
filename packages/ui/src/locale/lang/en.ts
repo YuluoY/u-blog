@@ -131,6 +131,7 @@ export const en = {
       delete: 'Delete',
       preview: 'Preview',
       continue: 'Continue',
+      dragOrClick: 'Drag or click to upload',
     },
     slider: {
       defaultLabel: 'slider between {min} and {max}',

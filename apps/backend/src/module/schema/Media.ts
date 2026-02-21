@@ -39,10 +39,10 @@ export class Media {
 	@MaxLength(20, { message: '媒体类型最多20个字符' })
 	mineType!: string
 
-	@Column({ type: 'varchar', length: 255, comment: '地址' })
+	@Column({ type: 'varchar', length: 2048, comment: '地址' })
 	@IsNotEmpty({ message: '地址不能为空' })
 	@IsString({ message: '地址必须为字符串' })
-	@MaxLength(255, { message: '地址最多255个字符' })
+	@MaxLength(2048, { message: '地址最多2048个字符' })
 	url!: string
 
 	@Column({ type: 'varchar', length: 20, comment: '扩展名' })
@@ -63,10 +63,10 @@ export class Media {
 	@MaxLength(255, { message: '哈希值最多255个字符' })
 	hash!: string
 
-	@Column({ type: 'varchar', length: 255, nullable: true, comment: '缩略图' })
+	@Column({ type: 'varchar', length: 2048, nullable: true, comment: '缩略图' })
 	@IsOptional()
 	@IsString({ message: '缩略图必须为字符串' })
-	@MaxLength(255, { message: '缩略图路径最多255个字符' })
+	@MaxLength(2048, { message: '缩略图路径最多2048个字符' })
 	thumbnail?: string | null
 
 	@Column({ type: 'smallint', nullable: true, comment: '宽度' })

@@ -114,6 +114,16 @@ $drawer-easing: ease;
   color: var(--u-text-1);
 }
 
+.u-drawer__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.6rem;
+  border-top: 1px solid var(--u-drawer-header-border);
+  flex-shrink: 0;
+}
+
 /* right */
 .u-drawer-slide-right-enter-from,
 .u-drawer-slide-right-leave-to {

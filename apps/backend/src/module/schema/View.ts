@@ -19,10 +19,10 @@ export class View {
 	@IsIP(undefined, { message: 'IP地址格式不正确' })
 	ip?: string | null
 
-	@Column({ type: 'varchar', length: 255, nullable: true, comment: '访问者浏览器' })
+	@Column({ type: 'varchar', length: 500, nullable: true, comment: '访问者浏览器' })
 	@IsOptional()
 	@IsString({ message: '访问者浏览器必须为字符串' })
-	@MaxLength(255, { message: '访问者浏览器最多255个字符' })
+	@MaxLength(500, { message: '访问者浏览器最多500个字符' })
 	agent?: string | null
 
 	@Column({ type: 'varchar', length: 255, nullable: true, comment: '访问者地址' })

@@ -86,7 +86,7 @@ import {
 import type { UTooltipEmits, UTooltipExposes, UTooltipProps } from '../types'
 import { type Options, type Instance, createPopper } from '@popperjs/core'
 import { debounce, type DebouncedFunc, bind, isNil } from 'lodash-es'
-import { useClickOutside } from '@u-blog/composables'
+import { useClickOutside, useEventListener } from '@u-blog/composables'
 import { pxToRem } from '@u-blog/utils'
 import {
   CTooltipContainerId,
@@ -258,10 +258,17 @@ function updatePopper()
   
 }
 
-useClickOutside(popperContainerRef, () =>
+// 点击外部关闭：同时排除触发器区域和弹出容器，避免 teleport 导致 click-outside 误判
+useEventListener(document, 'click', (e: Event) =>
 {
   if (props.trigger === CTooltipTrigger.HOVER || props.manual) return
-  visible.value && onClose()
+  if (!visible.value) return
+  const target = e.target as HTMLElement
+  // 点击在弹出层内部 → 忽略（多选下拉等场景需保持打开）
+  if (popperContainerRef.value?.contains(target)) return
+  // 点击在触发器内部 → 忽略（由 onTogglePopper 处理切换）
+  if (containerRef.value?.contains(target)) return
+  onClose()
 })
 
 const visibleWatch = watch(

@@ -1,44 +1,12 @@
 <template>
-  <u-form class="write-save-form" :class="`write-save-form--${layout}`" @submit.prevent="handleSubmit">
-    <!-- 方案 D 极简：首行 标题 + 状态 + 操作 + 更多 -->
-    <div v-if="layout === 'minimal'" class="write-save-form__minimal-row">
-      <u-form-item :label="t('write.titlePlaceholder')" required class="write-save-form__minimal-title">
-        <u-input
-          v-model="form.title"
-          :placeholder="t('write.titlePlaceholder')"
-          :max-length="100"
-          show-word-limit
-        />
-      </u-form-item>
-      <u-form-item :label="t('write.statusLabel')" class="write-save-form__minimal-status">
-        <div class="write-save-form__select-fw">
-          <u-select
-            v-model="form.status"
-            :options="statusOptions"
-            :placeholder="t('write.statusDraft')"
-          />
-        </div>
-      </u-form-item>
-      <div class="write-save-form__minimal-actions">
-        <u-button
-          type="primary"
-          :loading="unref(loading)"
-          :disabled="!userId || !form.title.trim()"
-          native-type="submit"
-        >
-          {{ form.status === CArticleStatus.PUBLISHED ? t('write.publish') : t('write.saveAsDraft') }}
-        </u-button>
-        <u-button plain @click="minimalExpanded = !minimalExpanded">
-          {{ minimalExpanded ? t('write.lessOptions') : t('write.moreOptions') }}
-          <u-icon :icon="minimalExpanded ? ['fas', 'chevron-up'] : ['fas', 'chevron-down']" />
-        </u-button>
-      </div>
-    </div>
-
-    <!-- 方案 D 展开区 或 其他方案完整表单 -->
-    <template v-if="layout !== 'minimal' || minimalExpanded">
-      <!-- 基础信息：标题、描述（非 minimal 时标题描述在此） -->
-      <div v-if="layout !== 'minimal'" class="write-save-form__base">
+  <u-form class="write-save-form" @submit.prevent="handleSubmit">
+    <!-- 基本信息区 -->
+    <section class="write-save-form__section">
+      <h4 class="write-save-form__section-title">
+        <u-icon :icon="['fas', 'pen-nib']" class="write-save-form__section-icon" />
+        {{ t('write.sectionBasic') }}
+      </h4>
+      <div class="write-save-form__field-group">
         <u-form-item :label="t('write.titlePlaceholder')" required>
           <u-input
             v-model="form.title"
@@ -52,75 +20,98 @@
             v-model="form.desc"
             type="textarea"
             :placeholder="t('write.descPlaceholder')"
-            :rows="layout === 'compact' ? 1 : 3"
+            :rows="3"
             :max-length="255"
             show-word-limit
           />
         </u-form-item>
       </div>
-      <div v-else class="write-save-form__base">
-        <u-form-item :label="t('write.descPlaceholder')">
-          <u-input
-            v-model="form.desc"
-            type="textarea"
-            :placeholder="t('write.descPlaceholder')"
-            :rows="2"
-            :max-length="255"
-            show-word-limit
-          />
-        </u-form-item>
-      </div>
+    </section>
 
-      <div class="write-save-form__meta">
-        <u-form-item :label="t('write.categoryPlaceholder')">
-          <div class="write-save-form__select-fw">
-            <u-select
-              v-model="form.categoryId"
-              :options="categoryOptions"
-              :placeholder="t('write.categoryPlaceholder')"
-            />
-          </div>
+    <!-- 封面图区（使用 UUpload 组件） -->
+    <section class="write-save-form__section">
+      <h4 class="write-save-form__section-title">
+        <u-icon :icon="['fas', 'image']" class="write-save-form__section-icon" />
+        {{ t('write.sectionCover') }}
+      </h4>
+      <div class="write-save-form__cover-area">
+        <u-upload
+          :model-value="form.cover"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          :max-size="5"
+          :placeholder="t('write.coverUpload')"
+          aspect-ratio="16/9"
+          :disabled="coverUploading"
+          @change="onCoverFileChange"
+          @remove="onCoverRemove"
+          @exceed="onCoverExceed"
+        >
+          <template #tip>
+            {{ coverUploading ? t('write.coverUploading') : t('write.coverUploadHint') }}
+          </template>
+        </u-upload>
+        <!-- URL 输入模式切换 -->
+        <div class="write-save-form__cover-toggle">
+          <button
+            type="button"
+            class="write-save-form__cover-toggle-btn"
+            @click="coverUrlMode = !coverUrlMode"
+          >
+            <u-icon :icon="coverUrlMode ? ['fas', 'upload'] : ['fas', 'link']" />
+            {{ coverUrlMode ? t('write.coverFileMode') : t('write.coverUrlMode') }}
+          </button>
+        </div>
+        <u-input
+          v-if="coverUrlMode"
+          v-model="form.cover"
+          :placeholder="t('write.coverPlaceholder')"
+        />
+      </div>
+    </section>
+
+    <!-- 分类与标签区 -->
+    <section class="write-save-form__section">
+      <h4 class="write-save-form__section-title">
+        <u-icon :icon="['fas', 'tags']" class="write-save-form__section-icon" />
+        {{ t('write.sectionMeta') }}
+      </h4>
+      <div class="write-save-form__field-group">
+        <u-form-item :label="t('write.categoryPlaceholder')" required>
+          <u-select
+            v-model="form.categoryId"
+            :options="categoryOptions"
+            :placeholder="t('write.categoryPlaceholder')"
+          />
         </u-form-item>
         <u-form-item :label="t('write.tagsPlaceholder')">
-          <div class="write-save-form__tags">
-            <div class="write-save-form__tags-selected">
-              <u-tag
-                v-for="tagId in form.tags"
-                :key="tagId"
-                closable
-                size="small"
-                @close="removeTag(tagId)"
-              >
-                {{ getTagName(tagId) }}
-              </u-tag>
-            </div>
-            <div class="write-save-form__select-fw">
-              <u-select
-                v-model="selectedTag"
-                :options="tagOptions"
-                :placeholder="t('write.tagsPlaceholder')"
-                @update:model-value="addTag"
-              />
-            </div>
-          </div>
-        </u-form-item>
-        <u-form-item :label="t('write.coverPlaceholder')">
-          <div class="write-save-form__cover">
-            <u-input
-              v-model="form.cover"
-              :placeholder="t('write.coverPlaceholder')"
-            />
-            <div v-if="form.cover" class="write-save-form__cover-preview">
-              <img :src="form.cover" alt="cover" />
-            </div>
-          </div>
+          <u-select
+            v-model="form.tags"
+            :options="allTagOptions"
+            :placeholder="t('write.tagsPlaceholder')"
+            multiple
+            :max-tag-count="3"
+          />
         </u-form-item>
       </div>
+    </section>
 
-      <div class="write-save-form__publish-row">
+    <!-- 发布设置区 -->
+    <section class="write-save-form__section">
+      <h4 class="write-save-form__section-title">
+        <u-icon :icon="['fas', 'sliders']" class="write-save-form__section-icon" />
+        {{ t('write.sectionPublish') }}
+      </h4>
+      <div class="write-save-form__field-group">
+        <u-form-item :label="t('write.statusLabel')" required>
+          <u-select
+            v-model="form.status"
+            :options="statusOptions"
+            :placeholder="t('write.statusDraft')"
+          />
+        </u-form-item>
         <u-form-item :label="t('write.publishTimeLabel')">
           <div class="write-save-form__publish-time">
-            <u-checkbox v-model="publishNow" class="write-save-form__publish-now">
+            <u-checkbox v-model="publishNow">
               {{ t('write.publishNow') }}
             </u-checkbox>
             <u-date-time-picker
@@ -131,47 +122,32 @@
             />
           </div>
         </u-form-item>
-        <u-form-item :label="t('write.statusLabel')">
-          <div class="write-save-form__select-fw">
-            <u-select
-              v-model="form.status"
-              :options="statusOptions"
-              :placeholder="t('write.statusDraft')"
-            />
-          </div>
-        </u-form-item>
-        <u-form-item>
-          <div class="write-save-form__switches">
-            <u-checkbox v-model="form.isPrivate">{{ t('write.isPrivate') }}</u-checkbox>
-            <u-checkbox v-model="form.isTop">{{ t('write.isTop') }}</u-checkbox>
-          </div>
-        </u-form-item>
+        <div class="write-save-form__switches">
+          <u-checkbox v-model="form.isPrivate">{{ t('write.isPrivate') }}</u-checkbox>
+          <u-checkbox v-model="form.isTop">{{ t('write.isTop') }}</u-checkbox>
+        </div>
       </div>
-    </template>
+    </section>
 
-    <p v-if="!userId" class="write-save-form__hint">{{ t('write.loginRequired') }}</p>
-    <div v-if="layout !== 'minimal'" class="write-save-form__footer">
-      <u-button v-if="!inline" plain @click="handleClose">{{ t('common.cancel') }}</u-button>
-      <u-button
-        type="primary"
-        :loading="unref(loading)"
-        :disabled="!userId || !form.title.trim()"
-        native-type="submit"
-      >
-        {{ form.status === CArticleStatus.PUBLISHED ? t('write.publish') : t('write.saveAsDraft') }}
-      </u-button>
-    </div>
+    <!-- 登录提示 -->
+    <p v-if="!userId" class="write-save-form__hint">
+      <u-icon :icon="['fas', 'circle-info']" />
+      {{ t('write.loginRequired') }}
+    </p>
   </u-form>
 </template>
 
 <script setup lang="ts">
-import type { Ref } from 'vue'
-import { reactive, ref, computed, watch, unref } from 'vue'
+import { reactive, ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { UNotificationFn } from '@u-blog/ui'
 import { CArticleStatus, type ArticleStatus } from '@u-blog/model'
 import api from '@/api'
 import { CTable } from '@u-blog/model'
 import type { ICategory, ITag } from '@u-blog/model'
+import type { UploadFile } from '@u-blog/ui'
+import { uploadFile, deleteMedia } from '@/api/request'
+import { getPublishSettings, putPublishSettings, clearPublishSettings, type PublishSettingsRecord } from '@/utils/publishSettingsDb'
 
 export interface WriteSaveFormPayload {
   title: string
@@ -186,6 +162,7 @@ export interface WriteSaveFormPayload {
   cover?: string | null
 }
 
+/** 日期格式化为 datetime-local 输入值 */
 function toDatetimeLocal(d: Date): string {
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
@@ -203,32 +180,19 @@ const props = withDefaults(
   defineProps<{
     content: string
     userId?: number | null
-    /** 支持传入 Ref 以便函数式弹窗内响应式更新 */
-    loading?: boolean | Ref<boolean>
-    /** 内嵌模式（如写在编辑器上方）：不显示取消按钮 */
-    inline?: boolean
-    /** 表单布局：card | compact | grid | minimal，见 WriteViewFormLayouts.md */
-    layout?: 'card' | 'compact' | 'grid' | 'minimal'
-    /** 函数式弹窗时传入，用于关闭对话框 */
-    onClose?: () => void
-    /** 函数式弹窗时传入，提交成功后由调用方关闭 */
-    onSubmit?: (payload: WriteSaveFormPayload) => void | Promise<void>
   }>(),
   {
-    userId: null,
-    loading: false,
-    inline: false,
-    layout: 'card'
+    userId: null
   }
 )
 
 const emit = defineEmits<{
   (e: 'submit', payload: WriteSaveFormPayload): void
-  (e: 'close'): void
 }>()
 
 const { t } = useI18n()
 
+/* ---------- 表单状态 ---------- */
 const form = reactive<{
   title: string
   desc: string
@@ -244,7 +208,7 @@ const form = reactive<{
   desc: '',
   categoryId: '',
   tags: [],
-  status: CArticleStatus.DRAFT,
+  status: CArticleStatus.PUBLISHED,
   isPrivate: false,
   isTop: false,
   cover: '',
@@ -252,9 +216,81 @@ const form = reactive<{
 })
 
 const publishNow = ref(true)
-const selectedTag = ref<number | string>('')
-const minimalExpanded = ref(false)
+const coverUrlMode = ref(false)
 
+/** 封面对应的 Media 记录 ID，用于删除/覆盖清理 */
+const coverMediaId = ref<number | null>(null)
+/** 封面上传中状态 */
+const coverUploading = ref(false)
+
+/* ---------- 暴露给父组件的状态 ---------- */
+
+/** 是否可提交 */
+const canSubmit = computed(() => !!props.userId && form.title.trim().length > 0)
+
+/** 提交按钮文案 */
+const submitLabel = computed(() =>
+  form.status === CArticleStatus.PUBLISHED ? t('write.publish') : t('write.saveAsDraft')
+)
+
+/* ---------- 封面超限提示 ---------- */
+function onCoverExceed() {
+  UNotificationFn({ message: t('write.coverUploadHint'), type: 'warning' })
+}
+
+/**
+ * 封面文件选取回调 —— 上传到服务端 Media 表，用 URL 替换 base64
+ */
+async function onCoverFileChange(file: UploadFile) {
+  if (!file.raw) return
+
+  // 立即用 base64 显示预览（即时反馈）
+  form.cover = file.url
+  coverUploading.value = true
+  try {
+    // 如果已有旧封面 Media，先异步清理（不阻塞新上传）
+    const oldMediaId = coverMediaId.value
+    if (oldMediaId) {
+      deleteMedia(oldMediaId).catch(() => {})
+      coverMediaId.value = null
+    }
+
+    const result = await uploadFile(file.raw)
+    // 上传成功，替换为服务端 URL（通过 Vite 代理可访问）
+    form.cover = result.url
+    coverMediaId.value = result.mediaId
+    savePublishSettingsDebounced()
+  } catch (err) {
+    UNotificationFn({
+      message: err instanceof Error ? err.message : t('write.coverUploadFail'),
+      type: 'error',
+    })
+    // 上传失败 → 清除预览
+    form.cover = ''
+  } finally {
+    coverUploading.value = false
+  }
+}
+
+/**
+ * 封面删除回调 —— 删除服务端 Media 记录 + 物理文件
+ */
+async function onCoverRemove() {
+  const oldMediaId = coverMediaId.value
+  form.cover = ''
+  coverMediaId.value = null
+  savePublishSettingsDebounced()
+
+  if (oldMediaId) {
+    try {
+      await deleteMedia(oldMediaId)
+    } catch {
+      // 清理失败不影响用户操作
+    }
+  }
+}
+
+/* ---------- 下拉选项 ---------- */
 const statusOptions = computed(() => [
   { value: CArticleStatus.DRAFT, label: t('write.statusDraft') },
   { value: CArticleStatus.PUBLISHED, label: t('write.statusPublished') }
@@ -267,68 +303,112 @@ const categoryOptions = computed(() => [
 ])
 
 const tagList = ref<ITag[]>([])
-const tagOptions = computed(() => [
-  { value: '', label: t('write.tagsPlaceholder') },
-  ...tagList.value
-    .filter((tag) => !form.tags.includes(tag.id))
-    .map((tag) => ({ value: tag.id, label: tag.name }))
-])
+const allTagOptions = computed(() =>
+  tagList.value.map((tag) => ({ value: tag.id, label: tag.name }))
+)
 
-function getTagName(tagId: number): string {
-  const tag = tagList.value.find((t) => t.id === tagId)
-  return tag?.name ?? ''
-}
-
-function addTag(tagId: number | string) {
-  if (tagId === '' || form.tags.includes(Number(tagId))) return
-  form.tags.push(Number(tagId))
-  selectedTag.value = ''
-}
-
-function removeTag(tagId: number) {
-  const idx = form.tags.indexOf(tagId)
-  if (idx > -1) form.tags.splice(idx, 1)
-}
-
-function extractFirstImage(mdContent: string): string {
-  const m1 = mdContent.match(/!\[.*?\]\((.*?)\)/)
-  if (m1?.[1]) return m1[1]
-  const m2 = mdContent.match(/<img.*?src=["'](.*?)["']/)
-  if (m2?.[1]) return m2[1]
-  const m3 = mdContent.match(/data:image\/[^;]+;base64,[^\s"')]+/)
-  if (m3?.[0]) return m3[0]
-  return ''
-}
-
+/* ---------- 从 Markdown 提取首个标题作为默认标题 ---------- */
 function extractFirstHeading(mdContent: string): string {
   const m = mdContent.match(/^#+\s+(.+)$/m)
   return m ? m[1].trim() : ''
 }
 
-function initForm() {
-  form.title = extractFirstHeading(props.content)
-  form.desc = ''
-  form.categoryId = ''
-  form.tags = []
-  form.status = CArticleStatus.DRAFT
-  form.isPrivate = false
-  form.isTop = false
-  form.cover = extractFirstImage(props.content)
-  form.publishedAt = toDatetimeLocal(new Date())
-  publishNow.value = true
-  selectedTag.value = ''
+/* ---------- 初始化表单 ---------- */
+let initDone = false
+
+async function initForm() {
+  // 先尝试从本地缓存恢复发布配置
+  const cached = await restorePublishSettings()
+  if (cached) {
+    form.title = cached.title || extractFirstHeading(props.content)
+    form.desc = cached.desc || ''
+    form.categoryId = cached.categoryId ?? ''
+    form.tags = cached.tags ?? []
+    form.status = (cached.status as ArticleStatus) || CArticleStatus.PUBLISHED
+    form.isPrivate = cached.isPrivate ?? false
+    form.isTop = cached.isTop ?? false
+    form.cover = cached.cover || ''
+    form.publishedAt = cached.publishedAt || toDatetimeLocal(new Date())
+    publishNow.value = cached.publishNow ?? true
+    coverUrlMode.value = cached.coverUrlMode ?? false
+    coverMediaId.value = cached.coverMediaId ?? null
+  } else {
+    form.title = extractFirstHeading(props.content)
+    form.desc = ''
+    form.categoryId = ''
+    form.tags = []
+    form.status = CArticleStatus.PUBLISHED
+    form.isPrivate = false
+    form.isTop = false
+    form.cover = ''
+    form.publishedAt = toDatetimeLocal(new Date())
+    publishNow.value = true
+    coverMediaId.value = null
+  }
+
+  initDone = true
   loadCategories()
   loadTags()
 }
 
-watch(() => props.content, initForm, { immediate: true })
+/** 从 IndexedDB 恢复发布配置 */
+async function restorePublishSettings(): Promise<PublishSettingsRecord | null> {
+  try {
+    return await getPublishSettings()
+  } catch {
+    return null
+  }
+}
+
+/** 防抖保存发布配置到 IndexedDB */
+let saveTimer: ReturnType<typeof setTimeout> | null = null
+function savePublishSettingsDebounced() {
+  if (!initDone) return
+  if (saveTimer) clearTimeout(saveTimer)
+  saveTimer = setTimeout(() => {
+    putPublishSettings({
+      title: form.title,
+      desc: form.desc,
+      categoryId: form.categoryId === '' ? null : Number(form.categoryId),
+      tags: form.tags,
+      status: form.status,
+      isPrivate: form.isPrivate,
+      isTop: form.isTop,
+      cover: form.cover,
+      coverMediaId: coverMediaId.value,
+      publishedAt: form.publishedAt,
+      publishNow: publishNow.value,
+      coverUrlMode: coverUrlMode.value,
+    }).catch(() => {})
+    saveTimer = null
+  }, 500)
+}
+
+onMounted(initForm)
+
+/** content 变化时只更新标题（如果用户未手动修改过） */
+watch(() => props.content, (newContent) => {
+  if (initDone && form.title === '') {
+    form.title = extractFirstHeading(newContent)
+  }
+})
 
 watch(publishNow, (now) => {
   if (!now && !form.publishedAt) {
     form.publishedAt = toDatetimeLocal(new Date())
   }
+  savePublishSettingsDebounced()
 })
 
+/** 监听表单字段变化，防抖保存 */
+watch(
+  () => [form.title, form.desc, form.categoryId, form.tags, form.status,
+    form.isPrivate, form.isTop, form.cover, form.publishedAt, coverUrlMode.value],
+  () => { savePublishSettingsDebounced() },
+  { deep: true },
+)
+
+/* ---------- 数据加载 ---------- */
 async function loadCategories() {
   try {
     const list = await api(CTable.CATEGORY).getCategoryList()
@@ -347,21 +427,18 @@ async function loadTags() {
   }
 }
 
-function handleClose() {
-  if (props.onClose) props.onClose()
-  else emit('close')
-}
-
+/* ---------- 提交处理 ---------- */
 async function handleSubmit() {
   const title = form.title.trim()
-  if (!title) return
-  if (!props.userId) return
+  if (!title || !props.userId) return
   const publishedAt = publishNow.value
     ? new Date().toISOString()
     : form.publishedAt
       ? new Date(form.publishedAt).toISOString()
       : new Date().toISOString()
-  const categoryId = form.categoryId === '' || form.categoryId == null ? undefined : Number(form.categoryId)
+  const categoryId = form.categoryId === '' || form.categoryId == null
+    ? undefined
+    : Number(form.categoryId)
   const payload: WriteSaveFormPayload = {
     title,
     content: props.content,
@@ -374,219 +451,128 @@ async function handleSubmit() {
     isTop: form.isTop,
     cover: form.cover || undefined
   }
-  if (props.onSubmit) {
-    await props.onSubmit(payload)
-  } else {
-    emit('submit', payload)
-  }
+  emit('submit', payload)
 }
+
+/** 发布成功后清理本地缓存（由父组件调用） */
+function clearCache() {
+  clearPublishSettings().catch(() => {})
+}
+
+defineExpose({
+  /** 触发表单提交 */
+  submit: handleSubmit,
+  /** 是否可提交（标题非空 & 已登录） */
+  canSubmit,
+  /** 提交按钮文案 */
+  submitLabel,
+  /** 清理发布配置缓存 */
+  clearCache,
+})
 </script>
 
 <style lang="scss" scoped>
-/* 下拉项固定宽度，避免不同选项长度导致布局抖动 */
-.write-save-form__select-fw {
-  width: 160px;
-  min-width: 160px;
+/* ====================================================================
+   WriteSaveForm — UDrawer 内嵌表单，纯内容区，无 header/footer
+   ==================================================================== */
+
+/* ---------- 表单分区 ---------- */
+.write-save-form__section {
+  padding: 1rem 0;
+
+  & + & {
+    border-top: 1px solid var(--u-border-1, #ebeef5);
+  }
+}
+
+.write-save-form__section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--u-text-2, #606266);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.write-save-form__section-icon {
+  font-size: 0.8rem;
+  color: var(--u-primary, #007bff);
+}
+
+.write-save-form__field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  :deep(.u-form-item) {
+    margin-bottom: 0;
+  }
+
   :deep(.u-select) {
     width: 100%;
   }
 }
 
-.write-save-form {
+/* ---------- 封面图区域 ---------- */
+.write-save-form__cover-area {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.625rem;
 }
 
-.write-save-form__tags {
+/* URL 模式切换 */
+.write-save-form__cover-toggle {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
 }
 
-.write-save-form__tags-selected {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-}
+.write-save-form__cover-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--u-primary, #007bff);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: opacity 0.15s;
 
-.write-save-form__cover {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.write-save-form__cover-preview {
-  width: 120px;
-  height: 80px;
-  border-radius: 4px;
-  overflow: hidden;
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+  &:hover {
+    opacity: 0.7;
   }
 }
 
+/* ---------- 发布时间 ---------- */
 .write-save-form__publish-time {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-}
-
-.write-save-form__publish-now {
-  align-self: flex-start;
+  gap: 0.625rem;
 }
 
 .write-save-form__datetime-input {
-  max-width: 280px;
-  min-width: 200px;
+  width: 100%;
 }
 
+/* ---------- 开关行 ---------- */
 .write-save-form__switches {
   display: flex;
   gap: 1.5rem;
   flex-wrap: wrap;
 }
 
+/* ---------- 提示信息 ---------- */
 .write-save-form__hint {
-  color: var(--u-text-3, #999);
-  font-size: 0.875rem;
-  margin: 0;
-}
-
-.write-save-form__footer {
   display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
-}
-
-/* ---------- 方案 A：卡片分区 ---------- */
-.write-save-form--card {
-  .write-save-form__base {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-  .write-save-form__meta {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--u-border-1, #eee);
-  }
-  .write-save-form__publish-row {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-}
-
-/* ---------- 方案 B：单行紧凑 ---------- */
-.write-save-form--compact {
-  gap: 0.75rem;
-  .write-save-form__base {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 1rem 1.5rem;
-    align-items: flex-start;
-    .u-form-item {
-      flex: 1 1 200px;
-      margin-bottom: 0;
-    }
-    .u-form-item:first-child {
-      min-width: 240px;
-    }
-  }
-  .write-save-form__meta {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 0.75rem 1rem;
-    align-items: flex-start;
-    .u-form-item {
-      margin-bottom: 0;
-    }
-  }
-  .write-save-form__publish-row {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 0.75rem 1rem;
-    align-items: center;
-    .u-form-item {
-      margin-bottom: 0;
-    }
-  }
-  .write-save-form__footer {
-    margin-top: 0.25rem;
-  }
-}
-
-/* ---------- 方案 C：两列网格 ---------- */
-.write-save-form--grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem 1.5rem;
-  .write-save-form__base {
-    grid-column: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-  .write-save-form__meta {
-    grid-column: 2;
-    grid-row: 1 / 3;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-  .write-save-form__publish-row {
-    grid-column: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-  .write-save-form__hint {
-    grid-column: 1 / -1;
-  }
-  .write-save-form__footer {
-    grid-column: 1 / -1;
-    margin-top: 0.25rem;
-  }
-}
-
-/* ---------- 方案 D：极简 + 折叠 ---------- */
-.write-save-form--minimal {
-  gap: 0.75rem;
-  .write-save-form__minimal-row {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.75rem 1rem;
-    .write-save-form__minimal-title {
-      flex: 1 1 200px;
-      min-width: 180px;
-      margin-bottom: 0;
-    }
-    .write-save-form__minimal-status {
-      margin-bottom: 0;
-    }
-    .write-save-form__minimal-actions {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-left: auto;
-    }
-  }
-  .write-save-form__meta,
-  .write-save-form__publish-row {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--u-text-3, #999);
+  font-size: 0.8125rem;
+  margin: 0.5rem 0 0;
+  padding: 0.5rem 0.75rem;
+  background: var(--u-background-2, #fafafa);
+  border-radius: var(--u-border-radius-4, 0.4rem);
 }
 </style>

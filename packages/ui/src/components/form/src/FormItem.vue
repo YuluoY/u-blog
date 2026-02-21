@@ -64,7 +64,8 @@ defineOptions({
 
 const props = withDefaults(defineProps<UFormItemProps>(), {
   label: '',
-  prop: ''
+  prop: '',
+  required: false
 })
 
 const form = inject(FORM_INJECTION_KEY, null)
@@ -77,9 +78,11 @@ const validateMessage = ref('')
 const showMessage = computed(() => form?.showMessage ?? true)
 const initialValue = ref<any>(undefined)
 
-// 根据 form.rules 中对应 prop 的 required 判断是否必填
+// 根据 required prop 或 form.rules 中对应 prop 的 required 判断是否必填
 const isRequired = computed(() =>
 {
+  // 手动标记 required 优先
+  if (props.required) return true
   if (!props.prop || !form?.rules) return false
   const rules = form.rules[typeof props.prop === 'string' ? props.prop : props.prop[0]]
   if (!rules) return false

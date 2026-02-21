@@ -74,6 +74,10 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
+      '/uploads': {
+        target: `http://${BACKEND_HOST}:${BACKEND_PORT}`,
+        changeOrigin: true,
+      },
     },
   },
 })

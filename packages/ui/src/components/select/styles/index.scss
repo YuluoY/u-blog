@@ -6,7 +6,7 @@
   position: relative;
   box-sizing: border-box;
 
-  /* 覆盖 Tooltip 的 inline-flex，让触发区撑满父级（MonthPicker 等 flex 布局下才能自适应） */
+  /* 覆盖 Tooltip 的 inline-flex，让触发区撑满父级 */
   .u-tooltip {
     display: flex;
     width: 100%;
@@ -23,6 +23,7 @@
     box-sizing: border-box;
   }
 
+  /* ---- 禁用态 ---- */
   &.is-disabled {
     cursor: not-allowed;
 
@@ -34,12 +35,14 @@
     }
   }
 
+  /* ---- 尺寸变体 ---- */
   &.u-select--small .u-select__trigger {
     min-height: 2rem;
     padding: 0 0.5rem;
     border-radius: var(--u-input-radius-sm, 0.3rem);
 
-    .u-select__label {
+    .u-select__label,
+    .u-select__placeholder {
       font-size: var(--u-font-size-sm, 1rem);
     }
   }
@@ -49,7 +52,8 @@
     padding: 0 0.75rem;
     border-radius: var(--u-input-radius-default, 0.5rem);
 
-    .u-select__label {
+    .u-select__label,
+    .u-select__placeholder {
       font-size: var(--u-font-size-base, 1.4rem);
     }
   }
@@ -59,12 +63,13 @@
     padding: 0 0.6rem 0 1.2rem;
     border-radius: var(--u-input-radius-large, 0.8rem);
 
-    .u-select__label {
+    .u-select__label,
+    .u-select__placeholder {
       font-size: var(--u-font-size-md, 1.2rem);
     }
   }
 
-  /* 触发区：与 Input 同套边框、背景、圆角 */
+  /* ---- 触发区基础（与 Input 同套） ---- */
   .u-select__trigger {
     width: 100%;
     display: flex;
@@ -77,17 +82,28 @@
     color: var(--u-text-1, #333);
     background-color: var(--u-input-bg, var(--u-background-1, #fff));
     border: 1px solid var(--u-border-2, #d9d9d9);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease,
+      background-color 0.2s ease;
     cursor: pointer;
     font-family: inherit;
   }
 
-  .u-select__trigger:focus-visible {
-    outline: none;
-    border-color: var(--u-primary-0);
-    box-shadow: 0 0 0 2px var(--u-primary-light-7);
+  /* 悬停态：边框加深 */
+  &:not(.is-disabled) .u-select__trigger:hover {
+    border-color: var(--u-text-4, #c0c4cc);
   }
 
+  /* 展开态/聚焦态：主色边框 + 光晕 */
+  &.is-open:not(.is-disabled) .u-select__trigger,
+  .u-select__trigger:focus-visible {
+    outline: none;
+    border-color: var(--u-primary, #007bff);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--u-primary, #007bff) 15%, transparent);
+  }
+
+  /* ---- 值标签 ---- */
   .u-select__label {
     flex: 1;
     min-width: 0;
@@ -97,13 +113,154 @@
     white-space: nowrap;
   }
 
+  /* ---- 占位符（单选和多选共用） ---- */
+  .u-select__placeholder {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+    color: var(--u-text-4, #c0c4cc);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: inherit;
+  }
+
+  /* ---- 箭头图标 ---- */
   .u-select__suffix {
     flex-shrink: 0;
-    color: var(--u-text-3);
+    color: var(--u-text-3, #a8abb2);
+    transition: transform 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+  }
+
+  /* 展开态箭头旋转 180° */
+  &.is-open .u-select__suffix {
+    transform: rotate(180deg);
+  }
+
+  /* ---- 清除按钮 ---- */
+  .u-select__clear {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    color: var(--u-text-4, #c0c4cc);
+    cursor: pointer;
+    transition: color 0.2s;
+
+    &:hover {
+      color: var(--u-text-2, #606266);
+    }
+  }
+
+  /* ---- 多选触发器 ---- */
+  .u-select__trigger--multiple {
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    padding: 0.2rem 0.5rem;
+    min-height: 2.4rem;
+    align-items: center;
+  }
+
+  .u-select__tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem;
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* ---- 多选 tag 紧凑覆写 ---- */
+  .u-select__tag {
+    max-width: 100%;
+
+    /* 消除 UTag 相邻间距 */
+    & + .u-tag {
+      margin-left: 0;
+    }
+
+    .u-tag__content {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  /* 在 Select 上下文中紧凑化 UTag，使用柔和中性色调 */
+  .u-select__trigger--multiple .u-tag {
+    /* 重置相邻 margin */
+    & + .u-tag {
+      margin-left: 0;
+    }
+
+    &.u-tag--small {
+      height: 1.8rem;
+      padding: 0 0.5rem;
+      font-size: 1.2rem;
+      border-radius: var(--u-border-radius-2, 0.3rem);
+      line-height: 1;
+    }
+
+    /* 中性灰底 + 深色文字，避免蓝色过于刺眼 */
+    &.u-tag--primary.u-tag--light {
+      background-color: var(--u-background-3, #f0f2f5);
+      color: var(--u-text-2, #606266);
+      border: none;
+    }
+
+    .u-tag__close {
+      font-size: 1rem;
+      margin-left: 0.2rem;
+      color: var(--u-text-3, #909399);
+      opacity: 0.8;
+      transition: color 0.2s, opacity 0.2s;
+
+      &:hover {
+        color: var(--u-text-1, #303133);
+        opacity: 1;
+      }
+    }
+  }
+
+  /* ---- 折叠计数徽标 ---- */
+  .u-select__tag-collapse {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.4rem;
+    height: 1.8rem;
+    font-size: 1.2rem;
+    border-radius: var(--u-border-radius-2, 0.3rem);
+    color: var(--u-text-2, #606266);
+    background: color-mix(in srgb, var(--u-text-3, #909399) 12%, transparent);
+    white-space: nowrap;
+    line-height: 1;
+  }
+
+  /* 多选尺寸微调 */
+  &.is-multiple.u-select--small .u-select__trigger--multiple {
+    min-height: 2rem;
+    padding: 0.15rem 0.4rem;
+    gap: 0.2rem;
+
+    .u-tag.u-tag--small {
+      height: 1.4rem;
+      padding: 0 0.4rem;
+      font-size: 1rem;
+    }
+  }
+  &.is-multiple.u-select--large .u-select__trigger--multiple {
+    min-height: 2.8rem;
+    padding: 0.25rem 0.6rem;
+
+    .u-tag.u-tag--small {
+      height: 2rem;
+      padding: 0 0.6rem;
+      font-size: 1.2rem;
+    }
   }
 }
 
-/* 弹出层内下拉列表（挂载在 #u-popper-container） */
+/* ---- 弹出层下拉（挂载在 #u-popper-container） ---- */
 .u-select__popper.u-tooltip__popper {
   padding: 0;
   overflow: hidden;
@@ -114,14 +271,17 @@
 }
 
 .u-select__dropdown {
-  min-width: 3.75rem; /* 60px */
+  min-width: 3.75rem;
   max-height: 200px;
   overflow-y: auto;
   padding: 0.25rem 0;
 }
 
 .u-select__option {
-  padding: 0.4rem 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem;
   cursor: pointer;
   font-size: 1rem;
   color: var(--u-text-1);
@@ -137,6 +297,34 @@
   &.is-selected {
     color: var(--u-primary-0);
     font-weight: 500;
-    background: var(--u-primary-light-7);
+    background: color-mix(in srgb, var(--u-primary, #007bff) 8%, transparent);
   }
+
+  /* 多选选项：选中只保留勾选+颜色，不加背景 */
+  &.is-multiple {
+    &.is-selected {
+      background: transparent;
+    }
+    &.is-selected:hover {
+      background: var(--u-background-3);
+    }
+  }
+}
+
+.u-select__option-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: var(--u-primary-0, #007bff);
+}
+
+.u-select__option-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

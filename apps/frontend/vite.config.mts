@@ -68,6 +68,10 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: path => path.replace(/^\/api/, '')
       },
+      '/uploads': {
+        target: 'http://localhost:3000',
+        changeOrigin: true
+      },
       // IP 定位接口走代理，避免跨域（ip.zhengbingdong.com）
       '/ip-api': {
         target: 'https://ip.zhengbingdong.com',

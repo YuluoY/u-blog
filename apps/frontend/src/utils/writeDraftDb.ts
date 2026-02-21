@@ -1,12 +1,14 @@
 /**
  * 撰写页草稿 IndexedDB 封装
  * 库名 u-blog-write，store drafts，主键 id（当前草稿为 'current'）
+ * 注意：与 publishSettingsDb 共用同一数据库，版本升级时需同步 store 创建
  */
 
 const DB_NAME = 'u-blog-write'
 const STORE_NAME = 'drafts'
 const CURRENT_DRAFT_ID = 'current'
-const DB_VERSION = 1
+/** v2: 新增 publish-settings store，两个工具文件必须使用同一版本号 */
+const DB_VERSION = 2
 
 export interface DraftRecord {
   id: string
@@ -23,6 +25,10 @@ function openDB(): Promise<IDBDatabase> {
       const db = (e.target as IDBOpenDBRequest).result
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME, { keyPath: 'id' })
+      }
+      // v2 新增 publish-settings store
+      if (!db.objectStoreNames.contains('publish-settings')) {
+        db.createObjectStore('publish-settings', { keyPath: 'id' })
       }
     }
   })

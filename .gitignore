@@ -110,3 +110,9 @@ temp/
 *.njsproj
 *.sln
 *.sw?
+
+.copilot/
+
+.github/
+
+.claude/

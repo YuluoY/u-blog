@@ -1,5 +1,14 @@
 import { vi } from 'vitest'
 
+// jsdom 缺少 ResizeObserver，全局 mock
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  globalThis.ResizeObserver = class ResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as any
+}
+
 vi.mock('@/components/code-editor', () => ({
   UCodeEditor: { name: 'UCodeEditor', template: '<div></div>' },
   default: { name: 'UCodeEditor', template: '<div></div>' }

@@ -201,6 +201,12 @@ export interface UFormItemProps {
    * @description 标签宽度，例如 '50px'。支持 auto。
    */
   labelWidth?: string | number
+
+  /**
+   * @description 手动标记为必填（显示星号），无需配合 form rules
+   * @default false
+   */
+  required?: boolean
 }
 
 export interface UFormItemExposes {

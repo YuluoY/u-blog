@@ -1,11 +1,8 @@
 import type { Request, Response } from 'express'
 import type { ControllerReturn } from '@u-blog/types'
 import { tryit } from '@u-blog/utils'
-import { formatResponse, getDataSource } from '@/utils'
-import CommonService from '@/service/common'
-import * as SiteOverviewService from '@/service/siteOverview'
-import * as CloudWeightsService from '@/service/cloudWeights'
-import * as ArticleSearchService from '@/service/articleSearch'
+import { formatResponse, getClientIp, getDataSource } from '@/utils'
+import CommonService, { type SearchScope } from '@/service/common'
 import { Users } from '@/module/schema/Users'
 import { Repository } from 'typeorm'
 import { IUserLogin } from '@u-blog/model'
@@ -42,26 +39,26 @@ class CommonController {
   }
 
   /** 网站概览统计（文章/分类/标签数、浏览/点赞/评论、运行天数、最后更新） */
-  async getSiteOverview(req: Request, _res: Response): ControllerReturn<Awaited<ReturnType<typeof SiteOverviewService.getSiteOverview>>>
+  async getSiteOverview(req: Request, _res: Response): ControllerReturn
   {
-    const tryData = await tryit(() => SiteOverviewService.getSiteOverview(req))
+    const tryData = await tryit(() => CommonService.getSiteOverview(req))
     return formatResponse(tryData, 'ok', '获取网站概览失败')
   }
 
   /** 类别/标签权重与声噪，供前端词云等可视化 */
-  async getCloudWeights(req: Request, _res: Response): ControllerReturn<Awaited<ReturnType<typeof CloudWeightsService.getCloudWeights>>>
+  async getCloudWeights(req: Request, _res: Response): ControllerReturn
   {
-    const tryData = await tryit(() => CloudWeightsService.getCloudWeights(req))
+    const tryData = await tryit(() => CommonService.getCloudWeights(req))
     return formatResponse(tryData, 'ok', '获取词云权重失败')
   }
 
   /** 文章全文搜索：对标题、正文、描述 ILIKE 匹配，仅已发布，返回列表与片段 */
-  async searchArticles(req: Request, _res: Response): ControllerReturn<Awaited<ReturnType<typeof ArticleSearchService.searchArticles>>>
+  async searchArticles(req: Request, _res: Response): ControllerReturn
   {
     const keyword = (req.query.keyword ?? req.body?.keyword ?? '') as string
-    const scope = (req.query.scope ?? req.body?.scope ?? 'all') as ArticleSearchService.SearchScope
+    const scope = (req.query.scope ?? req.body?.scope ?? 'all') as SearchScope
     const limit = Math.min(50, Math.max(1, Number(req.query.limit ?? req.body?.limit ?? 20) || 20))
-    const tryData = await tryit(() => ArticleSearchService.searchArticles(req, keyword, scope, limit))
+    const tryData = await tryit(() => CommonService.searchArticles(req, keyword, scope, limit))
     return formatResponse(tryData, 'ok', '搜索失败')
   }
 
@@ -74,6 +71,46 @@ class CommonController {
       ? `收到：${text}\n\n（当前为演示回复，可在后端接入 OpenAI/本地模型实现真实对话）`
       : '请发送文本消息。'
     return formatResponse([null, { reply }], 'ok', 'fail')
+  }
+
+  /** 文件上传：multer 处理后交由 Service 写入 Media 表 */
+  async upload(req: Request, _res: Response): ControllerReturn
+  {
+    const tryData = await tryit<any, Error>(() => CommonService.upload(req))
+    return formatResponse(tryData, '上传成功', '上传失败')
+  }
+
+  /** 删除媒体文件（Media 记录 + 物理文件） */
+  async deleteMedia(req: Request, _res: Response): ControllerReturn
+  {
+    const id = Number(req.body?.id ?? req.query?.id)
+    if (!id || Number.isNaN(id)) {
+      return formatResponse([new Error('id 必填') as any, null], '删除成功', '删除失败')
+    }
+    const tryData = await tryit<void, Error>(() => CommonService.deleteMedia(req, id))
+    return formatResponse(tryData, '删除成功', '删除失败')
+  }
+
+  /** 记录文章浏览（viewCount +1 + View 日志） */
+  async recordArticleView(req: Request, _res: Response): ControllerReturn
+  {
+    const articleId = Number(req.body?.articleId)
+    if (!articleId || Number.isNaN(articleId)) {
+      return formatResponse([new Error('articleId 必填') as any, null], 'ok', '参数错误')
+    }
+    const ip = getClientIp(req)
+    const agent = req.get('User-Agent') ?? undefined
+    const tryData = await tryit<any, Error>(() => CommonService.recordArticleView(req, articleId, ip, agent))
+    return formatResponse(tryData, 'ok', '记录浏览失败')
+  }
+
+  /** 记录站点访问（按 IP 去重，每日 UV） */
+  async recordSiteVisit(req: Request, _res: Response): ControllerReturn
+  {
+    const ip = getClientIp(req)
+    const agent = req.get('User-Agent') ?? undefined
+    const tryData = await tryit<any, Error>(() => CommonService.recordSiteVisit(req, ip, agent))
+    return formatResponse(tryData, 'ok', '记录访问失败')
   }
 
   private setCookie(res: Response, data: any): void

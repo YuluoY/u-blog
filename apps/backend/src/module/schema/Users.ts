@@ -36,10 +36,10 @@ export class Users {
 	@MaxLength(100, { message: '昵称最多100个字符' })
 	namec?: string | null
 
-	@Column({ type: 'varchar', length: 255, nullable: true, comment: '头像' })
+	@Column({ type: 'varchar', length: 2048, nullable: true, comment: '头像' })
 	@IsOptional()
 	@IsString({ message: '头像必须为字符串' })
-	@MaxLength(255, { message: '头像最多255个字符' })
+	@MaxLength(2048, { message: '头像最多2048个字符' })
 	avatar?: string | null
 
 	@Column({ type: 'varchar', length: 255, nullable: true, comment: '个人简介' })
@@ -84,7 +84,7 @@ export class Users {
 	@IsOptional()
 	isActive?: boolean
 
-	@Column({ type: 'varchar', length: 255, nullable: true, comment: '签发访问令牌' })
+	@Column({ type: 'varchar', length: 512, nullable: true, comment: '签发访问令牌' })
 	token?: string | null
 
 	@Column({ type: 'varchar', length: 255, select: false, nullable: true, comment: '刷新令牌的随机字符串密钥' })

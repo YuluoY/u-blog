@@ -57,10 +57,10 @@ export class Article {
 	@IsString({ message: '描述必须为字符串' })
 	desc?: string | null
 
-	@Column({ type: 'varchar', length: 255, nullable: true, comment: '封面' })
+	@Column({ type: 'text', nullable: true, comment: '封面' })
 	@IsOptional()
 	@IsString({ message: '封面必须为字符串' })
-	@MaxLength(255, { message: '封面路径最多255个字符' })
+	@MaxLength(2048, { message: '封面路径最多2048个字符' })
 	cover?: string | null
 
 	@Column({ 

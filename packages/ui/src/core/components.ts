@@ -8,6 +8,7 @@ import {
   UCard,
   UInput,
   USelect,
+  UCascader,
   UMonthPicker,
   UCalendarGrid,
   UText,
@@ -50,7 +51,8 @@ import {
   UExpandableRow,
   UFilterChips,
   UTabs,
-  UTabPane
+  UTabPane,
+  UUpload,
 } from '@/components'
 
 export default [
@@ -62,6 +64,7 @@ export default [
   UCard,
   UInput,
   USelect,
+  UCascader,
   UMonthPicker,
   UCalendarGrid,
   UText,
@@ -100,6 +103,7 @@ export default [
   UCommentInput,
   UCommentList,
   UCommentItem,
+  UUpload,
 
   UMessageFn,
   UDialogFn,

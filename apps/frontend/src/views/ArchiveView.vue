@@ -225,11 +225,19 @@ const archiveByYear = computed(() => {
   }
   const years = Array.from(byYear.keys()).sort((a, b) => b - a)
   const colorMap = assignYearColors(years)
-  return years.map(year => ({
-    year,
-    color: colorMap.get(year) ?? THEME_COLOR_VARS[0],
-    articles: byYear.get(year) ?? []
-  }))
+  return years.map(year => {
+    // 每个年份内的文章按创建日期降序排列（新文章在前）
+    const articles = (byYear.get(year) ?? []).slice().sort((a, b) => {
+      const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0
+      const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0
+      return tb - ta
+    })
+    return {
+      year,
+      color: colorMap.get(year) ?? THEME_COLOR_VARS[0],
+      articles
+    }
+  })
 })
 
 const hoveredId = ref<number | null>(null)

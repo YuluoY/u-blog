@@ -20,7 +20,7 @@
             <dl class="read-view__meta-stats">
               <div class="read-view__meta-stat"><dt>{{ t('read.words') }}</dt><dd>{{ wordCount }}</dd></div>
               <div class="read-view__meta-stat"><dt>{{ t('read.read') }}</dt><dd>~ {{ readingMinutes }} {{ t('read.minutes') }}</dd></div>
-              <div v-if="article.viewCount != null" class="read-view__meta-stat"><dt>{{ t('read.viewCount') }}</dt><dd>{{ article.viewCount }}</dd></div>
+              <div v-if="displayViewCount != null" class="read-view__meta-stat"><dt>{{ t('read.viewCount') }}</dt><dd>{{ displayViewCount }}</dd></div>
               <div v-if="article.likeCount != null" class="read-view__meta-stat"><dt>{{ t('read.like') }}</dt><dd>{{ article.likeCount }}</dd></div>
               <div v-if="article.commentCount != null" class="read-view__meta-stat"><dt>{{ t('read.comment') }}</dt><dd>{{ article.commentCount }}</dd></div>
             </dl>
@@ -112,6 +112,7 @@ import { useAppStore } from '@/stores/app'
 import { storeToRefs } from 'pinia'
 import { watch, computed, nextTick } from 'vue'
 import api from '@/api'
+import { recordArticleView } from '@/api/request'
 import { CTable, CTheme } from '@u-blog/model'
 import type { UCommentItemData } from '@u-blog/ui'
 
@@ -138,6 +139,10 @@ const article = computed(() => {
   if (cur && (String(cur.id) === id || cur.id === parseInt(id))) return cur
   return null
 })
+
+/** 实时浏览量（由后端返回的最新值覆盖，默认取 article 自带值） */
+const liveViewCount = ref<number | null>(null)
+const displayViewCount = computed(() => liveViewCount.value ?? article.value?.viewCount ?? null)
 
 const wordCount = computed(() => {
   const text = articleContent.value ?? ''
@@ -276,7 +281,18 @@ function toIso (d: Date | string) {
   return date.toISOString().slice(0, 10)
 }
 
-watch(() => route.params.id, () => {
+watch(() => route.params.id, async (newId) => {
+  // 切换文章时重置浏览量并重新记录
+  liveViewCount.value = null
+  if (newId) {
+    const articleId = parseInt(newId as string, 10)
+    if (articleId && !Number.isNaN(articleId)) {
+      try {
+        const { viewCount } = await recordArticleView(articleId)
+        liveViewCount.value = viewCount
+      } catch { /* 统计失败不阻断 */ }
+    }
+  }
   nextTick(() => {
     const main = document.querySelector('.layout-base__main')
     if (main) main.scrollTop = 0

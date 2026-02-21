@@ -129,6 +129,7 @@ export const zhCn = {
       delete: '删除',
       preview: '查看图片',
       continue: '继续上传',
+      dragOrClick: '拖拽或点击上传',
     },
     slider: {
       defaultLabel: '滑块介于 {min} 至 {max}',
