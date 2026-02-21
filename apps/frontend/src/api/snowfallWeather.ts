@@ -1,10 +1,11 @@
 /**
  * 免费接口：IP 定位 + 当日天气是否下雪（用于飘雪插件自动模式）
- * - 定位：ip-api.com（免费，无需 key）
+ * - 定位：ip.zhengbingdong.com（HTTPS、国内可访问、无需 key）
  * - 天气：Open-Meteo（免费，无需 key），WMO 雪类天气码 71,73,75,77,85,86
  */
 
-const IP_API = 'https://ip-api.com/json/?fields=lat,lon,status'
+/** 走前端代理 /ip-api，避免跨域（dev 见 vite proxy，生产需 nginx/后端代理同路径） */
+const IP_API = '/ip-api/v1/get'
 const OPEN_METEO = 'https://api.open-meteo.com/v1/forecast'
 
 const SNOW_CODES = new Set([71, 73, 75, 77, 85, 86])
@@ -17,9 +18,13 @@ export interface LocationResult {
 export async function getLocationByIP(): Promise<LocationResult | null> {
   try {
     const res = await fetch(IP_API, { signal: AbortSignal.timeout(5000) })
-    const data = await res.json()
-    if (data?.status !== 'success' || typeof data?.lat !== 'number' || typeof data?.lon !== 'number') return null
-    return { lat: data.lat, lon: data.lon }
+    const json = await res.json()
+    const data = json?.data
+    if (json?.ret !== 200 || !data) return null
+    const lat = typeof data.lat === 'string' ? parseFloat(data.lat) : data.lat
+    const lng = typeof data.lng === 'string' ? parseFloat(data.lng) : data.lng
+    if (typeof lat !== 'number' || typeof lng !== 'number' || Number.isNaN(lat) || Number.isNaN(lng)) return null
+    return { lat, lon: lng }
   } catch {
     return null
   }

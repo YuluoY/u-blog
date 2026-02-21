@@ -17,6 +17,9 @@ const __dirname = path.dirname(__filename);
 
 const SRC_COMPONENTS_DIR = path.join(__dirname, '../src/components');
 const OUTPUT_FILE = path.join(__dirname, '../dist/u-blog-ui.d.ts');
+/** 主类型入口，需引用 u-blog-ui.d.ts 才能让 instance.proxy 拥有 $dialog 等类型 */
+const CORE_INDEX_DTS = path.join(__dirname, '../dist/types/core/index.d.ts');
+const U_BLOG_UI_REF = `/// <reference path="../../u-blog-ui.d.ts" />\n`;
 
 /**
  * 将组件名转换为PascalCase
@@ -170,6 +173,16 @@ async function main() {
 
     // 写入文件
     fs.writeFileSync(OUTPUT_FILE, content, 'utf8');
+    
+    // 让主类型入口引用 u-blog-ui.d.ts，这样 instance.proxy 上才有 $dialog / $message 等类型
+    if (fs.existsSync(CORE_INDEX_DTS)) {
+      let coreIndex = fs.readFileSync(CORE_INDEX_DTS, 'utf8');
+      if (!coreIndex.includes('u-blog-ui.d.ts')) {
+        coreIndex = U_BLOG_UI_REF + coreIndex;
+        fs.writeFileSync(CORE_INDEX_DTS, coreIndex, 'utf8');
+        console.log('✅ 已为主类型入口添加对 u-blog-ui.d.ts 的引用');
+      }
+    }
     
     console.log(`✅ 成功生成组件类型声明文件: ${OUTPUT_FILE}`);
     console.log(`📄 文件大小: ${(content.length / 1024).toFixed(2)} KB`);

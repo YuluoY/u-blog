@@ -66,14 +66,14 @@ describe('UDialog 组件测试', () => {
     });
     // 内容测试
     it('内容渲染正确', async () => {
-        const content = '测试内容';
+        const component = '测试内容';
         const wrapper = createWrapper({
             modelValue: true,
-            content
+            component
         });
         await nextTick();
         const bodyEl = document.querySelector('.u-dialog__body');
-        expect(bodyEl?.textContent?.trim()).toBe(content);
+        expect(bodyEl?.textContent?.trim()).toBe(component);
     });
     // 遮罩层测试
     it('遮罩层渲染正确', async () => {

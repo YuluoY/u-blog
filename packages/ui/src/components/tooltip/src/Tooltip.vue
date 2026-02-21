@@ -46,7 +46,7 @@
           <div
             v-if="visible"
             ref="popperRef"
-            :class="['u-tooltip__popper', `u-tooltip__popper--${placement}`]"
+            :class="['u-tooltip__popper', `u-tooltip__popper--${placement}`, popperClass]"
             :style="popperStyles"
             v-on="dropdownEvents"
           >

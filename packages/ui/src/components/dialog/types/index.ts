@@ -16,11 +16,10 @@ export interface UDialogProps {
   title?: string
 
   /**
-   * @description 内容
-   * @type {VNode | Component | string | Function }
+   * @description 内容。string 走 v-html；其余走 <component :is="component" />（支持组件、VNode、渲染函数）
    * @default ''
    */
-  content?: VNode | Component | string | Function
+  component?: VNode | Component | string | (() => VNode)
 
   /**
    * @description 宽度

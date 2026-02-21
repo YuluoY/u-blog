@@ -1,9 +1,12 @@
 import type { Request } from 'express'
 import type { ControllerReturn } from '@u-blog/types'
+import { In } from 'typeorm'
 import { formatResponse, getClientIp, getDataSource, parseUserAgent, resolveIpLocation } from '@/utils'
 import { tryit } from '@u-blog/utils'
 import RestService from '@/service/rest'
+import { processArticleContent } from '@/service/articleContent'
 import { Article } from '@/module/schema/Article'
+import { Tag } from '@/module/schema/Tag'
 
 class RestController
 {
@@ -27,6 +30,7 @@ class RestController
   {
     const { ret = 0, ...data } = req.body
     const isComment = req.params?.model === 'comment' || req.model?.metadata?.name === 'Comment'
+    const isArticle = req.model?.metadata?.name === 'Article'
 
     if (isComment) {
       const ip = getClientIp(req)
@@ -41,8 +45,34 @@ class RestController
         ipLocation: ipLocation ?? undefined
       })
     }
-    const tryData = await tryit<any, Error>(() => RestService.add(req.model, data, ret))
-    // 评论发表成功后，若有 articleId 则同步增加文章评论数
+
+    let payload: typeof data = data
+    if (isArticle && data && typeof data === 'object' && !Array.isArray(data)) {
+      const { tags: tagIds, content, ...rest } = data as Record<string, unknown>
+      const processedContent = typeof content === 'string' ? processArticleContent(content) : content
+      payload = { ...rest, content: processedContent } as typeof data
+    }
+
+    const tryData = await tryit<any, Error>(() => RestService.add(req.model, payload, ret))
+
+    if (isArticle && tryData[0] == null && payload && typeof payload === 'object') {
+      const raw = data as Record<string, unknown>
+      const tagIds = Array.isArray(raw?.tags) ? (raw.tags as number[]).filter((id): id is number => Number.isInteger(id)) : []
+      const saved = tryData[1]
+      const id = saved?.id as number | undefined
+      if (id != null && tagIds.length > 0) {
+        const ds = getDataSource(req)
+        const articleRepo = ds.getRepository(Article)
+        const tagRepo = ds.getRepository(Tag)
+        const article = await articleRepo.findOne({ where: { id } })
+        if (article) {
+          const tags = await tagRepo.find({ where: { id: In(tagIds) } })
+          ;(article as Article & { tags?: Tag[] }).tags = tags
+          await articleRepo.save(article)
+        }
+      }
+    }
+
     if (isComment && tryData[0] == null && data?.articleId != null) {
       const articleId = Number(data.articleId)
       if (!Number.isNaN(articleId)) {

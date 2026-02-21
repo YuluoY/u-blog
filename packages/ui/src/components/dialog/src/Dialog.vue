@@ -48,11 +48,11 @@
         >
           <slot>
             <span
-              v-if="isString(content)"
-              v-html="content"
+              v-if="isString(component)"
+              v-html="component"
             />
             <component
-              :is="content"
+              :is="component"
               v-else
             />
           </slot>
@@ -88,7 +88,7 @@ defineOptions({
 
 const { t } = useLocale()
 const props = withDefaults(defineProps<UDialogProps>(), {
-  content: '弹窗内容',
+  component: '弹窗内容',
   openDelay: 0,
   closeDelay: 0,
   appendTo: 'body',

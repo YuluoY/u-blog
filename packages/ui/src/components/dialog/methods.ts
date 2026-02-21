@@ -15,21 +15,29 @@ export interface UDialogFnReturn {
 
 const DialogFn = (props: UDialogProps & UDialogFnProps = {}): UDialogFnReturn =>
 {
+  const appContext = (DialogFn as any)._context
   const isSingle = props?.single ?? true
 
-  let container = (isString(props?.appendTo) ? document.querySelector(props.appendTo) : props?.appendTo) || document.body
-
+  const appendTarget = (isString(props?.appendTo) ? document.querySelector(props.appendTo) : props?.appendTo) || document.body
+  const wrapperDiv = document.createElement('div')
+  appendTarget.appendChild(wrapperDiv)
+  let container: Element = wrapperDiv
   if (!isSingle)
   {
     const div = document.createElement('div')
-    container.appendChild(div)
+    wrapperDiv.appendChild(div)
     container = div
+  }
+  else
+  {
+    container = wrapperDiv
   }
 
   const openDebounce = debounce(open, props?.openDelay || 100)
   const closeDebounce = debounce(close, props?.closeDelay || 100)
 
   const _props = {
+    modelValue: true, // 函数式调用时默认打开弹窗，否则 Dialog 内部 visible 为 false 不显示
     ...props,
     zIndex: getNextZIndex(),
     open: openDebounce,
@@ -48,7 +56,9 @@ const DialogFn = (props: UDialogProps & UDialogFnProps = {}): UDialogFnReturn =>
 
   function open()
   {
-    render(h(DialogSFC, _props), container)
+    const vnode = h(DialogSFC, _props)
+    if (appContext) (vnode as any).appContext = appContext
+    render(vnode, container)
     !isSingle && container.remove()
   }
 

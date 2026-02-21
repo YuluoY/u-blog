@@ -12,12 +12,9 @@ if (!existsSync(dtsPath)) {
 }
 
 let content = readFileSync(dtsPath, 'utf-8')
+let patched = false
 
-if (content.includes('CVisualStyle')) {
-  console.log('CVisualStyle 已存在，无需补丁')
-  process.exit(0)
-}
-
+if (!content.includes('CVisualStyle')) {
 const cVisualInject = `declare const CVisualStyle: {
     readonly DEFAULT: "default";
     readonly GLASS: "glass";
@@ -43,10 +40,20 @@ if (exportMatch) {
     .replace('CTheme,', 'CVisualStyle, CTheme,')
     .replace('type Theme,', 'type Theme, type VisualStyle,')
   content = content.replace(exportMatch[0], newExport)
+  patched = true
+}
+}
+
+if (!content.includes('readonly SKILLS:')) {
+  content = content.replace(
+    /(readonly TIMELINE: "timeline";)\n(\s+readonly CUSTOM:)/,
+    '$1\n    readonly SKILLS: "skills";\n$2'
+  )
+  patched = true
 }
 
 writeFileSync(dtsPath, content)
 if (existsSync(dctsPath)) {
   writeFileSync(dctsPath, content)
 }
-console.log('已注入 CVisualStyle 和 VisualStyle 类型定义')
+console.log(patched ? '已注入 CVisualStyle/VisualStyle 或 CPageBlockType.SKILLS 类型定义' : '已注入 CVisualStyle 和 VisualStyle 类型定义')

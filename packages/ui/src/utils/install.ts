@@ -44,6 +44,9 @@ export function withInstallFunc<T extends Function>(fn: T, name: string)
   wrapped.install = (app: App) =>
   {
     app.config.globalProperties[name] = fn
+    // 与 Element Plus 一致：install 时保存 appContext，函数式调用时弹窗内组件才能 inject 到 i18n 等
+    const ctx = (app as any).appContext ?? (app as any)._context
+    if (ctx) (fn as any)._context = ctx
   }
 
   // 复制原函数的所有属性

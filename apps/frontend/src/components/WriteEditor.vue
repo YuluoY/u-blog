@@ -5,22 +5,25 @@
     class="write-view__editor"
     :toolbars="toolbars"
     :def-toolbars="defToolbars"
+    :on-save="onSave"
     @on-save="onSave"
+    :on-upload-img="onUploadImg"
   />
 </template>
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-import { MdEditor, allToolbar } from 'md-editor-v3'
+import { MdEditor, allToolbar, type ToolbarNames } from 'md-editor-v3'
 import 'md-editor-v3/lib/style.css'
 
 /** 有自定义工具栏时，在「保存」右侧插入索引 0，使 defToolbars 第一个按钮显示 */
-const toolbars = computed(() => {
+const toolbars = computed((): ToolbarNames[] | undefined => {
   if (!props.defToolbars) return undefined
-  const eqIdx = (allToolbar as string[]).indexOf('=')
-  const left = (allToolbar as string[]).slice(0, eqIdx >= 0 ? eqIdx : undefined)
-  const right = eqIdx >= 0 ? (allToolbar as string[]).slice(eqIdx) : []
-  return [...left, 0, ...right]
+  const arr = allToolbar as unknown as ToolbarNames[]
+  const eqIdx = (arr as (string | number)[]).indexOf('=')
+  const left = (arr as (string | number)[]).slice(0, eqIdx >= 0 ? eqIdx : undefined)
+  const right = eqIdx >= 0 ? (arr as (string | number)[]).slice(eqIdx) : []
+  return [...left, 0, ...right] as ToolbarNames[]
 })
 
 defineOptions({
@@ -42,7 +45,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   (e: 'update:content', value: string): void
-  (e: 'save'): void
+  (e: 'save', value: string): void
 }>()
 
 /** 内部内容，仅在此组件内与 MdEditor 双向绑定，避免父级 draft 每次变化触发 setValue 导致光标丢失 */
@@ -76,9 +79,34 @@ watch(
   { deep: false }
 )
 
-function onSave() {
-  emit('update:content', content.value)
-  emit('save')
+function onSave(_value?: string, _htmlPromise?: Promise<string>) {
+  const value = content.value
+  emit('update:content', value)
+  emit('save', value)
+}
+
+/** 图片上传/粘贴：转为 base64 插入，保存文章时后端会替换为永久 URL */
+function onUploadImg(files: File[], callback: (urls: string[]) => void) {
+  const urls: string[] = []
+  let done = 0
+  const total = files.length
+  if (total === 0) {
+    callback([])
+    return
+  }
+  files.forEach((file) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      urls.push(reader.result as string)
+      done += 1
+      if (done === total) callback(urls)
+    }
+    reader.onerror = () => {
+      done += 1
+      if (done === total) callback(urls)
+    }
+    reader.readAsDataURL(file)
+  })
 }
 
 /** 供父组件获取当前全文（如打开保存弹窗、快捷键保存前同步） */

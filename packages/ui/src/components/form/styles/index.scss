@@ -1,3 +1,23 @@
+/* 在 :root 提供回退，避免 u-form-item 单独使用时 --form-* 未定义；.u-form 内仍以 .u-form 为准 */
+:root {
+  --form-font-size: var(--u-font-size-base, 1.4rem);
+  --form-color: var(--u-text-2, #606266);
+  --form-line-height: var(--u-height-32, 3.2rem);
+  --form-error-font-size: var(--u-font-size-xs, 0.8rem);
+  --form-error-color: var(--u-danger, #f56c6c);
+  --form-error-border-color: var(--u-danger, #f56c6c);
+  --form-margin-bottom: var(--u-height-22, 2.2rem);
+  --form-padding-right: var(--u-height-12, 1.2rem);
+  --form-margin-right: var(--u-height-32, 3.2rem);
+  --form-error-padding-top: var(--u-height-4, 0.4rem);
+  --form-error-margin-left: var(--u-height-10, 1rem);
+  --form-label-padding-bottom: var(--u-height-10, 1rem);
+  --form-animation-duration: var(--u-animation-duration, 0.2s);
+  --form-animation-function: var(--u-animation-ease-out, ease-out);
+  --form-required-star-color: var(--u-danger, #f56c6c);
+  --form-required-star-margin: var(--u-height-4, 0.4rem);
+}
+
 .u-form {
   --form-font-size: var(--u-font-size-base);
   --form-color: var(--u-text-2);
@@ -108,14 +128,14 @@
     .u-form-item__content {
       .u-input {
         .u-input__wrapper {
-          border-color: var(--u-warning-1);
+          border-color: var(--u-warning-1, #e6a23c);
 
           &:hover {
-            border-color: var(--u-warning-2);
+            border-color: var(--u-warning-2, #cf9236);
           }
 
           &:focus-within {
-            border-color: var(--u-warning-3);
+            border-color: var(--u-warning-3, #b8860b);
           }
         }
       }

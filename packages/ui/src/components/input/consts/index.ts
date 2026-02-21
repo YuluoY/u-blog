@@ -5,7 +5,8 @@ export const CInputType = {
   CHECKBOX: 'checkbox',
   FILE: 'file',
   NUMBER: 'number',
-  RADIO: 'radio'
+  RADIO: 'radio',
+  DATETIME_LOCAL: 'datetime-local'
 } as const
 
 export const CInputSize = {

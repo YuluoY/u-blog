@@ -41,6 +41,7 @@ export interface ICreateArticlePayload {
   status?: string
   publishedAt: string
   categoryId?: number | null
+  tags?: number[]
   isPrivate?: boolean
   isTop?: boolean
   cover?: string | null
