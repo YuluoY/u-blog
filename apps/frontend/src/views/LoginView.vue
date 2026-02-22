@@ -74,6 +74,7 @@
                   type="password"
                   show-password
                   :placeholder="t('auth.passwordPlaceholder')"
+                  @keydown.enter.prevent="handleLogin"
                   size="large"
                   prefix-icon="fa-solid fa-lock"
                 />

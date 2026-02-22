@@ -250,6 +250,49 @@ export const useAppStore = defineStore('app', () =>
     } catch { /* ignore */ }
   }
 
+  /* ---------- 站点元信息（title / favicon） ---------- */
+  /** 默认站点名称 */
+  const DEFAULT_SITE_NAME = 'U-Blog'
+  /** 站点名称（从服务端设置加载，用于 document.title 等） */
+  const siteName = ref<string>(DEFAULT_SITE_NAME)
+  /** 站点图标 URL（从服务端设置加载，动态更新 <link rel="icon">） */
+  const siteFavicon = ref<string>('')
+  /** 是否仅展示当前用户自己的文章 */
+  const onlyOwnArticles = ref(false)
+  function setOnlyOwnArticles(v: boolean) { onlyOwnArticles.value = v }
+
+  function setSiteName(name: string) {
+    siteName.value = name || DEFAULT_SITE_NAME
+  }
+
+  /** 动态更新 <link rel="icon"> 的 href */
+  function applySiteFavicon(url: string) {
+    if (!url) return
+    let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
+    if (!link) {
+      link = document.createElement('link')
+      link.rel = 'icon'
+      document.head.appendChild(link)
+    }
+    link.href = url
+    // 根据扩展名设置 type
+    if (url.endsWith('.svg')) link.type = 'image/svg+xml'
+    else if (url.endsWith('.png')) link.type = 'image/png'
+    else if (url.endsWith('.ico')) link.type = 'image/x-icon'
+    else link.removeAttribute('type')
+  }
+
+  function setSiteFavicon(url: string) {
+    siteFavicon.value = url
+    if (url) applySiteFavicon(url)
+  }
+
+  /** 更新当前页面 document.title，格式：{pageTitle} - {siteName} */
+  function updateDocumentTitle(pageTitle?: string) {
+    const name = siteName.value || DEFAULT_SITE_NAME
+    document.title = pageTitle ? `${pageTitle} - ${name}` : name
+  }
+
   const [snowfallModeState, setSnowfallModeState] = useState<SnowfallMode>(loadSnowfallMode())
   const snowfallMode = computed<SnowfallMode>(() => snowfallModeState.value ?? 'off')
   const [snowfallCountState, setSnowfallCountState] = useState(loadSnowfallCount())
@@ -421,6 +464,21 @@ export const useAppStore = defineStore('app', () =>
         } catch { /* ignore */ }
       }
     }
+    // 站点名称
+    const siteNameVal = toScalar(settingsMap[SETTING_KEYS.SITE_NAME])
+    if (siteNameVal != null) {
+      setSiteName(String(siteNameVal).trim())
+    }
+    // 站点图标
+    const siteFaviconVal = toScalar(settingsMap[SETTING_KEYS.SITE_FAVICON])
+    if (siteFaviconVal != null) {
+      setSiteFavicon(String(siteFaviconVal).trim())
+    }
+    // 仅展示自己文章
+    const onlyOwnVal = toScalar(settingsMap[SETTING_KEYS.ONLY_OWN_ARTICLES])
+    if (onlyOwnVal != null) {
+      setOnlyOwnArticles(String(onlyOwnVal) === 'true')
+    }
   }
 
   /** 设置主题（不带动画），watch 会同步到 DOM 和本地缓存，并入库 */
@@ -504,6 +562,14 @@ export const useAppStore = defineStore('app', () =>
     setArchiveCardStyle,
     toggleTheme,
     hydrateAppearance,
+
+    siteName,
+    siteFavicon,
+    onlyOwnArticles,
+    setSiteName,
+    setSiteFavicon,
+    setOnlyOwnArticles,
+    updateDocumentTitle,
 
     snowfallMode,
     snowfallCount,

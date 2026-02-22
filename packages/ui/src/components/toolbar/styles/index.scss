@@ -1,0 +1,117 @@
+/* ========== UToolbar 基础工具条 ========== */
+
+/* BEM 命名：.u-toolbar / .u-toolbar__actions / .u-toolbar__btn / .u-toolbar__loading */
+
+.u-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: var(--u-border-radius-6, 8px);
+  background: var(--u-background-1, #fff);
+  user-select: none;
+  box-sizing: border-box;
+
+  /* ---- 方向 ---- */
+  &--vertical {
+    flex-direction: column;
+  }
+
+  /* ---- 尺寸 ---- */
+  &--small {
+    padding: 2px;
+    gap: 1px;
+
+    .u-toolbar__btn {
+      padding: 4px 6px;
+      font-size: var(--u-font-size-xxs, 1rem);
+    }
+
+    .u-toolbar__loading {
+      padding: 4px 8px;
+      font-size: var(--u-font-size-xxs, 1rem);
+    }
+  }
+
+  &--large {
+    padding: 6px;
+    gap: 4px;
+
+    .u-toolbar__btn {
+      padding: 8px 14px;
+      font-size: var(--u-font-size-sm, 1.4rem);
+    }
+
+    .u-toolbar__loading {
+      padding: 8px 16px;
+      font-size: var(--u-font-size-sm, 1.4rem);
+    }
+  }
+
+  /* ---- 操作区 ---- */
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  &--vertical &__actions {
+    flex-direction: column;
+  }
+
+  /* ---- 按钮 ---- */
+  &__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    border: none;
+    background: transparent;
+    color: var(--u-text-2, #666);
+    font-size: var(--u-font-size-xs, 1.2rem);
+    line-height: 1;
+    border-radius: var(--u-border-radius-4, 6px);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background var(--u-transition, 0.2s) ease,
+                color var(--u-transition, 0.2s) ease;
+
+    &:hover:not(:disabled) {
+      background: var(--u-primary-light-9, rgba(0, 123, 255, 0.08));
+      color: var(--u-primary, #007bff);
+    }
+
+    &:active:not(:disabled) {
+      background: var(--u-primary-light-8, rgba(0, 123, 255, 0.14));
+    }
+
+    &:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .u-icon {
+      font-size: 1em;
+    }
+  }
+
+  /* ---- 加载态 ---- */
+  &__loading {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    color: var(--u-primary, #007bff);
+    font-size: var(--u-font-size-xs, 1.2rem);
+    white-space: nowrap;
+
+    .u-icon {
+      animation: u-toolbar-spin 1s linear infinite;
+    }
+  }
+}
+
+@keyframes u-toolbar-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}

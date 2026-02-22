@@ -53,6 +53,8 @@ import {
   UTabs,
   UTabPane,
   UUpload,
+  UToolbar,
+  UFloatingToolbar,
 } from '@/components'
 
 export default [
@@ -104,6 +106,8 @@ export default [
   UCommentList,
   UCommentItem,
   UUpload,
+  UToolbar,
+  UFloatingToolbar,
 
   UMessageFn,
   UDialogFn,

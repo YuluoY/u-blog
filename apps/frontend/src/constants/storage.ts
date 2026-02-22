@@ -46,4 +46,14 @@ export const STORAGE_KEYS = {
   SNOWFALL_DAY_SNOW_CACHE: `${PREFIX}snowfall-day-snow`,
   /** 撰写页草稿内容（Markdown） */
   WRITE_DRAFT: `${PREFIX}write-draft`,
+  /** Chat 模型调参（temperature / maxTokens / contextLength）JSON */
+  CHAT_MODEL_PARAMS: `${PREFIX}chat-model-params`,
+  /** Chat 字号大小（数字，单位 px，如 15） */
+  CHAT_FONT_SIZE: `${PREFIX}chat-font-size`,
+  /** Chat 文件夹列表 JSON */
+  CHAT_FOLDERS: `${PREFIX}chat-folders`,
+  /** Chat 文件夹展开状态 JSON */
+  CHAT_FOLDERS_OPEN: `${PREFIX}chat-folders-open`,
+  /** 用户个人模型配置（非管理员本地存储） */
+  USER_MODEL_CONFIG: `${PREFIX}user-model-config`,
 } as const

@@ -51,9 +51,9 @@ export interface ICreateArticlePayload {
 export interface IArticleApis {
   [keyof: string]: ApiMethod
   /** 分页查询文章列表（仅已发布；order 置顶优先 + sort 对应排序） */
-  getArticleList: (page?: number, pageSize?: number, sort?: HomeSortType) => Promise<IArticle[]>
+  getArticleList: (page?: number, pageSize?: number, sort?: HomeSortType, userId?: number) => Promise<IArticle[]>
   /** 归档用：按时间倒序拉取全部（或大量）文章 */
-  getArticleListForArchive: (take?: number) => Promise<IArticle[]>
+  getArticleListForArchive: (take?: number, userId?: number) => Promise<IArticle[]>
   /** 根据 id 查询单篇文章 */
   getArticleById: (id: string) => Promise<IArticle | null>
   /** 新建文章（草稿或发布） */
@@ -61,11 +61,13 @@ export interface IArticleApis {
 }
 
 const apis: IArticleApis = {
-  async getArticleList(page = 1, pageSize = PAGE_SIZE, sort: HomeSortType = HOME_SORT_DEFAULT) {
+  async getArticleList(page = 1, pageSize = PAGE_SIZE, sort: HomeSortType = HOME_SORT_DEFAULT, userId?: number) {
     try {
       const order = getArticleListOrder(sort)
+      const where: Record<string, unknown> = { status: CArticleStatus.PUBLISHED }
+      if (userId) where.userId = userId
       const list = await restQuery<IArticle[]>('article', {
-        where: { status: CArticleStatus.PUBLISHED },
+        where,
         take: pageSize,
         skip: (page - 1) * pageSize,
         order,
@@ -77,10 +79,12 @@ const apis: IArticleApis = {
     }
   },
 
-  async getArticleListForArchive(take = 500) {
+  async getArticleListForArchive(take = 500, userId?: number) {
     try {
+      const where: Record<string, unknown> = { status: CArticleStatus.PUBLISHED }
+      if (userId) where.userId = userId
       const list = await restQuery<IArticle[]>('article', {
-        where: { status: CArticleStatus.PUBLISHED },
+        where,
         take,
         skip: 0,
         order: getArticleListOrder('date'),

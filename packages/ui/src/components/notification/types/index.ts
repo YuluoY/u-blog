@@ -10,6 +10,8 @@ export interface UNotificationProps {
   position?: UNotificationPosition
   offset?: number
   zIndex?: number
+  /** 相同内容去重：为 true 时，重复通知不再新建，而是在已有通知上显示 ×N 计数徽标 */
+  deduplicate?: boolean
   onClose?: () => void
 }
 

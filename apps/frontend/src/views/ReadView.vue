@@ -21,7 +21,7 @@
               <div class="read-view__meta-stat"><dt>{{ t('read.words') }}</dt><dd>{{ wordCount }}</dd></div>
               <div class="read-view__meta-stat"><dt>{{ t('read.read') }}</dt><dd>~ {{ readingMinutes }} {{ t('read.minutes') }}</dd></div>
               <div v-if="displayViewCount != null" class="read-view__meta-stat"><dt>{{ t('read.viewCount') }}</dt><dd>{{ displayViewCount }}</dd></div>
-              <div v-if="article.likeCount != null" class="read-view__meta-stat"><dt>{{ t('read.like') }}</dt><dd>{{ article.likeCount }}</dd></div>
+              <div class="read-view__meta-stat"><dt>{{ t('read.like') }}</dt><dd>{{ displayLikeCount }}</dd></div>
               <div v-if="article.commentCount != null" class="read-view__meta-stat"><dt>{{ t('read.comment') }}</dt><dd>{{ article.commentCount }}</dd></div>
             </dl>
           </header>
@@ -39,10 +39,26 @@
             <span v-else class="read-view__nav-placeholder" />
           </nav>
 
+          <!-- 点赞按钮 -->
+          <div class="read-view__like-action">
+            <button
+              type="button"
+              class="read-view__like-btn"
+              :class="{ 'read-view__like-btn--active': articleLiked }"
+              :disabled="likePending"
+              @click="handleLikeToggle"
+            >
+              <u-icon :icon="articleLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart'" />
+              <span>{{ articleLiked ? t('read.liked') : t('read.likeAction') }}</span>
+              <span class="read-view__like-count">{{ displayLikeCount }}</span>
+            </button>
+          </div>
+
           <!-- 评论区：按 path=/read/:id 拉取与发表，支持懒加载 -->
           <section v-if="commentPath" class="read-view__comments" aria-label="评论区">
             <u-comment :title="t('read.commentSection')" :show-title="true">
-              <template v-if="user?.id">
+              <!-- 登录用户：直接展示评论输入框 -->
+              <template v-if="isLoggedIn">
                 <u-comment-input
                   v-model="commentContent"
                   :placeholder="t('read.commentPlaceholder')"
@@ -54,10 +70,39 @@
                   @submit="handleCommentSubmit"
                 />
               </template>
-              <div v-else class="read-view__comment-login-hint">
-                <u-icon icon="fa-regular fa-user" />
-                <span>{{ t('read.loginToComment') }}</span>
-              </div>
+              <!-- 游客：昵称 + 邮箱 嵌入 CommentInput 的 prepend 插槽，一体化面板 -->
+              <template v-else>
+                <u-comment-input
+                  v-model="commentContent"
+                  :placeholder="t('read.commentPlaceholder')"
+                  :max-length="500"
+                  :submit-text="t('read.commentSubmit')"
+                  :loading="commentSubmitting"
+                  :emoji-picker-theme="appStore.theme === CTheme.DARK ? 'dark' : 'light'"
+                  @insert="commentContent += $event"
+                  @submit="handleCommentSubmit"
+                >
+                  <template #prepend>
+                    <!-- QQ 邮箱自动识别头像 -->
+                    <img v-if="guestAvatarUrl" :src="guestAvatarUrl" alt="avatar" class="read-view__qq-avatar" />
+                    <u-input
+                      v-model="guestNickname"
+                      size="small"
+                      prefix-icon="fa-solid fa-user"
+                      :placeholder="t('read.guestNicknamePlaceholder')"
+                      :max-length="50"
+                    />
+                    <u-input
+                      v-model="guestEmail"
+                      size="small"
+                      prefix-icon="fa-solid fa-envelope"
+                      :placeholder="t('read.guestEmailPlaceholder')"
+                      :max-length="100"
+                    />
+                    <span v-if="guestAvatarUrl" class="read-view__qq-badge">QQ</span>
+                  </template>
+                </u-comment-input>
+              </template>
               <u-comment-list
                 :list="(commentListByPath as unknown as UCommentItemData[])"
                 :loading="commentLoading"
@@ -66,7 +111,7 @@
                 :replying-id="replyingId"
                 :reply-content="replyContent"
                 :reply-loading="replySubmitting"
-                :logged-in="!!user?.id"
+                :logged-in="true"
                 @reply="handleReply"
                 @reply-submit="handleReplySubmit"
                 @reply-cancel="handleReplyCancel"
@@ -112,8 +157,10 @@ import { useAppStore } from '@/stores/app'
 import { storeToRefs } from 'pinia'
 import { watch, computed, nextTick } from 'vue'
 import api from '@/api'
-import { recordArticleView } from '@/api/request'
+import { recordArticleView, toggleArticleLike, getArticleLikeStatus, fetchQQNickname } from '@/api/request'
 import { CTable, CTheme } from '@u-blog/model'
+import { UMessageFn } from '@u-blog/ui'
+import { getQQAvatarUrl } from '@u-blog/ui'
 import type { UCommentItemData } from '@u-blog/ui'
 
 defineOptions({
@@ -127,7 +174,7 @@ const commentStore = useCommentStore()
 const userStore = useUserStore()
 const appStore = useAppStore()
 const { currentArticle, articleList } = storeToRefs(articleStore)
-const { user } = storeToRefs(userStore)
+const { user, isLoggedIn } = storeToRefs(userStore)
 
 const { Preview, Catalog, articleContent, scrollElement } = usePreviewMd({ articleId: route.params.id as string })
 
@@ -143,6 +190,59 @@ const article = computed(() => {
 /** 实时浏览量（由后端返回的最新值覆盖，默认取 article 自带值） */
 const liveViewCount = ref<number | null>(null)
 const displayViewCount = computed(() => liveViewCount.value ?? article.value?.viewCount ?? null)
+
+/** 点赞状态 */
+const articleLiked = ref(false)
+const liveLikeCount = ref<number | null>(null)
+const likePending = ref(false)
+const displayLikeCount = computed(() => liveLikeCount.value ?? article.value?.likeCount ?? 0)
+
+/**
+ * 简易浏览器指纹（用于游客点赞去重）
+ * 基于 canvas + navigator 特征生成一个简短 hash
+ */
+function getBrowserFingerprint(): string {
+  try {
+    const parts = [
+      navigator.userAgent,
+      navigator.language,
+      screen.width + 'x' + screen.height,
+      new Date().getTimezoneOffset().toString(),
+    ]
+    const str = parts.join('|')
+    let hash = 0
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0
+    }
+    return Math.abs(hash).toString(36)
+  } catch {
+    return ''
+  }
+}
+
+/** 切换点赞 */
+async function handleLikeToggle() {
+  const id = route.params.id as string
+  const articleId = parseInt(id, 10)
+  if (!articleId || Number.isNaN(articleId)) return
+  likePending.value = true
+  try {
+    const fp = isLoggedIn.value ? undefined : getBrowserFingerprint()
+    const result = await toggleArticleLike(articleId, fp)
+    articleLiked.value = result.liked
+    liveLikeCount.value = result.likeCount
+  } catch { /* 点赞失败静默 */ }
+  finally { likePending.value = false }
+}
+
+/** 查询点赞状态 */
+async function fetchLikeStatus(articleId: number) {
+  try {
+    const fp = isLoggedIn.value ? undefined : getBrowserFingerprint()
+    const { liked } = await getArticleLikeStatus(articleId, fp)
+    articleLiked.value = liked
+  } catch { /* 查询失败静默 */ }
+}
 
 const wordCount = computed(() => {
   const text = articleContent.value ?? ''
@@ -186,6 +286,33 @@ const replyingId = ref<number | null>(null)
 const replyContent = ref('')
 const replySubmitting = ref(false)
 
+/** 游客信息（存储在 localStorage 以便下次自动填充） */
+const guestNickname = ref(localStorage.getItem('guest_nickname') ?? '')
+const guestEmail = ref(localStorage.getItem('guest_email') ?? '')
+
+/** 游客 QQ 邮箱头像预览 */
+const guestAvatarUrl = computed(() => getQQAvatarUrl(guestEmail.value))
+
+/** QQ 邮箱自动获取真实昵称（当昵称为空或为上次自动填充时覆盖） */
+let lastAutoNickname = ''
+watch(guestEmail, async (email) => {
+  const match = email.match(/^(\d{5,11})@qq\.com$/i)
+  if (match) {
+    const qq = match[1]
+    // 仅在昵称为空或上次自动填充时覆盖
+    if (!guestNickname.value.trim() || guestNickname.value === lastAutoNickname) {
+      // 先用 QQ 号占位，再异步获取真实昵称
+      guestNickname.value = qq
+      lastAutoNickname = qq
+      const realName = await fetchQQNickname(qq)
+      if (realName && (guestNickname.value === qq || guestNickname.value === lastAutoNickname)) {
+        guestNickname.value = realName
+        lastAutoNickname = realName
+      }
+    }
+  }
+})
+
 /** 进入文章页或切换文章时拉取该 path 的评论第一页 */
 watch(
   commentPath,
@@ -195,20 +322,36 @@ watch(
   { immediate: true }
 )
 
-/** 发表主评论 */
+/** 发表主评论（登录用户 / 游客） */
 async function handleCommentSubmit() {
   const text = commentContent.value?.trim()
-  if (!text || !user.value?.id || !commentPath.value) return
+  if (!text || !commentPath.value) return
+
+  // 游客校验
+  if (!isLoggedIn.value) {
+    if (!guestNickname.value?.trim()) return
+    if (!guestEmail.value?.trim()) return
+  }
+
   commentSubmitting.value = true
   try {
     const id = route.params.id as string
     const articleId = id ? parseInt(id, 10) : undefined
-    await api(CTable.COMMENT).addComment({
+    const payload: Parameters<typeof api>[0] extends infer M ? any : never = {
       content: text,
       path: commentPath.value,
-      userId: user.value.id as number,
-      articleId: Number.isNaN(articleId) ? undefined : articleId
-    })
+      articleId: Number.isNaN(articleId) ? undefined : articleId,
+    }
+    if (isLoggedIn.value) {
+      payload.userId = user.value.id as number
+    } else {
+      payload.nickname = guestNickname.value.trim()
+      payload.email = guestEmail.value.trim()
+      // 持久化游客信息
+      localStorage.setItem('guest_nickname', payload.nickname)
+      localStorage.setItem('guest_email', payload.email)
+    }
+    await api(CTable.COMMENT).addComment(payload)
     commentContent.value = ''
     // 重新拉取第一页以包含新评论（服务端排序一致）
     await commentStore.qryCommentListByPath(commentPath.value, false)
@@ -219,6 +362,8 @@ async function handleCommentSubmit() {
         commentCount: (article.value.commentCount ?? 0) + 1
       })
     }
+  } catch (err: any) {
+    UMessageFn({ message: err?.message || t('read.commentSubmitFailed'), type: 'error' })
   } finally {
     commentSubmitting.value = false
   }
@@ -230,15 +375,27 @@ function handleReply(comment: UCommentItemData) {
 }
 
 async function handleReplySubmit(text: string, comment: UCommentItemData) {
-  if (!text.trim() || !user.value?.id || !commentPath.value) return
+  if (!text.trim() || !commentPath.value) return
+  // 游客校验
+  if (!isLoggedIn.value) {
+    if (!guestNickname.value?.trim() || !guestEmail.value?.trim()) return
+  }
   replySubmitting.value = true
   try {
-    await api(CTable.COMMENT).addComment({
+    const payload: Record<string, unknown> = {
       content: text.trim(),
       path: commentPath.value,
-      userId: user.value.id as number,
-      pid: comment.id
-    })
+      pid: comment.id,
+    }
+    if (isLoggedIn.value) {
+      payload.userId = user.value.id as number
+    } else {
+      payload.nickname = guestNickname.value.trim()
+      payload.email = guestEmail.value.trim()
+      localStorage.setItem('guest_nickname', payload.nickname as string)
+      localStorage.setItem('guest_email', payload.email as string)
+    }
+    await api(CTable.COMMENT).addComment(payload as any)
     replyContent.value = ''
     replyingId.value = null
     await commentStore.qryCommentListByPath(commentPath.value, false)
@@ -248,6 +405,8 @@ async function handleReplySubmit(text: string, comment: UCommentItemData) {
         commentCount: (article.value.commentCount ?? 0) + 1
       })
     }
+  } catch (err: any) {
+    UMessageFn({ message: err?.message || t('read.commentSubmitFailed'), type: 'error' })
   } finally {
     replySubmitting.value = false
   }
@@ -282,8 +441,10 @@ function toIso (d: Date | string) {
 }
 
 watch(() => route.params.id, async (newId) => {
-  // 切换文章时重置浏览量并重新记录
+  // 切换文章时重置浏览量 / 点赞状态并重新记录
   liveViewCount.value = null
+  liveLikeCount.value = null
+  articleLiked.value = false
   if (newId) {
     const articleId = parseInt(newId as string, 10)
     if (articleId && !Number.isNaN(articleId)) {
@@ -291,6 +452,8 @@ watch(() => route.params.id, async (newId) => {
         const { viewCount } = await recordArticleView(articleId)
         liveViewCount.value = viewCount
       } catch { /* 统计失败不阻断 */ }
+      // 异步查询点赞状态
+      fetchLikeStatus(articleId)
     }
   }
   nextTick(() => {
@@ -464,6 +627,74 @@ watch(() => route.params.id, async (newId) => {
   border-top: 1px solid var(--u-border-1);
 }
 
+.read-view__like-action {
+  display: flex;
+  justify-content: center;
+  padding: 24px 0;
+  margin-top: 24px;
+  border-top: 1px solid var(--u-border-1);
+}
+
+.read-view__like-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  font-size: 1.35rem;
+  font-weight: 500;
+  color: var(--u-text-2);
+  background: var(--u-background-2);
+  border: 1px solid var(--u-border-1);
+  border-radius: 24px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  user-select: none;
+
+  .u-icon {
+    font-size: 1.4rem;
+    transition: transform 0.25s ease, color 0.25s ease;
+  }
+
+  &:hover:not(:disabled) {
+    border-color: #e74c3c;
+    color: #e74c3c;
+    background: rgba(231, 76, 60, 0.06);
+
+    .u-icon {
+      transform: scale(1.15);
+    }
+  }
+
+  &--active {
+    color: #e74c3c;
+    border-color: #e74c3c;
+    background: rgba(231, 76, 60, 0.08);
+
+    .u-icon {
+      color: #e74c3c;
+      animation: like-bounce 0.35s ease;
+    }
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.read-view__like-count {
+  font-variant-numeric: tabular-nums;
+  min-width: 1.2em;
+  text-align: center;
+}
+
+@keyframes like-bounce {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.3); }
+  60% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
 .read-view__comment-login-hint {
   display: flex;
   align-items: center;
@@ -471,6 +702,26 @@ watch(() => route.params.id, async (newId) => {
   padding: 12px 0;
   font-size: 1.25rem;
   color: var(--u-text-4);
+}
+
+/* 游客 QQ 头像 & 标签 */
+.read-view__qq-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.read-view__qq-badge {
+  flex-shrink: 0;
+  padding: 1px 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #fff;
+  background: var(--u-primary, #409eff);
+  border-radius: 4px;
 }
 
 .read-view__comment-load-more {

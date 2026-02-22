@@ -22,9 +22,16 @@ router.delete('/del', requireAuth, async (req: Request, res: Response) => {
 })
 
 /**
- * 通用添加（需要登录）
+ * 通用添加：
+ * - comment 模型允许游客（通过 nickname + email），由 Controller 校验
+ * - 其他模型仍需登录
  */
-router.post('/add', requireAuth, async (req: Request, res: Response) => {
+router.post('/add', async (req: Request, res: Response) => {
+  const isComment = req.params?.model === 'comment' || req.model?.metadata?.name === 'Comment'
+  if (!isComment && !req.user) {
+    res.status(401).json({ code: 401, data: null, message: '请先登录' })
+    return
+  }
   const data = await RestController.add(req)
   res.json(data)
 })

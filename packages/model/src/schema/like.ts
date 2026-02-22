@@ -4,7 +4,8 @@ import type { IComment } from './comment'
 import type { IUser } from './user'
 
 export interface ILike extends IBaseSchema, Pick<IBaseFields, 'id'> {
-  userId: number
+  /** 登录用户 ID（游客点赞时为 null） */
+  userId?: number | null
   user?: IUser
 
   articleId?: number
@@ -12,6 +13,11 @@ export interface ILike extends IBaseSchema, Pick<IBaseFields, 'id'> {
 
   commentId?: number
   comment?: IComment
+
+  /** 游客点赞时的客户端 IP */
+  ip?: string | null
+  /** 游客点赞时的浏览器指纹 */
+  fingerprint?: string | null
 }
 
 /**

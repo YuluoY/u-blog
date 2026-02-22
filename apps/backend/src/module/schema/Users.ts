@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm'
-import { CTable, UserRole, CUserRole } from '@u-blog/model'
+import { CTable, UserRole, CUserRole, CGender, type Gender } from '@u-blog/model'
 import { IsArray, IsBoolean, IsDate, IsDateString, IsEmail, IsEnum, IsInt, IsIP, IsNotEmpty, IsObject, IsOptional, IsString, Max, MaxLength, Min, MinLength, ValidateNested } from 'class-validator'
 import { BaseSchema } from '../BaseSchema'
 
@@ -57,6 +57,21 @@ export class Users {
 	@IsOptional()
 	@IsEnum(CUserRole, { message: `角色必须是枚举值: ${Object.values(CUserRole).join(',')}`, each: true })
 	role?: UserRole
+
+	@Column({
+		type: 'enum',
+		enum: Object.values(CGender),
+		default: CGender.UNSET,
+		nullable: true,
+		comment: '性别',
+	})
+	@IsOptional()
+	@IsEnum(CGender, { message: `性别必须是枚举值: ${Object.values(CGender).join(',')}` })
+	gender?: Gender
+
+	@Column({ type: 'date', nullable: true, comment: '生日' })
+	@IsOptional()
+	birthday?: Date | null
 
 	@Column({ type: 'varchar', length: 255, nullable: true, comment: '所在地' })
 	@IsOptional()

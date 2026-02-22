@@ -318,13 +318,17 @@ function handleClose() {
     display: block;
   }
 
-  /* Tab 切换：使用 UButton，保持等分 */
+  /* Tab 切换：紧凑高度，面板内不需要标准组件高度 */
   &__tabs {
     display: flex;
     gap: 4px;
   }
   &__tab {
     flex: 1;
+    :deep(.u-button) {
+      height: 2.4rem;
+      font-size: 1.2rem;
+    }
   }
 
   /* 热力图容器：横向展示，支持左右滚动 */

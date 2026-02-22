@@ -1,14 +1,34 @@
 /**
  * 撰写页草稿 IndexedDB 封装
- * 库名 u-blog-write，store drafts，主键 id（当前草稿为 'current'）
+ * 库名 u-blog-write-{userId}，store drafts，主键 id（当前草稿为 'current'）
  * 注意：与 publishSettingsDb 共用同一数据库，版本升级时需同步 store 创建
  */
 
-const DB_NAME = 'u-blog-write'
+const DB_PREFIX = 'u-blog-write'
 const STORE_NAME = 'drafts'
 const CURRENT_DRAFT_ID = 'current'
 /** v2: 新增 publish-settings store，两个工具文件必须使用同一版本号 */
 const DB_VERSION = 2
+
+/** 当前绑定的用户 ID */
+let _currentUserId: string | number | null = null
+/** 单例 DB 实例 Promise */
+let _dbPromise: Promise<IDBDatabase> | null = null
+
+/** 切换当前用户（登录/退出时调用） */
+export function setCurrentUser(userId: string | number | null): void {
+  if (_currentUserId === userId) return
+  _currentUserId = userId
+  if (_dbPromise) {
+    _dbPromise.then(db => db.close()).catch(() => {})
+    _dbPromise = null
+  }
+}
+
+/** 获取当前数据库名称（含用户 ID 隔离后缀） */
+function getDBName(): string {
+  return _currentUserId ? `${DB_PREFIX}-${_currentUserId}` : DB_PREFIX
+}
 
 export interface DraftRecord {
   id: string
@@ -17,9 +37,13 @@ export interface DraftRecord {
 }
 
 function openDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION)
-    req.onerror = () => reject(req.error)
+  if (_dbPromise) return _dbPromise
+  _dbPromise = new Promise((resolve, reject) => {
+    const req = indexedDB.open(getDBName(), DB_VERSION)
+    req.onerror = () => {
+      _dbPromise = null
+      reject(req.error)
+    }
     req.onsuccess = () => resolve(req.result)
     req.onupgradeneeded = (e) => {
       const db = (e.target as IDBOpenDBRequest).result
@@ -32,6 +56,7 @@ function openDB(): Promise<IDBDatabase> {
       }
     }
   })
+  return _dbPromise
 }
 
 /**
@@ -43,8 +68,8 @@ export async function getDraft(): Promise<DraftRecord | null> {
     const tx = db.transaction(STORE_NAME, 'readonly')
     const store = tx.objectStore(STORE_NAME)
     const req = store.get(CURRENT_DRAFT_ID)
-    req.onerror = () => { db.close(); reject(req.error) }
-    req.onsuccess = () => { db.close(); resolve(req.result ?? null) }
+    req.onerror = () => reject(req.error)
+    req.onsuccess = () => resolve(req.result ?? null)
   })
 }
 
@@ -62,8 +87,8 @@ export async function putDraft(content: string): Promise<void> {
     const tx = db.transaction(STORE_NAME, 'readwrite')
     const store = tx.objectStore(STORE_NAME)
     const req = store.put(record)
-    req.onerror = () => { db.close(); reject(req.error) }
-    req.onsuccess = () => { db.close(); resolve() }
+    req.onerror = () => reject(req.error)
+    req.onsuccess = () => resolve()
   })
 }
 

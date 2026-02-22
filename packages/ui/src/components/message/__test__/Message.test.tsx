@@ -40,4 +40,17 @@ describe('UMessage 组件覆盖测试', () =>
     await rAf()
     expect(document.body.querySelector('.u-message')).toBeFalsy()
   })
+
+  test('连续创建的消息 DOM 数量应正确', async() =>
+  {
+    MessageFn({ message: 'msg-1', duration: 0 })
+    MessageFn({ message: 'msg-2', duration: 0 })
+    MessageFn({ message: 'msg-3', duration: 0 })
+    await rAf()
+    const msgs = document.body.querySelectorAll('.u-message')
+    expect(msgs.length).toBe(3)
+    closeAll()
+    await rAf()
+    expect(document.body.querySelectorAll('.u-message').length).toBe(0)
+  })
 })

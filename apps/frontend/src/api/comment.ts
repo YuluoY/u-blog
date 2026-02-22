@@ -12,7 +12,12 @@ export interface ICommentApis {
   addComment: (data: {
     content: string
     path: string
-    userId: number
+    /** 登录用户 ID（游客时不传） */
+    userId?: number | null
+    /** 游客昵称（未登录时必填） */
+    nickname?: string
+    /** 游客邮箱（未登录时必填） */
+    email?: string
     pid?: number | null
     articleId?: number | null
   }) => Promise<{ id: number }>

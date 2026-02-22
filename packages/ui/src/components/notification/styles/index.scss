@@ -17,9 +17,49 @@
     margin-bottom: 0.4rem;
   }
 
+  &__header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  &__icon {
+    font-size: 1.6rem;
+    flex-shrink: 0;
+
+    &--info { color: var(--u-primary); }
+    &--success { color: var(--u-success); }
+    &--warning { color: var(--u-warning); }
+    &--error { color: var(--u-danger); }
+  }
+
   &__title {
     font-weight: 600;
     color: var(--u-text-1);
+  }
+
+  /* 去重计数徽标 */
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    height: 2rem;
+    padding: 0 0.5rem;
+    border-radius: 1rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    line-height: 1;
+    color: #fff;
+    background-color: var(--u-danger, #e74c3c);
+    /* 弹跳动画 */
+    animation: notification-badge-pop 0.25s ease;
+  }
+
+  @keyframes notification-badge-pop {
+    0% { transform: scale(0.6); opacity: 0; }
+    60% { transform: scale(1.15); }
+    100% { transform: scale(1); opacity: 1; }
   }
 
   &__close {
@@ -52,12 +92,28 @@
   &--error { border-left: 4px solid var(--u-danger); }
 }
 
+/* 过渡动画 */
 .notification-fade-enter-active,
 .notification-fade-leave-active {
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
-.notification-fade-enter-from,
-.notification-fade-leave-to {
-  opacity: 0;
-  transform: translateX(100%);
+
+/* 右侧通知：从右滑入/滑出 */
+.u-notification--top-right,
+.u-notification--bottom-right {
+  &.notification-fade-enter-from,
+  &.notification-fade-leave-to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+/* 左侧通知：从左滑入/滑出 */
+.u-notification--top-left,
+.u-notification--bottom-left {
+  &.notification-fade-enter-from,
+  &.notification-fade-leave-to {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
 }

@@ -52,6 +52,106 @@ if (!content.includes('readonly SKILLS:')) {
   patched = true
 }
 
+// 注入 CTable 中缺失的 FRIEND_LINK 字段
+if (!content.includes('FRIEND_LINK')) {
+  content = content.replace(
+    /(readonly USER_SETTING: "user_setting";)\n(};)/,
+    '$1\n    readonly FRIEND_LINK: "friend_link";\n$2'
+  )
+  patched = true
+}
+
+// 注入 CGender 和 Gender 类型定义
+if (!content.includes('CGender')) {
+  const cGenderInject = `declare const CGender: {
+    readonly MALE: "male";
+    readonly FEMALE: "female";
+    readonly OTHER: "other";
+    readonly UNSET: "unset";
+};
+`
+  const genderTypeInject = `type Gender = typeof CGender[keyof typeof CGender];
+`
+
+  // 在 CTheme 声明之后插入 CGender
+  const cThemeBlock = content.match(/declare const CTheme:[\s\S]*?};/)
+  if (cThemeBlock) {
+    content = content.replace(cThemeBlock[0], cThemeBlock[0] + '\n' + cGenderInject)
+  }
+
+  // 在 type Theme = ... 之后插入 type Gender = ...
+  const themeTypeForGender = content.match(/type Theme = typeof CTheme\[keyof typeof CTheme\];?\s*\n/)
+  if (themeTypeForGender) {
+    content = content.replace(themeTypeForGender[0], themeTypeForGender[0] + genderTypeInject + '\n')
+  }
+
+  // 追加到 export 列表
+  const exportBlock = content.match(/export \{[^}]+\};/)
+  if (exportBlock) {
+    let newExport = exportBlock[0]
+      .replace('CTheme,', 'CGender, CTheme,')
+      .replace('type Theme,', 'type Gender, type Theme,')
+    content = content.replace(exportBlock[0], newExport)
+  }
+  patched = true
+}
+
+// 注入 IUser 中缺失的 gender 和 birthday 字段
+if (!content.includes('gender?: Gender')) {
+  // 在 IUser 接口的 role: UserRole; 之后添加 gender 和 birthday
+  content = content.replace(
+    /(interface IUser[\s\S]*?role: UserRole;\n)/,
+    '$1    gender?: Gender;\n    birthday?: Date | null;\n'
+  )
+  patched = true
+}
+
+// 注入 CFriendLinkStatus / IFriendLink / IFriendLinkDto / IFriendLinkVo 类型定义
+if (!content.includes('CFriendLinkStatus')) {
+  const cFriendLinkStatusInject = `declare const CFriendLinkStatus: {
+    readonly PENDING: "pending";
+    readonly APPROVED: "approved";
+    readonly REJECTED: "rejected";
+};
+type FriendLinkStatus = typeof CFriendLinkStatus[keyof typeof CFriendLinkStatus];
+interface IFriendLink extends IBaseSchema, Pick<IBaseFields, 'id'> {
+    userId: number;
+    user?: IUser;
+    url: string;
+    title: string;
+    icon?: string;
+    description?: string;
+    email?: string;
+    status: FriendLinkStatus;
+    sortOrder?: number;
+}
+interface IFriendLinkDto extends Pick<IFriendLink, 'url' | 'title' | 'description' | 'email'> {
+    userId?: number;
+    icon?: string;
+}
+interface IFriendLinkVo extends Omit<IFriendLink, 'deletedAt'> {
+}
+`
+  // 在 export 块之前插入
+  const exportBlock = content.match(/export \{[^}]+\};/)
+  if (exportBlock) {
+    content = content.replace(exportBlock[0], cFriendLinkStatusInject + exportBlock[0])
+    // 在 export 列表中追加新类型
+    let newExport = content.match(/export \{[^}]+\};/)[0]
+    newExport = newExport.replace(
+      'CTheme,',
+      'CFriendLinkStatus, CTheme,'
+    )
+    // 在 type Theme 之后追加 FriendLink 相关类型
+    newExport = newExport.replace(
+      'type Theme,',
+      'type FriendLinkStatus, type IFriendLink, type IFriendLinkDto, type IFriendLinkVo, type Theme,'
+    )
+    content = content.replace(content.match(/export \{[^}]+\};/)[0], newExport)
+  }
+  patched = true
+}
+
 writeFileSync(dtsPath, content)
 if (existsSync(dctsPath)) {
   writeFileSync(dctsPath, content)

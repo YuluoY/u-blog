@@ -9,6 +9,14 @@ export const CVisualStyle = {
   GLASS: 'glass'
 } as const
 
+/** 用户性别枚举 */
+export const CGender = {
+  MALE: 'male',
+  FEMALE: 'female',
+  OTHER: 'other',
+  UNSET: 'unset',
+} as const
+
 export const CTable = {
   USER: 'users',
   ARTICLE: 'article',
@@ -28,6 +36,8 @@ export const CTable = {
   ARTICLE_TAG: 'article_tag',
   ROLE_PERMISSION: 'role_permission',
   PAGE_BLOCK: 'page_block',
+  USER_SETTING: 'user_setting',
+  FRIEND_LINK: 'friend_link',
 } as const
 
 export const CLanguage = {
@@ -51,6 +61,7 @@ export const PAYLOAD_FIELD = ['id', 'username', 'role'] as const
 
 export type Theme = typeof CTheme[keyof typeof CTheme]
 export type VisualStyle = typeof CVisualStyle[keyof typeof CVisualStyle]
+export type Gender = typeof CGender[keyof typeof CGender]
 export type Table = typeof CTable[keyof typeof CTable]
 export type Language = typeof CLanguage[keyof typeof CLanguage]
 export type CustomType = typeof CCustomType[keyof typeof CCustomType]

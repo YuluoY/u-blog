@@ -7,7 +7,7 @@
         v-model="keyword"
         :placeholder="t('search.placeholder')"
         clearable
-        size="large"
+        size="default"
         :aria-label="t('search.title')"
         @keydown.enter.prevent="triggerSearch"
         @blur="triggerSearch"
@@ -19,9 +19,7 @@
         :aria-label="t('search.searchBtn')"
         class="search-panel__btn"
         @click="triggerSearch"
-      >
-        {{ t('search.searchBtn') }}
-      </u-button>
+      />
     </div>
     <u-text v-if="keyword.trim()" class="search-panel__hint-inline" tag="p">
       {{ t('search.pressEnter') }}

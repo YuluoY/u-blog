@@ -210,20 +210,18 @@ export async function initDefaultUser(dataSource: DataSource): Promise<void> {
 
 /**
  * 清空种子数据（文章、文章-标签关联、标签、分类），不删用户
+ * 使用 TRUNCATE ... CASCADE 自动清理所有外键依赖（view、like、comment 等）
  */
 export async function clearSeedData(dataSource: DataSource): Promise<void> {
   const qr = dataSource.createQueryRunner()
   await qr.connect()
   try {
-    await qr.startTransaction()
-    await qr.query(`DELETE FROM "${CTable.ARTICLE_TAG}"`)
-    await qr.query(`DELETE FROM "${CTable.ARTICLE}"`)
-    await qr.query(`DELETE FROM "${CTable.TAG}"`)
-    await qr.query(`DELETE FROM "${CTable.CATEGORY}"`)
-    await qr.commitTransaction()
-    console.log('  🗑️  已清空文章、标签、分类及关联表')
+    // CASCADE 会自动处理 view/like/comment/activity_log 等依赖 article 的表
+    await qr.query(
+      `TRUNCATE TABLE "${CTable.ARTICLE_TAG}", "${CTable.ARTICLE}", "${CTable.TAG}", "${CTable.CATEGORY}" RESTART IDENTITY CASCADE`
+    )
+    console.log('  🗑️  已清空文章、标签、分类及所有关联表')
   } catch (e) {
-    await qr.rollbackTransaction()
     throw e
   } finally {
     await qr.release()

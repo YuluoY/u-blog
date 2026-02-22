@@ -332,7 +332,7 @@
             <u-input
               v-model="form.openai_api_key"
               type="password"
-              :placeholder="t('settings.openaiKeyShort')"
+              :placeholder="maskedHints.openai_api_key || t('settings.openaiKeyShort')"
               show-password
               class="settings-drawer__input"
             />
@@ -430,6 +430,43 @@
             <u-input v-model="form.site_keywords" type="text" :placeholder="t('settings.siteKeywordsShort')" class="settings-drawer__input" />
           </div>
           </div>
+          <!-- 站点图标 -->
+          <div class="settings-drawer__card">
+          <div class="settings-drawer__item">
+            <div class="settings-drawer__item-head">
+              <span class="settings-drawer__title-box">
+                <span class="settings-drawer__label">{{ t('settings.siteFavicon') }}</span>
+                <u-tooltip :content="t('settings.siteFaviconHint')" placement="top" trigger="hover" :width="0" show-arrow>
+                  <span class="settings-drawer__help" aria-label="?">
+                    <u-icon icon="fa-solid fa-circle-question" />
+                  </span>
+                </u-tooltip>
+              </span>
+            </div>
+            <div class="settings-drawer__favicon-row">
+              <div class="settings-drawer__favicon-preview">
+                <img
+                  v-if="form.site_favicon && !faviconLoadError"
+                  :src="form.site_favicon"
+                  alt="favicon"
+                  @error="faviconLoadError = true"
+                />
+                <u-icon v-else icon="fa-solid fa-image" class="settings-drawer__favicon-empty" />
+              </div>
+              <u-input v-model="form.site_favicon" type="text" :placeholder="t('settings.siteFaviconPlaceholder')" class="settings-drawer__input settings-drawer__input--flex" />
+              <u-button size="small" :loading="uploadingFavicon" @click="triggerFaviconUpload">
+                <u-icon icon="fa-solid fa-upload" />
+              </u-button>
+              <input
+                ref="faviconInputRef"
+                type="file"
+                accept=".ico,.png,.svg,.jpg,.jpeg,.webp,image/*"
+                style="display: none"
+                @change="handleFaviconUpload"
+              />
+            </div>
+          </div>
+          </div>
           <u-button type="primary" size="default" :loading="savingSite" class="settings-drawer__save" @click="saveSiteSettings">
             <u-icon icon="fa-solid fa-save" />
             {{ t('settings.saveSite') }}
@@ -467,11 +504,17 @@ const {
   homeSortOptions,
   savingModel,
   savingSite,
+  uploadingFavicon,
+  faviconInputRef,
+  faviconLoadError,
+  maskedHints,
   loadServerSettings,
   handleListTypeChange,
   handleHomeSortChange,
   saveModelSettings,
   saveSiteSettings,
+  triggerFaviconUpload,
+  handleFaviconUpload,
   appStore,
 } = useSettingsForm()
 
@@ -713,6 +756,41 @@ watch(
 
 .settings-drawer__input {
   width: 100%;
+}
+
+.settings-drawer__input--flex {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-drawer__favicon-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-drawer__favicon-preview {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: var(--u-border-radius-4, 0.4rem);
+  border: 1px solid var(--u-border-1, rgba(255, 255, 255, 0.08));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--u-background-2);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+}
+
+.settings-drawer__favicon-empty {
+  font-size: 1.4rem;
+  color: var(--u-text-4);
 }
 
 .settings-drawer__save {

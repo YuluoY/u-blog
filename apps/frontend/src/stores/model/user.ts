@@ -2,7 +2,7 @@ import api from '@/api'
 import { CTable, type IUser, type IUserLoginDto, type IUserRegisterDto } from '@u-blog/model'
 import { useState } from '@u-blog/composables'
 import { defineStore } from 'pinia'
-import { restQuery, loginApi, registerApi, logoutApi, setAccessToken, sendEmailCodeApi } from '@/api/request'
+import { restQuery, loginApi, registerApi, logoutApi, setAccessToken, sendEmailCodeApi, updateProfileApi } from '@/api/request'
 
 export const useUserStore = defineStore('user', () =>
 {
@@ -95,6 +95,17 @@ export const useUserStore = defineStore('user', () =>
     }
   }
 
+  /** 更新当前用户个人资料 */
+  const updateProfile = async(data: Record<string, unknown>) =>
+  {
+    const updated = await updateProfileApi<Partial<IUser>>(data)
+    // 合并更新后的字段到本地 user 状态
+    if (updated) {
+      setUser({ ...user.value, ...updated })
+    }
+    return updated
+  }
+
   return {
     user,
     setUser,
@@ -105,5 +116,6 @@ export const useUserStore = defineStore('user', () =>
     register,
     logout,
     sendEmailCode,
+    updateProfile,
   }
 })

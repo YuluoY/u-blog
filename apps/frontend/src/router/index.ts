@@ -10,6 +10,8 @@ const ReadView = () => import('@/views/ReadView.vue')
 const MessageView = () => import('@/views/MessageView.vue')
 const ChatView = () => import('@/views/ChatView.vue')
 const LoginView = () => import('@/views/LoginView.vue')
+const FriendLinksView = () => import('@/views/FriendLinksView.vue')
+const UserBlogView = () => import('@/views/UserBlogView.vue')
 
 const routes: RouteRecordRaw[] = [
   {
@@ -66,8 +68,28 @@ const routes: RouteRecordRaw[] = [
     component: ChatView,
     meta: {
       index: 6,
-      title: '小惠',
-      isAffix: true
+      title: '助手',
+      isAffix: true,
+      requiresAuth: true,
+    }
+  },
+  {
+    path: '/links',
+    name: 'links',
+    component: FriendLinksView,
+    meta: {
+      index: 5,
+      title: '友链',
+      isAffix: true,
+    }
+  },
+  {
+    path: '/u/:username',
+    name: 'userBlog',
+    component: UserBlogView,
+    meta: {
+      title: '用户博客',
+      isAffix: false,
     }
   },
   {

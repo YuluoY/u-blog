@@ -1,0 +1,40 @@
+/* ========== UFloatingToolbar 浮动层样式 ========== */
+/* 按钮 / 加载态样式继承自 UToolbar，此处仅定义浮动定位外壳 */
+
+.u-floating-toolbar {
+  position: absolute;
+  z-index: var(--u-z-index-message, 1080);
+  transform: translate(-50%, -100%);
+  pointer-events: auto;
+
+  /* 内嵌的 UToolbar 添加浮动外壳装饰 */
+  > .u-toolbar {
+    border: 1px solid var(--u-border-2, #e0e0e0);
+    box-shadow: var(--u-shadow-3, 0 4px 16px rgba(0, 0, 0, 0.1));
+  }
+
+  /* 底部小三角 */
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid var(--u-background-1, #fff);
+    filter: drop-shadow(0 1px 0 var(--u-border-2, #e0e0e0));
+  }
+}
+
+/* ---- 淡入淡出过渡 ---- */
+.u-floating-toolbar-fade-enter-active,
+.u-floating-toolbar-fade-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.u-floating-toolbar-fade-enter-from,
+.u-floating-toolbar-fade-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -100%) translateY(4px);
+}

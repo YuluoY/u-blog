@@ -235,7 +235,7 @@ const submitLabel = computed(() =>
 
 /* ---------- 封面超限提示 ---------- */
 function onCoverExceed() {
-  UNotificationFn({ message: t('write.coverUploadHint'), type: 'warning' })
+  UNotificationFn({ message: t('write.coverUploadHint'), type: 'warning', deduplicate: true })
 }
 
 /**
@@ -264,6 +264,7 @@ async function onCoverFileChange(file: UploadFile) {
     UNotificationFn({
       message: err instanceof Error ? err.message : t('write.coverUploadFail'),
       type: 'error',
+      deduplicate: true,
     })
     // 上传失败 → 清除预览
     form.cover = ''

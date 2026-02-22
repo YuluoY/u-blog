@@ -2,6 +2,7 @@ import { DATABASE } from '@/constants'
 import { Database, type DbOptions } from './database'
 import { type Application } from 'express'
 import { initDefaultUser, initSeedData } from '@/service/init'
+import { migrateSiteSettingsToUserScope } from '@/service/init/migrateSiteSettings'
 
 export default {
   install(app: Application, opts: DbOptions)
@@ -12,6 +13,13 @@ export default {
       console.log('Database connected')
       // 初始化默认用户
       await initDefaultUser(dataSource)
+
+      // 一次性迁移：site_* 从全局 setting 表迁移到 super_admin 的 user_setting 表
+      try {
+        await migrateSiteSettingsToUserScope(dataSource)
+      } catch (e) {
+        console.error('⚠️  site_* 设置迁移失败（不影响启动）:', e)
+      }
       
       // 根据环境变量决定是否初始化假数据
       const shouldInitSeedData = process.env.INIT_SEED_DATA === 'true'

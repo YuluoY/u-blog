@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Check } from 'typeorm'
 import { CTable } from '@u-blog/model'
-import { IsInt, IsNotEmpty, ValidateIf } from 'class-validator'
+import { IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, ValidateIf } from 'class-validator'
 import { Users } from './Users'
 import { Article } from './Article'
 import { Comment } from './Comment'
@@ -16,10 +16,10 @@ export class Likes {
 	@PrimaryGeneratedColumn({ type: 'bigint', comment: '主键' })
 	id!: number
 
-	@Column({ name: 'userId', type: 'int', comment: '用户id' })
-	@IsNotEmpty({ message: '用户ID不能为空' })
+	@Column({ name: 'userId', type: 'int', nullable: true, comment: '用户id（游客点赞为 null）' })
+	@IsOptional()
 	@IsInt({ message: '用户ID必须为整数' })
-	userId!: number
+	userId?: number | null
 
 	@ManyToOne(() => Users)
 	@JoinColumn({ name: 'userId' })
@@ -44,5 +44,19 @@ export class Likes {
 	@ManyToOne(() => Comment)
 	@JoinColumn({ name: 'commentId' })
 	comment?: Comment | null
+
+	/** 游客点赞时的客户端 IP */
+	@Column({ type: 'varchar', length: 100, nullable: true, comment: '客户端 IP' })
+	@IsOptional()
+	@IsString()
+	@MaxLength(100)
+	ip?: string | null
+
+	/** 游客点赞时的浏览器指纹 */
+	@Column({ type: 'varchar', length: 64, nullable: true, comment: '浏览器指纹' })
+	@IsOptional()
+	@IsString()
+	@MaxLength(64)
+	fingerprint?: string | null
 
 }

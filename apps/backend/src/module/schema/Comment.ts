@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm'
 import { CTable } from '@u-blog/model'
-import { IsInt, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator'
+import { IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, IsEmail, ValidateIf } from 'class-validator'
 import { Article } from './Article'
 import { Users } from './Users'
 import { BaseSchema } from '../BaseSchema'
@@ -23,14 +23,30 @@ export class Comment {
 	@JoinColumn({ name: 'articleId' })
 	article?: Article | null
 
-	@Column({ name: 'userId', type: 'int', comment: '用户id' })
-	@IsNotEmpty({ message: '用户ID不能为空' })
+	@Column({ name: 'userId', type: 'int', nullable: true, comment: '用户id（游客评论为 null）' })
+	@IsOptional()
 	@IsInt({ message: '用户ID必须为整数' })
-	userId!: number
+	userId?: number | null
 
 	@ManyToOne(() => Users)
 	@JoinColumn({ name: 'userId' })
 	user?: Users | null
+
+	/** 游客昵称（未登录时必填） */
+	@Column({ type: 'varchar', length: 50, nullable: true, comment: '游客昵称' })
+	@ValidateIf((o) => !o.userId)
+	@IsNotEmpty({ message: '昵称不能为空' })
+	@IsString({ message: '昵称必须为字符串' })
+	@MaxLength(50, { message: '昵称最多50个字符' })
+	nickname?: string | null
+
+	/** 游客邮箱（未登录时必填） */
+	@Column({ type: 'varchar', length: 100, nullable: true, comment: '游客邮箱' })
+	@ValidateIf((o) => !o.userId)
+	@IsNotEmpty({ message: '邮箱不能为空' })
+	@IsEmail({}, { message: '邮箱格式不正确' })
+	@MaxLength(100, { message: '邮箱最多100个字符' })
+	email?: string | null
 
 	@Column({ type: 'text', comment: '评论内容' })
 	@IsNotEmpty({ message: '评论内容不能为空' })

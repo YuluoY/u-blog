@@ -16,7 +16,7 @@
 
         <!-- 发表留言区 -->
         <section class="message-page__editor">
-          <template v-if="user?.id">
+          <template v-if="isLoggedIn">
             <div class="message-page__editor-header">
               <div class="message-page__editor-avatar">
                 <img
@@ -42,10 +42,39 @@
               @submit="handleSubmit"
             />
           </template>
-          <div v-else class="message-page__login-hint">
-            <u-icon icon="fa-regular fa-user" />
-            <span>{{ t('message.loginToComment') }}</span>
-          </div>
+          <!-- 游客：昵称 + 邮箱 嵌入 CommentInput 的 prepend 插槽，一体化面板 -->
+          <template v-else>
+            <u-comment-input
+              v-model="content"
+              :placeholder="t('message.placeholder')"
+              :max-length="500"
+              :submit-text="t('message.submit')"
+              :loading="submitting"
+              :emoji-picker-theme="appStore.theme === CTheme.DARK ? 'dark' : 'light'"
+              @insert="content += $event"
+              @submit="handleSubmit"
+            >
+              <template #prepend>
+                <!-- QQ 邮箱自动识别头像 -->
+                <img v-if="guestAvatarUrl" :src="guestAvatarUrl" alt="avatar" class="message-page__qq-avatar" />
+                <u-input
+                  v-model="guestNickname"
+                  size="small"
+                  prefix-icon="fa-solid fa-user"
+                  :placeholder="t('message.guestNicknamePlaceholder')"
+                  :max-length="50"
+                />
+                <u-input
+                  v-model="guestEmail"
+                  size="small"
+                  prefix-icon="fa-solid fa-envelope"
+                  :placeholder="t('message.guestEmailPlaceholder')"
+                  :max-length="100"
+                />
+                <span v-if="guestAvatarUrl" class="message-page__qq-badge">QQ</span>
+              </template>
+            </u-comment-input>
+          </template>
         </section>
 
         <!-- 评论列表 -->
@@ -58,7 +87,7 @@
             :replying-id="replyingId"
             :reply-content="replyContent"
             :reply-loading="replySubmitting"
-            :logged-in="!!user?.id"
+            :logged-in="true"
             @reply="handleReply"
             @reply-submit="handleReplySubmit"
             @reply-cancel="handleReplyCancel"
@@ -74,7 +103,10 @@ import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/model/user'
 import { useAppStore } from '@/stores/app'
 import api from '@/api'
+import { fetchQQNickname } from '@/api/request'
 import { CTable, CTheme } from '@u-blog/model'
+import { UMessageFn } from '@u-blog/ui'
+import { getQQAvatarUrl } from '@u-blog/ui'
 import type { IComment } from '@u-blog/model'
 import type { UCommentItemData } from '@u-blog/ui'
 import { storeToRefs } from 'pinia'
@@ -86,7 +118,7 @@ defineOptions({ name: 'MessageView' })
 
 const MESSAGE_PATH = '/message'
 
-const { user } = storeToRefs(useUserStore())
+const { user, isLoggedIn } = storeToRefs(useUserStore())
 const content = ref('')
 const list = ref<IComment[]>([])
 const loading = ref(false)
@@ -96,6 +128,32 @@ const submitting = ref(false)
 const replyingId = ref<number | null>(null)
 const replyContent = ref('')
 const replySubmitting = ref(false)
+
+/** 游客信息（存储在 localStorage 以便下次自动填充） */
+const guestNickname = ref(localStorage.getItem('guest_nickname') ?? '')
+const guestEmail = ref(localStorage.getItem('guest_email') ?? '')
+
+/** 游客 QQ 邮箱头像预览 */
+const guestAvatarUrl = computed(() => getQQAvatarUrl(guestEmail.value))
+
+/** QQ 邮箱自动获取真实昵称（当昵称为空或为上次自动填充时覆盖） */
+let lastAutoNickname = ''
+watch(guestEmail, async (email) => {
+  const match = email.match(/^(\d{5,11})@qq\.com$/i)
+  if (match) {
+    const qq = match[1]
+    if (!guestNickname.value.trim() || guestNickname.value === lastAutoNickname) {
+      // 先用 QQ 号占位，再异步获取真实昵称
+      guestNickname.value = qq
+      lastAutoNickname = qq
+      const realName = await fetchQQNickname(qq)
+      if (realName && (guestNickname.value === qq || guestNickname.value === lastAutoNickname)) {
+        guestNickname.value = realName
+        lastAutoNickname = realName
+      }
+    }
+  }
+})
 
 /** 当前用户显示名 */
 const displayCurrentUser = computed(() => {
@@ -120,19 +178,33 @@ async function fetchList(restoreScroll = false) {
   }
 }
 
-/** 发表主留言 */
+/** 发表主留言（登录用户 / 游客） */
 async function handleSubmit() {
   const text = content.value?.trim()
-  if (!text || !user.value?.id) return
+  if (!text) return
+  // 游客校验
+  if (!isLoggedIn.value) {
+    if (!guestNickname.value?.trim() || !guestEmail.value?.trim()) return
+  }
   submitting.value = true
   try {
-    await api(CTable.COMMENT).addComment({
+    const payload: Record<string, unknown> = {
       content: text,
       path: MESSAGE_PATH,
-      userId: user.value.id as number,
-    })
+    }
+    if (isLoggedIn.value) {
+      payload.userId = user.value.id as number
+    } else {
+      payload.nickname = guestNickname.value.trim()
+      payload.email = guestEmail.value.trim()
+      localStorage.setItem('guest_nickname', payload.nickname as string)
+      localStorage.setItem('guest_email', payload.email as string)
+    }
+    await api(CTable.COMMENT).addComment(payload as any)
     content.value = ''
     await fetchList(true)
+  } catch (err: any) {
+    UMessageFn({ message: err?.message || t('message.submitFailed'), type: 'error' })
   } finally {
     submitting.value = false
   }
@@ -144,20 +216,34 @@ function handleReply(comment: UCommentItemData) {
   replyContent.value = ''
 }
 
-/** 提交回复 */
+/** 提交回复（登录用户 / 游客） */
 async function handleReplySubmit(text: string, comment: UCommentItemData) {
-  if (!text.trim() || !user.value?.id) return
+  if (!text.trim()) return
+  // 游客校验
+  if (!isLoggedIn.value) {
+    if (!guestNickname.value?.trim() || !guestEmail.value?.trim()) return
+  }
   replySubmitting.value = true
   try {
-    await api(CTable.COMMENT).addComment({
+    const payload: Record<string, unknown> = {
       content: text.trim(),
       path: MESSAGE_PATH,
-      userId: user.value.id as number,
       pid: comment.id,
-    })
+    }
+    if (isLoggedIn.value) {
+      payload.userId = user.value.id as number
+    } else {
+      payload.nickname = guestNickname.value.trim()
+      payload.email = guestEmail.value.trim()
+      localStorage.setItem('guest_nickname', payload.nickname as string)
+      localStorage.setItem('guest_email', payload.email as string)
+    }
+    await api(CTable.COMMENT).addComment(payload as any)
     replyContent.value = ''
     replyingId.value = null
     await fetchList(true)
+  } catch (err: any) {
+    UMessageFn({ message: err?.message || t('message.submitFailed'), type: 'error' })
   } finally {
     replySubmitting.value = false
   }
@@ -293,6 +379,26 @@ onMounted(() => {
     .u-icon {
       font-size: 1.4rem;
     }
+  }
+
+  /* 游客 QQ 头像 & 标签 */
+  &__qq-avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  &__qq-badge {
+    flex-shrink: 0;
+    padding: 1px 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.4;
+    color: #fff;
+    background: var(--u-primary, #409eff);
+    border-radius: 4px;
   }
 
   /* --- 评论区 --- */

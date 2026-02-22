@@ -72,17 +72,24 @@ watch(() => props.src, (newSrc) => {
   loadError.value = false
 })
 
-// 容器宽高、圆角，数字按 px 处理
+// 容器宽高、圆角，数字按 px 处理，纯数字字符串也自动补 px
+const normalizeSizeProp = (val: string | number): string => {
+  if (typeof val === 'number') return `${val}px`
+  // 纯数字字符串（如 "32"）→ 补 px
+  if (/^\d+(\.\d+)?$/.test(val)) return `${val}px`
+  return val
+}
+
 const containerStyle = computed<CSSProperties>(() => {
   const style: CSSProperties = {}
   if (props.width) {
-    style.width = typeof props.width === 'number' ? `${props.width}px` : props.width
+    style.width = normalizeSizeProp(props.width)
   }
   if (props.height) {
-    style.height = typeof props.height === 'number' ? `${props.height}px` : props.height
+    style.height = normalizeSizeProp(props.height)
   }
   if (props.radius) {
-    style.borderRadius = typeof props.radius === 'number' ? `${props.radius}px` : props.radius
+    style.borderRadius = normalizeSizeProp(props.radius)
   }
   return style
 })

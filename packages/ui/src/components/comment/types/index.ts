@@ -24,6 +24,22 @@ export interface UCommentItemData {
   browser?: string | null
   /** 设备类型 */
   device?: string | null
+  /** 游客昵称 */
+  nickname?: string | null
+  /** 游客邮箱 */
+  email?: string | null
+}
+
+/**
+ * 从邮箱提取 QQ 头像 URL（仅 QQ 邮箱有效）
+ * @param email - 邮箱地址
+ * @returns QQ 头像 URL，非 QQ 邮箱返回 null
+ */
+export function getQQAvatarUrl(email?: string | null): string | null {
+  if (!email) return null
+  const match = email.match(/^(\d{5,11})@qq\.com$/i)
+  if (!match) return null
+  return `https://q1.qlogo.cn/g?b=qq&nk=${match[1]}&s=100`
 }
 
 export interface UCommentItemProps {

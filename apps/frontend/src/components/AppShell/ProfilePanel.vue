@@ -24,7 +24,7 @@
     <div class="profile-panel__meta">
       <div v-if="user?.location" class="profile-panel__meta-item">
         <u-icon icon="fa-solid fa-location-dot" />
-        <span>{{ user.location }}</span>
+        <span>{{ locationText }}</span>
       </div>
       <div v-if="user?.email" class="profile-panel__meta-item">
         <u-icon icon="fa-solid fa-envelope" />
@@ -49,6 +49,13 @@
         >
           <u-icon v-if="socialIcon(s)" :icon="socialIcon(s)!" class="profile-panel__social-fa" />
           <img v-else-if="s.icon" :src="s.icon" class="profile-panel__social-icon" :alt="s.name" />
+          <img
+            v-else-if="socialFavicon(s)"
+            :src="socialFavicon(s)"
+            class="profile-panel__social-icon"
+            :alt="s.name"
+            @error="($event.target as HTMLImageElement).style.display = 'none'"
+          />
           <u-icon v-else icon="fa-solid fa-link" class="profile-panel__social-fa" />
           <span class="profile-panel__social-label">{{ s.name }}</span>
         </a>
@@ -107,6 +114,39 @@ function socialIcon(s: { name: string }): string | undefined {
 function formatDate(v: string | Date): string {
   const d = typeof v === 'string' ? new Date(v) : v
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+/**
+ * 解析 location 字段：兼容 JSON 格式和纯文本
+ * JSON 格式：{ codes, labels, detail } → "省 市 区 详细地址"
+ * 纯文本：原样返回
+ */
+const locationText = computed(() => {
+  const raw = user.value?.location
+  if (!raw) return ''
+  try {
+    const obj = JSON.parse(raw)
+    if (obj && Array.isArray(obj.labels)) {
+      // 去重相邻重复项（如 "天津市 天津市"）
+      const parts: string[] = []
+      for (const label of obj.labels) {
+        if (label && label !== parts[parts.length - 1]) parts.push(label)
+      }
+      if (obj.detail) parts.push(obj.detail)
+      return parts.join(' ')
+    }
+  } catch { /* 非 JSON，回退为纯文本 */ }
+  return raw
+})
+
+/** 从社交链接 URL 获取网站自身 favicon（不依赖第三方服务） */
+function socialFavicon(s: { url: string }): string {
+  if (!s.url) return ''
+  try {
+    const { protocol, hostname } = new URL(s.url)
+    if (!hostname) return ''
+    return `${protocol}//${hostname}/favicon.ico`
+  } catch { return '' }
 }
 </script>
 

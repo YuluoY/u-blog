@@ -37,4 +37,6 @@ export * from './timeline'
 export * from './comment'
 
 export * from './upload'
+export * from './toolbar'
+export * from './floating-toolbar'
 export * from './constants'

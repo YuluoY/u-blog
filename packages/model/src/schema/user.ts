@@ -1,4 +1,5 @@
 import type { IBaseFields, IBaseSchema } from '../base'
+import type { Gender } from '../base'
 import type { UserRole } from './role'
 
 export interface IUserWebsite {
@@ -22,6 +23,8 @@ export interface IUser extends IBaseSchema, Pick<IBaseFields, 'id'> {
   avatar?: string
   bio?: string
   role: UserRole
+  gender?: Gender
+  birthday?: Date | null
   location?: string
   ip?: string
   website?: IUserWebsite

@@ -43,18 +43,19 @@
       @mouseenter="onThumbEnter"
       @mouseleave="onThumbLeave"
     >
-      <div class="u-slider__thumb">
-        <u-tooltip
-          v-if="showTooltip"
-          ref="tooltipRef"
-          :class="tooltipClass"
-          :placement="placement"
-          manual
-          :visible="tooltipVisible"
-          v-bind="_popperOptions"
-          :content="formatValue(internalValue)"
-        />
-      </div>
+      <u-tooltip
+        v-if="showTooltip"
+        ref="tooltipRef"
+        :class="tooltipClass"
+        :placement="placement"
+        manual
+        :visible="tooltipVisible"
+        v-bind="_popperOptions"
+        :content="formatValue(internalValue)"
+      >
+        <div class="u-slider__thumb" />
+      </u-tooltip>
+      <div v-else class="u-slider__thumb" />
     </div>
     <div
       v-if="showInput && !vertical"

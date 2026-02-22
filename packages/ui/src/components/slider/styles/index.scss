@@ -1,10 +1,10 @@
 .u-slider {
-  --u-slider-height: var(--u-height-4);
-  --u-slider-thumb-size: 1rem;
-  --u-silder-thumb-border-width: var(--u-border-width-12);
+  --u-slider-height: var(--u-height-4, 0.4rem);
+  --u-slider-thumb-size: 1.6rem;
+  --u-slider-thumb-border-width: var(--u-border-width-12, 2px);
   --u-slider-thumb-border-color: var(--u-primary);
-  --u-slider-thumb-background-color: var(--u-white);
-  --u-slider-thumb-transition: scale var(--u-animation-delay-2) var(--u-animation-ease-in-back);
+  --u-slider-thumb-background-color: var(--u-white, #fff);
+  --u-slider-thumb-transition: transform 0.15s ease, box-shadow 0.15s ease;
   
   --u-slider-track-border-radius: var(--u-border-radius-3);
   --u-slider-track-background-color: var(--u-background-3);
@@ -44,9 +44,9 @@
   .u-slider__thumb-wrapper {
     width: var(--u-slider-thumb-size);
     height: var(--u-slider-thumb-size);
-    transform: translate(-50%);
+    transform: translate(-50%, -50%);
     position: absolute;
-    top: -0.4rem;
+    top: 50%;
     left: 0;
     z-index: 3;
     cursor: grab;
@@ -54,19 +54,31 @@
     &:active {
       cursor: grabbing;
     }
+
+    /* Tooltip 内嵌时不占用额外空间 */
+    > .u-tooltip {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    .u-tooltip__trigger {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
     
     .u-slider__thumb {
-      position: absolute;
-      width: inherit;
-      height: inherit;
+      width: 100%;
+      height: 100%;
       background-color: var(--u-slider-thumb-background-color);
       border-radius: 50%;
-      border: solid var(--u-silder-thumb-border-width) var(--u-slider-thumb-border-color);
+      border: solid var(--u-slider-thumb-border-width) var(--u-slider-thumb-border-color);
       transition: var(--u-slider-thumb-transition);
-
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
 
       &:hover {
-        transform: scale(1.2);
+        transform: scale(1.25);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
       }
     }
   }

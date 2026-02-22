@@ -3,16 +3,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.8rem;
+  gap: 0.6rem;
 
-  /* 放大圆形按钮、缩小图标视觉占比，避免“图标大圆小” */
+  /* 导航按钮保持正圆，不强制覆盖 Button circle 的尺寸 */
   .u-month-picker__nav {
     flex-shrink: 0;
-    min-width: 2.25rem;
-    min-height: 2.25rem;
-    width: 2.25rem;
-    height: 2.25rem;
-    padding: 0.5rem;
   }
 
   .u-month-picker__selects {

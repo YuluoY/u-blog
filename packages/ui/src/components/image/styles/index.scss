@@ -5,6 +5,7 @@
   background-color: var(--u-background-2);
   width: 100%;
   height: auto;
+  flex-shrink: 0; // 防止在 flex 容器中被压缩
 
   &.is-previewable {
     cursor: pointer;

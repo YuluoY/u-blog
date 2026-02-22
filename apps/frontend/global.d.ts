@@ -11,6 +11,14 @@ declare global {
   interface Window {
     $u: IStore
     $uFn: AppFn
+    /** DEV：调试用评论快捷入口 */
+    __debugAddComment?: (data: {
+      content: string
+      path: string
+      userId: number
+      pid?: number | null
+      articleId?: number | null
+    }) => Promise<unknown>
   }
 }
 

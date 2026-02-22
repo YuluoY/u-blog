@@ -1,4 +1,4 @@
-import { h, isVNode, render, shallowReactive, useId } from 'vue'
+import { h, isVNode, render, shallowReactive } from 'vue'
 import type {
   ICreateMessageProps,
   UMessage,
@@ -16,6 +16,12 @@ import type { UMessageType } from './types'
 
 const { nextZIndex } = useZIndex()
 const instances: UMessageInstance[] = shallowReactive([])
+
+/** 递增 ID 计数器（替代 Vue useId，避免在非 setup 上下文中调用失败导致 ID 重复） */
+let _messageIdSeed = 0
+function genMessageId(): string {
+  return `u-msg-${++_messageIdSeed}-${Date.now()}`
+}
 const defaultOptions: ICreateMessageProps = {
   type: 'info',
   duration: 3000,
@@ -36,7 +42,7 @@ const normalizeOptions = (options: UMessageParams): ICreateMessageProps =>
 
 const createMessage = (props: ICreateMessageProps): UMessageInstance =>
 {
-  const id = useId()
+  const id = genMessageId()
   const container = document.createElement('div')
   const destroy = () =>
   {

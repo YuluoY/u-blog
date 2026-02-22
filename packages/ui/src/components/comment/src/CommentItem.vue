@@ -131,6 +131,7 @@ import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { emojify } from 'node-emoji'
 import type { UCommentItemEmits, UCommentItemProps } from '../types'
+import { getQQAvatarUrl } from '../types'
 import { UIcon } from '@/components/icon'
 import UCommentInput from './CommentInput.vue'
 import CommentItemSelf from './CommentItem.vue'
@@ -158,18 +159,19 @@ const isNested = computed(() => currentDepth.value > 0)
 /** 当前条目是否正在被回复 */
 const isReplying = computed(() => props.replyingId === props.comment.id)
 
-/** 用户显示名称 */
+/** 用户显示名称（登录用户取 namec/username，游客取 nickname） */
 const displayName = computed(() => {
   const u = props.comment.user
-  if (!u) return '匿名'
+  if (!u) return props.comment.nickname ?? '匿名'
   return (u as { namec?: string }).namec ?? (u as { username?: string }).username ?? '匿名'
 })
 
-/** 头像 URL */
+/** 头像 URL（登录用户取 user.avatar，游客检测 QQ 邮箱自动生成头像） */
 const avatarUrl = computed(() => {
   const u = props.comment.user
-  if (!u) return ''
-  return (u as { avatar?: string }).avatar ?? ''
+  if (u) return (u as { avatar?: string }).avatar ?? ''
+  // 游客：尝试从 QQ 邮箱提取头像
+  return getQQAvatarUrl(props.comment.email) ?? ''
 })
 
 /** 被回复的父评论 id（用于滚动定位） */

@@ -6,16 +6,20 @@ import { Article } from '@/module/schema/Article'
 import { Category } from '@/module/schema/Category'
 import { Tag } from '@/module/schema/Tag'
 import { Setting } from '@/module/schema/Setting'
+import { UserSetting } from '@/module/schema/UserSetting'
 import { View } from '@/module/schema/View'
+import { Likes } from '@/module/schema/Likes'
+import { Comment } from '@/module/schema/Comment'
+import { FriendLink } from '@/module/schema/FriendLink'
 import {
   IUserRegisterDto, CUserRole, IUserLogin, IUser,
-  IUserRegister, IUserVo, CArticleStatus,
+  IUserRegister, IUserVo, CArticleStatus, CFriendLinkStatus,
 } from '@u-blog/model'
 import { plainToInstance } from 'class-transformer'
 import { validate } from 'class-validator'
 import { getRandomString } from '@u-blog/utils'
 import { sign, signRt, verify, decode } from '@/plugin/jwt'
-import { formatValidationErrors, encrypt, decrypt, getDataSource } from '@/utils'
+import { formatValidationErrors, encrypt, decrypt, decryptTransport, getDataSource } from '@/utils'
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -112,9 +116,23 @@ function fixOriginalName(raw: string): string {
 /** 需脱敏的设置 key（返回时只展示前几位 + ***） */
 const MASK_KEYS = new Set([
   'openai_api_key',
-  'openai_base_url',
+  // openai_base_url 不再脱敏：它不是机密信息，脱敏会导致前端回显为空并在下次保存时覆盖为空
   'anthropic_api_key',
   'api_key',
+])
+
+/**
+ * 用户级别设置 key — 存储在 user_setting 表中，按 userId 隔离。
+ * 不在此集合内的 key 仍使用全局 setting 表。
+ */
+const USER_SCOPED_KEYS = new Set([
+  'openai_api_key', 'openai_base_url', 'openai_model',
+  'openai_temperature', 'openai_max_tokens', 'openai_system_prompt', 'openai_context_length',
+  'chat_font_size',
+  // 站点信息：每个用户可拥有独立的站点元信息
+  'site_name', 'site_description', 'site_keywords', 'site_favicon',
+  // 多租户：用户个人博客设置
+  'visible_routes', 'friend_link_notify', 'only_own_articles', 'blog_theme',
 ])
 
 /** 脱敏值 */
@@ -158,6 +176,18 @@ const BASE64_IMAGE_REGEX_ALT = /<img[^>]+src="(data:image\/[^;]+;base64,[^"]+)"[
 const UPLOAD_DIR = 'uploads'
 
 /* ========== 邮箱验证码缓存（内存） ========== */
+
+/** 评论回复邮件通知频率限制：同一收件人 30 分钟内最多 1 封 */
+const replyNotifyCooldownMap = new Map<string, number>()
+const REPLY_NOTIFY_COOLDOWN_MS = 30 * 60 * 1000
+
+// 定期清理过期条目
+setInterval(() => {
+  const now = Date.now()
+  for (const [key, ts] of replyNotifyCooldownMap) {
+    if (now - ts > REPLY_NOTIFY_COOLDOWN_MS) replyNotifyCooldownMap.delete(key)
+  }
+}, 5 * 60 * 1000)
 
 interface VerifyCodeEntry {
   code: string
@@ -798,52 +828,611 @@ class CommonService {
     return { todayUv: Number(uv) }
   }
 
+  /* ---------- 文章点赞 ---------- */
+
+  /** 同一 IP / 指纹对同一文章的去重时间窗口（24 小时） */
+  private static LIKE_DEDUP_MS = 24 * 60 * 60 * 1000
+
+  /**
+   * 切换文章点赞状态
+   * - 登录用户：DB 精确去重（userId + articleId）
+   * - 游客：IP + fingerprint 去重（24 小时窗口）
+   * @returns { liked, likeCount }
+   */
+  async toggleArticleLike(
+    req: Request,
+    articleId: number,
+    ip: string | undefined,
+    fingerprint: string | undefined,
+  ): Promise<{ liked: boolean; likeCount: number }> {
+    const ds = getDataSource(req)
+    const articleRepo = ds.getRepository(Article)
+    const likeRepo = ds.getRepository(Likes)
+    const userId = req.user?.id ?? null
+
+    // 校验文章存在
+    const article = await articleRepo.findOne({ where: { id: articleId, status: CArticleStatus.PUBLISHED } })
+    if (!article) throw new Error('文章不存在或未发布')
+
+    let existing: Likes | null = null
+
+    if (userId) {
+      // 登录用户：通过 userId + articleId 精确查重
+      existing = await likeRepo.findOne({ where: { userId, articleId } })
+    } else if (ip || fingerprint) {
+      // 游客：通过 IP + fingerprint + 时间窗口查重
+      const qb = likeRepo.createQueryBuilder('l')
+        .where('l.articleId = :articleId', { articleId })
+        .andWhere('l.userId IS NULL')
+      if (ip) qb.andWhere('l.ip = :ip', { ip })
+      if (fingerprint) qb.andWhere('l.fingerprint = :fingerprint', { fingerprint })
+      const since = new Date(Date.now() - CommonService.LIKE_DEDUP_MS)
+      qb.andWhere('l.createdAt > :since', { since })
+      existing = await qb.getOne()
+    }
+
+    if (existing) {
+      // 已点赞 → 取消
+      await likeRepo.remove(existing)
+      await articleRepo.decrement({ id: articleId }, 'likeCount', 1)
+      const updated = await articleRepo.findOne({ where: { id: articleId }, select: ['id', 'likeCount'] })
+      return { liked: false, likeCount: Math.max(0, updated?.likeCount ?? 0) }
+    } else {
+      // 未点赞 → 新增
+      const like = likeRepo.create({
+        userId: userId ?? undefined,
+        articleId,
+        ip: ip ?? null,
+        fingerprint: fingerprint ?? null,
+      })
+      await likeRepo.save(like)
+      await articleRepo.increment({ id: articleId }, 'likeCount', 1)
+      const updated = await articleRepo.findOne({ where: { id: articleId }, select: ['id', 'likeCount'] })
+      return { liked: true, likeCount: updated?.likeCount ?? (article.likeCount + 1) }
+    }
+  }
+
+  /**
+   * 查询当前用户/游客是否已对指定文章点赞
+   */
+  async getArticleLikeStatus(
+    req: Request,
+    articleId: number,
+    ip: string | undefined,
+    fingerprint: string | undefined,
+  ): Promise<{ liked: boolean }> {
+    const ds = getDataSource(req)
+    const likeRepo = ds.getRepository(Likes)
+    const userId = req.user?.id ?? null
+
+    let existing: Likes | null = null
+
+    if (userId) {
+      existing = await likeRepo.findOne({ where: { userId, articleId } })
+    } else if (ip || fingerprint) {
+      const qb = likeRepo.createQueryBuilder('l')
+        .where('l.articleId = :articleId', { articleId })
+        .andWhere('l.userId IS NULL')
+      if (ip) qb.andWhere('l.ip = :ip', { ip })
+      if (fingerprint) qb.andWhere('l.fingerprint = :fingerprint', { fingerprint })
+      const since = new Date(Date.now() - CommonService.LIKE_DEDUP_MS)
+      qb.andWhere('l.createdAt > :since', { since })
+      existing = await qb.getOne()
+    }
+
+    return { liked: !!existing }
+  }
+
   /* ---------- 系统设置 ---------- */
 
   /**
    * 按 key 列表查询设置，返回 key -> { value, desc?, masked? }
    * 不传 keys 时返回全部
+   * 对 USER_SCOPED_KEYS 中的 key：已认证时优先读取 user_setting 表
    */
   async getSettings(
     req: Request,
     keys?: string[],
   ): Promise<Record<string, { value: unknown; desc?: string | null; masked?: boolean }>> {
-    const repo = getDataSource(req).getRepository(Setting) as Repository<Setting>
-    const qb = repo.createQueryBuilder('s')
-    if (keys && keys.length > 0) {
-      qb.andWhere('s.key IN (:...keys)', { keys })
-    }
-    const list = await qb.getMany()
+    const userId = req.user?.id
     const out: Record<string, { value: unknown; desc?: string | null; masked?: boolean }> = {}
-    for (const row of list) {
+
+    // 空数组快速返回
+    if (keys && keys.length === 0) return out
+
+    // 分离用户级 key 和全局 key
+    const userKeys = keys?.filter(k => USER_SCOPED_KEYS.has(k)) ?? []
+    const globalKeys = keys?.filter(k => !USER_SCOPED_KEYS.has(k))
+
+    // 1. 查询全局 Setting 表 —— 仅查非用户级 key，用户级 key 不走全局 fallback
+    const settingRepo = getDataSource(req).getRepository(Setting) as Repository<Setting>
+    const globalQb = settingRepo.createQueryBuilder('s')
+    if (keys && keys.length > 0) {
+      // 只查全局部分（排除用户级 key，避免全局 fallback 导致数据泄漏）
+      if (globalKeys && globalKeys.length > 0) {
+        globalQb.andWhere('s.key IN (:...keys)', { keys: globalKeys })
+      } else {
+        // 请求的 key 全是用户级的，跳过全局查询
+        globalQb.andWhere('1 = 0')
+      }
+    } else if (!keys) {
+      // 未指定 keys：查全部非用户级 key
+      globalQb.andWhere('s.key NOT IN (:...scopedKeys)', { scopedKeys: [...USER_SCOPED_KEYS] })
+    }
+    const globalList = await globalQb.getMany()
+    for (const row of globalList) {
+      let val = row.value
+      if (CommonService.ENCRYPT_KEYS.has(row.key) && typeof val === 'string' && val.includes(':')) {
+        try { val = decrypt(val) } catch { /* 兼容旧数据 */ }
+      }
       const masked = MASK_KEYS.has(row.key)
       out[row.key] = {
-        value: masked ? maskValue(row.value) : row.value,
+        value: masked ? maskValue(val) : val,
         desc: row.desc ?? undefined,
         masked: masked ? true : undefined,
       }
     }
+
+    // 2. 从 user_setting 表读取用户级 key
+    // 已登录 → 读当前用户的设置；未登录 → 回退读 super_admin 用户的设置（访客看站长信息）
+    const targetUserId = userId ?? await this.getSuperAdminId(req)
+    if (targetUserId) {
+      const userSettingRepo = getDataSource(req).getRepository(UserSetting) as Repository<UserSetting>
+      const usQb = userSettingRepo.createQueryBuilder('us')
+        .where('us.userId = :userId', { userId: targetUserId })
+      // 如果指定了 keys，只查用户级部分
+      if (userKeys.length > 0) {
+        usQb.andWhere('us.key IN (:...keys)', { keys: userKeys })
+      } else if (!keys) {
+        // 未指定 keys 时查全部用户级设置
+        usQb.andWhere('us.key IN (:...scopedKeys)', { scopedKeys: [...USER_SCOPED_KEYS] })
+      }
+      const userList = await usQb.getMany()
+      for (const row of userList) {
+        let val = row.value
+        if (CommonService.ENCRYPT_KEYS.has(row.key) && typeof val === 'string' && val.includes(':')) {
+          try { val = decrypt(val) } catch { /* 兼容旧数据 */ }
+        }
+        const masked = MASK_KEYS.has(row.key)
+        out[row.key] = {
+          value: masked ? maskValue(val) : val,
+          desc: row.desc ?? undefined,
+          masked: masked ? true : undefined,
+        }
+      }
+    }
+
     return out
+  }
+
+  /** 需要加密存储的 key（写入时加密，读取时解密） */
+  private static readonly ENCRYPT_KEYS = new Set(['openai_api_key'])
+
+  /** 缓存 super_admin 用户 ID（undefined 表示未缓存，null 表示查库后不存在） */
+  private _superAdminId: number | null | undefined = undefined
+
+  /** 获取 super_admin 用户 ID（访客 fallback 时使用） */
+  private async getSuperAdminId(req: Request): Promise<number | null> {
+    if (this._superAdminId !== undefined) return this._superAdminId
+    const userRepo = getDataSource(req).getRepository(Users) as Repository<Users>
+    const admin = await userRepo.findOne({
+      where: { role: CUserRole.SUPER_ADMIN },
+      select: ['id'],
+      order: { id: 'ASC' },
+    })
+    this._superAdminId = admin?.id ?? null
+    return this._superAdminId
   }
 
   /**
    * 批量 upsert 设置（按 key 存在则更新，否则插入）
+   * openai_api_key 等敏感字段会使用 AES 加密后存储
+   * 用户级 key（USER_SCOPED_KEYS）写入 user_setting 表，其余写入 setting 表
    */
   async setSettings(
     req: Request,
     record: Record<string, { value: unknown; desc?: string }>,
   ): Promise<void> {
-    const repo = getDataSource(req).getRepository(Setting) as Repository<Setting>
+    const userId = req.user?.id
+    const settingRepo = getDataSource(req).getRepository(Setting) as Repository<Setting>
+    const userSettingRepo = userId
+      ? getDataSource(req).getRepository(UserSetting) as Repository<UserSetting>
+      : null
+
     for (const [key, { value, desc }] of Object.entries(record)) {
-      const existing = await repo.findOne({ where: { key } })
-      if (existing) {
-        existing.value = value
-        if (desc !== undefined) existing.desc = desc
-        await repo.save(existing)
-      } else {
-        const entity = repo.create({ key, value, desc: desc ?? null })
-        await repo.save(entity)
+      // 防御：跳过无效 key（如 "undefined"、空字符串等前端传参异常）
+      if (!key || key === 'undefined' || key === 'null') continue
+      // 1. 传输层解密（前端通过 AES-GCM 加密后格式: __enc__:iv:ciphertext）
+      let plainValue: unknown = value
+      if (typeof value === 'string' && value.startsWith('__enc__:')) {
+        plainValue = decryptTransport(value)
       }
+      // 2. 存储层加密（AES-256-CBC）
+      const finalValue = CommonService.ENCRYPT_KEYS.has(key) && typeof plainValue === 'string' && (plainValue as string).trim()
+        ? encrypt((plainValue as string).trim())
+        : plainValue
+
+      // 用户级 key 且已认证 → 写入 user_setting 表
+      if (USER_SCOPED_KEYS.has(key) && userId && userSettingRepo) {
+        const existing = await userSettingRepo.findOne({ where: { userId, key } })
+        if (existing) {
+          existing.value = finalValue
+          if (desc !== undefined) existing.desc = desc
+          await userSettingRepo.save(existing)
+        } else {
+          const entity = userSettingRepo.create({ userId, key, value: finalValue, desc: desc ?? null })
+          await userSettingRepo.save(entity)
+        }
+      } else {
+        // 全局 key → 写入 setting 表
+        const existing = await settingRepo.findOne({ where: { key } })
+        if (existing) {
+          existing.value = finalValue
+          if (desc !== undefined) existing.desc = desc
+          await settingRepo.save(existing)
+        } else {
+          const entity = settingRepo.create({ key, value: finalValue, desc: desc ?? null })
+          await settingRepo.save(entity)
+        }
+      }
+    }
+  }
+
+  /* ---------- 评论回复邮件通知 ---------- */
+
+  /**
+   * 当有人回复评论时，异步发送邮件通知被回复者
+   * - 注册用户：从 Users 表获取 email
+   * - 游客：使用 Comment.email 字段
+   * - 同一收件人 30 分钟内最多 1 封（防骚扰）
+   * - 不回复自己
+   */
+  async sendCommentReplyNotification(
+    req: Request,
+    parentCommentId: number,
+    replyComment: { content: string; nickname?: string | null; userId?: number | null },
+    articleId?: number | null,
+  ): Promise<void> {
+    try {
+      const ds = getDataSource(req)
+      const commentRepo = ds.getRepository(Comment)
+      const userRepo = ds.getRepository(Users)
+
+      // 查询父评论
+      const parent = await commentRepo.findOne({
+        where: { id: parentCommentId },
+        select: ['id', 'userId', 'email', 'nickname', 'content', 'articleId'],
+      })
+      if (!parent) return
+
+      // 获取被回复者邮箱
+      let recipientEmail: string | null = null
+      let recipientName: string = '用户'
+      if (parent.userId) {
+        const parentUser = await userRepo.findOne({
+          where: { id: parent.userId },
+          select: ['id', 'email', 'namec', 'username'],
+        })
+        if (parentUser?.email) {
+          recipientEmail = parentUser.email
+          recipientName = parentUser.namec || parentUser.username || '用户'
+        }
+      } else if (parent.email) {
+        recipientEmail = parent.email
+        recipientName = parent.nickname || '访客'
+      }
+
+      if (!recipientEmail) return
+
+      // 不给自己发通知
+      if (replyComment.userId && parent.userId && replyComment.userId === parent.userId) return
+
+      // 频率限制：同一收件人 30 分钟冷却
+      const lastSent = replyNotifyCooldownMap.get(recipientEmail)
+      if (lastSent && Date.now() - lastSent < REPLY_NOTIFY_COOLDOWN_MS) return
+      replyNotifyCooldownMap.set(recipientEmail, Date.now())
+
+      // 获取回复者名称
+      let replierName = replyComment.nickname || '匿名用户'
+      if (replyComment.userId) {
+        const replier = await userRepo.findOne({
+          where: { id: replyComment.userId },
+          select: ['id', 'namec', 'username'],
+        })
+        if (replier) replierName = replier.namec || replier.username || '用户'
+      }
+
+      // 获取文章标题（如果有关联文章）
+      const realArticleId = articleId ?? parent.articleId
+      let articleTitle = ''
+      if (realArticleId) {
+        const article = await ds.getRepository(Article).findOne({
+          where: { id: realArticleId },
+          select: ['id', 'title'],
+        })
+        if (article) articleTitle = article.title || ''
+      }
+
+      // 站点 URL（从环境变量获取，默认本地开发地址）
+      const siteUrl = process.env.SITE_URL || 'http://localhost:5173'
+      const articleLink = realArticleId ? `${siteUrl}/read/${realArticleId}` : siteUrl
+
+      // 截断评论内容，防止邮件过长
+      const truncate = (text: string, max: number) =>
+        text.length > max ? text.slice(0, max) + '…' : text
+      const parentSnippet = truncate(parent.content.replace(/<[^>]*>/g, ''), 100)
+      const replySnippet = truncate(replyComment.content.replace(/<[^>]*>/g, ''), 200)
+
+      // 构建 HTML 邮件
+      const html = `
+        <div style="max-width:600px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#333;">
+          <div style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:24px 32px;border-radius:8px 8px 0 0;">
+            <h2 style="margin:0;color:#fff;font-size:20px;">💬 您收到了一条新回复</h2>
+          </div>
+          <div style="background:#fff;padding:24px 32px;border:1px solid #e8e8e8;border-top:none;border-radius:0 0 8px 8px;">
+            <p style="margin:0 0 16px;color:#555;">Hi <strong>${recipientName}</strong>，</p>
+            <p style="margin:0 0 12px;color:#555;">
+              <strong>${replierName}</strong> 回复了您${articleTitle ? `在《${articleTitle}》中` : ''}的评论：
+            </p>
+            <div style="background:#f5f5f5;border-left:4px solid #ddd;padding:12px 16px;margin:0 0 12px;border-radius:4px;color:#888;font-size:14px;">
+              ${parentSnippet}
+            </div>
+            <div style="background:#f0f7ff;border-left:4px solid #667eea;padding:12px 16px;margin:0 0 20px;border-radius:4px;font-size:14px;">
+              ${replySnippet}
+            </div>
+            <a href="${articleLink}" style="display:inline-block;background:#667eea;color:#fff;text-decoration:none;padding:10px 24px;border-radius:6px;font-size:14px;">
+              查看详情
+            </a>
+            <hr style="border:none;border-top:1px solid #eee;margin:24px 0 12px;" />
+            <p style="margin:0;font-size:12px;color:#aaa;">
+              此邮件由 Ucc Blog 系统自动发送，同一邮箱 30 分钟内最多收到 1 封通知。
+            </p>
+          </div>
+        </div>
+      `
+
+      const transporter = createTransporter()
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: recipientEmail,
+        subject: `[Ucc Blog] ${replierName} 回复了您的评论${articleTitle ? ` — ${articleTitle}` : ''}`,
+        html,
+      })
+    } catch (err) {
+      // 邮件发送失败不阻塞主流程，仅打印日志
+      console.error('[CommentReplyNotify] 发送邮件通知失败:', err)
+    }
+  }
+
+  /* ---------- 友情链接 ---------- */
+
+  /** 查询已审核通过的友链列表（公开接口，按 sortOrder DESC + createdAt DESC） */
+  async getFriendLinks(req: Request, userId: number): Promise<FriendLink[]> {
+    const ds = getDataSource(req)
+    const repo = ds.getRepository(FriendLink)
+    return repo.find({
+      where: { userId, status: CFriendLinkStatus.APPROVED },
+      order: { sortOrder: 'DESC', createdAt: 'DESC' } as any,
+    })
+  }
+
+  /** 查询某用户的全部友链（博主管理用，含待审核/已拒绝） */
+  async getAllFriendLinks(req: Request, userId: number): Promise<FriendLink[]> {
+    const ds = getDataSource(req)
+    const repo = ds.getRepository(FriendLink)
+    return repo.find({
+      where: { userId },
+      order: { status: 'ASC', sortOrder: 'DESC', createdAt: 'DESC' } as any,
+    })
+  }
+
+  /** 提交友链申请（访客可用） */
+  async submitFriendLink(
+    req: Request,
+    data: { userId: number; url: string; title: string; icon?: string; description?: string; email?: string },
+  ): Promise<FriendLink> {
+    const ds = getDataSource(req)
+    const repo = ds.getRepository(FriendLink)
+    // 检查重复 URL
+    const existing = await repo.findOne({ where: { userId: data.userId, url: data.url } })
+    if (existing) throw new Error('该链接已存在，请勿重复提交')
+    const entity = repo.create({
+      ...data,
+      status: CFriendLinkStatus.PENDING,
+      sortOrder: 0,
+    })
+    const saved = await repo.save(entity)
+    // 异步通知博主
+    this.notifyFriendLinkSubmission(req, data.userId, saved).catch(() => {})
+    return saved
+  }
+
+  /** 审核友链（通过/拒绝） */
+  async reviewFriendLink(
+    req: Request,
+    linkId: number,
+    ownerId: number,
+    action: 'approve' | 'reject',
+  ): Promise<FriendLink> {
+    const ds = getDataSource(req)
+    const repo = ds.getRepository(FriendLink)
+    const link = await repo.findOne({ where: { id: linkId, userId: ownerId } })
+    if (!link) throw new Error('友链不存在或无权操作')
+    link.status = action === 'approve' ? CFriendLinkStatus.APPROVED : CFriendLinkStatus.REJECTED
+    return repo.save(link)
+  }
+
+  /** 更新友链排序权重 */
+  async updateFriendLinkSort(req: Request, linkId: number, ownerId: number, sortOrder: number): Promise<FriendLink> {
+    const ds = getDataSource(req)
+    const repo = ds.getRepository(FriendLink)
+    const link = await repo.findOne({ where: { id: linkId, userId: ownerId } })
+    if (!link) throw new Error('友链不存在或无权操作')
+    link.sortOrder = sortOrder
+    return repo.save(link)
+  }
+
+  /** 删除友链 */
+  async deleteFriendLink(req: Request, linkId: number, ownerId: number): Promise<void> {
+    const ds = getDataSource(req)
+    const repo = ds.getRepository(FriendLink)
+    const link = await repo.findOne({ where: { id: linkId, userId: ownerId } })
+    if (!link) throw new Error('友链不存在或无权操作')
+    await repo.remove(link)
+  }
+
+  /** 友链申请邮件通知博主 */
+  private async notifyFriendLinkSubmission(req: Request, blogOwnerId: number, link: FriendLink): Promise<void> {
+    try {
+      // 检查博主是否开启了友链通知
+      const ds = getDataSource(req)
+      const userSettingRepo = ds.getRepository(UserSetting)
+      const notifySetting = await userSettingRepo.findOne({
+        where: { userId: blogOwnerId, key: 'friend_link_notify' },
+      })
+      // 默认开启通知，设为 'false' 时关闭
+      if (notifySetting?.value === 'false' || notifySetting?.value === false) return
+
+      // 获取博主邮箱
+      const userRepo = ds.getRepository(Users)
+      const owner = await userRepo.findOne({ where: { id: blogOwnerId }, select: ['id', 'email', 'namec', 'username'] })
+      if (!owner?.email) return
+
+      const siteUrl = process.env.SITE_URL || 'http://localhost:5173'
+      const html = `
+        <div style="max-width:600px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#333;">
+          <div style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:24px 32px;border-radius:8px 8px 0 0;">
+            <h2 style="margin:0;color:#fff;font-size:20px;">🔗 新的友链申请</h2>
+          </div>
+          <div style="background:#fff;padding:24px 32px;border:1px solid #e8e8e8;border-top:none;border-radius:0 0 8px 8px;">
+            <p style="margin:0 0 16px;color:#555;">Hi <strong>${owner.namec || owner.username}</strong>，</p>
+            <p style="margin:0 0 12px;color:#555;">您收到了一个新的友链申请：</p>
+            <div style="background:#f5f5f5;padding:16px;border-radius:8px;margin:0 0 16px;">
+              <p style="margin:0 0 8px;"><strong>标题：</strong>${link.title}</p>
+              <p style="margin:0 0 8px;"><strong>URL：</strong><a href="${link.url}" style="color:#667eea;">${link.url}</a></p>
+              ${link.description ? `<p style="margin:0 0 8px;"><strong>简介：</strong>${link.description}</p>` : ''}
+              ${link.email ? `<p style="margin:0;"><strong>邮箱：</strong>${link.email}</p>` : ''}
+            </div>
+            <a href="${siteUrl}/setting" style="display:inline-block;background:#667eea;color:#fff;text-decoration:none;padding:10px 24px;border-radius:6px;font-size:14px;">
+              前往审核
+            </a>
+            <hr style="border:none;border-top:1px solid #eee;margin:24px 0 12px;" />
+            <p style="margin:0;font-size:12px;color:#aaa;">此邮件由 Ucc Blog 系统自动发送。</p>
+          </div>
+        </div>
+      `
+      const transporter = createTransporter()
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: owner.email,
+        subject: `[Ucc Blog] 新的友链申请 — ${link.title}`,
+        html,
+      })
+    } catch (err) {
+      console.error('[FriendLinkNotify] 发送邮件通知失败:', err)
+    }
+  }
+
+  /* ---------- 用户博客公开资料 ---------- */
+
+  /** 根据用户名获取用户公开博客信息（含个人设置 + 文章统计） */
+  async getUserBlogProfile(req: Request, username: string): Promise<{
+    user: Partial<IUser>
+    settings: Record<string, unknown>
+    stats: { articleCount: number; totalViews: number; totalLikes: number }
+  }> {
+    const ds = getDataSource(req)
+    const userRepo = ds.getRepository(Users)
+    const user = await userRepo.findOne({
+      where: { username },
+      select: ['id', 'username', 'namec', 'avatar', 'bio', 'role', 'gender', 'location', 'website', 'socials', 'createdAt'] as any,
+    })
+    if (!user) throw new Error('用户不存在')
+
+    // 获取用户个人设置（站点信息 + 可见路由）
+    const userSettingRepo = ds.getRepository(UserSetting)
+    const publicKeys = ['site_name', 'site_description', 'site_keywords', 'site_favicon', 'visible_routes', 'blog_theme']
+    const userSettings = await userSettingRepo.find({
+      where: { userId: user.id },
+    })
+    const settings: Record<string, unknown> = {}
+    for (const row of userSettings) {
+      if (publicKeys.includes(row.key)) {
+        settings[row.key] = row.value
+      }
+    }
+
+    // 文章统计
+    const articleRepo = ds.getRepository(Article)
+    const statsRaw = await articleRepo
+      .createQueryBuilder('a')
+      .select('COUNT(a.id)', 'articleCount')
+      .addSelect('COALESCE(SUM(a.viewCount), 0)', 'totalViews')
+      .addSelect('COALESCE(SUM(a.likeCount), 0)', 'totalLikes')
+      .where('a.userId = :userId', { userId: user.id })
+      .andWhere('a.status = :status', { status: CArticleStatus.PUBLISHED })
+      .getRawOne()
+
+    return {
+      user: {
+        id: user.id,
+        username: user.username,
+        namec: user.namec,
+        avatar: user.avatar,
+        bio: user.bio,
+        role: user.role,
+        gender: user.gender,
+        location: user.location,
+        website: user.website as any,
+        socials: user.socials as any,
+        createdAt: (user as any).createdAt,
+      },
+      settings,
+      stats: {
+        articleCount: parseInt(statsRaw?.articleCount ?? '0', 10),
+        totalViews: parseInt(statsRaw?.totalViews ?? '0', 10),
+        totalLikes: parseInt(statsRaw?.totalLikes ?? '0', 10),
+      },
+    }
+  }
+
+  /* ---------- 站点 meta 信息抓取 ---------- */
+
+  /** 抓取目标网站的 title 和 favicon */
+  async fetchSiteMeta(url: string): Promise<{ title: string; icon: string; description: string }> {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 8000)
+    try {
+      const resp = await fetch(url, {
+        signal: controller.signal,
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; UccBlogBot/1.0)' },
+      })
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
+      const html = await resp.text()
+      // 提取 title
+      const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i)
+      const title = titleMatch?.[1]?.trim() ?? ''
+      // 提取 description
+      const descMatch = html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i)
+        || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']description["']/i)
+      const description = descMatch?.[1]?.trim() ?? ''
+      // 提取 favicon
+      const iconMatch = html.match(/<link[^>]+rel=["'](?:shortcut )?icon["'][^>]+href=["']([^"']+)["']/i)
+        || html.match(/<link[^>]+href=["']([^"']+)["'][^>]+rel=["'](?:shortcut )?icon["']/i)
+      let icon = iconMatch?.[1]?.trim() ?? ''
+      // 相对路径转绝对路径
+      if (icon && !icon.startsWith('http')) {
+        const base = new URL(url)
+        icon = icon.startsWith('/') ? `${base.origin}${icon}` : `${base.origin}/${icon}`
+      }
+      // 无 favicon 则用默认路径
+      if (!icon) {
+        const base = new URL(url)
+        icon = `${base.origin}/favicon.ico`
+      }
+      return { title, icon, description }
+    } finally {
+      clearTimeout(timeout)
     }
   }
 }

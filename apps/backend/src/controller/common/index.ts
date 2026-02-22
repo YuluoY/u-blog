@@ -81,17 +81,6 @@ class CommonController {
     return formatResponse(tryData, 'ok', '搜索失败')
   }
 
-  /** 博客 AI 助手：接收用户消息，返回回复（可扩展接入 OpenAI 等） */
-  async chat(req: Request, _res: Response): ControllerReturn<{ reply: string }>
-  {
-    const { message } = req.body || {}
-    const text = typeof message === 'string' ? message.trim() : ''
-    const reply = text
-      ? `收到：${text}\n\n（当前为演示回复，可在后端接入 OpenAI/本地模型实现真实对话）`
-      : '请发送文本消息。'
-    return formatResponse([null, { reply }], 'ok', 'fail')
-  }
-
   /** 文件上传：multer 处理后交由 Service 写入 Media 表 */
   async upload(req: Request, _res: Response): ControllerReturn
   {
@@ -130,6 +119,63 @@ class CommonController {
     const agent = req.get('User-Agent') ?? undefined
     const tryData = await tryit<any, Error>(() => CommonService.recordSiteVisit(req, ip, agent))
     return formatResponse(tryData, 'ok', '记录访问失败')
+  }
+
+  /** 文章点赞切换（登录用户 DB 去重 / 游客 IP+fingerprint 去重） */
+  async toggleArticleLike(req: Request, _res: Response): ControllerReturn
+  {
+    const articleId = Number(req.body?.articleId)
+    if (!articleId || Number.isNaN(articleId)) {
+      return formatResponse([new Error('articleId 必填') as any, null], 'ok', '参数错误')
+    }
+    const ip = getClientIp(req)
+    const fingerprint = (req.body?.fingerprint as string) ?? undefined
+    const tryData = await tryit<any, Error>(() => CommonService.toggleArticleLike(req, articleId, ip, fingerprint))
+    return formatResponse(tryData, 'ok', '操作失败')
+  }
+
+  /** 查询文章点赞状态 */
+  async getArticleLikeStatus(req: Request, _res: Response): ControllerReturn
+  {
+    const articleId = Number(req.query?.articleId ?? req.body?.articleId)
+    if (!articleId || Number.isNaN(articleId)) {
+      return formatResponse([new Error('articleId 必填') as any, null], 'ok', '参数错误')
+    }
+    const ip = getClientIp(req)
+    const fingerprint = (req.query?.fingerprint as string) ?? undefined
+    const tryData = await tryit<any, Error>(() => CommonService.getArticleLikeStatus(req, articleId, ip, fingerprint))
+    return formatResponse(tryData, 'ok', '查询失败')
+  }
+
+  /** 更新当前用户个人资料（仅允许编辑安全字段） */
+  async updateProfile(req: Request, _res: Response): ControllerReturn
+  {
+    const userId = req.user?.id
+    if (!userId) {
+      return formatResponse([new Error('未登录') as any, null], '更新成功', '未登录')
+    }
+    const userRepo = getDataSource(req).getRepository(Users) as Repository<Users>
+    // 白名单：仅允许修改的字段
+    const ALLOWED_FIELDS = ['namec', 'avatar', 'bio', 'gender', 'birthday', 'location', 'website', 'socials'] as const
+    const updates: Record<string, unknown> = {}
+    for (const field of ALLOWED_FIELDS) {
+      if (req.body[field] !== undefined) {
+        updates[field] = req.body[field]
+      }
+    }
+    if (Object.keys(updates).length === 0) {
+      return formatResponse([new Error('没有可更新的字段') as any, null], '更新成功', '没有可更新的字段')
+    }
+    const tryData = await tryit<any, Error>(async () => {
+      await userRepo.update(userId, updates)
+      // 返回更新后的用户（排除敏感字段）
+      const user = await userRepo.findOne({
+        where: { id: userId },
+        select: ['id', 'username', 'email', 'namec', 'avatar', 'bio', 'role', 'gender', 'birthday', 'location', 'website', 'socials'],
+      })
+      return user
+    })
+    return formatResponse(tryData, '更新成功', '更新个人资料失败')
   }
 
   private setCookie(res: Response, data: any): void

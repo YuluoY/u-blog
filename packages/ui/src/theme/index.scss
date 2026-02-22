@@ -114,9 +114,9 @@
   /* ease-in-out-back */
   --u-animation-ease-in-out-back: cubic-bezier(0.68, -0.55, 0.265, 1.55);
   /* 其他 */
-  --u-z-index-message: 1080; /* 消息的 z-index */
+  --u-z-index-message: 2100; /* 消息的 z-index，需高于 Drawer(2000) */
   --u-z-index-modal: 1050; /* 模态框的 z-index */
-  --u-z-index-tooltip: 2100; /* 工具提示的 z-index，需高于抽屉(2000)以便在抽屉内悬浮时可见 */
+  --u-z-index-tooltip: 10100; /* 工具提示 z-index，需高于折叠面板(10003)以便下拉可见 */
   --u-z-index-popover: 1070; /* 弹出框的 z-index */
   --u-z-index-backdrop: 1040; /* 背景遮罩的 z-index */
   --u-z-index-dropdown: 1000; /* 下拉菜单的 z-index */

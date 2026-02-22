@@ -8,6 +8,28 @@ import CommonService from '@/service/common'
 import { Article } from '@/module/schema/Article'
 import { Tag } from '@/module/schema/Tag'
 
+/**
+ * IP 频率限制：同一 IP 在窗口期内最多允许的评论数
+ * Map<ip, timestamp[]>
+ */
+const commentRateMap = new Map<string, number[]>()
+/** 频率限制窗口：10 分钟 */
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000
+/** 窗口内最大评论条数 */
+const RATE_LIMIT_MAX = 5
+
+/** 检查 IP 评论频率，返回 true 表示超限 */
+function isRateLimited(ip: string): boolean {
+  const now = Date.now()
+  const timestamps = commentRateMap.get(ip) ?? []
+  // 清理过期记录
+  const valid = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS)
+  if (valid.length >= RATE_LIMIT_MAX) return true
+  valid.push(now)
+  commentRateMap.set(ip, valid)
+  return false
+}
+
 class RestController
 {
   async query(req: Request): ControllerReturn
@@ -37,6 +59,36 @@ class RestController
       const ua = req.get('User-Agent') ?? undefined
       const { browser, device } = parseUserAgent(ua)
       const ipLocation = ip ? await resolveIpLocation(ip) : null
+
+      // 游客评论校验：必须提供 nickname + email
+      if (!req.user) {
+        if (!data.nickname?.trim()) {
+          return formatResponse([new Error('昵称不能为空') as any, null], req.__('rest.addSuccess'), '昵称不能为空')
+        }
+        if (!data.email?.trim()) {
+          return formatResponse([new Error('邮箱不能为空') as any, null], req.__('rest.addSuccess'), '邮箱不能为空')
+        }
+        // 简单邮箱格式验证
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
+          return formatResponse([new Error('邮箱格式不正确') as any, null], req.__('rest.addSuccess'), '邮箱格式不正确')
+        }
+        // IP 频率限制
+        if (ip && isRateLimited(ip)) {
+          return formatResponse(
+            [new Error('评论过于频繁，请稍后再试') as any, null],
+            req.__('rest.addSuccess'),
+            '评论过于频繁，请稍后再试'
+          )
+        }
+        // 清理游客数据：不允许伪造 userId
+        delete data.userId
+      } else {
+        // 登录用户：注入 userId，清理游客字段
+        data.userId = req.user.id
+        delete data.nickname
+        delete data.email
+      }
+
       Object.assign(data, {
         ip: ip ?? undefined,
         userAgent: ua ?? undefined,
@@ -80,6 +132,20 @@ class RestController
         await articleRepo.increment({ id: articleId }, 'commentCount', 1)
       }
     }
+
+    // 评论回复邮件通知：异步发送，不阻塞响应
+    if (isComment && tryData[0] == null && data?.pid) {
+      const parentId = Number(data.pid)
+      if (!Number.isNaN(parentId)) {
+        CommonService.sendCommentReplyNotification(
+          req,
+          parentId,
+          { content: data.content, nickname: data.nickname, userId: data.userId },
+          data.articleId ? Number(data.articleId) : undefined,
+        ).catch(() => { /* 静默：通知失败不影响主流程 */ })
+      }
+    }
+
     return formatResponse(tryData, req.__('rest.addSuccess'), req.__('rest.addFail'))
   }
 

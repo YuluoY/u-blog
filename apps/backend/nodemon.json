@@ -3,6 +3,7 @@
   "ext": "ts",
   "exec": "npx tsx --tsconfig tsconfig.json src/main.ts",
   "ignore": ["node_modules", "dist"],
+  "signal": "SIGTERM",
   "env": {
     "NODE_ENV": "development"
   }

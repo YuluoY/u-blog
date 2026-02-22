@@ -41,10 +41,14 @@ const permission = (router: Router) =>
     next()
   })
 
-  router.afterEach(() =>
+  router.afterEach((to) =>
   {
     const { replRoutes } = useAppStore()
     replRoutes(router.getRoutes())
+
+    // 动态更新页面标题：{pageTitle} - {siteName}
+    const appStore = useAppStore()
+    appStore.updateDocumentTitle(to.meta.title as string | undefined)
   })
 }
 

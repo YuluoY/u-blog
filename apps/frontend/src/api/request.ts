@@ -31,12 +31,17 @@ instance.interceptors.request.use((config) => {
   return config
 })
 
-/* ---------- 响应拦截器：401 时清除 token ---------- */
+/* ---------- 响应拦截器：401 时清除 token，并提取后端 message ---------- */
 instance.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
       accessToken = null
+    }
+    // 优先使用后端返回的 message，而非 axios 默认的 "Request failed with status code xxx"
+    const backendMsg = error.response?.data?.message
+    if (backendMsg && typeof backendMsg === 'string') {
+      error.message = backendMsg
     }
     return Promise.reject(error)
   }
@@ -175,6 +180,38 @@ export async function recordSiteVisit(): Promise<{ todayUv: number }> {
   return payload.data
 }
 
+/**
+ * 切换文章点赞状态（登录用户 DB 去重，游客 IP+fingerprint 去重）
+ * @param articleId 文章 ID
+ * @param fingerprint 可选的浏览器指纹
+ * @returns { liked, likeCount }
+ */
+export async function toggleArticleLike(articleId: number, fingerprint?: string): Promise<{ liked: boolean; likeCount: number }> {
+  const res = await instance.post<BackendResponse<{ liked: boolean; likeCount: number }>>('/article-like', { articleId, fingerprint })
+  const payload = res.data
+  if (payload.code !== 0) {
+    throw new Error(payload.message || '操作失败')
+  }
+  return payload.data
+}
+
+/**
+ * 查询文章点赞状态
+ * @param articleId 文章 ID
+ * @param fingerprint 可选的浏览器指纹
+ * @returns { liked }
+ */
+export async function getArticleLikeStatus(articleId: number, fingerprint?: string): Promise<{ liked: boolean }> {
+  const params: Record<string, string> = { articleId: String(articleId) }
+  if (fingerprint) params.fingerprint = fingerprint
+  const res = await instance.get<BackendResponse<{ liked: boolean }>>('/article-like-status', { params })
+  const payload = res.data
+  if (payload.code !== 0) {
+    throw new Error(payload.message || '查询失败')
+  }
+  return payload.data
+}
+
 /* ---------- 认证相关 ---------- */
 
 /**
@@ -232,6 +269,43 @@ export async function logoutApi(): Promise<void> {
     await instance.post<BackendResponse<unknown>>('/logout')
   } catch { /* ignore */ }
   setAccessToken(null)
+}
+
+/**
+ * 更新当前用户个人资料
+ * @param data 可编辑字段：namec, avatar, bio, gender, birthday, location, website, socials
+ */
+export async function updateProfileApi<T = unknown>(data: Record<string, unknown>): Promise<T> {
+  const res = await instance.put<BackendResponse<T>>('/profile', data)
+  const payload = res.data
+  if (payload.code !== 0) {
+    throw new Error(payload.message || '更新个人资料失败')
+  }
+  return payload.data as T
+}
+
+/* ---------- QQ 信息查询 ---------- */
+
+/** QQ 昵称缓存（避免重复请求） */
+const qqNicknameCache = new Map<string, string>()
+
+/**
+ * 通过后端代理获取 QQ 昵称
+ * @param qq QQ 号（5~11 位数字）
+ * @returns 昵称字符串，获取失败时返回空字符串
+ */
+export async function fetchQQNickname(qq: string): Promise<string> {
+  if (!/^\d{5,11}$/.test(qq)) return ''
+  // 命中缓存直接返回
+  if (qqNicknameCache.has(qq)) return qqNicknameCache.get(qq)!
+  try {
+    const res = await instance.get<BackendResponse<{ nickname: string; qq: string }>>('/qq-info', { params: { qq } })
+    const nickname = res.data?.code === 0 ? (res.data.data?.nickname || '') : ''
+    if (nickname) qqNicknameCache.set(qq, nickname)
+    return nickname
+  } catch {
+    return ''
+  }
 }
 
 export default instance

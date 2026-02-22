@@ -30,6 +30,9 @@ import { i18n } from '@/locales'
 import { getSettings } from '@/api/settings'
 import { recordSiteVisit } from '@/api/request'
 import { SETTING_KEYS } from '@/constants/settings'
+import { setCurrentUser as setWriteDraftUser } from '@/utils/writeDraftDb'
+import { setCurrentUser as setPublishSettingsUser } from '@/utils/publishSettingsDb'
+import type { IUser } from '@u-blog/model'
 
 const appStore = useAppStore()
 const route = useRoute()
@@ -63,10 +66,39 @@ watch(
   { immediate: true }
 )
 
-// 应用启动时：拉取外观设置 + 各 model store 初始数据；飘雪自动模式时查询当日是否下雪
+// 监听用户切换，同步撰写相关 IndexedDB 的用户隔离
+const userStore = useUserStore()
+watch(
+  () => (userStore.user as Partial<IUser>)?.id,
+  (newId) => {
+    const uid = newId ?? null
+    setWriteDraftUser(uid)
+    setPublishSettingsUser(uid)
+  },
+  { immediate: true }
+)
+
+// 应用启动时：拉取外观设置 + 站点元信息 + 各 model store 初始数据
 onMounted(() => {
-  getSettings([SETTING_KEYS.THEME, SETTING_KEYS.LANGUAGE, SETTING_KEYS.ARTICLE_LIST_TYPE, SETTING_KEYS.HOME_SORT])
-    .then((data) => appStore.hydrateAppearance(data))
+  getSettings([
+    SETTING_KEYS.THEME,
+    SETTING_KEYS.LANGUAGE,
+    SETTING_KEYS.ARTICLE_LIST_TYPE,
+    SETTING_KEYS.HOME_SORT,
+    SETTING_KEYS.SITE_NAME,
+    SETTING_KEYS.SITE_FAVICON,
+    SETTING_KEYS.ONLY_OWN_ARTICLES,
+  ])
+    .then((data) => {
+      const prevOnlyOwn = appStore.onlyOwnArticles
+      appStore.hydrateAppearance(data)
+      // 拉取到站点名称后立即更新当前页面 title
+      appStore.updateDocumentTitle(route.meta.title as string | undefined)
+      // 若"仅展示我的文章"设置变化，需重新拉取文章列表
+      if (appStore.onlyOwnArticles !== prevOnlyOwn) {
+        useArticleStore().qryArticleList()
+      }
+    })
     .catch(() => {})
 
   useCategoryStore().qryCategoryList()

@@ -12,11 +12,13 @@
         />
       </div>
 
-      <!-- 右下角浮动发布按钮 -->
+      <!-- 右下角浮动发布按钮（可拖拽调整位置） -->
       <button
+        ref="publishFabRef"
         class="write-view__publish-fab"
-        :class="{ 'is-hidden': panelVisible }"
-        @click="panelVisible = true"
+        :class="{ 'is-hidden': panelVisible, 'is-dragging': fabDragging }"
+        :style="fabStyle"
+        @click="onFabClick"
         :aria-label="t('write.publishArticle')"
       >
         <u-icon :icon="['fas', 'paper-plane']" />
@@ -58,6 +60,7 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { UNotificationFn } from '@u-blog/ui'
 import { useAppStore } from '@/stores/app'
+import { useDraggablePosition } from '@/composables/useDraggablePosition'
 import { useUserStore } from '@/stores/model/user'
 import { CTheme, CTable } from '@u-blog/model'
 import { useWriteDraft } from '@/composables/useWriteDraft'
@@ -85,6 +88,23 @@ const saveFormRef = ref<InstanceType<typeof WriteSaveForm> | null>(null)
 const saveLoading = ref(false)
 /** 发布面板是否展示 */
 const panelVisible = ref(false)
+
+/* ---------- 可拖拽发布按钮 ---------- */
+const publishFabRef = ref<HTMLElement | null>(null)
+const { position: fabPosition, isDragging: fabDragging } = useDraggablePosition(publishFabRef, {
+  storageKey: 'u-blog:write-fab-position',
+  defaultPosition: { right: 24, bottom: 24 },
+})
+/** 按钮定位样式 */
+const fabStyle = computed(() => ({
+  right: `${fabPosition.value.right}px`,
+  bottom: `${fabPosition.value.bottom}px`,
+}))
+/** 拖拽中不触发点击 */
+function onFabClick() {
+  if (fabDragging.value) return
+  panelVisible.value = true
+}
 
 function onEditorContent(v: string) {
   draft.value = v
@@ -137,7 +157,8 @@ async function onSaveSubmit(payload: {
   } catch (e) {
     UNotificationFn({
       message: (e instanceof Error ? e.message : t('write.saveFail')),
-      type: 'error'
+      type: 'error',
+      deduplicate: true,
     })
   } finally {
     saveLoading.value = false
@@ -174,8 +195,7 @@ async function onSaveSubmit(payload: {
 /* ---------- 浮动发布按钮 ---------- */
 .write-view__publish-fab {
   position: absolute;
-  right: 1.5rem;
-  bottom: 1.5rem;
+  /* right / bottom 由 :style 动态设置 */
   z-index: 10;
   display: inline-flex;
   align-items: center;
@@ -187,17 +207,25 @@ async function onSaveSubmit(payload: {
   color: #fff;
   font-size: 0.9375rem;
   font-weight: 500;
-  cursor: pointer;
+  cursor: grab;
   box-shadow: 0 4px 16px rgba(0, 123, 255, 0.3);
   transition: transform 0.2s, box-shadow 0.2s, opacity 0.25s;
+  touch-action: none; /* 禁止浏览器默认触摸行为，确保 pointer 事件流畅 */
+  user-select: none;
 
-  &:hover {
+  &:hover:not(.is-dragging) {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
   }
 
-  &:active {
+  &:active:not(.is-dragging) {
     transform: translateY(0);
+  }
+
+  &.is-dragging {
+    cursor: grabbing;
+    box-shadow: 0 8px 28px rgba(0, 123, 255, 0.45);
+    transition: box-shadow 0.15s;
   }
 
   &.is-hidden {

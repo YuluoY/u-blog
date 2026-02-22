@@ -4,10 +4,12 @@ import { useState } from '@u-blog/composables'
 import { defineStore } from 'pinia'
 import { PAGE_SIZE } from '@/api/article'
 import { useAppStore } from '@/stores/app'
+import { useUserStore } from '@/stores/model/user'
 
 export const useArticleStore = defineStore('article', () =>
 {
   const appStore = useAppStore()
+  const userStore = useUserStore()
   const [articleList, setArticleList] = useState<IArticle[]>([])
   /** 归档页时间线用（来自接口） */
   const [archiveList, setArchiveList] = useState<IArticle[]>([])
@@ -17,6 +19,14 @@ export const useArticleStore = defineStore('article', () =>
   const [hasMore, setHasMore] = useState(true)
   const [archiveLoading, setArchiveLoading] = useState(false)
 
+  /** 获取过滤用的 userId：仅当已登录且开启"仅展示我的文章"时返回当前用户 ID */
+  function getFilterUserId(): number | undefined {
+    if (appStore.onlyOwnArticles && userStore.isLoggedIn && userStore.user?.id) {
+      return userStore.user.id as number
+    }
+    return undefined
+  }
+
   /** 加载第一页（重置列表），排序依 appStore.homeSort */
   const qryArticleList = async() =>
   {
@@ -25,7 +35,7 @@ export const useArticleStore = defineStore('article', () =>
     setHasMore(true)
     try {
       const sort = appStore.homeSort ?? 'date'
-      const list = await api(CTable.ARTICLE).getArticleList(1, PAGE_SIZE, sort)
+      const list = await api(CTable.ARTICLE).getArticleList(1, PAGE_SIZE, sort, getFilterUserId())
       setArticleList(list)
       if (list.length < PAGE_SIZE) setHasMore(false)
     } finally {
@@ -41,7 +51,7 @@ export const useArticleStore = defineStore('article', () =>
     const nextPage = page.value + 1
     try {
       const sort = appStore.homeSort ?? 'date'
-      const list = await api(CTable.ARTICLE).getArticleList(nextPage, PAGE_SIZE, sort)
+      const list = await api(CTable.ARTICLE).getArticleList(nextPage, PAGE_SIZE, sort, getFilterUserId())
       if (list.length > 0) {
         setArticleList([...articleList.value, ...list])
         setPage(nextPage)
@@ -57,7 +67,7 @@ export const useArticleStore = defineStore('article', () =>
   {
     setArchiveLoading(true)
     try {
-      const list = await api(CTable.ARTICLE).getArticleListForArchive(500)
+      const list = await api(CTable.ARTICLE).getArticleListForArchive(500, getFilterUserId())
       setArchiveList(list)
     } finally {
       setArchiveLoading(false)

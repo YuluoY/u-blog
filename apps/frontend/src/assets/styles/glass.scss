@@ -189,13 +189,13 @@ html[theme-style="glass"].dark .chat-input-bar {
   background-color: rgba(30, 30, 30, 0.65) !important;
 }
 
-html[theme-style="glass"] .chat-message__bubble {
+html[theme-style="glass"] .chat-message--user .chat-message__bubble {
   background-color: rgba(255, 255, 255, 0.75) !important;
   backdrop-filter: blur(12px) saturate(150%) !important;
   -webkit-backdrop-filter: blur(12px) saturate(150%) !important;
 }
 
-html[theme-style="glass"].dark .chat-message__bubble {
+html[theme-style="glass"].dark .chat-message--user .chat-message__bubble {
   background-color: rgba(40, 40, 40, 0.75) !important;
 }
 
