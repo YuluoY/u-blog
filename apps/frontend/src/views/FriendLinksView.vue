@@ -239,6 +239,7 @@
 import { ref, onMounted, computed, watch, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/model/user'
+import { useBlogOwnerStore } from '@/stores/blogOwner'
 import { UMessageFn, type FormRules, type UFormExposes } from '@u-blog/ui'
 import { storeToRefs } from 'pinia'
 import type { IFriendLink } from '@u-blog/model'
@@ -255,6 +256,7 @@ defineOptions({ name: 'FriendLinksView' })
 
 const { t } = useI18n()
 const { user, isLoggedIn } = storeToRefs(useUserStore())
+const blogOwnerStore = useBlogOwnerStore()
 
 /** 状态 → UTag type 映射 */
 function statusTagType(status: string): 'warning' | 'success' | 'danger' {
@@ -267,12 +269,14 @@ function statusTagType(status: string): 'warning' | 'success' | 'danger' {
 const links = ref<IFriendLink[]>([])
 const loading = ref(false)
 
-/** 加载当前站点的已审核友链（使用 super_admin 的 userId 作为默认博主） */
+/** 加载当前站点的已审核友链（子域名模式优先使用博客拥有者 ID） */
 async function loadLinks() {
   loading.value = true
   try {
-    // 若已登录则显示自己的友链，否则显示站长（userId=1）的友链
-    const userId = user.value?.id ?? 1
+    // 子域名模式 → 博客拥有者的友链，否则当前登录用户 / 站长（userId=1）
+    const userId = blogOwnerStore.isSubdomainMode && blogOwnerStore.blogOwnerId
+      ? blogOwnerStore.blogOwnerId
+      : (user.value?.id ?? 1)
     links.value = await getFriendLinks(userId)
   } catch {
     links.value = []
@@ -334,7 +338,9 @@ async function handleSubmit() {
     if (!valid) return
     submitting.value = true
     try {
-      const userId = user.value?.id ?? 1
+      const userId = blogOwnerStore.isSubdomainMode && blogOwnerStore.blogOwnerId
+        ? blogOwnerStore.blogOwnerId
+        : (user.value?.id ?? 1)
       await submitFriendLink({
         userId,
         url: form.url.trim(),
@@ -418,7 +424,7 @@ onMounted(() => {
     align-items: center;
     justify-content: space-between;
     padding: 32px 0 24px;
-    border-bottom: 1px solid var(--u-border-color, #eee);
+    border-bottom: 1px solid var(--u-border-1);
     margin-bottom: 24px;
   }
   &__title {
@@ -438,12 +444,12 @@ onMounted(() => {
   &__stat-num {
     font-size: 28px;
     font-weight: 700;
-    color: var(--u-primary-color, #667eea);
+    color: var(--u-primary);
     line-height: 1;
   }
   &__stat-label {
     font-size: 12px;
-    color: var(--u-text-color-secondary, #999);
+    color: var(--u-text-3);
     margin-top: 4px;
   }
 
@@ -462,7 +468,7 @@ onMounted(() => {
     justify-content: center;
     gap: 8px;
     padding: 48px 0;
-    color: var(--u-text-color-secondary, #999);
+    color: var(--u-text-3);
     font-size: 14px;
   }
 
@@ -474,8 +480,8 @@ onMounted(() => {
     gap: 12px;
     padding: 16px;
     border-radius: 12px;
-    border: 1px solid var(--u-border-color, #eee);
-    background: var(--u-bg-color, #fff);
+    border: 1px solid var(--u-border-1);
+    background: var(--u-background-1);
     text-decoration: none;
     color: inherit;
     transition: all 0.25s ease;
@@ -484,7 +490,7 @@ onMounted(() => {
     &:hover {
       transform: translateY(-2px);
       box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15);
-      border-color: var(--u-primary-color, #667eea);
+      border-color: var(--u-primary);
     }
   }
   &__card-icon {
@@ -496,7 +502,7 @@ onMounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--u-primary) 0%, var(--u-primary-1) 100%);
   }
   &__card-letter {
     font-size: 20px;
@@ -534,7 +540,7 @@ onMounted(() => {
 
   /* 管理面板 */
   &__manage {
-    border-top: 1px solid var(--u-border-color, #eee);
+    border-top: 1px solid var(--u-border-1);
     padding-top: 24px;
     margin-top: 16px;
   }
@@ -542,7 +548,7 @@ onMounted(() => {
     font-size: 18px;
     font-weight: 600;
     margin: 0 0 16px;
-    color: var(--u-text-color, #333);
+    color: var(--u-text-1);
   }
   &__manage-list {
     display: flex;

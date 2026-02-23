@@ -56,7 +56,10 @@
                 </div>
                 <!-- 助手消息：Markdown 渲染 + 代码高亮 -->
                 <div v-else class="chat-message__text chat-message__text--md">
-                  <MarkdownPreview :content="message.content || ' '" />
+                  <MarkdownPreview
+                    :content="normalizeStreamingMarkdown(message.content, streaming && isLastMessage(message))"
+                    :code-foldable="false"
+                  />
                   <span
                     v-if="streaming && isLastMessage(message)"
                     class="chat-message__cursor"
@@ -406,8 +409,10 @@ import { STORAGE_KEYS } from '@/constants/storage'
 import { useChatStore } from '@/stores/chat'
 import { useAppStore } from '@/stores/app'
 import { useUserStore } from '@/stores/model/user'
+import { useBlogOwnerStore } from '@/stores/blogOwner'
 import { useChatRAG } from '@/composables/useChatRAG'
 import MarkdownPreview from '@/components/MarkdownPreview.vue'
+import { normalizeStreamingMarkdown } from '@/utils/markdownStreaming'
 
 defineOptions({ name: 'ChatView' })
 
@@ -415,6 +420,7 @@ const { t } = useI18n()
 const chatStore = useChatStore()
 const appStore = useAppStore()
 const userStore = useUserStore()
+const blogOwnerStore = useBlogOwnerStore()
 const { search: ragSearch, formatContext } = useChatRAG()
 const inputText = ref('')
 const inputRef = ref<HTMLTextAreaElement | null>(null)
@@ -761,8 +767,16 @@ let _apiKeyChecked = false
  * 发送前校验：
  * 1. 路由守卫已处理未登录跳转，这里双重保险
  * 2. 检查是否已配置模型 API Key
+ * 3. 子域名游客模式下跳过以上校验（后端通过 blogOwnerId 鉴权并加载博主配置）
  */
 async function preSendValidation(): Promise<boolean> {
+  // 子域名完整模式下的游客：跳过登录和 API Key 校验（后端自行验证博主配置）
+  const isGuestSubdomainChat =
+    blogOwnerStore.isSubdomainMode &&
+    !blogOwnerStore.isReadOnly &&
+    !userStore.isLoggedIn
+  if (isGuestSubdomainChat) return true
+
   // 登录校验（理论上路由已拦截，这里作为兜底）
   if (!userStore.isLoggedIn) {
     UMessageFn({ message: t('chat.notLoggedIn'), type: 'warning' })
@@ -845,6 +859,10 @@ async function handleSend() {
         maxTokens: chatModelParams.maxTokens,
       },
       ragContext,
+      // 子域名游客场景：传递博主 ID，后端据此加载博主的模型配置并验证权限
+      blogOwnerStore.isSubdomainMode && !userStore.isLoggedIn
+        ? blogOwnerStore.blogOwnerId
+        : undefined,
     )
   } catch (e) {
     if ((e as Error).name === 'AbortError') {
@@ -967,7 +985,7 @@ function isLastMessage(msg: { id: string }): boolean {
 }
 
 .chat-messages-list {
-  max-width: 800px;
+  width: 100%;
   margin: 0 auto;
   padding: 0 2rem;
   display: flex;
@@ -1190,7 +1208,7 @@ function isLastMessage(msg: { id: string }): boolean {
 
 /* ===================== 输入区 ===================== */
 .chat-input-container {
-  width: 100%; max-width: 800px; margin: 0 auto;
+  width: 100%; margin: 0 auto;
   padding: 0 2rem 2rem; box-sizing: border-box;
   position: relative;
 }

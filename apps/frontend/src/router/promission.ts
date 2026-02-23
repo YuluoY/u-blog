@@ -2,6 +2,7 @@ import type { Router } from 'vue-router'
 import dynamicRoutes from './dynamic'
 import { useAppStore } from '@/stores/app'
 import { useUserStore } from '@/stores/model/user'
+import { useBlogOwnerStore } from '@/stores/blogOwner'
 
 const permission = (router: Router) =>
 {
@@ -27,15 +28,35 @@ const permission = (router: Router) =>
     const isLoggedIn = userStore.isLoggedIn
 
     // 仅游客可访问的页面（如登录页），已登录则回首页
+    // 特殊处理：如果携带 returnUrl 参数（如从管理后台重定向来的），直接跳转回去
     if (to.meta.guestOnly && isLoggedIn) {
+      const returnUrl = to.query.returnUrl as string | undefined
+      if (returnUrl) {
+        const decoded = decodeURIComponent(returnUrl)
+        if (decoded.startsWith('/') || decoded.startsWith(window.location.origin) || decoded.includes('localhost')) {
+          // 取消 Vue Router 导航后执行外部跳转（不调用 next 会导致 Invalid navigation guard 错误）
+          next(false)
+          window.location.href = decoded
+          return
+        }
+      }
       next({ name: 'home', replace: true })
       return
     }
 
-    // 需要认证的页面，未登录则跳转登录页（保留 redirect 参数）
+    // 需要认证的页面——未登录时通常跳转登录
+    // 例外：子域名「完整模式」下，游客可以访问 /chat（使用博主配置的 AI 模型）
     if (to.meta.requiresAuth && !isLoggedIn) {
-      next({ name: 'login', query: { redirect: to.fullPath }, replace: true })
-      return
+      const blogOwnerStore = useBlogOwnerStore()
+      const isFullModeChat =
+        blogOwnerStore.isSubdomainMode &&
+        !blogOwnerStore.isReadOnly &&
+        to.name === 'chat'
+
+      if (!isFullModeChat) {
+        next({ name: 'login', query: { redirect: to.fullPath }, replace: true })
+        return
+      }
     }
 
     next()

@@ -55,6 +55,8 @@ import {
   UUpload,
   UToolbar,
   UFloatingToolbar,
+  UProgressBar,
+  UBackTop,
 } from '@/components'
 
 export default [
@@ -108,6 +110,8 @@ export default [
   UUpload,
   UToolbar,
   UFloatingToolbar,
+  UProgressBar,
+  UBackTop,
 
   UMessageFn,
   UDialogFn,

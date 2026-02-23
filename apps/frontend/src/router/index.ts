@@ -9,6 +9,7 @@ const ArchiveView = () => import('@/views/ArchiveView.vue')
 const ReadView = () => import('@/views/ReadView.vue')
 const MessageView = () => import('@/views/MessageView.vue')
 const ChatView = () => import('@/views/ChatView.vue')
+const XiaohuiView = () => import('@/views/XiaohuiView.vue')
 const LoginView = () => import('@/views/LoginView.vue')
 const FriendLinksView = () => import('@/views/FriendLinksView.vue')
 const UserBlogView = () => import('@/views/UserBlogView.vue')
@@ -84,7 +85,17 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
-    path: '/u/:username',
+    path: '/xiaohui',
+    name: 'xiaohui',
+    component: XiaohuiView,
+    meta: {
+      index: 7,
+      title: '小惠',
+      isAffix: true,
+    }
+  },
+  {
+    path: '/@:username',
     name: 'userBlog',
     component: UserBlogView,
     meta: {

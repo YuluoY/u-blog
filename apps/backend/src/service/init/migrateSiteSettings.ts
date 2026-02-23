@@ -45,11 +45,14 @@ export async function migrateSiteSettingsToUserScope(ds: DataSource): Promise<vo
   await ds.transaction(async (manager) => {
     // 逐条 INSERT，ON CONFLICT 跳过（避免重复迁移覆盖用户已修改的值）
     for (const row of rows) {
+      // pg-node 从 JSONB 读出的值会被自动解析为 JS 基本类型（string/number 等），
+      // 再插入另一个 JSONB 列时需要重新序列化为 JSON 字符串
+      const jsonValue = JSON.stringify(row.value)
       await manager.query(
         `INSERT INTO "${CTable.USER_SETTING}" ("userId", key, value, "desc")
-         VALUES ($1, $2, $3, $4)
+         VALUES ($1, $2, $3::jsonb, $4)
          ON CONFLICT ("userId", key) DO NOTHING`,
-        [adminId, row.key, row.value, row.desc],
+        [adminId, row.key, jsonValue, row.desc],
       )
     }
 

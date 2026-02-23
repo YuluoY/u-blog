@@ -61,6 +61,7 @@ function backendGuardPlugin(): Plugin {
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: process.env.ADMIN_BASE_PATH || '/',
   plugins: [react(), tailwindcss(), backendGuardPlugin()],
   resolve: {
     // 保证 react / react-dom 单例，避免 @tanstack/react-query 等库拿到另一份 React 导致 useContext 为 null

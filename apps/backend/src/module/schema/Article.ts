@@ -81,7 +81,7 @@ export class Article {
 	@IsBoolean({ message: '是否置顶必须是布尔值' })
 	isTop!: boolean
 
-	@Column({ type: 'varchar', length: 50, nullable: true, comment: '密码保护' })
+	@Column({ type: 'varchar', length: 50, select: false, nullable: true, comment: '密码保护' })
 	@IsOptional()
 	@IsString({ message: '密码保护必须为字符串' })
 	@MaxLength(50, { message: '密码保护最多50个字符' })

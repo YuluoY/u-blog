@@ -96,15 +96,16 @@ export const toModelName = (tableName: string): string =>
 export const toTableName = (modelName: string): string => snakeCase(modelName)
 
 /**
- * 返回带类型的值
- * @param {string} str
- * @returns
+ * 安全地解析 JSON 字符串为指定类型
+ * @param {string} str - JSON 字符串
+ * @param {T} defaultValue - 解析失败时的默认值
+ * @returns 解析后的值或默认值
  */
 export const withType = <T = any>(str: string, defaultValue: T): T =>
 {
 	try {
-		return new Function(`return ${str}`)() as T
-	} catch (error) {
+		return JSON.parse(str) as T
+	} catch {
 		return defaultValue
 	}
 }

@@ -203,18 +203,25 @@ export const useAppStore = defineStore('app', () =>
       // locale 同步在 App.vue 的 watch 中做，保证在 Vue 响应式上下文中触发重渲染
     }
   }
+  /** 根据屏幕宽度获取默认列表类型：移动端(<=375px)默认卡片视图，桌面端默认基础视图 */
+  function getDefaultListType(): ArticleList {
+    if (typeof window !== 'undefined' && window.innerWidth <= 375) {
+      return CArticleList.CARD
+    }
+    return CArticleList.BASE
+  }
   function loadArticleListType(): ArticleList {
     try {
       const v = localStorage.getItem(STORAGE_KEYS.ARTICLE_LIST_TYPE)
       if (v === CArticleList.BASE || v === CArticleList.CARD || v === CArticleList.WATERFALL || v === CArticleList.COMPACT) return v
-      return CArticleList.BASE
+      return getDefaultListType()
     } catch {
-      return CArticleList.BASE
+      return getDefaultListType()
     }
   }
   const [articleListTypeState, setArticleListTypeState] = useState<ArticleList>(loadArticleListType())
   /** 用 computed 暴露并兜底，避免 ShallowRef 在 Pinia 下未被正确追踪导致首页不更新 */
-  const articleListType = computed<ArticleList>(() => articleListTypeState.value || CArticleList.BASE)
+  const articleListType = computed<ArticleList>(() => articleListTypeState.value || getDefaultListType())
   function setArticleListType(v: ArticleList) {
     setArticleListTypeState(v)
     try {

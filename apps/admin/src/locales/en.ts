@@ -33,6 +33,12 @@ export const en = {
     media: 'Media',
     settings: 'Settings',
     aboutBlocks: 'About Blocks',
+    analytics: 'Analytics',
+    friendLinks: 'Friend Links',
+    roles: 'Roles',
+    permissions: 'Permissions',
+    routes: 'Routes',
+    xiaohui: 'Xiaohui Chat',
   },
   app: {
     title: 'U-Blog Admin',

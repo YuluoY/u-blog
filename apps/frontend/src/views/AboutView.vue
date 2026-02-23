@@ -1,10 +1,37 @@
 <template>
   <div class="about-page">
-    <!-- 页面 Hero -->
+    <!-- 页面 Hero：渐变背景 + 打字机效果 -->
     <header class="about-page__hero">
+      <div class="about-page__hero-bg" />
       <div class="about-page__hero-content">
         <h1 class="about-page__title">{{ t('about.title') }}</h1>
-        <p class="about-page__desc">{{ t('about.desc') }}</p>
+        <p class="about-page__subtitle">{{ t('about.subtitle') }}</p>
+        <div class="about-page__hero-stats">
+          <div class="about-page__stat">
+            <span class="about-page__stat-icon">
+              <u-icon icon="fa-solid fa-layer-group" />
+            </span>
+            <span class="about-page__stat-label">{{ t('about.stats.monorepo') }}</span>
+          </div>
+          <div class="about-page__stat">
+            <span class="about-page__stat-icon">
+              <u-icon icon="fa-solid fa-cube" />
+            </span>
+            <span class="about-page__stat-label">{{ t('about.stats.apps') }}</span>
+          </div>
+          <div class="about-page__stat">
+            <span class="about-page__stat-icon">
+              <u-icon icon="fa-solid fa-puzzle-piece" />
+            </span>
+            <span class="about-page__stat-label">{{ t('about.stats.components') }}</span>
+          </div>
+          <div class="about-page__stat">
+            <span class="about-page__stat-icon">
+              <u-icon icon="fa-solid fa-language" />
+            </span>
+            <span class="about-page__stat-label">{{ t('about.stats.i18n') }}</span>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -16,16 +43,19 @@
 
     <!-- 区块列表 -->
     <div v-else class="about-page__blocks">
-      <template v-for="block in blocks" :key="block.id">
-        <!-- WHOAMI - 个人介绍 -->
+      <template v-for="(block, idx) in blocks" :key="block.id">
+        <!-- WHOAMI - 个人介绍（特殊卡片样式）-->
         <section
           v-if="block.type === PAGE_BLOCK_TYPE.WHOAMI"
           class="about-page__block about-page__whoami"
+          :style="{ animationDelay: `${idx * 0.1}s` }"
         >
-          <h2 class="about-page__block-title">
-            <u-icon icon="fa-regular fa-user" />
-            <span>{{ block.title }}</span>
-          </h2>
+          <div class="about-page__block-header">
+            <span class="about-page__block-icon about-page__block-icon--whoami">
+              <u-icon icon="fa-regular fa-user" />
+            </span>
+            <h2 class="about-page__block-title">{{ block.title }}</h2>
+          </div>
           <div class="about-page__whoami-content">
             <MarkdownPreview :content="block.content" />
           </div>
@@ -35,74 +65,16 @@
         <section
           v-else-if="block.type === PAGE_BLOCK_TYPE.INTRO"
           class="about-page__block about-page__intro"
+          :style="{ animationDelay: `${idx * 0.1}s` }"
         >
-          <h2 class="about-page__block-title">
-            <u-icon icon="fa-solid fa-circle-info" />
-            <span>{{ block.title }}</span>
-          </h2>
+          <div class="about-page__block-header">
+            <span class="about-page__block-icon about-page__block-icon--intro">
+              <u-icon icon="fa-solid fa-circle-info" />
+            </span>
+            <h2 class="about-page__block-title">{{ block.title }}</h2>
+          </div>
           <div class="about-page__intro-content">
             <MarkdownPreview :content="block.content" />
-          </div>
-        </section>
-
-        <!-- SKILLS - 技术栈与熟练度 -->
-        <section
-          v-else-if="isSkillsType(block.type)"
-          class="about-page__block about-page__skills"
-        >
-          <h2 class="about-page__block-title">
-            <u-icon icon="fa-solid fa-code" />
-            <span>{{ block.title }}</span>
-          </h2>
-          <div class="about-page__skills-groups">
-            <div
-              v-for="group in getSkillGroups(block.extra)"
-              :key="group.name"
-              class="about-page__skills-group"
-            >
-              <h3 class="about-page__skills-group-name">{{ group.name }}</h3>
-              <div class="about-page__skills-items">
-                <div
-                  v-for="item in group.items"
-                  :key="item.name"
-                  class="about-page__skill-item"
-                >
-                  <span class="about-page__skill-name">{{ item.name }}</span>
-                  <div class="about-page__skill-bar">
-                    <div
-                      class="about-page__skill-bar-fill"
-                      :style="{ width: `${(item.level / 5) * 100}%` }"
-                    />
-                  </div>
-                  <span class="about-page__skill-level">{{ item.level }} / 5</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- TIMELINE - 时间线 -->
-        <section
-          v-else-if="isTimelineType(block.type)"
-          class="about-page__block about-page__timeline"
-        >
-          <h2 class="about-page__block-title">
-            <u-icon icon="fa-solid fa-clock" />
-            <span>{{ block.title }}</span>
-          </h2>
-          <div class="about-page__timeline-items">
-            <div
-              v-for="(item, index) in getTimelineItems(block.extra)"
-              :key="index"
-              class="about-page__timeline-item"
-            >
-              <div class="about-page__timeline-dot" />
-              <div class="about-page__timeline-content">
-                <span class="about-page__timeline-year">{{ item.year }}</span>
-                <h4 class="about-page__timeline-title">{{ item.title }}</h4>
-                <p class="about-page__timeline-desc">{{ item.desc }}</p>
-              </div>
-            </div>
           </div>
         </section>
 
@@ -110,17 +82,25 @@
         <section
           v-else-if="block.type === PAGE_BLOCK_TYPE.CUSTOM"
           class="about-page__block about-page__custom"
+          :style="{ animationDelay: `${idx * 0.1}s` }"
         >
-          <h2 v-if="block.title" class="about-page__block-title">
-            <u-icon icon="fa-solid fa-puzzle-piece" />
-            <span>{{ block.title }}</span>
-          </h2>
+          <div v-if="block.title" class="about-page__block-header">
+            <span class="about-page__block-icon about-page__block-icon--custom">
+              <u-icon :icon="getCustomIcon(block.title)" />
+            </span>
+            <h2 class="about-page__block-title">{{ block.title }}</h2>
+          </div>
           <div class="about-page__custom-content">
             <MarkdownPreview :content="block.content" />
           </div>
         </section>
       </template>
     </div>
+
+    <!-- 页脚装饰 -->
+    <footer class="about-page__footer">
+      <p>{{ t('about.footer') }}</p>
+    </footer>
   </div>
 </template>
 
@@ -138,59 +118,24 @@ const { t } = useI18n()
 const PAGE_BLOCK_TYPE = {
   INTRO: 'intro',
   WHOAMI: 'whoami',
-  EXPERIENCE: 'experience',
-  WHY_BLOG: 'why_blog',
-  TIMELINE: 'timeline',
-  SKILLS: 'skills',
   CUSTOM: 'custom',
 } as const
 
-/** 技能区块额外数据 */
-interface ISkillsGroup {
-  name: string
-  items: { name: string; level: number }[]
+/** 自定义区块图标映射（按区块标题匹配） */
+const CUSTOM_ICON_MAP: Record<string, string> = {
+  '技术架构': 'fa-solid fa-sitemap',
+  '设计理念': 'fa-solid fa-lightbulb',
+  '开源致谢': 'fa-solid fa-heart',
+  '联系我': 'fa-solid fa-paper-plane',
 }
-
-interface ISkillsExtra {
-  groups: ISkillsGroup[]
-}
-
-/** 时间线区块额外数据 */
-interface ITimelineItem {
-  year: string
-  title: string
-  desc: string
-}
-
-interface ITimelineExtra {
-  items: ITimelineItem[]
-}
+const CUSTOM_ICON_DEFAULT = 'fa-solid fa-puzzle-piece'
 
 const blocks = ref<IPageBlockVo[]>([])
 const loading = ref(false)
 
-/** 判断是否为技能类型 */
-function isSkillsType(type: string): boolean {
-  return type === PAGE_BLOCK_TYPE.SKILLS
-}
-
-/** 获取技能组数据 */
-function getSkillGroups(extra?: Record<string, unknown> | null): ISkillsGroup[] {
-  if (!extra) return []
-  const data = extra as unknown as ISkillsExtra
-  return data?.groups ?? []
-}
-
-/** 判断是否为时间线类型 */
-function isTimelineType(type: string): boolean {
-  return type === PAGE_BLOCK_TYPE.TIMELINE
-}
-
-/** 获取时间线数据 */
-function getTimelineItems(extra?: Record<string, unknown> | null): ITimelineItem[] {
-  if (!extra) return []
-  const data = extra as unknown as ITimelineExtra
-  return data?.items ?? []
+/** 根据区块标题返回对应图标 */
+function getCustomIcon(title: string): string {
+  return CUSTOM_ICON_MAP[title] || CUSTOM_ICON_DEFAULT
 }
 
 async function fetchBlocks() {
@@ -211,33 +156,109 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+/* 入场动画 */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .about-page {
+  box-sizing: border-box;
   width: 100%;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 36px;
 
-  /* Hero */
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  /* ===== Hero ===== */
   &__hero {
-    padding: 32px 0 24px;
-    border-bottom: 1px solid var(--u-border-1);
+    position: relative;
+    padding: 40px 0 32px;
+    overflow: hidden;
+  }
+
+  &__hero-bg {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      135deg,
+      rgba(var(--u-primary-rgb), 0.06) 0%,
+      rgba(var(--u-primary-rgb), 0.02) 50%,
+      transparent 100%
+    );
+    border-radius: 0 0 24px 24px;
+    pointer-events: none;
+  }
+
+  &__hero-content {
+    position: relative;
+    z-index: 1;
   }
 
   &__title {
-    font-size: 2.4rem;
+    font-size: 2.6rem;
     font-weight: 800;
     color: var(--u-text-1);
     margin: 0;
     line-height: 1.3;
+    letter-spacing: -0.02em;
   }
 
-  &__desc {
+  &__subtitle {
     font-size: 1.35rem;
     color: var(--u-text-2);
-    margin: 6px 0 0;
+    margin: 8px 0 0;
+    line-height: 1.6;
   }
 
-  /* Loading */
+  &__hero-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 24px;
+  }
+
+  &__stat {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--u-background-2);
+    border: 1px solid var(--u-border-1);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 1.2rem;
+    color: var(--u-text-2);
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: var(--u-primary);
+      color: var(--u-primary);
+      background: rgba(var(--u-primary-rgb), 0.06);
+    }
+  }
+
+  &__stat-icon {
+    font-size: 1.1rem;
+    color: var(--u-primary);
+    display: flex;
+    align-items: center;
+  }
+
+  &__stat-label {
+    white-space: nowrap;
+  }
+
+  /* ===== Loading ===== */
   &__loading {
     display: flex;
     align-items: center;
@@ -248,255 +269,276 @@ onMounted(() => {
     font-size: 1.4rem;
   }
 
-  /* Blocks */
+  /* ===== Blocks ===== */
   &__blocks {
     display: flex;
     flex-direction: column;
-    gap: 48px;
+    gap: 40px;
   }
 
   &__block {
     width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    background: var(--u-background-2);
+    border: 1px solid var(--u-border-1);
+    border-radius: 16px;
+    padding: 28px;
+    animation: fadeInUp 0.5s ease both;
+    transition: box-shadow 0.3s ease, border-color 0.3s ease;
+
+    &:hover {
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+      border-color: rgba(var(--u-primary-rgb), 0.3);
+    }
+  }
+
+  &__block-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  &__block-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+
+    &--whoami {
+      background: rgba(var(--u-primary-rgb), 0.12);
+      color: var(--u-primary);
+    }
+
+    &--intro {
+      background: rgba(52, 199, 89, 0.12);
+      color: #34c759;
+    }
+
+    &--custom {
+      background: rgba(0, 122, 255, 0.12);
+      color: #007aff;
+    }
   }
 
   &__block-title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     font-weight: 700;
     color: var(--u-text-1);
-    margin: 0 0 20px;
-    padding-bottom: 12px;
-    border-bottom: 2px solid var(--u-primary);
-
-    .u-icon {
-      font-size: 1.6rem;
-      color: var(--u-primary);
-    }
+    margin: 0;
+    line-height: 1.4;
   }
 
-  /* WHOAMI */
+  /* ===== WHOAMI ===== */
   &__whoami-content {
     :deep(.markdown-preview) {
-      font-size: 1.5rem;
-      line-height: 1.8;
+      font-size: 1.4rem;
+      line-height: 1.9;
       color: var(--u-text-1);
 
-      p {
-        margin-bottom: 1em;
+      p { margin-bottom: 1em; }
+
+      blockquote {
+        border-left: 3px solid var(--u-primary);
+        padding-left: 16px;
+        margin: 16px 0;
+        color: var(--u-text-2);
+        font-style: italic;
       }
     }
   }
 
-  /* INTRO */
+  /* ===== INTRO ===== */
   &__intro-content {
     :deep(.markdown-preview) {
-      font-size: 1.4rem;
-      line-height: 1.8;
+      font-size: 1.35rem;
+      line-height: 1.9;
       color: var(--u-text-1);
 
-      ul {
-        padding-left: 20px;
-      }
-
+      ul { padding-left: 20px; list-style: none; }
       li {
-        margin: 8px 0;
+        margin: 10px 0;
+        position: relative;
+        padding-left: 4px;
       }
-
-      strong {
-        color: var(--u-primary);
-      }
+      strong { color: var(--u-primary); }
     }
   }
 
-  /* SKILLS */
-  &__skills-groups {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 24px;
-  }
-
-  &__skills-group {
-    background: var(--u-background-2);
-    border-radius: 12px;
-    padding: 20px;
-    border: 1px solid var(--u-border-1);
-  }
-
-  &__skills-group-name {
-    font-size: 1.3rem;
-    font-weight: 600;
-    color: var(--u-text-1);
-    margin: 0 0 16px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--u-border-1);
-  }
-
-  &__skills-items {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  &__skill-item {
-    display: grid;
-    grid-template-columns: 1fr auto auto;
-    align-items: center;
-    gap: 12px;
-  }
-
-  &__skill-name {
-    font-size: 1.2rem;
-    color: var(--u-text-1);
-    font-weight: 500;
-  }
-
-  &__skill-bar {
-    width: 100px;
-    height: 6px;
-    background: var(--u-background-3);
-    border-radius: 3px;
-    overflow: hidden;
-  }
-
-  &__skill-bar-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--u-primary) 0%, var(--u-success) 100%);
-    border-radius: 3px;
-    transition: width 0.3s ease;
-  }
-
-  &__skill-level {
-    font-size: 1rem;
-    color: var(--u-text-3);
-    min-width: 40px;
-    text-align: right;
-  }
-
-  /* TIMELINE */
-  &__timeline-items {
-    position: relative;
-    padding-left: 24px;
-
-    &::before {
-      content: '';
-      position: absolute;
-      left: 4px;
-      top: 8px;
-      bottom: 8px;
-      width: 2px;
-      background: var(--u-border-1);
-    }
-  }
-
-  &__timeline-item {
-    position: relative;
-    padding-bottom: 24px;
-
-    &:last-child {
-      padding-bottom: 0;
-    }
-  }
-
-  &__timeline-dot {
-    position: absolute;
-    left: -24px;
-    top: 6px;
-    width: 10px;
-    height: 10px;
-    background: var(--u-primary);
-    border-radius: 50%;
-    border: 2px solid var(--u-background-1);
-
-    &::after {
-      content: '';
-      position: absolute;
-      left: -6px;
-      top: -6px;
-      width: 18px;
-      height: 18px;
-      background: rgba(var(--u-primary-rgb), 0.2);
-      border-radius: 50%;
-    }
-  }
-
-  &__timeline-content {
-    padding-left: 8px;
-  }
-
-  &__timeline-year {
-    display: inline-block;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--u-primary);
-    background: rgba(var(--u-primary-rgb), 0.1);
-    padding: 2px 10px;
-    border-radius: 4px;
-    margin-bottom: 6px;
-  }
-
-  &__timeline-title {
-    font-size: 1.3rem;
-    font-weight: 600;
-    color: var(--u-text-1);
-    margin: 0 0 4px;
-  }
-
-  &__timeline-desc {
-    font-size: 1.2rem;
-    color: var(--u-text-2);
-    margin: 0;
-    line-height: 1.5;
-  }
-
-  /* CUSTOM */
+  /* ===== CUSTOM ===== */
   &__custom-content {
     :deep(.markdown-preview) {
-      font-size: 1.4rem;
-      line-height: 1.8;
+      font-size: 1.35rem;
+      line-height: 1.85;
       color: var(--u-text-1);
+
+      strong { color: var(--u-primary); }
+
+      /* 代码块：跟随 md-editor-v3 内置主题，仅修正布局问题 */
+      .md-editor-code {
+        margin: 1em 0;
+        border-radius: 10px;
+        overflow: visible;
+        font-size: 1.25rem;
+        line-height: 1.7;
+
+        /*
+         * 禁用库默认 sticky 头部：在页面滚动容器内会产生位移偏差
+         * （同 chat 页面的处理方式）
+         */
+        .md-editor-code-head {
+          position: relative;
+          top: auto;
+          z-index: auto;
+        }
+
+        /* 代码字体统一 + 允许横向滚动 */
+        pre {
+          font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace !important;
+          font-size: inherit;
+          line-height: inherit;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        code {
+          font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace !important;
+          font-size: inherit;
+          line-height: inherit;
+          word-break: normal;
+        }
+      }
+
+      /* 行内代码 */
+      :not(pre) > code {
+        font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+      }
     }
+  }
+
+  /* ===== Footer ===== */
+  &__footer {
+    text-align: center;
+    padding: 24px 0 8px;
+    color: var(--u-text-3);
+    font-size: 1.2rem;
+    border-top: 1px solid var(--u-border-1);
+
+    p { margin: 0; }
   }
 }
 
-/* 响应式 */
+/* ===== 暗色模式细节调整 ===== */
+html.dark .about-page {
+  &__block:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  }
+
+  &__block-icon {
+    &--intro { color: #30d158; }
+    &--custom { color: #64d2ff; }
+  }
+}
+
+/* ===== 响应式 ===== */
 @media (max-width: 767px) {
   .about-page {
-    gap: 24px;
+    gap: 20px;
 
     &__hero {
       padding: 20px 0 16px;
     }
 
     &__title {
-      font-size: 2rem;
+      font-size: 1.8rem;
     }
 
-    &__desc {
-      font-size: 1.2rem;
+    &__subtitle {
+      font-size: 1.1rem;
+    }
+
+    &__hero-stats {
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    &__stat {
+      font-size: 1rem;
+      padding: 4px 10px;
+      gap: 6px;
+    }
+
+    &__stat-icon {
+      font-size: 1rem;
     }
 
     &__blocks {
-      gap: 32px;
+      gap: 20px;
+    }
+
+    &__block {
+      padding: 16px;
+      border-radius: 12px;
+      /* 允许代码块内部横向滚动 */
+      overflow: visible;
+    }
+
+    &__block-header {
+      margin-bottom: 12px;
+      gap: 10px;
+    }
+
+    &__block-icon {
+      width: 28px;
+      height: 28px;
+      font-size: 1.1rem;
+      border-radius: 8px;
     }
 
     &__block-title {
-      font-size: 1.5rem;
+      font-size: 1.3rem;
     }
 
-    &__skills-groups {
-      grid-template-columns: 1fr;
+    /* 各内容区字号缩小 */
+    &__whoami-content :deep(.markdown-preview) {
+      font-size: 1.25rem;
+      line-height: 1.75;
     }
 
-    &__skill-item {
-      grid-template-columns: 1fr auto;
-      gap: 8px;
+    &__intro-content :deep(.markdown-preview) {
+      font-size: 1.2rem;
+      line-height: 1.75;
+
+      ul { padding-left: 16px; }
+      li { margin: 8px 0; }
     }
 
-    &__skill-level {
-      display: none;
+    &__custom-content :deep(.markdown-preview) {
+      font-size: 1.2rem;
+      line-height: 1.7;
+
+      /* 移动端代码块：缩小字号，保证可横向滚动 */
+      .md-editor-code {
+        font-size: 1.1rem;
+        margin: 0.75em -16px;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+
+        pre {
+          padding: 14px 16px;
+        }
+      }
+    }
+
+    &__footer {
+      padding: 16px 0 4px;
+      font-size: 1.1rem;
     }
   }
-}
-</style>
+}</style>

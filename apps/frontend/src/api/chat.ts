@@ -18,11 +18,12 @@ type SSEEvent = SSETokenEvent | SSEDoneEvent | SSEErrorEvent
 
 /**
  * 发送聊天消息并以 SSE 流式接收回复
- * @param messages  完整对话历史
- * @param onToken   每接收到一个 token 片段时的回调
- * @param signal    AbortController.signal，用于取消请求
- * @param config    可选的模型参数覆盖（温度、最大输出等）
- * @param ragContext 可选的 RAG 检索上下文，由后端注入系统提示词
+ * @param messages     完整对话历史
+ * @param onToken      每接收到一个 token 片段时的回调
+ * @param signal       AbortController.signal，用于取消请求
+ * @param config       可选的模型参数覆盖（温度、最大输出等）
+ * @param ragContext   可选的 RAG 检索上下文，由后端注入系统提示词
+ * @param blogOwnerId  子域名游客场景下博主的 userId，后端据此加载博主的模型配置
  * @returns 完整的回复文本
  */
 export async function sendChatMessageStream(
@@ -31,6 +32,7 @@ export async function sendChatMessageStream(
   signal?: AbortSignal,
   config?: ChatModelConfig,
   ragContext?: string,
+  blogOwnerId?: number,
 ): Promise<string> {
   // 从 request 模块获取内存中的 access token，确保鉴权与 axios 实例一致
   const { getAccessToken } = await import('./request')
@@ -47,6 +49,7 @@ export async function sendChatMessageStream(
       messages,
       ...(config ? { config } : {}),
       ...(ragContext ? { context: ragContext } : {}),
+      ...(blogOwnerId ? { blogOwnerId } : {}),
     }),
     signal,
   })

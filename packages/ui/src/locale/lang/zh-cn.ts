@@ -181,6 +181,9 @@ export const zhCn = {
     readProgress: {
       label: '阅读进度',
     },
+    progressBar: {
+      loading: '加载中',
+    },
     card: {
       collapseExpand: '折叠/展开',
     },

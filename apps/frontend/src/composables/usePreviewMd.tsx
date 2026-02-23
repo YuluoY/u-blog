@@ -113,10 +113,11 @@ export const usePreviewMd = ({
 
       return () => (
         <MdPreview 
-          key={`preview-${route.params.id}-${content.value.length}-${previewTheme.value}`}
+          key={`preview-${route.params.id}-${content.value.length}`}
           id={id} 
           modelValue={content.value}
           theme={previewTheme.value}
+          codeStyleReverse={false}
         />
       )
     }

@@ -140,8 +140,8 @@ const emit = defineEmits<{
     font-weight: 500;
 
     &--pinned {
-      background: var(--u-primary-2, #e8f4ff);
-      color: var(--u-primary-0, #1890ff);
+      background: var(--u-primary);
+      color: #fff;
     }
 
     &--hot {

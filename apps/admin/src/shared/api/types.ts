@@ -13,4 +13,5 @@ export interface LoginRes {
   username: string
   role?: string
   namec?: string
+  token?: string
 }

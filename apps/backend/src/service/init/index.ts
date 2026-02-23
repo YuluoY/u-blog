@@ -1,10 +1,13 @@
 import { DataSource } from 'typeorm'
-import { CTable, CPageBlockType, CUserRole, CArticleStatus } from '@u-blog/model'
+import { CTable, CPageBlockType, CUserRole, CArticleStatus, CPermission, CPermissionAction } from '@u-blog/model'
 import { Users } from '@/module/schema/Users'
 import { Article } from '@/module/schema/Article'
 import { Category } from '@/module/schema/Category'
 import { Tag } from '@/module/schema/Tag'
 import { PageBlock } from '@/module/schema/PageBlock'
+import { Role } from '@/module/schema/Role'
+import { Permission } from '@/module/schema/Permission'
+import { Route } from '@/module/schema/Route'
 import { encrypt } from '@/utils'
 import { getRandomString } from '@u-blog/utils'
 import { createCategory, createTag } from '@u-blog/model'
@@ -67,32 +70,180 @@ function generateChineseMarkdown(targetLength: number): string {
   return '# 正文\n\n' + parts.join('').slice(0, targetLength)
 }
 
+/* ====================================================================
+ *  RBAC 种子数据：角色 / 权限 / 路由
+ * ==================================================================== */
+
+/** 默认权限种子 */
+const DEFAULT_PERMISSIONS = [
+  // --- 菜单权限 ---
+  { name: '仪表盘', code: 'menu:dashboard', type: CPermission.MENU, action: CPermissionAction.READ, resource: '/dashboard', desc: '仪表盘菜单' },
+  { name: '文章管理', code: 'menu:articles', type: CPermission.MENU, action: CPermissionAction.READ, resource: '/articles', desc: '文章管理菜单' },
+  { name: '分类管理', code: 'menu:categories', type: CPermission.MENU, action: CPermissionAction.READ, resource: '/categories', desc: '分类管理菜单' },
+  { name: '标签管理', code: 'menu:tags', type: CPermission.MENU, action: CPermissionAction.READ, resource: '/tags', desc: '标签管理菜单' },
+  { name: '评论管理', code: 'menu:comments', type: CPermission.MENU, action: CPermissionAction.READ, resource: '/comments', desc: '评论管理菜单' },
+  { name: '用户管理', code: 'menu:users', type: CPermission.MENU, action: CPermissionAction.READ, resource: '/users', desc: '用户管理菜单' },
+  { name: '媒体管理', code: 'menu:media', type: CPermission.MENU, action: CPermissionAction.READ, resource: '/media', desc: '媒体管理菜单' },
+  { name: '友链管理', code: 'menu:friend-links', type: CPermission.MENU, action: CPermissionAction.READ, resource: '/friend-links', desc: '友链管理菜单' },
+  { name: '设置', code: 'menu:settings', type: CPermission.MENU, action: CPermissionAction.READ, resource: '/settings', desc: '设置菜单' },
+  { name: '关于页区块', code: 'menu:about-blocks', type: CPermission.MENU, action: CPermissionAction.READ, resource: '/about-blocks', desc: '关于页区块菜单' },
+  { name: '数据分析', code: 'menu:analytics', type: CPermission.MENU, action: CPermissionAction.READ, resource: '/analytics', desc: '数据分析菜单' },
+  { name: '角色管理', code: 'menu:roles', type: CPermission.MENU, action: CPermissionAction.READ, resource: '/roles', desc: '角色管理菜单' },
+  { name: '权限管理', code: 'menu:permissions', type: CPermission.MENU, action: CPermissionAction.READ, resource: '/permissions', desc: '权限管理菜单' },
+  { name: '路由管理', code: 'menu:routes', type: CPermission.MENU, action: CPermissionAction.READ, resource: '/routes', desc: '路由管理菜单' },
+  { name: '小惠对话', code: 'menu:xiaohui', type: CPermission.MENU, action: CPermissionAction.READ, resource: '/xiaohui', desc: '小惠 AI 对话管理菜单' },
+  // --- API 权限 ---
+  { name: '文章创建', code: 'api:article:create', type: CPermission.API, action: CPermissionAction.CREATE, resource: 'article', desc: '创建文章' },
+  { name: '文章编辑', code: 'api:article:update', type: CPermission.API, action: CPermissionAction.UPDATE, resource: 'article', desc: '编辑文章' },
+  { name: '文章删除', code: 'api:article:delete', type: CPermission.API, action: CPermissionAction.DELETE, resource: 'article', desc: '删除文章' },
+  { name: '评论删除', code: 'api:comment:delete', type: CPermission.API, action: CPermissionAction.DELETE, resource: 'comment', desc: '删除评论' },
+  { name: '用户管理', code: 'api:user:update', type: CPermission.API, action: CPermissionAction.UPDATE, resource: 'users', desc: '编辑用户信息' },
+  { name: '设置写入', code: 'api:setting:update', type: CPermission.API, action: CPermissionAction.UPDATE, resource: 'setting', desc: '修改系统设置' },
+  { name: '媒体上传', code: 'api:media:create', type: CPermission.API, action: CPermissionAction.CREATE, resource: 'media', desc: '上传媒体文件' },
+  { name: '友链审核', code: 'api:friend-link:update', type: CPermission.API, action: CPermissionAction.UPDATE, resource: 'friend_link', desc: '审核友链申请' },
+  // --- 按钮权限 ---
+  { name: '批量删除', code: 'btn:batch-delete', type: CPermission.BUTTON, action: CPermissionAction.DELETE, resource: '*', desc: '批量删除按钮' },
+  { name: '数据导出', code: 'btn:export', type: CPermission.BUTTON, action: CPermissionAction.READ, resource: '*', desc: '数据导出按钮' },
+] as const
+
+/** 默认角色种子及其权限绑定（通过 code 引用权限） */
+const DEFAULT_ROLES: Array<{ name: string; desc: string; permissionCodes: string[] }> = [
+  {
+    name: CUserRole.SUPER_ADMIN,
+    desc: '超级管理员，拥有所有权限',
+    permissionCodes: DEFAULT_PERMISSIONS.map(p => p.code), // 所有权限
+  },
+  {
+    name: CUserRole.ADMIN,
+    desc: '管理员，拥有内容管理和审核权限',
+    permissionCodes: [
+      'menu:dashboard', 'menu:articles', 'menu:categories', 'menu:tags',
+      'menu:comments', 'menu:users', 'menu:media', 'menu:friend-links',
+      'menu:settings', 'menu:about-blocks', 'menu:analytics', 'menu:xiaohui',
+      'api:article:create', 'api:article:update', 'api:article:delete',
+      'api:comment:delete', 'api:user:update', 'api:setting:update',
+      'api:media:create', 'api:friend-link:update',
+      'btn:batch-delete', 'btn:export',
+    ],
+  },
+  {
+    name: CUserRole.USER,
+    desc: '普通用户，拥有基础浏览和发布权限',
+    permissionCodes: [
+      'menu:dashboard',
+      'api:article:create', 'api:article:update',
+      'api:media:create',
+    ],
+  },
+]
+
+/** 默认前端路由种子 */
+const DEFAULT_ROUTES = [
+  { name: 'home',     path: '/home',       title: '首页',     icon: 'HomeOutlined',    isKeepAlive: true,  isAffix: true,  isExact: false, isProtected: false, isHero: false, isLeftSide: true,  isRightSide: true  },
+  { name: 'archive',  path: '/archive',    title: '归档',     icon: 'ContainerOutlined', isKeepAlive: true,  isAffix: true,  isExact: false, isProtected: false, isHero: false, isLeftSide: true,  isRightSide: true  },
+  { name: 'about',    path: '/about',      title: '关于',     icon: 'UserOutlined',    isKeepAlive: true,  isAffix: true,  isExact: false, isProtected: false, isHero: false, isLeftSide: false, isRightSide: false },
+  { name: 'message',  path: '/message',    title: '留言',     icon: 'MessageOutlined', isKeepAlive: true,  isAffix: true,  isExact: false, isProtected: false, isHero: false, isLeftSide: false, isRightSide: false },
+  { name: 'links',    path: '/links',      title: '友链',     icon: 'LinkOutlined',    isKeepAlive: true,  isAffix: true,  isExact: false, isProtected: false, isHero: false, isLeftSide: false, isRightSide: false },
+  { name: 'chat',     path: '/chat',       title: '助手',     icon: 'RobotOutlined',   isKeepAlive: true,  isAffix: true,  isExact: false, isProtected: true,  isHero: false, isLeftSide: false, isRightSide: false },
+  { name: 'read',     path: '/read/:id',   title: '阅读',     icon: 'ReadOutlined',    isKeepAlive: false, isAffix: false, isExact: false, isProtected: false, isHero: false, isLeftSide: false, isRightSide: false },
+  { name: 'userBlog', path: '/@:username', title: '用户博客', icon: 'TeamOutlined',    isKeepAlive: false, isAffix: false, isExact: false, isProtected: false, isHero: false, isLeftSide: false, isRightSide: false },
+  { name: 'login',    path: '/login',      title: '登录',     icon: 'LoginOutlined',   isKeepAlive: false, isAffix: false, isExact: false, isProtected: false, isHero: false, isLeftSide: false, isRightSide: false },
+  { name: 'write',    path: '/write',      title: '写作',     icon: 'EditOutlined',    isKeepAlive: false, isAffix: false, isExact: false, isProtected: true,  isHero: false, isLeftSide: false, isRightSide: false },
+]
+
+/**
+ * 初始化 RBAC 种子数据（角色、权限、路由）
+ * 幂等操作：已存在则跳过
+ */
+export async function initRBAC(dataSource: DataSource): Promise<void> {
+  console.log('\n🔐 开始初始化 RBAC 种子数据...')
+
+  try {
+    const permRepo = dataSource.getRepository(Permission)
+    const roleRepo = dataSource.getRepository(Role)
+    const routeRepo = dataSource.getRepository(Route)
+
+    // 1. 权限
+    console.log('  🔑 初始化权限...')
+    const permissionMap = new Map<string, Permission>()
+    for (const p of DEFAULT_PERMISSIONS) {
+      let existing = await permRepo.findOne({ where: { code: p.code } })
+      if (!existing) {
+        existing = permRepo.create({
+          name: p.name,
+          code: p.code,
+          type: p.type,
+          action: p.action,
+          resource: p.resource,
+          desc: p.desc,
+        })
+        existing = await permRepo.save(existing)
+        console.log(`    ✅ 权限创建: ${p.code}`)
+      } else {
+        console.log(`    ℹ️  权限已存在: ${p.code}`)
+      }
+      permissionMap.set(p.code, existing)
+    }
+
+    // 2. 角色（含权限绑定）
+    console.log('  👥 初始化角色...')
+    for (const r of DEFAULT_ROLES) {
+      let existing = await roleRepo.findOne({ where: { name: r.name }, relations: ['permissions'] })
+      if (!existing) {
+        const perms = r.permissionCodes
+          .map(code => permissionMap.get(code))
+          .filter(Boolean) as Permission[]
+        existing = roleRepo.create({ name: r.name, desc: r.desc })
+        existing.permissions = perms
+        await roleRepo.save(existing)
+        console.log(`    ✅ 角色创建: ${r.name}（${perms.length} 项权限）`)
+      } else {
+        console.log(`    ℹ️  角色已存在: ${r.name}`)
+      }
+    }
+
+    // 3. 路由
+    console.log('  🗺️  初始化路由...')
+    for (const rt of DEFAULT_ROUTES) {
+      let existing = await routeRepo.findOne({ where: { name: rt.name } })
+      if (!existing) {
+        existing = routeRepo.create(rt)
+        await routeRepo.save(existing)
+        console.log(`    ✅ 路由创建: ${rt.name} (${rt.path})`)
+      } else {
+        console.log(`    ℹ️  路由已存在: ${rt.name}`)
+      }
+    }
+
+    console.log('✨ RBAC 种子数据初始化完成\n')
+  } catch (error) {
+    console.error('❌ 初始化 RBAC 种子数据失败:', error)
+  }
+}
+
 /**
  * 默认用户数据列表
+ * huyongle 为站长（super_admin），初始化后游客默认看到此用户的数据
  */
 const DEFAULT_USERS_DATA = [
   {
-    username: 'superadmin',
+    username: 'huyongle',
     password: '123456',
-    email: 'superadmin@u-blog.com',
-    namec: '超级管理员',
-    avatar: 'https://avatars.githubusercontent.com/u/29045874',
-    bio: '系统超级管理员，拥有所有权限',
+    email: '568055454@qq.com',
+    namec: '雨落',
+    avatar: 'https://q1.qlogo.cn/g?b=qq&nk=568055454&s=100',
+    bio: '全栈开发者，开源爱好者，记录技术与生活',
     role: CUserRole.SUPER_ADMIN,
-    location: '北京市',
+    location: '深圳市',
     ip: '127.0.0.1',
     website: {
       url: 'https://u-blog.com/',
-      title: 'U-Blog 官方网站',
+      title: 'U-Blog',
       desc: '一个现代化的博客系统',
-      avatar: 'https://avatars.githubusercontent.com/u/29045874'
+      avatar: 'https://q1.qlogo.cn/g?b=qq&nk=568055454&s=100'
     },
     socials: [
-      { name: 'GitHub', icon: 'https://github.com/favicon.ico', url: 'https://github.com/u-blog' },
-      { name: 'X', icon: '', url: 'https://x.com/u-blog' },
-      { name: 'Weibo', icon: '', url: 'https://weibo.com/u-blog' },
-      { name: 'Zhihu', icon: '', url: 'https://www.zhihu.com/people/u-blog' },
-      { name: 'LinkedIn', icon: '', url: 'https://www.linkedin.com/company/u-blog' },
+      { name: 'GitHub', icon: 'https://github.com/favicon.ico', url: 'https://github.com/huyongle' },
     ]
   },
   {
@@ -113,34 +264,28 @@ const DEFAULT_USERS_DATA = [
     },
     socials: [
       { name: 'GitHub', icon: 'https://github.com/favicon.ico', url: 'https://github.com/admin' },
-      { name: 'X', icon: '', url: 'https://x.com/admin' },
-      { name: 'Weibo', icon: '', url: 'https://weibo.com/admin' },
     ]
   },
   {
-    username: 'huyongle',
+    username: 'testuser',
     password: '123456',
-    email: '568055454@qq.com',
-    namec: '雨落',
-    avatar: 'https://avatars.githubusercontent.com/u/8129137',
-    bio: '开发者，电影爱好者，哲学家',
+    email: 'testuser@u-blog.com',
+    namec: '测试用户',
+    avatar: 'https://avatars.githubusercontent.com/u/583231',
+    bio: '普通用户，喜欢阅读和写作',
     role: CUserRole.USER,
-    location: '深圳市',
-    ip: '247.255.30.201',
+    location: '北京市',
+    ip: '127.0.0.3',
     website: {
-      url: 'https://unlined-developing.net/',
-      title: '年度啊相反教师平坦撕哇哦杏子爬百般',
-      desc: 'consectetur',
-      avatar: 'https://avatars.githubusercontent.com/u/8129137'
+      url: 'https://testuser.u-blog.com/',
+      title: '测试博客',
+      desc: '我的个人博客',
+      avatar: 'https://avatars.githubusercontent.com/u/583231'
     },
     socials: [
-      {
-        name: '硕雨涵',
-        icon: 'https://avatars.githubusercontent.com/u/8129137',
-        url: 'https://new-blowgun.biz/'
-      }
+      { name: 'GitHub', icon: 'https://github.com/favicon.ico', url: 'https://github.com/testuser' },
     ]
-  }
+  },
 ]
 
 /**

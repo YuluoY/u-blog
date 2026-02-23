@@ -22,10 +22,10 @@
           :class="[
             'layout-base__main',
             {
-              'layout-base__main--chat': isChatRoute,
+              'layout-base__main--chat': isChatRoute || isXiaohuiRoute,
               'layout-base__main--about': isAboutRoute,
               'layout-base__main--sidebar-collapsed':
-              sidebarStore.collapsed && !isWriteRoute && !isChatRoute,
+              sidebarStore.collapsed && !isWriteRoute && !isChatRoute && !isXiaohuiRoute,
             },
           ]"
         >
@@ -49,6 +49,20 @@
     <u-region region="bottom" class="layout-base__bottom">
       <BottomInfo />
     </u-region>
+
+    <!-- 全局请求加载进度条 -->
+    <u-progress-bar ref="progressBarRefEl" />
+
+    <!-- 置顶按钮：target 指向实际滚动容器，默认位置在 footer 上方 60px，可拖拽 -->
+    <u-back-top
+      :visibility-height="300"
+      target=".layout-base__main"
+      :bottom="108"
+      draggable
+    />
+
+    <!-- 移动端底部导航栏（⚤767px 可见，替代被隐藏的 IconBar） -->
+    <MobileBottomNav />
   </u-layout>
 </template>
 
@@ -56,12 +70,15 @@
 import { pxToRem } from '@u-blog/utils'
 import HeadNav from '@/components/HeadNav.vue'
 import BottomInfo from '@/components/BottomInfo.vue'
+import MobileBottomNav from '@/components/MobileBottomNav.vue'
 import IconBar from '@/components/AppShell/IconBar.vue'
 import SidePanel from '@/components/AppShell/SidePanel.vue'
 import PopoverPanel from '@/components/AppShell/PopoverPanel.vue'
 import SettingsDrawer from '@/components/AppShell/SettingsDrawer.vue'
 import { useSidebarStore } from '@/stores/sidebar'
 import { useAppStore } from '@/stores/app'
+import { useProgressBar, registerProgressBar } from '@/composables/useProgressBar'
+import type { UProgressBarExposes } from '@u-blog/ui'
 import { HEADER_HEIGHT_PX, FOOTER_HEIGHT_PX, ICON_BAR_WIDTH_PX, SIDE_PANEL_WIDTH_PX } from '@/constants/layout'
 import { useRoute } from 'vue-router'
 
@@ -73,7 +90,14 @@ const route = useRoute()
 const sidebarStore = useSidebarStore()
 const appStore = useAppStore()
 
+/* ---- 全局加载进度条：注册实例到 composable，供 axios 拦截器调用 ---- */
+const progressBarRefEl = ref<UProgressBarExposes | null>(null)
+watch(progressBarRefEl, (instance) => {
+  registerProgressBar(instance)
+}, { immediate: true })
+
 const isChatRoute = computed(() => route.name === 'chat')
+const isXiaohuiRoute = computed(() => route.name === 'xiaohui')
 const isAboutRoute = computed(() => route.name === 'about')
 const isWriteRoute = computed(() => route.name === 'write')
 
@@ -210,13 +234,32 @@ const bodyOffsetStyle = computed(() => ({
   }
 }
 
-/* 响应式：小屏隐藏 Side Panel，主区始终占满，缩小 padding */
+/* 响应式：平板（≤992px）折叠侧边栏，Main 占满 */
+@media (max-width: 992px) {
+  .layout-base__side-panel-wrap {
+    display: none;
+  }
+  .layout-base__main {
+    flex: 1 1 0% !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+}
+
+/* 响应式：手机（≤767px）隐藏 IconBar + SidePanel，Main 全屏 */
 @media (max-width: 767px) {
+  .layout-base__icon-bar-wrap {
+    display: none;
+  }
   .layout-base__side-panel-wrap {
     display: none;
   }
   .layout-base__main {
     padding: 12px;
+    /* 底部留出移动导航栏高度 + 安全区域 */
+    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 12px);
     flex: 1 1 0% !important;
     width: 100% !important;
     max-width: none !important;

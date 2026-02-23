@@ -2,7 +2,15 @@
   <header class="head-nav" :style="{ height: navHeight }">
     <!-- 左：Logo + 站点名 -->
     <div class="head-nav__brand" @click="router.push('/')">
-      <img class="head-nav__logo" :src="logo" alt="" />
+      <!-- 有 logo URL 时显示图片，否则显示 SVG 图标 -->
+      <img v-if="logo" class="head-nav__logo" :src="logo" alt="" />
+      <span v-else class="head-nav__logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="24" height="24">
+          <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M2 17l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
       <u-text class="head-nav__site-name" :ellipsis="true">{{ siteName }}</u-text>
     </div>
     <!-- 中：路由导航 -->
@@ -23,6 +31,29 @@
         </template>
       </u-menu>
     </nav>
+    <!-- 移动端汉堡菜单按钮 -->
+    <button class="head-nav__hamburger" :aria-label="t('headNav.ariaToggleMenu')" @click="mobileMenuOpen = !mobileMenuOpen">
+      <span class="head-nav__hamburger-line" :class="{ 'is-open': mobileMenuOpen }" />
+    </button>
+
+    <!-- 移动端导航抽屉 -->
+    <Transition name="mobile-nav-fade">
+      <div v-show="mobileMenuOpen" class="head-nav__mobile-overlay" @click.self="mobileMenuOpen = false">
+        <nav class="head-nav__mobile-drawer" :aria-label="t('headNav.ariaMainNav')">
+          <router-link
+            v-for="r in visibleRoutes"
+            :key="r.path"
+            :to="r.path"
+            class="head-nav__mobile-link"
+            :class="{ 'is-active': route.path === r.path }"
+            @click="mobileMenuOpen = false"
+          >
+            {{ navTitle(r) }}
+          </router-link>
+        </nav>
+      </div>
+    </Transition>
+
     <!-- 右：认证区 -->
     <div class="head-nav__actions">
       <!-- 已登录：头像 + 用户名 → 悬浮下拉菜单 -->
@@ -66,9 +97,23 @@
               </div>
               <div class="head-nav__dropdown-divider" />
               <!-- 菜单项 -->
+              <div class="head-nav__dropdown-item" @click="handleGoMyPage">
+                <u-icon icon="fa-solid fa-house-user" />
+                <span>{{ t('profile.myHomepage') }}</span>
+              </div>
               <div class="head-nav__dropdown-item" @click="handleEditProfile">
                 <u-icon icon="fa-solid fa-user-pen" />
                 <span>{{ t('profile.editProfile') }}</span>
+              </div>
+              <!-- 分享我的博客 -->
+              <div class="head-nav__dropdown-item" @click="handleCopyShareLink">
+                <u-icon icon="fa-solid fa-share-nodes" />
+                <span>{{ t('profile.shareBlog') }}</span>
+              </div>
+              <!-- 管理后台入口（仅 admin / super_admin 可见） -->
+              <div v-if="isAdmin" class="head-nav__dropdown-item" @click="handleGoAdmin">
+                <u-icon icon="fa-solid fa-gear" />
+                <span>{{ t('profile.adminPanel') }}</span>
               </div>
               <div class="head-nav__dropdown-divider" />
               <div class="head-nav__dropdown-item head-nav__dropdown-item--danger" @click="handleLogout">
@@ -96,13 +141,15 @@
 import { useI18n } from 'vue-i18n'
 import { UMenu, UMenuItem, USubMenu } from '@/components/Menu'
 import ProfileEditModal from '@/components/ProfileEditModal.vue'
-import { useRouter, type RouteRecordRaw } from 'vue-router'
+import { useRouter, useRoute, type RouteRecordRaw } from 'vue-router'
 import { useHeaderStore } from '@/stores/header'
 import { HEADER_HEIGHT_PX } from '@/constants/layout'
 import { useAppStore } from '@/stores/app'
 import { useUserStore } from '@/stores/model/user'
+import { useBlogOwnerStore } from '@/stores/blogOwner'
 import { pxToRem } from '@u-blog/utils'
 import { useClickOutside } from '@u-blog/composables'
+import { UMessageFn } from '@u-blog/ui'
 
 defineOptions({
   name: 'HeadNav',
@@ -112,11 +159,19 @@ const { t } = useI18n({ useScope: 'global' })
 const headerStore = useHeaderStore()
 const appStore = useAppStore()
 const userStore = useUserStore()
+const blogOwnerStore = useBlogOwnerStore()
 const router = useRouter()
+const route = useRoute()
 
 const isLoggedIn = computed(() => userStore.isLoggedIn)
+/** 当前用户是否拥有管理后台权限（admin / super_admin） */
+const isAdmin = computed(() => {
+  const role = userStore.user?.role
+  return role === 'admin' || role === 'super_admin'
+})
 const showDropdown = ref(false)
 const profileModalVisible = ref(false)
+const mobileMenuOpen = ref(false)
 
 // 点击用户菜单外部时关闭下拉
 const userMenuRef = ref<HTMLElement | null>(null)
@@ -124,11 +179,23 @@ useClickOutside(userMenuRef, () => {
   showDropdown.value = false
 })
 
-/** 已登录时显示全部导航；未登录时隐藏需要认证的路由（如撰写） */
+/**
+ * 导航路由过滤：
+ * - 需认证路由（write / chat）对未登录用户隐藏
+ * - 例外：子域名「完整模式」允许游客看到 chat 导航
+ * - write 始终需要登录（游客无法创作）
+ */
 const visibleRoutes = computed(() =>
   appStore.routes?.filter((v: RouteRecordRaw) => {
     if (!v.name || !v.meta?.isAffix) return false
-    if (v.meta?.requiresAuth && !isLoggedIn.value) return false
+    if (v.meta?.requiresAuth && !isLoggedIn.value) {
+      // 子域名完整模式：允许游客看到 chat 入口
+      const routeName = String(v.name)
+      if (blogOwnerStore.isSubdomainMode && !blogOwnerStore.isReadOnly && routeName === 'chat') {
+        return true
+      }
+      return false
+    }
     return true
   })
 )
@@ -155,6 +222,37 @@ async function handleLogout() {
 function handleEditProfile() {
   showDropdown.value = false
   profileModalVisible.value = true
+}
+
+/** 跳转到我的主页 */
+function handleGoMyPage() {
+  showDropdown.value = false
+  const username = userStore.user?.username
+  if (username) {
+    router.push(`/@${username}`)
+  }
+}
+
+/** 复制分享链接到剪贴板（子域名格式） */
+async function handleCopyShareLink() {
+  showDropdown.value = false
+  const username = userStore.user?.username
+  if (!username) return
+  const shareUrl = blogOwnerStore.buildShareUrl(username)
+  try {
+    await navigator.clipboard.writeText(shareUrl)
+    UMessageFn({ type: 'success', message: t('profile.shareLinkCopied') })
+  } catch {
+    UMessageFn({ type: 'error', message: t('profile.shareLinkFailed') })
+  }
+}
+
+/** 管理后台入口（dev: http://localhost:5174，prod 可通过 VITE_ADMIN_URL 配置） */
+const ADMIN_URL = import.meta.env.VITE_ADMIN_URL || 'http://localhost:5174'
+
+function handleGoAdmin() {
+  showDropdown.value = false
+  window.open(ADMIN_URL, '_blank')
 }
 </script>
 
@@ -187,6 +285,19 @@ function handleEditProfile() {
     height: 3.2rem;
     border-radius: 50%;
     object-fit: cover;
+  }
+
+  /* 无 logo 时的 SVG 图标兜底 */
+  &__logo-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.2rem;
+    height: 3.2rem;
+    border-radius: 50%;
+    background: var(--u-primary);
+    color: #fff;
+    flex-shrink: 0;
   }
 
   &__site-name {
@@ -379,6 +490,140 @@ function handleEditProfile() {
   &__login-btn {
     font-size: 1.3rem;
   }
+
+  /* 汉堡菜单按钮：仅移动端可见 */
+  &__hamburger {
+    display: none;
+    flex-shrink: 0;
+    width: 3.6rem;
+    height: 3.6rem;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  &__hamburger-line {
+    display: block;
+    width: 2rem;
+    height: 2px;
+    background-color: var(--u-text-1);
+    position: relative;
+    transition: background-color 0.3s;
+
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background-color: var(--u-text-1);
+      transition: transform 0.3s;
+    }
+    &::before { top: -6px; }
+    &::after { top: 6px; }
+
+    /* 展开态：X 号 */
+    &.is-open {
+      background-color: transparent;
+      &::before { transform: translateY(6px) rotate(45deg); }
+      &::after { transform: translateY(-6px) rotate(-45deg); }
+    }
+  }
+
+  /* 移动端导航遮罩 */
+  &__mobile-overlay {
+    display: none;
+  }
+}
+
+/* ---- 移动端响应式 ≤ 767px ---- */
+@media (max-width: 767px) {
+  .head-nav {
+    padding: 0 12px;
+
+    /* 桌面导航隐藏 */
+    &__nav {
+      display: none !important;
+    }
+
+    /* 汉堡按钮可见 */
+    &__hamburger {
+      display: flex;
+      order: -1;
+      margin-right: 8px;
+    }
+
+    /* 品牌区缩小 */
+    &__logo {
+      width: 2.4rem;
+      height: 2.4rem;
+    }
+    &__site-name {
+      font-size: 1.3rem;
+      max-width: 8rem;
+    }
+
+    /* 用户名隐藏，仅保留头像 */
+    &__user {
+      display: none;
+    }
+    &__caret {
+      display: none;
+    }
+
+    /* 移动端导航遮罩 */
+    &__mobile-overlay {
+      display: block;
+      position: fixed;
+      top: v-bind(navHeight);
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: 99;
+    }
+
+    /* 移动端导航抽屉 */
+    &__mobile-drawer {
+      background: var(--u-background-1);
+      border-bottom: 1px solid var(--u-border-1);
+      box-shadow: var(--u-shadow-3, 0 8px 24px rgba(0, 0, 0, 0.12));
+      padding: 8px 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    &__mobile-link {
+      display: block;
+      padding: 12px 24px;
+      font-size: 1.5rem;
+      color: var(--u-text-2);
+      text-decoration: none;
+      transition: background 0.15s, color 0.15s;
+
+      &:hover,
+      &.is-active {
+        background: var(--u-background-2);
+        color: var(--u-primary-0);
+        font-weight: 600;
+      }
+    }
+  }
+}
+
+/* 移动端导航过渡动画 */
+.mobile-nav-fade-enter-active,
+.mobile-nav-fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+.mobile-nav-fade-enter-from,
+.mobile-nav-fade-leave-to {
+  opacity: 0;
 }
 
 /* 下拉面板过渡动画 */
@@ -386,7 +631,6 @@ function handleEditProfile() {
 .dropdown-fade-leave-active {
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
-
 .dropdown-fade-enter-from,
 .dropdown-fade-leave-to {
   opacity: 0;

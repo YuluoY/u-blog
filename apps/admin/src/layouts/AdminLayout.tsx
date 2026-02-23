@@ -12,15 +12,21 @@ import {
   PictureOutlined,
   SettingOutlined,
   ReadOutlined,
+  BarChartOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   LogoutOutlined,
   GlobalOutlined,
   BulbOutlined,
   MoonOutlined,
+  LinkOutlined,
+  SafetyCertificateOutlined,
+  KeyOutlined,
+  NodeIndexOutlined,
+  RobotOutlined,
 } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
-import { useAuth } from '../features/auth/AuthContext'
+import { useAuth, FRONTEND_LOGIN_URL } from '../features/auth/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { setStoredLang, type Lang } from '../app/i18n'
 import i18n from '../app/i18n'
@@ -35,8 +41,14 @@ const MENU_KEYS = [
   '/tags',
   '/comments',
   '/media',
+  '/friend-links',
   '/settings',
   '/about-blocks',
+  '/analytics',
+  '/roles',
+  '/permissions',
+  '/routes',
+  '/xiaohui',
 ] as const
 const MENU_ICONS = [
   DashboardOutlined,
@@ -46,8 +58,14 @@ const MENU_ICONS = [
   TagsOutlined,
   CommentOutlined,
   PictureOutlined,
+  LinkOutlined,
   SettingOutlined,
   ReadOutlined,
+  BarChartOutlined,
+  SafetyCertificateOutlined,
+  KeyOutlined,
+  NodeIndexOutlined,
+  RobotOutlined,
 ]
 const MENU_TRANSLATION_KEYS = [
   'menu.dashboard',
@@ -57,8 +75,14 @@ const MENU_TRANSLATION_KEYS = [
   'menu.tags',
   'menu.comments',
   'menu.media',
+  'menu.friendLinks',
   'menu.settings',
   'menu.aboutBlocks',
+  'menu.analytics',
+  'menu.roles',
+  'menu.permissions',
+  'menu.routes',
+  'menu.xiaohui',
 ] as const
 
 export default function AdminLayout() {
@@ -86,7 +110,8 @@ export default function AdminLayout() {
 
   const handleLogout = () => {
     logout()
-    navigate('/login')
+    // 登出后返回前端首页（不传 returnUrl，避免用户反复重定向）
+    window.location.href = FRONTEND_LOGIN_URL.replace('/login', '')
   }
 
   const langOptions = [

@@ -1,47 +1,34 @@
 import type { IActivityLog } from '../schema/activityLog'
+import { CActivityType } from '../schema/activityLog'
 import { faker } from '@faker-js/faker/locale/zh_CN'
 import { createUser } from './user'
 
+const ACTIVITY_TYPES = Object.values(CActivityType)
+
 /**
- * 创建操作日志
- * @returns 操作日志
+ * 创建模拟行为日志
+ * @returns 行为日志
  * @example
  * createActivityLog()
  */
-export const createActivityLog = (): IActivityLog =>
-{
-  const actions = [
-    '登录',
-    '登出',
-    '创建文章',
-    '更新文章',
-    '删除文章',
-    '创建评论',
-    '删除评论',
-    '点赞文章',
-    '取消点赞',
-    '关注用户',
-    '取消关注',
-    '上传文件',
-    '删除文件',
-    '修改设置',
-    '查看文章',
-    '搜索文章'
-  ]
-
+export const createActivityLog = (): IActivityLog => {
   return {
     id: faker.number.int({ min: 1, max: 1000000 }),
-    userId: faker.number.int({ min: 1, max: 1000000 }),
-    user: createUser(),
-    action: faker.helpers.arrayElement(actions),
-    createdAt: faker.date.between({
-      from: '2020-01-01',
-      to: new Date()
-    }),
-    updatedAt: faker.date.between({
-      from: '2020-01-01',
-      to: new Date()
-    })
+    type: faker.helpers.arrayElement(ACTIVITY_TYPES),
+    userId: faker.datatype.boolean() ? faker.number.int({ min: 1, max: 100 }) : null,
+    user: faker.datatype.boolean() ? createUser() : null,
+    sessionId: faker.string.alphanumeric(16),
+    ip: faker.internet.ip(),
+    location: faker.location.city(),
+    browser: faker.helpers.arrayElement(['Chrome 120', 'Firefox 121', 'Safari 17', 'Edge 120']),
+    device: faker.helpers.arrayElement(['Desktop', 'Mobile', 'Tablet']),
+    os: faker.helpers.arrayElement(['Windows 10', 'macOS', 'Android 14', 'iOS 17', 'Linux']),
+    path: faker.internet.url(),
+    referer: faker.datatype.boolean() ? faker.internet.url() : null,
+    metadata: null,
+    duration: faker.datatype.boolean() ? faker.number.int({ min: 1000, max: 300000 }) : null,
+    createdAt: faker.date.between({ from: '2024-01-01', to: new Date() }),
+    updatedAt: faker.date.between({ from: '2024-01-01', to: new Date() }),
   }
 }
 

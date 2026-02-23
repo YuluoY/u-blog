@@ -1,0 +1,95 @@
+/* ---- UProgressBar 请求加载进度条 ---- */
+
+/* 颜色映射：跟随主题 CSS 变量 */
+$progress-bar-colors: (
+  'primary': var(--u-primary, #667eea),
+  'success': var(--u-success, #67c23a),
+  'warning': var(--u-warning, #e6a23c),
+  'danger': var(--u-danger, #f56c6c),
+  'info': var(--u-info, #909399),
+);
+
+.u-progress-bar {
+  width: 100%;
+  overflow: hidden;
+  pointer-events: none;
+
+  /* 固定定位 */
+  &--fixed {
+    position: fixed;
+    left: 0;
+    right: 0;
+
+    &.u-progress-bar--top {
+      top: 0;
+    }
+
+    &.u-progress-bar--bottom {
+      bottom: 0;
+    }
+  }
+
+  /* 进度条主体 */
+  &__bar {
+    height: 100%;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: width, transform;
+
+    /* 各类型颜色 */
+    @each $name, $color in $progress-bar-colors {
+      &--#{$name} {
+        background-color: $color;
+      }
+    }
+
+    /* 不确定模式动画 */
+    &--indeterminate {
+      width: 100% !important;
+      animation: u-progress-bar-indeterminate 1.8s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite;
+      transform-origin: left;
+    }
+  }
+
+  /* 右端光效 peg */
+  &__peg {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100%;
+    opacity: 1;
+
+    @each $name, $color in $progress-bar-colors {
+      &--#{$name} {
+        box-shadow: 0 0 10px $color, 0 0 5px $color;
+      }
+    }
+  }
+}
+
+/* 进出过渡 */
+.u-progress-bar-fade-enter-active {
+  transition: opacity 0.15s ease;
+}
+
+.u-progress-bar-fade-leave-active {
+  transition: opacity 0.4s ease;
+}
+
+.u-progress-bar-fade-enter-from,
+.u-progress-bar-fade-leave-to {
+  opacity: 0;
+}
+
+/* 不确定模式关键帧 */
+@keyframes u-progress-bar-indeterminate {
+  0% {
+    transform: scaleX(0) translateX(-100%);
+  }
+  40% {
+    transform: scaleX(0.4) translateX(0%);
+  }
+  100% {
+    transform: scaleX(0.5) translateX(100%);
+  }
+}

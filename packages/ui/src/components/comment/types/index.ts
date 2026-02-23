@@ -42,6 +42,32 @@ export function getQQAvatarUrl(email?: string | null): string | null {
   return `https://q1.qlogo.cn/g?b=qq&nk=${match[1]}&s=100`
 }
 
+/**
+ * 为游客生成确定性随机头像 URL（基于 DiceBear Avatars）
+ * 同一个 seed 始终产出同一头像，确保一致性
+ * @param seed - 用于生成头像的种子字符串（昵称、邮箱等）
+ * @returns 头像 URL
+ */
+export function getRandomAvatarUrl(seed: string): string {
+  const encoded = encodeURIComponent(seed.trim().toLowerCase())
+  return `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${encoded}`
+}
+
+/**
+ * 获取游客头像 URL：QQ 邮箱 → QQ 头像，其他 → DiceBear 随机头像
+ * @param email - 邮箱地址
+ * @param nickname - 游客昵称（作为兜底种子）
+ * @returns 头像 URL（始终有值）
+ */
+export function getGuestAvatarUrl(email?: string | null, nickname?: string | null): string {
+  // 优先使用 QQ 头像
+  const qqAvatar = getQQAvatarUrl(email)
+  if (qqAvatar) return qqAvatar
+  // 使用邮箱或昵称作为种子生成随机头像
+  const seed = email || nickname || 'anonymous'
+  return getRandomAvatarUrl(seed)
+}
+
 export interface UCommentItemProps {
   /** 单条评论数据 */
   comment: UCommentItemData

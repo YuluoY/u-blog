@@ -1,5 +1,5 @@
 <template>
-  <div class="auth-page" :class="{ 'is-register': !isLogin }">
+  <div class="auth-page" :class="{ 'is-register': !isLogin, 'is-light': isLightTheme }">
     <!-- ===== Mesh Gradient Aurora 背景 ===== -->
     <div class="auth-page__aurora">
       <div class="auth-page__aurora-orb auth-page__aurora-orb--1" />
@@ -218,11 +218,25 @@
           <!-- 分割线 + 切换 -->
           <footer class="auth-page__footer">
             <span class="auth-page__divider-line" />
-            <button class="auth-page__switch" @click="toggleMode">
+            <button class="auth-page__switch" :class="{ 'auth-page__switch--disabled': !isLogin && !registrationStatus.enabled }" @click="toggleMode">
               {{ isLogin ? t('auth.switchToRegister') : t('auth.switchToLogin') }}
             </button>
             <span class="auth-page__divider-line" />
           </footer>
+
+          <!-- 注册关闭提示（切换到注册模式后显示） -->
+          <Transition name="auth-toast">
+            <div v-if="!isLogin && !registrationStatus.enabled" class="auth-page__reg-disabled">
+              <div class="auth-page__reg-disabled-icon">
+                <u-icon icon="fa-solid fa-lock" size="2x" />
+              </div>
+              <p class="auth-page__reg-disabled-title">{{ t('auth.registrationClosedTitle') }}</p>
+              <p class="auth-page__reg-disabled-desc">{{ registrationStatus.reason || t('auth.registrationDisabled') }}</p>
+              <u-button type="primary" size="small" round @click="toggleMode">
+                {{ t('auth.switchToLogin') }}
+              </u-button>
+            </div>
+          </Transition>
         </div>
       </main>
     </div>
@@ -230,10 +244,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onBeforeUnmount } from 'vue'
+import { ref, reactive, computed, onBeforeUnmount, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/model/user'
+import { useArticleStore } from '@/stores/model/article'
+import { useAppStore } from '@/stores/app'
+import { getRegistrationStatus, type RegistrationStatus } from '@/api/request'
+import { CTheme } from '@u-blog/model'
 import type { UFormExposes, FormRules } from '@u-blog/ui'
 
 defineOptions({ name: 'LoginView' })
@@ -242,6 +260,10 @@ const { t } = useI18n({ useScope: 'global' })
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
+const appStore = useAppStore()
+
+/** 是否为亮色模式 */
+const isLightTheme = computed(() => appStore.theme !== CTheme.DARK)
 
 /* ---------- 状态 ---------- */
 const isLogin = ref(true)
@@ -251,6 +273,10 @@ const successMsg = ref('')
 const sendingCode = ref(false)
 const codeCooldown = ref(0)
 let cooldownTimer: ReturnType<typeof setInterval> | null = null
+
+/** 注册开放状态（后台控制） */
+const registrationStatus = ref<RegistrationStatus>({ enabled: true, reason: '' })
+const registrationChecked = ref(false)
 
 const loginFormRef = ref<UFormExposes | null>(null)
 const registerFormRef = ref<UFormExposes | null>(null)
@@ -307,13 +333,31 @@ function clearMessages() {
 }
 
 function toggleMode() {
+  // 切换到注册模式时检查注册状态
+  if (isLogin.value && !registrationStatus.value.enabled) {
+    flashError(registrationStatus.value.reason || t('auth.registrationDisabled'))
+    return
+  }
   isLogin.value = !isLogin.value
   clearMessages()
 }
 
 function redirectAfterAuth() {
+  // 管理后台重定向回跳：从 returnUrl 解析跨域目标
+  const returnUrl = route.query.returnUrl as string | undefined
+  if (returnUrl) {
+    const decoded = decodeURIComponent(returnUrl)
+    // 仅允许跳转到同域或 localhost 开发地址，防止开放重定向
+    if (decoded.startsWith('/') || decoded.startsWith(window.location.origin) || decoded.includes('localhost')) {
+      window.location.href = decoded
+      return
+    }
+  }
   const redirect = (route.query.redirect as string) || '/home'
   router.replace(redirect)
+  // 登录/注册后，userId 变化会影响 getFilterUserId() 的结果，
+  // 必须重新拉取文章列表以反映当前用户的数据视图
+  useArticleStore().qryArticleList()
 }
 
 /** 自动清除消息 */
@@ -392,6 +436,21 @@ async function handleRegister() {
     loading.value = false
   }
 }
+
+/** 获取注册开放状态 */
+async function checkRegistrationStatus() {
+  try {
+    registrationStatus.value = await getRegistrationStatus()
+  } catch {
+    registrationStatus.value = { enabled: false, reason: '无法检查注册状态，请稍后再试' }
+  } finally {
+    registrationChecked.value = true
+  }
+}
+
+onMounted(() => {
+  checkRegistrationStatus()
+})
 
 onBeforeUnmount(() => { if (cooldownTimer) clearInterval(cooldownTimer) })
 </script>
@@ -850,6 +909,52 @@ onBeforeUnmount(() => { if (cooldownTimer) clearInterval(cooldownTimer) })
     color: hsl(var(--_accent-2));
     text-shadow: 0 0 16px hsl(var(--_accent) / 0.5);
   }
+
+  &--disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+
+/* ---- 注册关闭提示 ---- */
+.auth-page__reg-disabled {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 3.2rem 2rem;
+  margin-top: 1.6rem;
+  border-radius: 1.6rem;
+  background: rgba(255, 80, 80, 0.06);
+  border: 1px solid rgba(255, 80, 80, 0.15);
+  backdrop-filter: blur(8px);
+}
+
+.auth-page__reg-disabled-icon {
+  width: 6.4rem;
+  height: 6.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 80, 80, 0.1);
+  color: hsl(0 75% 60%);
+  margin-bottom: 1.6rem;
+}
+
+.auth-page__reg-disabled-title {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--_text-primary);
+  margin: 0 0 0.8rem;
+}
+
+.auth-page__reg-disabled-desc {
+  font-size: 1.3rem;
+  color: var(--_text-secondary);
+  margin: 0 0 2rem;
+  line-height: 1.6;
+  max-width: 32rem;
 }
 
 /* ===================== Keyframes ===================== */
@@ -922,6 +1027,116 @@ onBeforeUnmount(() => { if (cooldownTimer) clearInterval(cooldownTimer) })
 .auth-toast-leave-to {
   opacity: 0;
   transform: translateY(-8px);
+}
+
+/* ===================== 亮色主题覆盖 ===================== */
+.auth-page.is-light {
+  /* 覆盖局部 CSS 变量为亮色调 */
+  --_accent: 217 92% 55%;
+  --_accent-2: 250 76% 60%;
+  --_glass-bg: rgba(255, 255, 255, 0.65);
+  --_glass-border: rgba(0, 0, 0, 0.08);
+  --_glass-blur: 20px;
+  --_text-primary: #1a1a2e;
+  --_text-secondary: rgba(26, 26, 46, 0.6);
+  --_card-bg: rgba(255, 255, 255, 0.82);
+  --_card-border: rgba(0, 0, 0, 0.06);
+
+  background: linear-gradient(135deg, #e8eaf6 0%, #f5f5f5 40%, #e3f2fd 100%);
+
+  /* Aurora orbs 降低饱和度和不透明度 */
+  .auth-page__aurora {
+    filter: saturate(0.6);
+    opacity: 0.35;
+  }
+
+  /* Shell 容器：白色毛玻璃 */
+  .auth-page__shell {
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.04) inset,
+      0 20px 60px rgba(0, 0, 0, 0.08),
+      0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+
+  /* 品牌面板 */
+  .auth-page__brand {
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.02) 0%, transparent 100%);
+    border-right-color: rgba(0, 0, 0, 0.06);
+  }
+
+  .auth-page__brand-name {
+    background: linear-gradient(135deg, #1a1a2e 30%, rgba(26, 26, 46, 0.7));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .auth-page__features li {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.05);
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.06);
+    }
+  }
+
+  /* Logo 样式保持渐变色 */
+  .auth-page__logo-ring {
+    background: linear-gradient(135deg, hsl(var(--_accent) / 0.1), hsl(var(--_accent-2) / 0.08));
+    border-color: hsl(var(--_accent) / 0.2);
+  }
+
+  /* 返回按钮 */
+  .auth-page__back {
+    &:hover {
+      background: rgba(0, 0, 0, 0.06);
+    }
+  }
+
+  /* 表单覆盖 */
+  .auth-page__form {
+    :deep(.u-input__wrapper) {
+      background: rgba(0, 0, 0, 0.03);
+      border-color: rgba(0, 0, 0, 0.1);
+
+      &:hover {
+        border-color: rgba(0, 0, 0, 0.2);
+        background: rgba(0, 0, 0, 0.04);
+      }
+
+      &:focus-within {
+        border-color: hsl(var(--_accent));
+        box-shadow: 0 0 0 3px hsl(var(--_accent) / 0.1);
+        background: #fff;
+      }
+    }
+
+    :deep(.u-input__inner) {
+      color: var(--_text-primary);
+
+      &::placeholder {
+        color: rgba(0, 0, 0, 0.3);
+      }
+    }
+  }
+
+  /* 分割线 */
+  .auth-page__divider-line {
+    background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.08), transparent);
+  }
+
+  /* Toast */
+  .auth-page__toast--error {
+    background: hsl(0 70% 50% / 0.08);
+    color: hsl(0 75% 45%);
+    border-color: hsl(0 70% 50% / 0.15);
+  }
+
+  .auth-page__toast--success {
+    background: hsl(145 70% 42% / 0.08);
+    color: hsl(145 60% 35%);
+    border-color: hsl(145 70% 42% / 0.15);
+  }
 }
 
 /* ===================== Responsive ===================== */

@@ -44,6 +44,22 @@ export const SETTING_KEYS = {
   ONLY_OWN_ARTICLES: 'only_own_articles',
   /** 博客主题风格 */
   BLOG_THEME: 'blog_theme',
+  /** 博客分享模式：readonly（只读，默认） / full（完整功能） */
+  BLOG_SHARE_MODE: 'blog_share_mode',
+  /** Footer：备案号文字 */
+  FOOTER_ICP_NUMBER: 'footer_icp_number',
+  /** Footer：备案号链接 */
+  FOOTER_ICP_LINK: 'footer_icp_link',
+  /** Footer：备案号是否显示（'true' / 'false'） */
+  FOOTER_ICP_VISIBLE: 'footer_icp_visible',
+  /** Footer：萌ICP文字 */
+  FOOTER_MOE_ICP_NUMBER: 'footer_moe_icp_number',
+  /** Footer：萌ICP链接 */
+  FOOTER_MOE_ICP_LINK: 'footer_moe_icp_link',
+  /** Footer：萌ICP是否显示（'true' / 'false'） */
+  FOOTER_MOE_ICP_VISIBLE: 'footer_moe_icp_visible',
+  /** Footer：作者名称 */
+  FOOTER_AUTHOR: 'footer_author',
 } as const
 
 /** 需要脱敏显示的 key（后端会返回 masked） */

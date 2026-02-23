@@ -1,7 +1,7 @@
 import type { IArticle } from '@u-blog/model'
 import { CArticleStatus } from '@u-blog/model'
 import type { ApiMethod } from './types'
-import { restQuery, restAdd } from './request'
+import { restQuery, restAdd, restUpdate } from './request'
 
 /** 每页条数 */
 export const PAGE_SIZE = 10
@@ -58,6 +58,8 @@ export interface IArticleApis {
   getArticleById: (id: string) => Promise<IArticle | null>
   /** 新建文章（草稿或发布） */
   createArticle: (payload: ICreateArticlePayload) => Promise<IArticle>
+  /** 更新文章 */
+  updateArticle: (id: number, payload: Partial<ICreateArticlePayload>) => Promise<IArticle>
 }
 
 const apis: IArticleApis = {
@@ -118,6 +120,12 @@ const apis: IArticleApis = {
       isTop: payload.isTop ?? false
     }
     return restAdd<IArticle>('article', body)
+  },
+
+  /** 更新已有文章 */
+  async updateArticle(id: number, payload: Partial<ICreateArticlePayload>) {
+    const body: Record<string, unknown> = { ...payload }
+    return restUpdate<IArticle>('article', id, body)
   }
 }
 

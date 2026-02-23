@@ -9,12 +9,12 @@ import router from '@/router'
 import i18n from './locales'
 import UccUI from '@u-blog/ui'
 import '@u-blog/ui/dist/es/index.css'
+import '@/assets/styles/md-code-theme.scss'
 import SnowfallPlugin from '@u-blog/snowfall'
 import '@u-blog/snowfall/dist/style.css'
 
 import beforehand from './beforehand'
 import stores from './stores'
-import { useAppStore } from './stores/app'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -24,11 +24,7 @@ app.use(stores)
 app.use(router)
 app.use(i18n)
 
-// 启动时把本地存储的语言同步到 i18n，保证首屏与切换后文案一致
-const appStore = useAppStore()
-if (appStore.language) {
-  i18n.global.locale.value = appStore.language
-}
+// 语言同步统一在 App.vue 的 watch(language) 中完成，此处不再重复
 
 app.use(UccUI)
 app.use(SnowfallPlugin)

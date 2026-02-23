@@ -20,6 +20,7 @@ import { validate } from 'class-validator'
 import { getRandomString } from '@u-blog/utils'
 import { sign, signRt, verify, decode } from '@/plugin/jwt'
 import { formatValidationErrors, encrypt, decrypt, decryptTransport, getDataSource } from '@/utils'
+import bcrypt from 'bcrypt'
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -133,6 +134,8 @@ const USER_SCOPED_KEYS = new Set([
   'site_name', 'site_description', 'site_keywords', 'site_favicon',
   // 多租户：用户个人博客设置
   'visible_routes', 'friend_link_notify', 'only_own_articles', 'blog_theme',
+  // 博客分享模式：readonly / full（决定访客可用功能范围）
+  'blog_share_mode',
 ])
 
 /** 脱敏值 */
@@ -175,6 +178,16 @@ const BASE64_IMAGE_REGEX = /!\[([^\]]*)\]\((data:image\/[^;]+;base64,[^)]+)\)/g
 const BASE64_IMAGE_REGEX_ALT = /<img[^>]+src="(data:image\/[^;]+;base64,[^"]+)"[^>]*>/g
 const UPLOAD_DIR = 'uploads'
 
+/** HTML 实体转义 —— 防止邮件等 HTML 场景中的 XSS */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 /* ========== 邮箱验证码缓存（内存） ========== */
 
 /** 评论回复邮件通知频率限制：同一收件人 30 分钟内最多 1 封 */
@@ -194,8 +207,9 @@ interface VerifyCodeEntry {
   expiresAt: number
 }
 
-/** 邮箱 → 验证码条目映射；TTL = appCfg.emailExpired (5 min) */
+/** 邮箱 → 验证码条目映射；TTL = appCfg.emailExpired (5 min)；上限 5000 条 */
 const emailCodeCache = new Map<string, VerifyCodeEntry>()
+const EMAIL_CODE_CACHE_MAX = 5000
 
 /** 定期清理过期条目（每 60 秒） */
 setInterval(() => {
@@ -215,7 +229,13 @@ class CommonService {
    * 发送邮箱验证码：生成 6 位随机数 → 写入缓存 → 通过 nodemailer 发送
    * 同一邮箱 60 秒内不可重复发送（防刷）
    */
-  async sendEmailCode(email: string, userRepo: Repository<Users>) {
+  async sendEmailCode(req: Request, email: string, userRepo: Repository<Users>) {
+    // 注册关闭时禁止发送验证码
+    const { enabled, reason } = await this.isRegistrationEnabled(req)
+    if (!enabled) {
+      throw new Error(reason || '注册功能暂未开放，无法发送验证码')
+    }
+
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       throw new Error('邮箱格式不正确')
     }
@@ -235,7 +255,10 @@ class CommonService {
     // 生成 6 位验证码
     const code = String(Math.floor(100000 + Math.random() * 900000))
 
-    // 写入缓存
+    // 写入缓存（超出上限则拒绝，防止内存耗尽攻击）
+    if (emailCodeCache.size >= EMAIL_CODE_CACHE_MAX && !emailCodeCache.has(email)) {
+      throw new Error('系统繁忙，请稍后再试')
+    }
     emailCodeCache.set(email, {
       code,
       expiresAt: Date.now() + appCfg.emailExpired,
@@ -267,12 +290,33 @@ class CommonService {
 
   /* ---------- 认证相关 ---------- */
 
+  /**
+   * 检查注册功能是否开放
+   * 读取全局设置 `registration_enabled`，默认关闭（个人博客备案场景）
+   */
+  async isRegistrationEnabled(req: Request): Promise<{ enabled: boolean; reason: string }> {
+    const settingRepo = getDataSource(req).getRepository(Setting) as Repository<Setting>
+    const row = await settingRepo.findOne({ where: { key: 'registration_enabled' } })
+    // 未配置时默认关闭注册
+    const enabled = row?.value === true || row?.value === 'true'
+    const reason = enabled
+      ? ''
+      : (row?.desc || '当前为个人博客空间，暂不开放注册。如有需要请联系站长。')
+    return { enabled, reason }
+  }
+
   async register(
     req: Request,
     userRepo: Repository<Users>,
     data: IUserRegisterDto & { emailCode?: string },
     ret: number = 0,
   ) {
+    // -1、检查注册是否开放
+    const { enabled, reason } = await this.isRegistrationEnabled(req)
+    if (!enabled) {
+      throw new Error(reason || '注册功能暂未开放')
+    }
+
     // 0、校验邮箱验证码
     if (!data.emailCode) {
       throw new Error('请输入邮箱验证码')
@@ -291,18 +335,18 @@ class CommonService {
     if (errors.length > 0)
       throw new Error(formatValidationErrors(errors))
 
-    // 3、密码加密（使用 AES-256-CBC）
-    const encryptedPassword = encrypt(data.password)
+    // 3、密码加密（使用 bcrypt 单向哈希，12 轮盐）
+    const encryptedPassword = await bcrypt.hash(data.password, 12)
 
     // 4、生成刷新令牌的随机字符串密钥
     const rthash = getRandomString(32, 'hex')
 
-    // 5、设置默认值
+    // 5、设置默认值（强制角色为普通用户，防止注册时提权）
     const userData = {
       ...data,
       password: encryptedPassword,
-      role: data.role || CUserRole.USER,
-      isActive: data.isActive !== undefined ? data.isActive : true,
+      role: CUserRole.USER,
+      isActive: true,
       failLoginCount: 0,
       lastLoginAt: new Date(),
       rthash,
@@ -325,7 +369,11 @@ class CommonService {
 
     // 10、根据 ret 参数决定返回内容
     if (ret) {
-      const { password, rthash: _, ...userInfo } = user
+      const {
+        password, rthash: _,
+        failLoginCount: _fc, lockoutExpiresAt: _la, lastLoginAt: _lla, isActive: _ia,
+        ...userInfo
+      } = user
       return { ...userInfo, token, rt: refreshToken }
     } else {
       return { id: user.id, token, rt: refreshToken }
@@ -358,15 +406,24 @@ class CommonService {
     // 3. 检查激活状态
     if (user.isActive === false) throw new Error('账号未激活')
 
-    // 4. 解密数据库中的密码并验证
-    let decryptedPassword: string
-    try {
-      decryptedPassword = decrypt(user.password)
-    } catch {
-      throw new Error('密码数据损坏，请联系管理员')
+    // 4. 验证密码 —— 兼容 bcrypt（新）和 AES（旧）两种格式
+    const isBcryptHash = user.password.startsWith('$2')
+    let passwordMatch = false
+
+    if (isBcryptHash) {
+      // bcrypt 哈希：直接比较
+      passwordMatch = await bcrypt.compare(data.password, user.password)
+    } else {
+      // 旧版 AES 加密：解密后对比，成功则自动迁移为 bcrypt
+      try {
+        const decryptedPassword = decrypt(user.password)
+        passwordMatch = decryptedPassword === data.password
+      } catch {
+        throw new Error('密码数据损坏，请联系管理员')
+      }
     }
 
-    if (decryptedPassword !== data.password) {
+    if (!passwordMatch) {
       user.failLoginCount = (user.failLoginCount || 0) + 1
       if (user.failLoginCount >= 5) {
         user.lockoutExpiresAt = new Date(Date.now() + 30 * 60 * 1000)
@@ -380,6 +437,11 @@ class CommonService {
     // 5. 密码正确，重置失败次数
     user.failLoginCount = 0
     user.lastLoginAt = new Date()
+
+    // 5.1 自动将旧版 AES 密码迁移为 bcrypt 哈希
+    if (!isBcryptHash) {
+      user.password = await bcrypt.hash(data.password, 12)
+    }
 
     // 6. 生成新的刷新令牌密钥
     const rthash = getRandomString(32, 'hex')
@@ -395,7 +457,11 @@ class CommonService {
     await userRepo.save(user)
 
     // 9. 返回用户信息（不包含敏感信息）
-    const { password: _, rthash: __, ...userInfo } = user
+    const {
+      password: _, rthash: __,
+      failLoginCount: _fc, lockoutExpiresAt: _la, lastLoginAt: _lla, isActive: _ia,
+      ...userInfo
+    } = user
     return { ...userInfo, token, rt: refreshToken }
   }
 
@@ -435,7 +501,10 @@ class CommonService {
     user.token = token
     await userRepo.save(user)
 
-    const { rthash: _, ...userInfo } = user
+    const {
+      rthash: _, isActive: _ia,
+      ...userInfo
+    } = user
     return { ...userInfo, token, rt: newRt }
   }
 
@@ -1160,8 +1229,13 @@ class CommonService {
       // 截断评论内容，防止邮件过长
       const truncate = (text: string, max: number) =>
         text.length > max ? text.slice(0, max) + '…' : text
-      const parentSnippet = truncate(parent.content.replace(/<[^>]*>/g, ''), 100)
-      const replySnippet = truncate(replyComment.content.replace(/<[^>]*>/g, ''), 200)
+      const parentSnippet = escapeHtml(truncate(parent.content.replace(/<[^>]*>/g, ''), 100))
+      const replySnippet = escapeHtml(truncate(replyComment.content.replace(/<[^>]*>/g, ''), 200))
+
+      // HTML 转义用户输入，防止邮件 XSS
+      const safeRecipientName = escapeHtml(recipientName)
+      const safeReplierName = escapeHtml(replierName)
+      const safeArticleTitle = escapeHtml(articleTitle)
 
       // 构建 HTML 邮件
       const html = `
@@ -1170,9 +1244,9 @@ class CommonService {
             <h2 style="margin:0;color:#fff;font-size:20px;">💬 您收到了一条新回复</h2>
           </div>
           <div style="background:#fff;padding:24px 32px;border:1px solid #e8e8e8;border-top:none;border-radius:0 0 8px 8px;">
-            <p style="margin:0 0 16px;color:#555;">Hi <strong>${recipientName}</strong>，</p>
+            <p style="margin:0 0 16px;color:#555;">Hi <strong>${safeRecipientName}</strong>，</p>
             <p style="margin:0 0 12px;color:#555;">
-              <strong>${replierName}</strong> 回复了您${articleTitle ? `在《${articleTitle}》中` : ''}的评论：
+              <strong>${safeReplierName}</strong> 回复了您${safeArticleTitle ? `在《${safeArticleTitle}》中` : ''}的评论：
             </p>
             <div style="background:#f5f5f5;border-left:4px solid #ddd;padding:12px 16px;margin:0 0 12px;border-radius:4px;color:#888;font-size:14px;">
               ${parentSnippet}
@@ -1195,7 +1269,7 @@ class CommonService {
       await transporter.sendMail({
         from: process.env.EMAIL_USER,
         to: recipientEmail,
-        subject: `[Ucc Blog] ${replierName} 回复了您的评论${articleTitle ? ` — ${articleTitle}` : ''}`,
+        subject: `[Ucc Blog] ${safeReplierName} 回复了您的评论${safeArticleTitle ? ` — ${safeArticleTitle}` : ''}`,
         html,
       })
     } catch (err) {
@@ -1351,7 +1425,7 @@ class CommonService {
 
     // 获取用户个人设置（站点信息 + 可见路由）
     const userSettingRepo = ds.getRepository(UserSetting)
-    const publicKeys = ['site_name', 'site_description', 'site_keywords', 'site_favicon', 'visible_routes', 'blog_theme']
+    const publicKeys = ['site_name', 'site_description', 'site_keywords', 'site_favicon', 'visible_routes', 'blog_theme', 'blog_share_mode']
     const userSettings = await userSettingRepo.find({
       where: { userId: user.id },
     })
@@ -1398,8 +1472,40 @@ class CommonService {
 
   /* ---------- 站点 meta 信息抓取 ---------- */
 
+  /**
+   * 获取站长（super_admin）公开资料 — 游客访问时的 fallback 信息
+   * 复用 getUserBlogProfile 逻辑，自动查找 super_admin 用户
+   */
+  async getSiteOwnerProfile(req: Request): Promise<{
+    user: Partial<IUser>
+    settings: Record<string, unknown>
+    stats: { articleCount: number; totalViews: number; totalLikes: number }
+  } | null> {
+    const ds = getDataSource(req)
+    const userRepo = ds.getRepository(Users)
+    const admin = await userRepo.findOne({
+      where: { role: CUserRole.SUPER_ADMIN },
+      select: ['username'] as any,
+      order: { id: 'ASC' },
+    })
+    if (!admin) return null
+    return this.getUserBlogProfile(req, admin.username)
+  }
+
+  /* ---------- 站点 meta 信息抓取（外部网站） ---------- */
+
   /** 抓取目标网站的 title 和 favicon */
   async fetchSiteMeta(url: string): Promise<{ title: string; icon: string; description: string }> {
+    // SSRF 防护：禁止请求内网 IP（私有地址 / 环回地址 / 链路本地地址）
+    const { hostname } = new URL(url)
+    const blockedPatterns = [
+      /^localhost$/i, /^127\./, /^10\./, /^172\.(1[6-9]|2\d|3[01])\./, /^192\.168\./,
+      /^0\./, /^169\.254\./, /^::1$/, /^fc00:/i, /^fe80:/i, /^fd/i,
+    ]
+    if (blockedPatterns.some(p => p.test(hostname))) {
+      throw new Error('不允许访问内网地址')
+    }
+
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 8000)
     try {

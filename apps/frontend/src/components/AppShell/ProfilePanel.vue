@@ -67,12 +67,21 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/model/user'
+import { useBlogOwnerStore } from '@/stores/blogOwner'
 import { storeToRefs } from 'pinia'
 
 defineOptions({ name: 'ProfilePanel' })
 
 const { t } = useI18n()
-const { user } = storeToRefs(useUserStore())
+const { user: authUser } = storeToRefs(useUserStore())
+const blogOwnerStore = useBlogOwnerStore()
+
+/** 子域名模式下始终展示博客拥有者的资料 */
+const user = computed(() =>
+  blogOwnerStore.isSubdomainMode && blogOwnerStore.profile?.user
+    ? blogOwnerStore.profile.user
+    : authUser.value
+)
 
 const displayName = computed(() => user.value?.namec || user.value?.username || t('profile.owner'))
 

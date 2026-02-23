@@ -1,8 +1,8 @@
 import { ModelHandler } from '@/middleware'
 import commonRouter from './common'
 import restRouter from './rest'
-import webRouter from './web'
-import backRouter from './back'
+import analyticsRouter from './analytics'
+import xiaohuiRouter from './xiaohui'
 import type { Application } from 'express'
 
 export const Router = {
@@ -12,8 +12,8 @@ export const Router = {
 	 */
 	install(app: Application) {
 		app.use('/', commonRouter)
+		app.use('/xiaohui', xiaohuiRouter)
+		app.use('/activity', analyticsRouter)
 		app.use('/rest/:model', ModelHandler, restRouter)
-		// app.use('/web/:model', ModelHandler, SqlHandler(), webRouter)
-		// app.use('/back/:model', ModelHandler, SqlHandler(), backRouter)
 	}
 }

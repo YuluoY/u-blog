@@ -1,24 +1,55 @@
 import express, { type Router } from 'express'
 import type { Request, Response, NextFunction } from 'express'
+import rateLimit from 'express-rate-limit'
 import CommonController from '@/controller/common'
 import * as SettingsController from '@/controller/settings'
 import { UploadHandler } from '@/middleware/UploadHandler'
 import { requireAuth } from '@/middleware/AuthGuard'
 import { requireRole } from '@/middleware/RoleGuard'
-import { toResponse } from '@/utils'
+import { toResponse, getDataSource } from '@/utils'
 import { IUserLogin, CUserRole } from '@u-blog/model'
 import ChatService, { type ChatRequestMessage, type ModelConfigOverride } from '@/service/chat'
 import CommonService from '@/service/common'
+import { UserSetting } from '@/module/schema/UserSetting'
 
 const router = express.Router() as Router
 
+const _isDev = process.env.NODE_ENV !== 'production'
+
+/** 开发环境跳过 localhost 限流（Vite dev proxy 全走 127.0.0.1） */
+function skipLocalhost(req: import('express').Request): boolean {
+  if (!_isDev) return false
+  const ip = req.ip || req.socket?.remoteAddress || ''
+  return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1'
+}
+
+/** 认证相关限流：同一 IP 15 分钟内最多 15 次（注册/登录/邮箱验证码） */
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { code: 429, data: null, message: '操作过于频繁，请稍后再试' },
+  skip: skipLocalhost,
+})
+
+/** 站点信息抓取限流：同一 IP 1 分钟内最多 10 次 */
+const fetchMetaLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { code: 429, data: null, message: '请求过于频繁，请稍后再试' },
+  skip: skipLocalhost,
+})
+
 /**
  * 用户偏好类 key — 只需登录即可保存
- * 敏感/管理类 key（openai_api_key、site_name 等）需要 ADMIN 角色
+ * 所有已登录用户均可自定义模型配置（API Key 在存储层加密）
  */
 const USER_PREFERENCE_KEYS = new Set([
   'theme', 'language', 'article_list_type', 'home_sort', 'visual_style',
-  // 模型配置：所有已登录用户均可保存（API Key 在存储层加密）
+  // 模型配置：所有已登录用户均可保存
   'openai_api_key', 'openai_base_url', 'openai_model',
   'openai_temperature', 'openai_max_tokens', 'openai_system_prompt', 'openai_context_length',
   // 聊天偏好
@@ -27,6 +58,8 @@ const USER_PREFERENCE_KEYS = new Set([
   'site_name', 'site_description', 'site_keywords', 'site_favicon',
   // 多租户：用户个人博客设置
   'visible_routes', 'friend_link_notify', 'only_own_articles', 'blog_theme',
+  // 博客分享模式
+  'blog_share_mode',
 ])
 
 /**
@@ -73,18 +106,28 @@ router.get('/article-search', async (req: Request, res: Response) => {
   toResponse(result, res)
 })
 
-router.post('/register', async (req: Request, res: Response) => {
+/** 公开接口：查询注册是否开放 */
+router.get('/registration-status', async (req: Request, res: Response) => {
+  try {
+    const status = await CommonService.isRegistrationEnabled(req)
+    res.json({ code: 0, data: status, message: 'ok' })
+  } catch (err: any) {
+    res.json({ code: 1, data: { enabled: false, reason: '查询失败' }, message: err?.message || '查询失败' })
+  }
+})
+
+router.post('/register', authLimiter, async (req: Request, res: Response) => {
   const result = await CommonController.register(req, res)
   toResponse(result, res)
 })
 
 /** 发送邮箱验证码（注册前调用） */
-router.post('/send-email-code', async (req: Request, res: Response) => {
+router.post('/send-email-code', authLimiter, async (req: Request, res: Response) => {
   const result = await CommonController.sendEmailCode(req, res)
   toResponse(result, res)
 })
 
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login', authLimiter, async (req: Request, res: Response) => {
   const result = await CommonController.login<IUserLogin>(req, res)
   toResponse(result, res)
 })
@@ -99,7 +142,45 @@ router.post('/logout', requireAuth, async (req: Request, res: Response) => {
   toResponse(result, res)
 })
 
-router.post('/chat', requireAuth, async (req: Request, res: Response) => {
+/**
+ * /chat 专用认证中间件 — 三层防线：
+ * 1. 已登录用户：直接放行（使用自己的模型配置）
+ * 2. 游客 + blogOwnerId：从 DB 验证博主的 blog_share_mode === 'full' 后放行
+ * 3. 其他情况：401 拒绝
+ *
+ * 通过后将有效的 blogOwnerId 挂到 res.locals.chatBlogOwnerId，供路由处理函数使用。
+ */
+async function chatAuthGuard(req: Request, res: Response, next: NextFunction): Promise<void> {
+  // 已登录用户直接放行
+  if (req.user) { next(); return }
+
+  // 游客场景：必须携带 blogOwnerId（子域名博客模式）
+  const blogOwnerId = Number(req.body?.blogOwnerId)
+  if (!blogOwnerId || !Number.isFinite(blogOwnerId)) {
+    res.status(401).json({ code: 401, data: null, message: '请先登录' })
+    return
+  }
+
+  // 服务端验证：博主是否开启了完整分享模式
+  try {
+    const ds = getDataSource(req)
+    const userSettingRepo = ds.getRepository(UserSetting)
+    const shareModeSetting = await userSettingRepo.findOne({
+      where: { userId: blogOwnerId, key: 'blog_share_mode' },
+    })
+    if (shareModeSetting?.value !== 'full') {
+      res.status(403).json({ code: 403, data: null, message: '该博客未开放此功能' })
+      return
+    }
+    // 验证通过，将 blogOwnerId 传递给后续处理
+    res.locals.chatBlogOwnerId = blogOwnerId
+    next()
+  } catch {
+    res.status(500).json({ code: 500, data: null, message: '服务器内部错误' })
+  }
+}
+
+router.post('/chat', chatAuthGuard, async (req: Request, res: Response) => {
   const { message, messages, config, context: ragContext } = req.body || {}
 
   // 兼容两种传参：messages 数组（多轮）或 message 字符串（单条）
@@ -139,7 +220,17 @@ router.post('/chat', requireAuth, async (req: Request, res: Response) => {
         }
       : undefined
 
-    const stream = await ChatService.chatStream(req, chatMessages, override, typeof ragContext === 'string' ? ragContext : undefined)
+    // 游客场景下使用博主的模型配置（chatAuthGuard 已验证 share_mode）
+    const chatBlogOwnerId: number | undefined = res.locals.chatBlogOwnerId
+
+    const stream = await ChatService.chatStream(req, chatMessages, override, typeof ragContext === 'string' ? ragContext : undefined, chatBlogOwnerId)
+
+    // SSE 超时保护：最长 3 分钟
+    const SSE_TIMEOUT_MS = 3 * 60 * 1000
+    const sseTimer = setTimeout(() => {
+      res.write(`data: ${JSON.stringify({ error: '响应超时，请重新发送' })}\n\n`)
+      res.end()
+    }, SSE_TIMEOUT_MS)
 
     for await (const chunk of stream) {
       const delta = chunk.choices?.[0]?.delta?.content
@@ -152,6 +243,7 @@ router.post('/chat', requireAuth, async (req: Request, res: Response) => {
         res.write(`data: ${JSON.stringify({ done: true })}\n\n`)
       }
     }
+    clearTimeout(sseTimer)
   } catch (err: any) {
     // 错误也通过 SSE 事件发送，前端统一处理
     const msg = err?.message || 'AI 请求失败'
@@ -356,6 +448,20 @@ router.delete('/friend-links/:id', requireAuth, async (req: Request, res: Respon
 
 /* ========== 用户博客公开资料 ========== */
 
+/** 获取站长（super_admin）公开信息 — 游客侧栏展示用，无需认证 */
+router.get('/site-owner', async (req: Request, res: Response) => {
+  try {
+    const profile = await CommonService.getSiteOwnerProfile(req)
+    if (!profile) {
+      res.json({ code: 1, message: '站长信息不存在', data: null })
+      return
+    }
+    res.json({ code: 0, data: profile, message: 'ok' })
+  } catch (err: any) {
+    res.json({ code: 1, message: err?.message || '获取站长信息失败', data: null })
+  }
+})
+
 /** 根据用户名获取博客公开信息（用户资料 + 个人设置 + 文章统计） */
 router.get('/u/:username', async (req: Request, res: Response) => {
   const { username } = req.params
@@ -374,7 +480,7 @@ router.get('/u/:username', async (req: Request, res: Response) => {
 /* ========== 站点信息抓取 ========== */
 
 /** 抓取目标网站 meta 信息（title / favicon / description） */
-router.get('/fetch-site-meta', async (req: Request, res: Response) => {
+router.get('/fetch-site-meta', fetchMetaLimiter, async (req: Request, res: Response) => {
   const url = String(req.query.url || '').trim()
   if (!url) {
     res.json({ code: 1, message: '缺少 url 参数', data: null })
@@ -391,6 +497,55 @@ router.get('/fetch-site-meta', async (req: Request, res: Response) => {
   } catch (err: any) {
     res.json({ code: 1, message: err?.message || '抓取站点信息失败', data: null })
   }
+})
+
+/**
+ * IP 定位代理：代理外部 IP 定位服务，避免前端直连跨域 & 优雅降级
+ * 主服务：ip.zhengbingdong.com → 失败后回退 ip-api.com
+ * GET /ip-location
+ */
+router.get('/ip-location', async (req: Request, res: Response) => {
+  const TIMEOUT_MS = 5000
+
+  // 主服务：ip.zhengbingdong.com（国内快，中文结果）
+  try {
+    const ctrl1 = new AbortController()
+    const t1 = setTimeout(() => ctrl1.abort(), TIMEOUT_MS)
+    const r1 = await fetch('https://ip.zhengbingdong.com/v1/get', { signal: ctrl1.signal })
+    clearTimeout(t1)
+    if (r1.ok) {
+      const json = await r1.json()
+      res.json(json)
+      return
+    }
+  } catch { /* 主服务不可用，尝试备用 */ }
+
+  // 备用服务：ip-api.com（无需 key，有速率限制）
+  try {
+    const ctrl2 = new AbortController()
+    const t2 = setTimeout(() => ctrl2.abort(), TIMEOUT_MS)
+    const r2 = await fetch('http://ip-api.com/json/?fields=country,regionName,city,query,lat,lon&lang=zh-CN', { signal: ctrl2.signal })
+    clearTimeout(t2)
+    if (r2.ok) {
+      const data = await r2.json() as Record<string, unknown>
+      // 适配为主服务相同的返回格式
+      res.json({
+        ret: 200,
+        data: {
+          ip: data.query,
+          city: data.city,
+          prov: data.regionName,
+          country: data.country,
+          lat: data.lat,
+          lng: data.lon,
+        },
+      })
+      return
+    }
+  } catch { /* 备用也不可用 */ }
+
+  // 两个服务均不可用
+  res.json({ ret: 0, data: null, message: 'IP 定位服务暂不可用' })
 })
 
 export default router

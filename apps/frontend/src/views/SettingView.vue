@@ -387,6 +387,33 @@
             </div>
           </div>
 
+          <!-- 分享模式 -->
+          <div class="setting-item setting-item--column">
+            <div class="setting-item__info">
+              <span class="setting-item__label">{{ t('settings.shareMode') }}</span>
+              <span class="setting-item__hint">{{ t('settings.shareModeHint') }}</span>
+            </div>
+            <div class="setting-item__control setting-item__control--wrap">
+              <u-button
+                :type="blogForm.share_mode === 'readonly' ? 'primary' : 'info'"
+                size="small"
+                @click="blogForm.share_mode = 'readonly'"
+              >
+                {{ t('settings.shareModeReadonly') }}
+              </u-button>
+              <u-button
+                :type="blogForm.share_mode === 'full' ? 'primary' : 'info'"
+                size="small"
+                @click="blogForm.share_mode = 'full'"
+              >
+                {{ t('settings.shareModeFull') }}
+              </u-button>
+            </div>
+            <p class="setting-item__desc-text">
+              {{ blogForm.share_mode === 'full' ? t('settings.shareModeFullDesc') : t('settings.shareModeReadonlyDesc') }}
+            </p>
+          </div>
+
           <div class="setting-form__actions">
             <u-button type="primary" size="small" :loading="savingBlog" @click="saveBlogSettings">
               <u-icon icon="fa-solid fa-save" />
@@ -546,6 +573,7 @@ async function loadServerSettings() {
     SETTING_KEYS.ONLY_OWN_ARTICLES,
     SETTING_KEYS.FRIEND_LINK_NOTIFY,
     SETTING_KEYS.VISIBLE_ROUTES,
+    SETTING_KEYS.BLOG_SHARE_MODE,
   ]
   const data = await getSettings(keys)
   appStore.hydrateAppearance(data)
@@ -608,6 +636,11 @@ async function loadServerSettings() {
   if (typeof vrVal === 'string') {
     try { blogForm.visible_routes = JSON.parse(vrVal) } catch { /* 保持默认 */ }
   }
+  // 分享模式：从服务端读取（安全，不可被访客篡改）
+  const smVal = data[SETTING_KEYS.BLOG_SHARE_MODE]?.value
+  if (smVal === 'full' || smVal === 'readonly') {
+    blogForm.share_mode = smVal
+  }
 }
 
 /** 提交时敏感项：若前端为空且后端已脱敏，则不传该 key，避免覆盖为空白 */
@@ -666,6 +699,7 @@ const blogForm = reactive({
   only_own_articles: false,
   friend_link_notify: true,
   visible_routes: ['home', 'archive', 'message', 'links', 'chat', 'about'] as string[],
+  share_mode: 'readonly' as 'readonly' | 'full',
 })
 
 /** 可选路由列表 */
@@ -697,6 +731,7 @@ async function saveBlogSettings() {
       [SETTING_KEYS.ONLY_OWN_ARTICLES]: { value: String(blogForm.only_own_articles) },
       [SETTING_KEYS.FRIEND_LINK_NOTIFY]: { value: String(blogForm.friend_link_notify) },
       [SETTING_KEYS.VISIBLE_ROUTES]: { value: JSON.stringify(blogForm.visible_routes) },
+      [SETTING_KEYS.BLOG_SHARE_MODE]: { value: blogForm.share_mode },
     })
     UMessageFn({ message: t('settings.blogSaved'), type: 'success' })
   } catch (err: any) {
@@ -832,6 +867,13 @@ onMounted(() => {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
+  }
+
+  &__desc-text {
+    margin: 6px 0 0;
+    font-size: 1.1rem;
+    color: var(--u-text-3);
+    line-height: 1.5;
   }
 }
 

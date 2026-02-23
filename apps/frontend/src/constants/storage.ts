@@ -56,4 +56,10 @@ export const STORAGE_KEYS = {
   CHAT_FOLDERS_OPEN: `${PREFIX}chat-folders-open`,
   /** 用户个人模型配置（非管理员本地存储） */
   USER_MODEL_CONFIG: `${PREFIX}user-model-config`,
+  /** 小惠会话列表 JSON */
+  XIAOHUI_SESSIONS: `${PREFIX}xiaohui-sessions`,
+  /** 小惠当前会话 ID */
+  XIAOHUI_CURRENT_SESSION: `${PREFIX}xiaohui-current-session`,
+  /** 小惠侧栏是否展开 */
+  XIAOHUI_SIDEBAR_VISIBLE: `${PREFIX}xiaohui-sidebar-visible`,
 } as const

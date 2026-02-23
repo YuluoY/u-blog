@@ -1,1 +1,1 @@
-export { login, refresh } from '../../shared/api/auth'
+export { refresh } from '../../shared/api/auth'

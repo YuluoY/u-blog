@@ -1,7 +1,7 @@
 import { DATABASE } from '@/constants'
 import { Database, type DbOptions } from './database'
 import { type Application } from 'express'
-import { initDefaultUser, initSeedData } from '@/service/init'
+import { initDefaultUser, initSeedData, initRBAC } from '@/service/init'
 import { migrateSiteSettingsToUserScope } from '@/service/init/migrateSiteSettings'
 
 export default {
@@ -13,6 +13,9 @@ export default {
       console.log('Database connected')
       // 初始化默认用户
       await initDefaultUser(dataSource)
+
+      // 初始化 RBAC 种子数据（角色、权限、路由）
+      await initRBAC(dataSource)
 
       // 一次性迁移：site_* 从全局 setting 表迁移到 super_admin 的 user_setting 表
       try {

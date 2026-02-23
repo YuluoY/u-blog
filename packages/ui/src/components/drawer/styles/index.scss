@@ -36,6 +36,8 @@ $drawer-easing: ease;
   flex-direction: column;
   pointer-events: all;
   transition: transform $drawer-duration $drawer-easing;
+  /* 移动端限制宽度不超出屏幕 */
+  max-width: 100vw;
 
   &.right {
     top: 0;

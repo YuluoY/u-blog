@@ -7,8 +7,13 @@
       role="dialog"
       :aria-label="t('popover.sidePanel')"
       :style="popoverStyle"
+      tabindex="-1"
       @keydown.esc="close"
     >
+      <!-- 移动端关闭按钮 -->
+      <button class="popover-panel__close-btn" aria-label="关闭" @click="close">
+        <u-icon icon="fa-solid fa-xmark" />
+      </button>
       <div class="popover-panel__inner">
         <ProfilePanel v-if="activePanel === PANEL_ID.PROFILE" />
         <CalendarPanel v-else-if="activePanel === PANEL_ID.CALENDAR" :on-close="close" />
@@ -234,7 +239,46 @@ onUnmounted(() => {
     overflow-y: auto;
     overflow-x: hidden;
     transition: none;
-    /* 搜索面板：仅内部列表 __result 滚动；分类/标签等面板内容过长时由本容器滚动，避免截断 */
+  }
+
+  /* 移动端关闭按钮：仅在 ≤767px 显示 */
+  &__close-btn {
+    display: none;
+  }
+
+  /* 移动端全屏覆盖，忽略 JS 定位的 left/top，留出底部导航栏空间 */
+  @media (max-width: 767px) {
+    left: 0 !important;
+    top: 0 !important;
+    right: 0;
+    width: 100vw !important;
+    height: calc(100vh - 56px - env(safe-area-inset-bottom, 0px)) !important;
+    max-height: calc(100vh - 56px - env(safe-area-inset-bottom, 0px)) !important;
+    border-radius: 0;
+    border: none;
+
+    .popover-panel__close-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      z-index: 1;
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 50%;
+      background: var(--u-background-2);
+      color: var(--u-text-2);
+      font-size: 16px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+
+      &:active {
+        opacity: 0.6;
+      }
+    }
   }
 }
 
@@ -246,5 +290,11 @@ onUnmounted(() => {
   /* left 由 :style="backdropStyle" 注入，不覆盖 icon bar */
   z-index: 10001;
   background: transparent;
+
+  /* 移动端過罩全屏 */
+  @media (max-width: 767px) {
+    left: 0 !important;
+    background: rgba(0, 0, 0, 0.3);
+  }
 }
 </style>

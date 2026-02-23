@@ -21,7 +21,6 @@ function RouteErrorBoundary() {
   )
 }
 
-const LoginPage = lazy(() => import('../features/auth/LoginPage'))
 const DashboardPage = lazy(() => import('../features/dashboard/DashboardPage'))
 const Categories = lazy(() => import('../features/categories/CategoriesPage'))
 const Tags = lazy(() => import('../features/tags/TagsPage'))
@@ -31,21 +30,20 @@ const Comments = lazy(() => import('../features/comments/CommentsPage'))
 const Settings = lazy(() => import('../features/settings/SettingsPage'))
 const AboutBlocks = lazy(() => import('../features/about-blocks/AboutBlocksPage'))
 const Media = lazy(() => import('../features/media/MediaPage'))
+const Analytics = lazy(() => import('../features/analytics/AnalyticsPage'))
+const FriendLinks = lazy(() => import('../features/friend-links/FriendLinksPage'))
+const Roles = lazy(() => import('../features/roles/RolesPage'))
+const Permissions = lazy(() => import('../features/permissions/PermissionsPage'))
+const Routes = lazy(() => import('../features/routes/RoutesPage'))
+const Xiaohui = lazy(() => import('../features/xiaohui/XiaohuiPage'))
 
 function Lazy({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<Spin size="large" style={{ display: 'block', margin: '48px auto' }} />}>{children}</Suspense>
 }
 
+const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || undefined
+
 const router = createBrowserRouter([
-  {
-    path: '/login',
-    element: (
-      <Lazy>
-        <LoginPage />
-      </Lazy>
-    ),
-    errorElement: <RouteErrorBoundary />,
-  },
   {
     path: '/',
     element: (
@@ -65,10 +63,16 @@ const router = createBrowserRouter([
       { path: 'media', element: <Lazy><Media /></Lazy> },
       { path: 'settings', element: <Lazy><Settings /></Lazy> },
       { path: 'about-blocks', element: <Lazy><AboutBlocks /></Lazy> },
+      { path: 'analytics', element: <Lazy><Analytics /></Lazy> },
+      { path: 'friend-links', element: <Lazy><FriendLinks /></Lazy> },
+      { path: 'roles', element: <Lazy><Roles /></Lazy> },
+      { path: 'permissions', element: <Lazy><Permissions /></Lazy> },
+      { path: 'routes', element: <Lazy><Routes /></Lazy> },
+      { path: 'xiaohui', element: <Lazy><Xiaohui /></Lazy> },
     ],
   },
   { path: '*', element: <Navigate to="/" replace /> },
-])
+], { basename })
 
 export function AppRouter() {
   return <RouterProvider router={router} />

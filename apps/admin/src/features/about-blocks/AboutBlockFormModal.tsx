@@ -92,7 +92,7 @@ export function AboutBlockFormModal({
         return
       }
     }
-    await Promise.resolve(onSubmit({ ...rest, extra }))
+    await Promise.resolve(onSubmit({ ...rest, extra } as any))
     form.resetFields()
     onClose()
   }

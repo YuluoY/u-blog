@@ -15,3 +15,10 @@ export async function getUserBlogProfile(username: string): Promise<UserBlogProf
   if (res.data.code !== 0) throw new Error(res.data.message || '获取用户信息失败')
   return res.data.data
 }
+
+/** 获取站长（super_admin）公开资料 — 游客侧栏展示用，无需认证 */
+export async function getSiteOwnerProfile(): Promise<UserBlogProfile | null> {
+  const res = await request.get<BackendResponse<UserBlogProfile>>('/site-owner')
+  if (res.data.code !== 0) return null
+  return res.data.data
+}

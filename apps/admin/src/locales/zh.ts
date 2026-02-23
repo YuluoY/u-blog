@@ -33,6 +33,12 @@ export const zh = {
     media: '媒体',
     settings: '设置',
     aboutBlocks: '关于页区块',
+    analytics: '行为分析',
+    friendLinks: '友链管理',
+    roles: '角色管理',
+    permissions: '权限管理',
+    routes: '路由管理',
+    xiaohui: '小惠对话',
   },
   app: {
     title: 'U-Blog 管理',

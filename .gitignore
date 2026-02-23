@@ -116,3 +116,4 @@ temp/
 .github/
 
 .claude/
+.playwright-mcp

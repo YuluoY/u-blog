@@ -2,7 +2,9 @@ import api from '@/api'
 import { CTable, type IUser, type IUserLoginDto, type IUserRegisterDto } from '@u-blog/model'
 import { useState } from '@u-blog/composables'
 import { defineStore } from 'pinia'
-import { restQuery, loginApi, registerApi, logoutApi, setAccessToken, sendEmailCodeApi, updateProfileApi } from '@/api/request'
+import { loginApi, registerApi, logoutApi, setAccessToken, sendEmailCodeApi, updateProfileApi } from '@/api/request'
+import { useBlogOwnerStore } from '@/stores/blogOwner'
+import { getUserBlogProfile, getSiteOwnerProfile, type UserBlogProfile } from '@/api/userBlog'
 
 export const useUserStore = defineStore('user', () =>
 {
@@ -35,15 +37,19 @@ export const useUserStore = defineStore('user', () =>
       setAuthReady(true)
       return
     }
-    // 未登录：查站长信息用于侧栏展示
+    // 未登录：子域名模式使用博客拥有者信息，否则查站长信息用于侧栏展示
     setIsLoggedIn(false)
     try {
-      const list = await restQuery<Partial<IUser>[]>('users', {
-        where: { role: 'super_admin' },
-        take: 1
-      })
-      if (Array.isArray(list) && list[0]) {
-        setUser(list[0])
+      const blogOwnerStore = useBlogOwnerStore()
+      if (blogOwnerStore.isSubdomainMode && blogOwnerStore.profile?.user) {
+        // 子域名模式：直接使用博客拥有者的资料
+        setUser(blogOwnerStore.profile.user)
+      } else {
+        // 非子域名：查站长信息用于侧栏展示（公开接口，无需登录）
+        const profile = await getSiteOwnerProfile()
+        if (profile?.user) {
+          setUser(profile.user)
+        }
       }
     } catch { /* ignore */ }
     setAuthReady(true)
@@ -79,16 +85,18 @@ export const useUserStore = defineStore('user', () =>
     await logoutApi()
     setIsLoggedIn(false)
     setAccessToken(null)
-    // 重新加载站长信息
+    // 重新加载展示信息：子域名模式用博客拥有者，否则用站长
     try {
-      const list = await restQuery<Partial<IUser>[]>('users', {
-        where: { role: 'super_admin' },
-        take: 1
-      })
-      if (Array.isArray(list) && list[0]) {
-        setUser(list[0])
+      const blogOwnerStore = useBlogOwnerStore()
+      if (blogOwnerStore.isSubdomainMode && blogOwnerStore.profile?.user) {
+        setUser(blogOwnerStore.profile.user)
       } else {
-        setUser({})
+        const profile = await getSiteOwnerProfile()
+        if (profile?.user) {
+          setUser(profile.user)
+        } else {
+          setUser({})
+        }
       }
     } catch {
       setUser({})

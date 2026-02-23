@@ -131,7 +131,7 @@ import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { emojify } from 'node-emoji'
 import type { UCommentItemEmits, UCommentItemProps } from '../types'
-import { getQQAvatarUrl } from '../types'
+import { getGuestAvatarUrl } from '../types'
 import { UIcon } from '@/components/icon'
 import UCommentInput from './CommentInput.vue'
 import CommentItemSelf from './CommentItem.vue'
@@ -166,12 +166,12 @@ const displayName = computed(() => {
   return (u as { namec?: string }).namec ?? (u as { username?: string }).username ?? '匿名'
 })
 
-/** 头像 URL（登录用户取 user.avatar，游客检测 QQ 邮箱自动生成头像） */
+/** 头像 URL（登录用户取 user.avatar，游客使用 QQ 头像或随机头像） */
 const avatarUrl = computed(() => {
   const u = props.comment.user
   if (u) return (u as { avatar?: string }).avatar ?? ''
-  // 游客：尝试从 QQ 邮箱提取头像
-  return getQQAvatarUrl(props.comment.email) ?? ''
+  // 游客：QQ 邮箱 → QQ 头像，其他 → DiceBear 随机头像
+  return getGuestAvatarUrl(props.comment.email, props.comment.nickname)
 })
 
 /** 被回复的父评论 id（用于滚动定位） */

@@ -43,34 +43,24 @@ class RestService {
     // 处理 where 条件
     if (where && typeof where === 'object') {
       Object.keys(where).forEach(key => {
-        // 查找对应的列
+        // 查找对应的列（必须是已知的实体列名，防止 SQL 注入）
         const column = metadata.findColumnWithPropertyName(key)
         if (column) {
-          // 使用数据库列名和参数化查询防止 SQL 注入
           const paramKey = `param_${key}`
           queryBuilder.andWhere(`${alias}.${column.databaseName} = :${paramKey}`, { [paramKey]: where[key] })
-        } else {
-          // 如果找不到列，尝试直接使用属性名（可能是数据库列名）
-          const paramKey = `param_${key}`
-          queryBuilder.andWhere(`${alias}.${key} = :${paramKey}`, { [paramKey]: where[key] })
         }
+        // 移除了不安全的 else 分支：未在实体元数据中声明的属性一律忽略
       })
     }
     
-    // 处理排序（先排序再分页）
+    // 处理排序（先排序再分页）—— 只允许已知实体列名
     if (order && typeof order === 'object') {
       const dir = (v: string) => (String(v).toUpperCase() === 'DESC' ? 'DESC' : 'ASC') as 'ASC' | 'DESC'
       Object.keys(order).forEach(key => {
+        const column = metadata.findColumnWithPropertyName(key)
+        if (!column) return // 忽略不存在的列，防止 SQL 注入
         const orderDir = dir(order[key])
-        let colName: string
-        if (metadata.name === 'Article' && key === 'createdAt') {
-          const col = metadata.findColumnWithPropertyName('createdAt')
-          colName = col?.databaseName ?? 'createdAt'
-        } else {
-          const column = metadata.findColumnWithPropertyName(key)
-          colName = column ? column.databaseName : key
-        }
-        queryBuilder.addOrderBy(`${alias}.${colName}`, orderDir)
+        queryBuilder.addOrderBy(`${alias}.${column.databaseName}`, orderDir)
       })
     }
 

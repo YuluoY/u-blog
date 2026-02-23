@@ -14,7 +14,7 @@ class CommonController {
   {
     const { email } = req.body || {}
     const userRepo = getDataSource(req).getRepository(Users) as Repository<Users>
-    const tryData = await tryit<any, Error>(() => CommonService.sendEmailCode(email, userRepo))
+    const tryData = await tryit<any, Error>(() => CommonService.sendEmailCode(req, email, userRepo))
     return formatResponse(tryData, '验证码已发送', '发送验证码失败')
   }
 

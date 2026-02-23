@@ -110,6 +110,7 @@ import { getQQAvatarUrl } from '@u-blog/ui'
 import type { IComment } from '@u-blog/model'
 import type { UCommentItemData } from '@u-blog/ui'
 import { storeToRefs } from 'pinia'
+import { filterSensitiveWords } from '@/utils/sensitiveFilter'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -182,14 +183,19 @@ async function fetchList(restoreScroll = false) {
 async function handleSubmit() {
   const text = content.value?.trim()
   if (!text) return
-  // 游客校验
+  // 游客校验：昵称 + 邮箱必填
   if (!isLoggedIn.value) {
-    if (!guestNickname.value?.trim() || !guestEmail.value?.trim()) return
+    if (!guestNickname.value?.trim() || !guestEmail.value?.trim()) {
+      UMessageFn({ message: t('message.guestFieldsRequired'), type: 'warning' })
+      return
+    }
   }
   submitting.value = true
   try {
+    // 敏感词过滤
+    const filteredText = filterSensitiveWords(text)
     const payload: Record<string, unknown> = {
-      content: text,
+      content: filteredText,
       path: MESSAGE_PATH,
     }
     if (isLoggedIn.value) {
@@ -219,14 +225,19 @@ function handleReply(comment: UCommentItemData) {
 /** 提交回复（登录用户 / 游客） */
 async function handleReplySubmit(text: string, comment: UCommentItemData) {
   if (!text.trim()) return
-  // 游客校验
+  // 游客校验：昵称 + 邮箱必填
   if (!isLoggedIn.value) {
-    if (!guestNickname.value?.trim() || !guestEmail.value?.trim()) return
+    if (!guestNickname.value?.trim() || !guestEmail.value?.trim()) {
+      UMessageFn({ message: t('message.guestFieldsRequired'), type: 'warning' })
+      return
+    }
   }
   replySubmitting.value = true
   try {
+    // 敏感词过滤
+    const filteredText = filterSensitiveWords(text.trim())
     const payload: Record<string, unknown> = {
-      content: text.trim(),
+      content: filteredText,
       path: MESSAGE_PATH,
       pid: comment.id,
     }

@@ -180,9 +180,12 @@ const props = withDefaults(
   defineProps<{
     content: string
     userId?: number | null
+    /** 编辑模式：是否正在编辑已有文章 */
+    editMode?: boolean
   }>(),
   {
-    userId: null
+    userId: null,
+    editMode: false,
   }
 )
 
@@ -229,9 +232,10 @@ const coverUploading = ref(false)
 const canSubmit = computed(() => !!props.userId && form.title.trim().length > 0)
 
 /** 提交按钮文案 */
-const submitLabel = computed(() =>
-  form.status === CArticleStatus.PUBLISHED ? t('write.publish') : t('write.saveAsDraft')
-)
+const submitLabel = computed(() => {
+  if (props.editMode) return t('write.updateArticle')
+  return form.status === CArticleStatus.PUBLISHED ? t('write.publish') : t('write.saveAsDraft')
+})
 
 /* ---------- 封面超限提示 ---------- */
 function onCoverExceed() {
@@ -318,6 +322,14 @@ function extractFirstHeading(mdContent: string): string {
 let initDone = false
 
 async function initForm() {
+  // 编辑模式下跳过缓存恢复，等待父组件调用 loadEditData
+  if (props.editMode) {
+    initDone = true
+    loadCategories()
+    loadTags()
+    return
+  }
+
   // 先尝试从本地缓存恢复发布配置
   const cached = await restorePublishSettings()
   if (cached) {
@@ -455,6 +467,38 @@ async function handleSubmit() {
   emit('submit', payload)
 }
 
+/**
+ * 编辑模式：加载已有文章数据到表单
+ * @param article 文章完整对象
+ */
+function loadEditData(article: {
+  title: string
+  desc?: string
+  categoryId?: number | null
+  tags?: Array<{ id: number }> | number[]
+  status?: string
+  isPrivate?: boolean
+  isTop?: boolean
+  cover?: string
+  publishedAt?: string
+}) {
+  form.title = article.title || ''
+  form.desc = article.desc || ''
+  form.categoryId = article.categoryId ?? ''
+  // tags 可能是对象数组 [{id:1}] 或纯 id 数组
+  form.tags = (article.tags ?? []).map((t: any) => typeof t === 'object' ? t.id : t)
+  form.status = (article.status as ArticleStatus) || CArticleStatus.PUBLISHED
+  form.isPrivate = article.isPrivate ?? false
+  form.isTop = article.isTop ?? false
+  form.cover = article.cover || ''
+  if (article.publishedAt) {
+    form.publishedAt = toDatetimeLocal(new Date(article.publishedAt))
+    publishNow.value = false
+  } else {
+    publishNow.value = true
+  }
+}
+
 /** 发布成功后清理本地缓存（由父组件调用） */
 function clearCache() {
   clearPublishSettings().catch(() => {})
@@ -469,6 +513,8 @@ defineExpose({
   submitLabel,
   /** 清理发布配置缓存 */
   clearCache,
+  /** 编辑模式：加载已有文章数据 */
+  loadEditData,
 })
 </script>
 

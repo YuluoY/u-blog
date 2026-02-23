@@ -182,6 +182,9 @@ export const en = {
     readProgress: {
       label: 'Reading progress',
     },
+    progressBar: {
+      loading: 'Loading',
+    },
     card: {
       collapseExpand: 'Collapse/Expand',
     },

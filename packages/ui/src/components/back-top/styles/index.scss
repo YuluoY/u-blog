@@ -1,0 +1,168 @@
+@use 'sass:map';
+
+/* ---- UBackTop 置顶按钮 ---- */
+
+/* 颜色映射：跟随主题 CSS 变量 */
+$back-top-colors: (
+  'primary': (
+    bg: var(--u-primary, #667eea),
+    hover: var(--u-primary-light-2, #7c93ee),
+    active: var(--u-primary-0, #5a72e0),
+    shadow: rgba(102, 126, 234, 0.4),
+  ),
+  'success': (
+    bg: var(--u-success, #67c23a),
+    hover: var(--u-success-light-2, #85cf60),
+    active: var(--u-success, #67c23a),
+    shadow: rgba(103, 194, 58, 0.4),
+  ),
+  'warning': (
+    bg: var(--u-warning, #e6a23c),
+    hover: var(--u-warning-light-2, #ebb563),
+    active: var(--u-warning, #e6a23c),
+    shadow: rgba(230, 162, 60, 0.4),
+  ),
+  'danger': (
+    bg: var(--u-danger, #f56c6c),
+    hover: var(--u-danger-light-2, #f78989),
+    active: var(--u-danger, #f56c6c),
+    shadow: rgba(245, 108, 108, 0.4),
+  ),
+  'info': (
+    bg: var(--u-info, #909399),
+    hover: var(--u-info-light-2, #a6a9ad),
+    active: var(--u-info, #909399),
+    shadow: rgba(144, 147, 153, 0.4),
+  ),
+);
+
+.u-back-top {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  /* 确保文字/图标在深色按钮上清晰可见 */
+  color: #fff;
+  transition:
+    background-color 0.25s ease,
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    opacity 0.25s ease;
+  /* 触控设备的可拖拽支持 */
+  touch-action: none;
+  user-select: none;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--u-primary, #667eea);
+    outline-offset: 2px;
+  }
+
+  /* 拖拽中禁用 hover 动画，添加缩放反馈 */
+  &--dragging {
+    cursor: grabbing;
+    transition: none !important;
+
+    &:hover {
+      transform: scale(1.08);
+    }
+  }
+
+  /* 形状 */
+  &--circle {
+    border-radius: 50%;
+  }
+
+  &--square {
+    border-radius: 10px;
+  }
+
+  /* 阴影 */
+  &--shadow {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+    &:hover {
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    }
+  }
+
+  /* 各类型颜色 */
+  @each $name, $map in $back-top-colors {
+    &--#{$name} {
+      background-color: map.get($map, bg);
+
+      &:hover {
+        background-color: map.get($map, hover);
+      }
+
+      &:active {
+        background-color: map.get($map, active);
+      }
+
+      /* 阴影使用对应色 */
+      &.u-back-top--shadow {
+        box-shadow: 0 4px 16px map.get($map, shadow);
+
+        &:hover {
+          box-shadow: 0 6px 24px map.get($map, shadow);
+        }
+      }
+    }
+  }
+
+  /* 默认箭头图标 */
+  &__icon {
+    width: 50%;
+    height: 50%;
+  }
+
+  /* 自定义图标 */
+  &__custom-icon {
+    font-size: 1.2em;
+    line-height: 1;
+  }
+}
+
+/* 暗夜模式微调：降低饱和度，提升对比 */
+:root.dark {
+  .u-back-top {
+    color: rgba(255, 255, 255, 0.95);
+
+    &--shadow {
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+
+      &:hover {
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+      }
+    }
+  }
+}
+
+/* 滑入/滑出过渡 */
+.u-back-top-slide-enter-active {
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.u-back-top-slide-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.u-back-top-slide-enter-from {
+  opacity: 0;
+  transform: translateY(20px) scale(0.8);
+}
+
+.u-back-top-slide-leave-to {
+  opacity: 0;
+  transform: translateY(10px) scale(0.9);
+}

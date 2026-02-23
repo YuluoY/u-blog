@@ -15,6 +15,11 @@
                 <span v-if="article.user" class="read-view__meta-author">{{ article.user.namec || article.user.username }}</span>
                 <time v-if="article.publishedAt" class="read-view__meta-date" :datetime="toIso(article.publishedAt)">{{ t('read.publishedAt') }} {{ formatDate(article.publishedAt) }}</time>
                 <time v-if="article.updatedAt" class="read-view__meta-date" :datetime="toIso(article.updatedAt)">{{ t('read.updatedAt') }} {{ formatDate(article.updatedAt) }}</time>
+                <!-- 编辑入口：仅文章作者可见，融入 byline 行尾 -->
+                <router-link v-if="canEdit" :to="`/write?edit=${article.id}`" class="read-view__edit-btn" :title="t('read.editArticle')">
+                  <u-icon icon="fa-solid fa-pen-to-square" />
+                  <span>{{ t('read.editArticle') }}</span>
+                </router-link>
               </div>
             </div>
             <dl class="read-view__meta-stats">
@@ -154,6 +159,7 @@ import { useArticleStore } from '@/stores/model/article'
 import { useCommentStore } from '@/stores/model/comment'
 import { useUserStore } from '@/stores/model/user'
 import { useAppStore } from '@/stores/app'
+import { useBlogOwnerStore } from '@/stores/blogOwner'
 import { storeToRefs } from 'pinia'
 import { watch, computed, nextTick } from 'vue'
 import api from '@/api'
@@ -162,6 +168,7 @@ import { CTable, CTheme } from '@u-blog/model'
 import { UMessageFn } from '@u-blog/ui'
 import { getQQAvatarUrl } from '@u-blog/ui'
 import type { UCommentItemData } from '@u-blog/ui'
+import { filterSensitiveWords } from '@/utils/sensitiveFilter'
 
 defineOptions({
   name: 'ReadView'
@@ -173,6 +180,7 @@ const articleStore = useArticleStore()
 const commentStore = useCommentStore()
 const userStore = useUserStore()
 const appStore = useAppStore()
+const blogOwnerStore = useBlogOwnerStore()
 const { currentArticle, articleList } = storeToRefs(articleStore)
 const { user, isLoggedIn } = storeToRefs(userStore)
 
@@ -185,6 +193,17 @@ const article = computed(() => {
   const cur = currentArticle.value
   if (cur && (String(cur.id) === id || cur.id === parseInt(id))) return cur
   return null
+})
+
+/**
+ * 是否可以编辑：已登录 + 是文章作者
+ * 分享模式无需检查——游客没有 token 看不到此按钮；
+ * 如果博主自己通过分享链接访问且已登录，仍可编辑自己的文章。
+ */
+const canEdit = computed(() => {
+  if (!isLoggedIn.value || !article.value) return false
+  const articleUserId = article.value.userId ?? (article.value.user as any)?.id
+  return user.value?.id === articleUserId
 })
 
 /** 实时浏览量（由后端返回的最新值覆盖，默认取 article 自带值） */
@@ -327,18 +346,22 @@ async function handleCommentSubmit() {
   const text = commentContent.value?.trim()
   if (!text || !commentPath.value) return
 
-  // 游客校验
+  // 游客校验：昵称 + 邮箱必填
   if (!isLoggedIn.value) {
-    if (!guestNickname.value?.trim()) return
-    if (!guestEmail.value?.trim()) return
+    if (!guestNickname.value?.trim() || !guestEmail.value?.trim()) {
+      UMessageFn({ message: t('read.guestFieldsRequired'), type: 'warning' })
+      return
+    }
   }
 
   commentSubmitting.value = true
   try {
     const id = route.params.id as string
     const articleId = id ? parseInt(id, 10) : undefined
+    // 敏感词过滤
+    const filteredText = filterSensitiveWords(text)
     const payload: Parameters<typeof api>[0] extends infer M ? any : never = {
-      content: text,
+      content: filteredText,
       path: commentPath.value,
       articleId: Number.isNaN(articleId) ? undefined : articleId,
     }
@@ -376,14 +399,19 @@ function handleReply(comment: UCommentItemData) {
 
 async function handleReplySubmit(text: string, comment: UCommentItemData) {
   if (!text.trim() || !commentPath.value) return
-  // 游客校验
+  // 游客校验：昵称 + 邮箱必填
   if (!isLoggedIn.value) {
-    if (!guestNickname.value?.trim() || !guestEmail.value?.trim()) return
+    if (!guestNickname.value?.trim() || !guestEmail.value?.trim()) {
+      UMessageFn({ message: t('read.guestFieldsRequired'), type: 'warning' })
+      return
+    }
   }
   replySubmitting.value = true
   try {
+    // 敏感词过滤
+    const filteredText = filterSensitiveWords(text.trim())
     const payload: Record<string, unknown> = {
-      content: text.trim(),
+      content: filteredText,
       path: commentPath.value,
       pid: comment.id,
     }
@@ -543,6 +571,42 @@ watch(() => route.params.id, async (newId) => {
     font-size: 1.2rem;
     color: var(--u-text-3);
   }
+}
+
+/* 编辑按钮 — 融入 byline 行尾，风格与日期/作者协调 */
+.read-view__edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding: 2px 10px;
+  font-size: 1.15rem;
+  color: var(--u-text-3);
+  text-decoration: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  cursor: pointer;
+  line-height: 1.6;
+
+  .u-icon {
+    font-size: 1rem;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+  }
+
+  &:hover {
+    color: var(--u-primary);
+    border-color: var(--u-primary);
+    background: color-mix(in srgb, var(--u-primary) 8%, transparent);
+
+    .u-icon {
+      opacity: 1;
+    }
+  }
+}
+
+.read-view__meta {
   &-stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
@@ -755,5 +819,129 @@ watch(() => route.params.id, async (newId) => {
   width: 200px;
   position: sticky;
   top: 24px;
+}
+
+/* 响应式：平板及以下隐藏目录侧栏 */
+@media (max-width: 992px) {
+  .read-view__catalog {
+    display: none;
+  }
+}
+
+/* 响应式：手机文章详情页适配 */
+@media (max-width: 767px) {
+  .read-view__body {
+    gap: 0;
+  }
+
+  /* 头部元信息：缩减间距，排列更紧凑 */
+  .read-view__meta {
+    padding-bottom: 12px;
+
+    /* 纵向堆叠全居中，与 stats 行对齐 */
+    &-top {
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    &-taxonomy {
+      justify-content: center;
+      gap: 4px;
+    }
+    &-category {
+      font-size: 1.1rem;
+      padding: 2px 8px;
+    }
+    &-tag {
+      font-size: 1.05rem;
+      padding: 1px 6px;
+    }
+    &-byline {
+      justify-content: center;
+      font-size: 1.1rem;
+      gap: 2px 8px;
+    }
+    &-date {
+      font-size: 1.05rem;
+    }
+    /* 强制 5 个统计项全在同一行，避免孤行 */
+    &-stats {
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px 0;
+    }
+    &-stat {
+      dt {
+        font-size: 0.95rem;
+      }
+      dd {
+        font-size: 1.15rem;
+      }
+    }
+  }
+
+  /* 正文区域：缩小 Markdown 渲染字号 */
+  .read-view__content {
+    :deep(.md-editor-previewOnly) {
+      font-size: 14px;
+    }
+    :deep(.md-editor-preview) {
+      font-size: 14px;
+
+      p, li, td, th, dd, dt {
+        font-size: 14px;
+        line-height: 1.7;
+      }
+      h1 { font-size: 22px; }
+      h2 { font-size: 19px; }
+      h3 { font-size: 17px; }
+      h4 { font-size: 15px; }
+      blockquote {
+        font-size: 13px;
+        padding: 8px 12px;
+      }
+    }
+  }
+
+  /* 点赞按钮 */
+  .read-view__like-btn {
+    font-size: 1.2rem;
+    padding: 8px 18px;
+    gap: 6px;
+
+    .u-icon {
+      font-size: 1.25rem;
+    }
+  }
+  .read-view__like-action {
+    padding: 16px 0;
+    margin-top: 16px;
+  }
+
+  /* 上下篇导航 */
+  .read-view__nav {
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 16px;
+
+    &-label {
+      font-size: 1.1rem;
+    }
+    &-title {
+      font-size: 1.25rem;
+    }
+    &-link {
+      padding: 8px 12px;
+    }
+  }
+
+  /* 评论区间距 */
+  .read-view__comments {
+    margin-top: 20px;
+    padding-top: 16px;
+  }
+  .read-view__comment-login-hint {
+    font-size: 1.15rem;
+  }
 }
 </style>

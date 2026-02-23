@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express'
 import sharp from 'sharp'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import { existsSync } from 'node:fs'
 
 /**
@@ -45,7 +45,14 @@ export const SharpImageHandler = async (req: Request, res: Response, next: NextF
 	let imageBuffer = null
 	const qExts = ['jpeg', 'png', 'webp', 'gif']
 
-	const localPath = join(__dirname, '../..', 'public/static/image', req.params.path)
+	const baseDir = resolve(__dirname, '../..', 'public/static/image')
+	const localPath = resolve(baseDir, req.params.path)
+
+	// 路径穿越防护：确保解析后的路径仍在预期目录内
+	if (!localPath.startsWith(baseDir)) {
+		res.status(400).json({ code: 400, data: null, message: '非法路径' })
+		return
+	}
 
 	if (!existsSync(localPath)) {
 		req.image = null

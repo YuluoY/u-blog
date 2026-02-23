@@ -19,6 +19,11 @@ body,
 html {
   // 统一 rem 基线：项目历史设计稿按 1rem = 10px，保持与既有样式语义一致。
   font-size: 10px;
+
+  // 移动端等比缩小：1rem = 9px，全站字号 / 间距自动缩减约 10%
+  @media (max-width: 767px) {
+    font-size: 9px;
+  }
 }
 
 a {

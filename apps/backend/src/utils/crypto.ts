@@ -59,8 +59,8 @@ export const decrypt = (encryptedText: string): string => {
 
 /* ========== 传输层解密（与前端 transportCrypto.ts 配对） ========== */
 
-/** 与前端共享的传输密钥种子（通过 SHA-256 派生 256-bit 密钥） */
-const TRANSPORT_SEED = 'u-blog-transport-key-2024!!@#$%'
+/** 与前端共享的传输密钥种子（从环境变量获取，确保不硬编码在源码中） */
+const TRANSPORT_SEED = process.env.TRANSPORT_KEY || 'u-blog-transport-key-2024!!@#$%'
 
 /** 从种子派生 AES-256 密钥 */
 function getTransportKey(): Buffer {

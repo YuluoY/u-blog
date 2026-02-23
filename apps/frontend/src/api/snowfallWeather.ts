@@ -4,8 +4,8 @@
  * - 天气：Open-Meteo（免费，无需 key），WMO 雪类天气码 71,73,75,77,85,86
  */
 
-/** 走前端代理 /ip-api，避免跨域（dev 见 vite proxy，生产需 nginx/后端代理同路径） */
-const IP_API = '/ip-api/v1/get'
+/** 走后端代理 /ip-location，避免跨域和外部服务 500 错误直接暴露到 console */
+const IP_API = '/api/ip-location'
 const OPEN_METEO = 'https://api.open-meteo.com/v1/forecast'
 
 const SNOW_CODES = new Set([71, 73, 75, 77, 85, 86])

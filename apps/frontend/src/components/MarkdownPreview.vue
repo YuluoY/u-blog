@@ -1,26 +1,47 @@
 <template>
   <MdPreview
     :model-value="content"
-    :preview="true"
-    :show-line-number="false"
-    :show-toolbar="false"
+    :theme="previewTheme"
+    :code-style-reverse="false"
+    :show-code-row-number="false"
+    :code-foldable="codeFoldable"
+    :auto-fold-threshold="autoFoldThreshold"
     :style="{ background: 'transparent' }"
     class="markdown-preview"
   />
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { MdPreview } from 'md-editor-v3'
 import 'md-editor-v3/lib/preview.css'
+import { useAppStore } from '@/stores/app'
+import { CTheme } from '@u-blog/model'
 
 defineOptions({ name: 'MarkdownPreview' })
 
-defineProps<{
+const appStore = useAppStore()
+
+// 跟随应用主题切换 md-editor-v3 的亮/暗代码高亮
+const previewTheme = computed(() =>
+  appStore.theme === CTheme.DARK ? 'dark' : 'light'
+)
+
+withDefaults(defineProps<{
   content: string
-}>()
+  /** 代码块是否可折叠 */
+  codeFoldable?: boolean
+  /** 自动折叠阈值行数 */
+  autoFoldThreshold?: number
+}>(), {
+  codeFoldable: true,
+  autoFoldThreshold: 30,
+})
 </script>
 
 <style lang="scss">
+/* 代码块亮 / 暗主题 CSS 变量覆盖已移至全局 assets/styles/md-code-theme.scss */
+
 .markdown-preview {
   background: transparent !important;
   /*
@@ -36,12 +57,13 @@ defineProps<{
     --md-bk-color: transparent;
   }
 
-  /* 强制正文区容器继承主题文字色，防止库内部硬编码颜色 */
+  /* 强制正文区容器继承主题文字色 & 背景透明，防止库内部硬编码颜色/背景 */
   .md-editor-preview-wrapper,
   .md-editor-preview {
     padding: 0;
     color: var(--u-text-1);
     font-size: inherit;
+    background: transparent !important;
   }
 
   /*

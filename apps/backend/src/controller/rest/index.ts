@@ -7,6 +7,17 @@ import RestService from '@/service/rest'
 import CommonService from '@/service/common'
 import { Article } from '@/module/schema/Article'
 import { Tag } from '@/module/schema/Tag'
+import sanitizeHtml from 'sanitize-html'
+import { USERS_SENSITIVE_FIELDS, stripSensitiveFields } from '@/middleware/RestWriteGuard'
+
+/** 评论内容允许的 HTML 标签和属性（严格白名单） */
+const COMMENT_SANITIZE_OPTS: sanitizeHtml.IOptions = {
+  allowedTags: ['p', 'br', 'b', 'i', 'em', 'strong', 'a', 'code', 'pre', 'blockquote'],
+  allowedAttributes: {
+    a: ['href', 'title', 'rel', 'target'],
+  },
+  allowedSchemes: ['http', 'https', 'mailto'],
+}
 
 /**
  * IP 频率限制：同一 IP 在窗口期内最多允许的评论数
@@ -17,6 +28,18 @@ const commentRateMap = new Map<string, number[]>()
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000
 /** 窗口内最大评论条数 */
 const RATE_LIMIT_MAX = 5
+/** Map 最大条目数，防止内存耗尽 */
+const RATE_MAP_MAX_SIZE = 10000
+
+/** 定期清理过期的评论限流记录（每 60 秒） */
+setInterval(() => {
+  const now = Date.now()
+  for (const [ip, timestamps] of commentRateMap) {
+    const valid = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS)
+    if (valid.length === 0) commentRateMap.delete(ip)
+    else commentRateMap.set(ip, valid)
+  }
+}, 60_000)
 
 /** 检查 IP 评论频率，返回 true 表示超限 */
 function isRateLimited(ip: string): boolean {
@@ -25,6 +48,8 @@ function isRateLimited(ip: string): boolean {
   // 清理过期记录
   const valid = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS)
   if (valid.length >= RATE_LIMIT_MAX) return true
+  // 超出 Map 大小上限时，拒绝新 IP（防止攻击者填满内存）
+  if (!commentRateMap.has(ip) && commentRateMap.size >= RATE_MAP_MAX_SIZE) return true
   valid.push(now)
   commentRateMap.set(ip, valid)
   return false
@@ -35,6 +60,10 @@ class RestController
   async query(req: Request): ControllerReturn
   {
     const tryData = await tryit<any, Error>(() => RestService.query(req.model, req))
+    // Users 表查询：过滤敏感字段（password/token/rthash 等）
+    if (tryData[0] == null && isUsersModel(req)) {
+      sanitizeUsersResponse(tryData[1])
+    }
     return formatResponse(tryData, req.__('rest.querySuccess'), req.__('rest.queryFail'))
   }
 
@@ -96,6 +125,11 @@ class RestController
         device: device ?? undefined,
         ipLocation: ipLocation ?? undefined
       })
+
+      // 评论内容 XSS 清理：只保留安全的 HTML 标签
+      if (typeof data.content === 'string') {
+        data.content = sanitizeHtml(data.content, COMMENT_SANITIZE_OPTS)
+      }
     }
 
     let payload: typeof data = data
@@ -157,7 +191,30 @@ class RestController
       return formatResponse([new Error('id 必填') as any, null], req.__('rest.updateSuccess'), req.__('rest.updateFail'))
     }
     const tryData = await tryit<any, Error>(() => RestService.update(req.model, numId, rest))
+    // Users 表更新：过滤响应中的敏感字段
+    if (tryData[0] == null && isUsersModel(req)) {
+      sanitizeUsersResponse(tryData[1])
+    }
     return formatResponse(tryData, req.__('rest.updateSuccess'), req.__('rest.updateFail'))
+  }
+}
+
+/* ---------- 辅助函数 ---------- */
+
+/** 判断当前操作的是否为 Users 模型 */
+function isUsersModel(req: Request): boolean {
+  return req.model?.metadata?.name === 'Users' || req.params?.model === 'users'
+}
+
+/** 从用户数据（单条或数组）中移除敏感字段 */
+function sanitizeUsersResponse(data: any): void {
+  if (!data) return
+  if (Array.isArray(data)) {
+    data.forEach(item => {
+      if (item && typeof item === 'object') stripSensitiveFields(item, USERS_SENSITIVE_FIELDS)
+    })
+  } else if (typeof data === 'object') {
+    stripSensitiveFields(data, USERS_SENSITIVE_FIELDS)
   }
 }
 

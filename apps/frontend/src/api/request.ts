@@ -1,5 +1,6 @@
 import axios from 'axios'
 import type { IUserLogin, IUserRegisterDto, IUserLoginDto } from '@u-blog/model'
+import { startProgress, endProgress, failProgress } from '@/composables/useProgressBar'
 
 /** 内存中保存的 access token（不持久化，刷新页面后通过 /refresh 恢复） */
 let accessToken: string | null = null
@@ -23,8 +24,10 @@ const instance = axios.create({
   }
 })
 
-/* ---------- 请求拦截器：自动附带 Authorization 头 ---------- */
+/* ---------- 请求拦截器：自动附带 Authorization 头 + 触发进度条 ---------- */
 instance.interceptors.request.use((config) => {
+  // 触发全局加载进度条
+  startProgress()
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`
   }
@@ -33,8 +36,12 @@ instance.interceptors.request.use((config) => {
 
 /* ---------- 响应拦截器：401 时清除 token，并提取后端 message ---------- */
 instance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    endProgress()
+    return response
+  },
   (error) => {
+    failProgress()
     if (error.response?.status === 401) {
       accessToken = null
     }
@@ -213,6 +220,24 @@ export async function getArticleLikeStatus(articleId: number, fingerprint?: stri
 }
 
 /* ---------- 认证相关 ---------- */
+
+/** 注册状态信息 */
+export interface RegistrationStatus {
+  enabled: boolean
+  reason: string
+}
+
+/**
+ * 查询注册功能是否开放（公开接口，无需登录）
+ */
+export async function getRegistrationStatus(): Promise<RegistrationStatus> {
+  const res = await instance.get<BackendResponse<RegistrationStatus>>('/registration-status')
+  const payload = res.data
+  if (payload.code !== 0) {
+    return { enabled: false, reason: '查询失败' }
+  }
+  return payload.data
+}
 
 /**
  * 用户登录

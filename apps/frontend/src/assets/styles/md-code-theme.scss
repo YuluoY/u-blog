@@ -1,0 +1,15 @@
+/**
+ * md-editor-v3 代码块主题覆盖
+ *
+ * 默认的 "default" previewTheme 在亮色模式下硬编码暗色代码块背景(#282c34)，
+ * 此文件覆盖 CSS 变量使代码块跟随应用亮/暗主题。
+ */
+
+/* 亮色主题：将代码块背景改为浅色 */
+.md-editor:not(.md-editor-dark) .md-editor-preview {
+  --md-theme-code-block-bg-color: #f6f8fa;
+  --md-theme-code-block-color: #383a42;
+  --md-theme-code-before-bg-color: var(--md-theme-code-block-bg-color);
+  --md-theme-code-copy-tips-bg-color: #fff;
+  --md-theme-code-copy-tips-color: #141414;
+}

@@ -64,12 +64,15 @@ const SETTING_KEYS = [
 class ChatService {
 
   /**
-   * 从 user_setting 表读取当前用户的模型配置（用户级隔离，不走全局 fallback）
+   * 从 user_setting 表读取模型配置（用户级隔离）
+   * - 登录用户：读取 req.user.id 的配置
+   * - 子域名游客：通过 blogOwnerId 读取博主的配置
    * @throws {Error} 未配置 API Key 时抛出
    */
-  private async getModelConfig(req: Request): Promise<ModelConfig> {
+  private async getModelConfig(req: Request, blogOwnerId?: number): Promise<ModelConfig> {
     const ds = getDataSource(req)
-    const userId = req.user?.id
+    // 优先使用显式传入的 blogOwnerId（游客使用博主配置），否则用当前登录用户
+    const userId = blogOwnerId ?? req.user?.id
 
     // 仅从当前用户的 user_setting 读取（AI 配置严格按用户隔离，无全局 fallback）
     const map = new Map<string, unknown>()
@@ -151,14 +154,16 @@ class ChatService {
   /**
    * 流式聊天：返回 OpenAI 流对象，调用方逐 chunk 读取写入 SSE
    * @param ragContext 可选的 RAG 检索上下文
+   * @param blogOwnerId 子域名游客场景下，博主的 userId（使用博主的模型配置）
    */
   async chatStream(
     req: Request,
     messages: ChatRequestMessage[],
     override?: ModelConfigOverride,
     ragContext?: string,
+    blogOwnerId?: number,
   ): Promise<Stream<OpenAI.ChatCompletionChunk>> {
-    const config = await this.getModelConfig(req)
+    const config = await this.getModelConfig(req, blogOwnerId)
     // 应用调用方传入的参数覆盖（温度、最大输出等）
     if (override) {
       if (override.temperature != null) config.temperature = Math.min(2, Math.max(0, override.temperature))

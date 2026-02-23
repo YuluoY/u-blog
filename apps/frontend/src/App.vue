@@ -21,21 +21,27 @@ import { watch, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import LayoutBase from '@/components/LayoutBase.vue'
 import { useAppStore } from '@/stores/app'
+import { useBlogOwnerStore } from '@/stores/blogOwner'
 import { fetchTodayHasSnowByIP } from '@/api/snowfallWeather'
 import { useCategoryStore } from '@/stores/model/category'
 import { useTagStore } from '@/stores/model/tag'
 import { useArticleStore } from '@/stores/model/article'
 import { useUserStore } from '@/stores/model/user'
 import { i18n } from '@/locales'
-import { getSettings } from '@/api/settings'
+import { getSettings, type SettingsMap } from '@/api/settings'
 import { recordSiteVisit } from '@/api/request'
 import { SETTING_KEYS } from '@/constants/settings'
+import { useFooterStore } from '@/stores/footer'
 import { setCurrentUser as setWriteDraftUser } from '@/utils/writeDraftDb'
 import { setCurrentUser as setPublishSettingsUser } from '@/utils/publishSettingsDb'
+import { useActivityTracker } from '@/composables/useActivityTracker'
 import type { IUser } from '@u-blog/model'
 
 const appStore = useAppStore()
 const route = useRoute()
+
+// 初始化行为追踪
+useActivityTracker()
 
 /** 需要独立全屏渲染的路由（不包裹 LayoutBase） */
 const FULLSCREEN_ROUTES = new Set(['login'])
@@ -78,8 +84,13 @@ watch(
   { immediate: true }
 )
 
-// 应用启动时：拉取外观设置 + 站点元信息 + 各 model store 初始数据
-onMounted(() => {
+// 应用启动时：初始化博客拥有者（子域名检测）→ 拉取外观设置 + 站点元信息 + 各 model store 初始数据
+onMounted(async () => {
+  // 优先初始化博客拥有者（后续数据查询依赖 blogOwnerId 过滤）
+  const blogOwnerStore = useBlogOwnerStore()
+  await blogOwnerStore.init()
+
+  // 合并所有设置 keys 为一次请求（包含外观 + footer），减少网络往返
   getSettings([
     SETTING_KEYS.THEME,
     SETTING_KEYS.LANGUAGE,
@@ -88,23 +99,37 @@ onMounted(() => {
     SETTING_KEYS.SITE_NAME,
     SETTING_KEYS.SITE_FAVICON,
     SETTING_KEYS.ONLY_OWN_ARTICLES,
+    SETTING_KEYS.FOOTER_ICP_NUMBER,
+    SETTING_KEYS.FOOTER_ICP_LINK,
+    SETTING_KEYS.FOOTER_ICP_VISIBLE,
+    SETTING_KEYS.FOOTER_MOE_ICP_NUMBER,
+    SETTING_KEYS.FOOTER_MOE_ICP_LINK,
+    SETTING_KEYS.FOOTER_MOE_ICP_VISIBLE,
+    SETTING_KEYS.FOOTER_AUTHOR,
   ])
-    .then((data) => {
+    .then((data: SettingsMap) => {
       const prevOnlyOwn = appStore.onlyOwnArticles
       appStore.hydrateAppearance(data)
-      // 拉取到站点名称后立即更新当前页面 title
       appStore.updateDocumentTitle(route.meta.title as string | undefined)
-      // 若"仅展示我的文章"设置变化，需重新拉取文章列表
+
+      // 使用同一份 settings 数据写入 footerStore，不再二次请求
+      useFooterStore().hydrateFromSettings(data)
+
+      // settings 确认后再加载文章列表（排序依赖 homeSort）
+      useArticleStore().qryArticleList()
+      // 若"仅展示我的文章"设置变化，强制刷新
       if (appStore.onlyOwnArticles !== prevOnlyOwn) {
         useArticleStore().qryArticleList()
       }
     })
-    .catch(() => {})
+    .catch(() => {
+      // settings 请求失败也要保证文章列表加载
+      useArticleStore().qryArticleList()
+    })
 
   useCategoryStore().qryCategoryList()
   useTagStore().qryTagList()
-  useArticleStore().qryArticleList()
-  useUserStore().fetchUser()
+  // fetchUser 已在 beforehand() 中 await 完成，此处无需再调
 
   // 记录站点访问（后端按 IP 每日去重）
   recordSiteVisit().catch(() => {})

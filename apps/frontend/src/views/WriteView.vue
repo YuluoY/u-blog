@@ -19,10 +19,10 @@
         :class="{ 'is-hidden': panelVisible, 'is-dragging': fabDragging }"
         :style="fabStyle"
         @click="onFabClick"
-        :aria-label="t('write.publishArticle')"
+        :aria-label="isEditMode ? t('write.updateArticle') : t('write.publishArticle')"
       >
-        <u-icon :icon="['fas', 'paper-plane']" />
-        <span class="write-view__publish-fab-text">{{ t('write.publish') }}</span>
+        <u-icon :icon="['fas', isEditMode ? 'pen-to-square' : 'paper-plane']" />
+        <span class="write-view__publish-fab-text">{{ isEditMode ? t('write.updateArticle') : t('write.publish') }}</span>
       </button>
     </u-region>
   </u-layout>
@@ -30,7 +30,7 @@
   <!-- 发布抽屉（使用 UI 组件库 UDrawer） -->
   <u-drawer
     v-model="panelVisible"
-    :title="t('write.publishArticle')"
+    :title="isEditMode ? t('write.updateArticle') : t('write.publishArticle')"
     :width="400"
     placement="right"
   >
@@ -38,6 +38,7 @@
       ref="saveFormRef"
       :content="draft"
       :user-id="unref(user)?.id ?? null"
+      :edit-mode="isEditMode"
       @submit="onSaveSubmit"
     />
     <template #footer>
@@ -55,9 +56,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, unref } from 'vue'
+import { computed, ref, unref, onMounted, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { UNotificationFn } from '@u-blog/ui'
 import { useAppStore } from '@/stores/app'
 import { useDraggablePosition } from '@/composables/useDraggablePosition'
@@ -76,10 +77,18 @@ defineOptions({
 
 const { t } = useI18n()
 const router = useRouter()
+const route = useRoute()
 const appStore = useAppStore()
 const userStore = useUserStore()
 const { user } = storeToRefs(userStore)
 const editorTheme = computed(() => (appStore.theme === CTheme.DARK ? 'dark' : 'light'))
+
+/** 编辑模式：URL 携带 ?edit=<articleId> 时进入 */
+const editArticleId = computed(() => {
+  const id = route.query.edit
+  return id ? parseInt(id as string, 10) : null
+})
+const isEditMode = computed(() => !!editArticleId.value && !Number.isNaN(editArticleId.value))
 
 const { draft, flushDraft } = useWriteDraft(250)
 
@@ -117,6 +126,48 @@ async function handleSave(value?: string) {
   await flushDraft()
 }
 
+/**
+ * 编辑模式：加载已有文章数据到编辑器和表单
+ */
+async function loadArticleForEdit(articleId: number) {
+  try {
+    const article = await api(CTable.ARTICLE).getArticleById(String(articleId))
+    if (!article) {
+      UNotificationFn({ message: t('write.saveFail'), type: 'error', deduplicate: true })
+      return
+    }
+    // 验证是否是自己的文章
+    if (article.userId !== user.value?.id) {
+      UNotificationFn({ message: t('write.loginRequired'), type: 'error', deduplicate: true })
+      router.replace('/')
+      return
+    }
+    // 填充编辑器内容
+    draft.value = article.content || ''
+    await nextTick()
+    writeEditorRef.value?.setContent?.(article.content || '')
+    // 填充发布表单
+    await nextTick()
+    saveFormRef.value?.loadEditData({
+      title: article.title,
+      desc: article.desc,
+      categoryId: (article as any).categoryId ?? article.category?.id ?? null,
+      tags: article.tags,
+      status: article.status,
+      isPrivate: article.isPrivate,
+      isTop: article.isTop,
+      cover: article.cover,
+      publishedAt: article.publishedAt,
+    })
+  } catch (e) {
+    UNotificationFn({
+      message: (e instanceof Error ? e.message : t('write.saveFail')),
+      type: 'error',
+      deduplicate: true,
+    })
+  }
+}
+
 async function onSaveSubmit(payload: {
   title: string
   content: string
@@ -134,26 +185,44 @@ async function onSaveSubmit(payload: {
   const content = writeEditorRef.value?.getContent() ?? payload.content ?? draft.value
   saveLoading.value = true
   try {
-    const article = await api(CTable.ARTICLE).createArticle({
-      ...payload,
-      content,
-      userId
-    })
-    panelVisible.value = false
+    if (isEditMode.value && editArticleId.value) {
+      // 编辑模式：更新文章
+      await api(CTable.ARTICLE).updateArticle(editArticleId.value, {
+        ...payload,
+        content,
+        userId,
+      })
+      panelVisible.value = false
+      UNotificationFn({
+        message: t('write.updateSuccess'),
+        type: 'success',
+        deduplicate: true,
+      })
+      // 跳转到文章阅读页
+      router.push(`/read/${editArticleId.value}`)
+    } else {
+      // 新建模式：创建文章
+      const article = await api(CTable.ARTICLE).createArticle({
+        ...payload,
+        content,
+        userId
+      })
+      panelVisible.value = false
 
-    // 清理编辑器草稿 + 发布配置缓存
-    draft.value = ''
-    await putDraft('')
-    saveFormRef.value?.clearCache()
+      // 清理编辑器草稿 + 发布配置缓存
+      draft.value = ''
+      await putDraft('')
+      saveFormRef.value?.clearCache()
 
-    // 跳转到发布成功页
-    router.push({
-      name: 'writeSuccess',
-      query: {
-        id: String(article.id),
-        title: encodeURIComponent(payload.title)
-      }
-    })
+      // 跳转到发布成功页
+      router.push({
+        name: 'writeSuccess',
+        query: {
+          id: String(article.id),
+          title: encodeURIComponent(payload.title)
+        }
+      })
+    }
   } catch (e) {
     UNotificationFn({
       message: (e instanceof Error ? e.message : t('write.saveFail')),
@@ -164,6 +233,13 @@ async function onSaveSubmit(payload: {
     saveLoading.value = false
   }
 }
+
+/* ---------- 编辑模式：监听路由参数变化加载文章 ---------- */
+watch(editArticleId, (id) => {
+  if (id && !Number.isNaN(id)) {
+    loadArticleForEdit(id)
+  }
+}, { immediate: true })
 </script>
 
 <style lang="scss" scoped>

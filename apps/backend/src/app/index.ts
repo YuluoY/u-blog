@@ -89,7 +89,7 @@ const appCfg: IAppConfig = {
 		 * access token
 		 */
 		jwt: {
-			expiresIn: '99999d',
+			expiresIn: '30m',
 			algorithm: 'HS256',
 			issuer: 'ucc'
 		},

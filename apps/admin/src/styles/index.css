@@ -181,20 +181,6 @@ body {
   margin: 0 auto;
 }
 
-/* 登录页：全屏居中 + 渐变背景，antd Card 标题居中 */
-.login-page {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.login-page .ant-card-head-title {
-  text-align: center;
-  font-size: 18px;
-}
-
 /**
  * View Transitions API：主题切换时新视图从点击处圆形扩散露出（与 frontend 一致，不盖住内容）
  */

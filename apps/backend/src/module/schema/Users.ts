@@ -99,7 +99,7 @@ export class Users {
 	@IsOptional()
 	isActive?: boolean
 
-	@Column({ type: 'varchar', length: 512, nullable: true, comment: '签发访问令牌' })
+	@Column({ type: 'varchar', length: 512, select: false, nullable: true, comment: '签发访问令牌' })
 	token?: string | null
 
 	@Column({ type: 'varchar', length: 255, select: false, nullable: true, comment: '刷新令牌的随机字符串密钥' })

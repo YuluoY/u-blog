@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { useState } from '@u-blog/composables'
-import { getRandomImage } from '@u-blog/model'
 
 /**
  * 顶部导航栏高度（设计稿语义：60px）。
@@ -13,7 +12,8 @@ export const TOP_NAV_HEIGHT_PX = 60
 export const useHeaderStore = defineStore('header', () =>
 {
   const [height, setHeight] = useState(TOP_NAV_HEIGHT_PX)
-  const [logo, setLogo] = useState(getRandomImage())
+  /** logo 为空时 HeadNav 会显示 icon 兜底 */
+  const [logo, setLogo] = useState('')
   const [name, setName] = useState('')
   const [siteName, setSiteName] = useState('博客')
 

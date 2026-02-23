@@ -5,11 +5,13 @@ import { defineStore } from 'pinia'
 import { PAGE_SIZE } from '@/api/article'
 import { useAppStore } from '@/stores/app'
 import { useUserStore } from '@/stores/model/user'
+import { useBlogOwnerStore } from '@/stores/blogOwner'
 
 export const useArticleStore = defineStore('article', () =>
 {
   const appStore = useAppStore()
   const userStore = useUserStore()
+  const blogOwnerStore = useBlogOwnerStore()
   const [articleList, setArticleList] = useState<IArticle[]>([])
   /** 归档页时间线用（来自接口） */
   const [archiveList, setArchiveList] = useState<IArticle[]>([])
@@ -19,8 +21,16 @@ export const useArticleStore = defineStore('article', () =>
   const [hasMore, setHasMore] = useState(true)
   const [archiveLoading, setArchiveLoading] = useState(false)
 
-  /** 获取过滤用的 userId：仅当已登录且开启"仅展示我的文章"时返回当前用户 ID */
+  /**
+   * 获取过滤用的 userId：
+   * 1. 子域名博客模式 → 优先使用博客拥有者 ID
+   * 2. 登录用户开启"仅展示我的文章" → 使用当前用户 ID
+   */
   function getFilterUserId(): number | undefined {
+    // 子域名模式：始终过滤为博客拥有者的文章
+    if (blogOwnerStore.isSubdomainMode && blogOwnerStore.blogOwnerId) {
+      return blogOwnerStore.blogOwnerId
+    }
     if (appStore.onlyOwnArticles && userStore.isLoggedIn && userStore.user?.id) {
       return userStore.user.id as number
     }

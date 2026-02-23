@@ -38,6 +38,7 @@ export const CTable = {
   PAGE_BLOCK: 'page_block',
   USER_SETTING: 'user_setting',
   FRIEND_LINK: 'friend_link',
+  XIAOHUI_CONVERSATION: 'xiaohui_conversation',
 } as const
 
 export const CLanguage = {

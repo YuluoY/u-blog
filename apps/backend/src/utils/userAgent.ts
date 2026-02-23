@@ -64,3 +64,36 @@ export function parseUserAgent(ua: string | undefined): { browser?: string; devi
 
   return { browser, device }
 }
+
+/**
+ * 从 User-Agent 解析操作系统名称
+ * 返回如 "Windows 10"、"macOS"、"Android 14"、"iOS 17" 等
+ */
+export function parseOs(ua: string | undefined): string | undefined {
+  if (!ua || typeof ua !== 'string') return undefined
+
+  if (/Windows NT 10/.test(ua)) return 'Windows 10'
+  if (/Windows NT 6\.3/.test(ua)) return 'Windows 8.1'
+  if (/Windows NT 6\.2/.test(ua)) return 'Windows 8'
+  if (/Windows NT 6\.1/.test(ua)) return 'Windows 7'
+  if (/Windows/.test(ua)) return 'Windows'
+
+  if (/Mac OS X/.test(ua)) {
+    if (/iPhone|iPad|iPod/.test(ua)) {
+      const m = ua.match(/OS (\d+)[_.](\d+)/)
+      return m ? `iOS ${m[1]}` : 'iOS'
+    }
+    return 'macOS'
+  }
+
+  if (/Android/.test(ua)) {
+    const m = ua.match(/Android ([\d.]+)/)
+    return m ? `Android ${m[1].split('.')[0]}` : 'Android'
+  }
+
+  if (/Linux/.test(ua)) return 'Linux'
+  if (/CrOS/.test(ua)) return 'ChromeOS'
+  if (/Ubuntu/.test(ua)) return 'Ubuntu'
+
+  return undefined
+}

@@ -3,6 +3,7 @@
     <MdEditor
       v-model="content"
       :theme="theme"
+      :code-style-reverse="false"
       class="write-view__editor"
       :toolbars="toolbars"
       :def-toolbars="defToolbars"
@@ -130,6 +131,12 @@ function getContent(): string {
   return content.value
 }
 
+/** 供父组件设置编辑器内容（编辑模式加载已有文章） */
+function setContent(val: string): void {
+  content.value = val
+  syncFromInitialDone = true
+}
+
 /** 立即将当前内容同步到父级（先 emit 再让父级 flush） */
 function flushSync(): void {
   if (debounceTimer) {
@@ -170,6 +177,7 @@ async function handleAiAction(key: string, selectedText: string) {
 
 defineExpose({
   getContent,
+  setContent,
   flushSync
 })
 </script>

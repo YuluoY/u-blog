@@ -5,7 +5,7 @@ import enUS from 'antd/locale/en_US'
 import { useEffect, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
-import { AuthProvider, useAuth } from '../features/auth/AuthContext'
+import { AuthProvider, useAuth, FRONTEND_LOGIN_URL } from '../features/auth/AuthContext'
 import { ThemeProvider, useTheme } from '../contexts/ThemeContext'
 import { setMessageInstance, setOnUnauthorized } from '../shared/api/client'
 
@@ -45,7 +45,9 @@ function Auth401Setup() {
   useEffect(() => {
     setOnUnauthorized(() => {
       logout()
-      window.location.href = '/login'
+      // 会话过期：跳转到前端登录页，携带 returnUrl 以便回跳
+      const returnUrl = encodeURIComponent(window.location.href)
+      window.location.href = `${FRONTEND_LOGIN_URL}?returnUrl=${returnUrl}`
     })
     return () => setOnUnauthorized(null)
   }, [logout])

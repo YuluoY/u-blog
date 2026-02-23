@@ -1,5 +1,8 @@
 import express from 'express'
 import cookieParser from 'cookie-parser'
+import helmet from 'helmet'
+import cors from 'cors'
+import rateLimit from 'express-rate-limit'
 import appCfg from '@/app'
 import database from '@/module'
 
@@ -11,6 +14,38 @@ import { ResponseInterceptor } from '@/middleware'
 import { Swagger } from '@/plugin/swagger'
 
 const app = express()
+
+// 安全头（helmet）
+app.use(helmet({
+	contentSecurityPolicy: false, // SPA 应用需要较宽松的 CSP，视需要后续收紧
+	crossOriginEmbedderPolicy: false,
+}))
+
+// CORS 配置
+app.use(cors({
+	origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173', 'http://localhost:5174'],
+	credentials: true,
+	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+	allowedHeaders: ['Content-Type', 'Authorization', 'Accept-Language'],
+}))
+
+// 全局速率限制：每 IP 15 分钟内最多 300 次请求
+// 开发环境下跳过 localhost 来源（Vite dev proxy 全部走 127.0.0.1，会共享计数器）
+const isDev = process.env.NODE_ENV !== 'production'
+app.use(rateLimit({
+	windowMs: 15 * 60 * 1000,
+	max: 300,
+	standardHeaders: true,
+	legacyHeaders: false,
+	message: { code: 429, data: null, message: '请求过于频繁，请稍后再试' },
+	skip: (req) => {
+		if (!isDev) return false
+		const ip = req.ip || req.socket?.remoteAddress || ''
+		// 开发时跳过本机请求，避免 dev proxy 共享 IP 触发限流
+		return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1'
+	},
+}))
+
 // session
 Session.install(app)
 
@@ -22,11 +57,11 @@ database.install(app, {
 	database: appCfg.database
 })
 
-// 解析 application/json 类型的请求体 express 4.0+
-app.use(express.json())
+// 解析 application/json（限制 1MB，防止超大 payload 攻击）
+app.use(express.json({ limit: '1mb' }))
 
-// 解析 application/x-www-form-urlencoded 类型的请求体 express 4.0+
-app.use(express.urlencoded({ extended: true }))
+// 解析 application/x-www-form-urlencoded（限制 1MB）
+app.use(express.urlencoded({ extended: true, limit: '1mb' }))
 
 // 解析cookie
 app.use(cookieParser())
@@ -45,10 +80,6 @@ app.use(express.static(appCfg.staticPath))
 
 // 配置API接口生成文档
 Swagger.install(app)
-
-// app.get('/', (req, res) => {
-// 	res.send('Hello World123')
-// })
 
 const server = app.listen(appCfg.port, () => {
 	console.log(`Ucc-blog server listening on http://localhost:${appCfg.port}`)
