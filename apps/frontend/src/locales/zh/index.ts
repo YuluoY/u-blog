@@ -238,6 +238,11 @@ export default {
     commentSubmitFailed: '评论发送失败',
     guestFieldsRequired: '请先填写昵称和邮箱后再评论',
     editArticle: '编辑文章',
+    protectHint: '该文章受密码保护，请输入密码后查看',
+    protectPlaceholder: '输入文章密码',
+    protectSubmit: '验证',
+    protectVerifying: '验证中…',
+    protectWrong: '密码错误，请重试',
   },
   home: {
     loadMore: '加载更多',
@@ -338,6 +343,7 @@ export default {
     browse: '浏览',
     pinned: '置顶',
     hot: '火热',
+    locked: '密码保护',
     randomImage: '随机图片',
   },
   search: {
@@ -389,6 +395,7 @@ export default {
   },
   archive: {
     loading: '加载归档中...',
+    allLoaded: '— 已加载全部文章 —',
     yearCount: '{count} 篇',
     currentFilters: '当前筛选',
     clearFilters: '清除筛选',
@@ -483,6 +490,10 @@ export default {
   },
   footer: {
     icp: '萌ICP备20261027号',
+  },
+  guestAdmin: {
+    label: '查看后台',
+    tooltip: '以游客身份查看后台系统（只读模式）',
   },
   auth: {
     login: '登录',
@@ -601,5 +612,29 @@ export default {
     deleteSession: '删除对话',
     confirmDelete: '确认删除？',
     deleteWarning: '删除后该对话将无法恢复，请谨慎操作。',
+    newFolder: '新建文件夹',
+    deleteFolder: '删除文件夹',
+    moveToFolder: '移到文件夹',
+    removeFromFolder: '移出文件夹',
+    uncategorized: '未分类',
+    deleteFolderWarning: '删除后文件夹内的会话将移至未分类。',
+  },
+  subscribe: {
+    tooltip: '订阅博客',
+    title: '订阅博客',
+    desc: '输入邮箱，第一时间收到新文章通知',
+    email: '邮箱',
+    emailPlaceholder: '请输入您的邮箱',
+    name: '昵称',
+    namePlaceholder: '怎么称呼您',
+    submit: '订阅',
+    submitting: '提交中…',
+    subscribeBtn: '订阅',
+    failed: '订阅失败，请稍后重试',
+    successTitle: '验证邮件已发送',
+    successDesc: '请前往邮箱点击确认链接完成订阅',
+    verifySuccess: '订阅成功！感谢您的关注',
+    verifyInvalid: '验证链接无效或已过期',
+    unsubscribed: '您已成功退订',
   },
 }

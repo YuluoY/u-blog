@@ -37,6 +37,7 @@
           :reply-loading="replyLoading"
           :logged-in="loggedIn"
           :show-children="false"
+          :owner-user-id="ownerUserId"
           @reply="(c) => $emit('reply', c)"
           @reply-submit="(content, c) => $emit('reply-submit', content, c)"
           @reply-cancel="$emit('reply-cancel')"
@@ -68,6 +69,7 @@
             :logged-in="loggedIn"
             :depth="1"
             :show-children="false"
+            :owner-user-id="ownerUserId"
             @reply="(c) => $emit('reply', c)"
             @reply-submit="(content, c) => $emit('reply-submit', content, c)"
             @reply-cancel="$emit('reply-cancel')"
@@ -130,7 +132,8 @@ const props = withDefaults(defineProps<UCommentListProps>(), {
   replyContent: '',
   replyLoading: false,
   loggedIn: false,
-  replyFoldThreshold: CCommentReplyFoldThreshold
+  replyFoldThreshold: CCommentReplyFoldThreshold,
+  ownerUserId: null
 })
 
 defineEmits<UCommentListEmits>()

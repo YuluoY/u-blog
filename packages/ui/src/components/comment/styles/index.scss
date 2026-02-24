@@ -93,6 +93,24 @@
     line-height: 1.4;
   }
 
+  /* 作者徽章 */
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 1.1rem;
+    font-weight: 500;
+    line-height: 1.4;
+    white-space: nowrap;
+
+    &--author {
+      color: var(--u-primary, #4d96ff);
+      background: color-mix(in srgb, var(--u-primary, #4d96ff) 12%, transparent);
+      border: 1px solid color-mix(in srgb, var(--u-primary, #4d96ff) 30%, transparent);
+    }
+  }
+
   &__reply-to {
     display: inline-flex;
     align-items: center;

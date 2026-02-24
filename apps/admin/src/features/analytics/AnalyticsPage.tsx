@@ -12,6 +12,7 @@ import {
   Tag,
   Spin,
   Tabs,
+  Button,
 } from 'antd'
 import {
   EyeOutlined,
@@ -20,6 +21,7 @@ import {
   UserAddOutlined,
   RiseOutlined,
   GlobalOutlined,
+  DownloadOutlined,
 } from '@ant-design/icons'
 import {
   LineChart,
@@ -46,6 +48,8 @@ import {
   useActivityLogs,
 } from './useAnalytics'
 import type { LogListParams } from './api'
+import { exportToJSON } from '../../shared/utils/exportData'
+import { WriteAction } from '../../shared/components/WriteAction'
 
 const { RangePicker } = DatePicker
 
@@ -253,7 +257,7 @@ export default function AnalyticsPage() {
       {/* ---- 分布统计（Tab 分组） ---- */}
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={12}>
-          <Card title="页面排行 Top 20">
+          <Card title="页面排行 Top 20" extra={<WriteAction><Button size="small" icon={<DownloadOutlined />} onClick={() => exportToJSON(pageRanks ?? [], 'page-ranks')}>导出</Button></WriteAction>}>
             <Table
               dataSource={pageRanks ?? []}
               columns={pageColumns}
@@ -339,7 +343,7 @@ export default function AnalyticsPage() {
       </Row>
 
       {/* ---- 地域分布 ---- */}
-      <Card title="地域分布 Top 20">
+      <Card title="地域分布 Top 20" extra={<WriteAction><Button size="small" icon={<DownloadOutlined />} onClick={() => exportToJSON(geo ?? [], 'geo-distribution')}>导出</Button></WriteAction>}>
         <Row gutter={16}>
           <Col xs={24} lg={12}>
             <ResponsiveContainer width="100%" height={340}>
@@ -366,7 +370,7 @@ export default function AnalyticsPage() {
       </Card>
 
       {/* ---- 行为日志明细 ---- */}
-      <Card title="行为日志明细">
+      <Card title="行为日志明细" extra={<WriteAction><Button size="small" icon={<DownloadOutlined />} onClick={() => exportToJSON(logsData?.list ?? [], 'activity-logs')}>导出</Button></WriteAction>}>
         <Space wrap style={{ marginBottom: 16 }}>
           <Select
             placeholder="事件类型"

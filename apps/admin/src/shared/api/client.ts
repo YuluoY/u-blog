@@ -30,6 +30,12 @@ export function setOnUnauthorized(fn: (() => void) | null) {
   onUnauthorized = fn
 }
 
+/** 游客只读模式标记：为 true 时 401 不触发重定向 */
+let guestMode = false
+export function setGuestMode(val: boolean) {
+  guestMode = val
+}
+
 interface MessageLike {
   error: (content: string) => void
   success?: (content: string) => void
@@ -71,9 +77,12 @@ apiClient.interceptors.response.use(
     const payload = err.response?.data
     const msg = payload?.message || err.message || '网络错误'
     if (status === 401) {
-      accessToken = null
-      onUnauthorized?.()
-      getMessage().error('登录已过期，请重新登录')
+      // 游客只读模式下 401 是预期的，静默跳过重定向
+      if (!guestMode) {
+        accessToken = null
+        onUnauthorized?.()
+        getMessage().error('登录已过期，请重新登录')
+      }
     } else {
       getMessage().error(msg)
     }

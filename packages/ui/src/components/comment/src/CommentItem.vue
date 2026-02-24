@@ -30,6 +30,8 @@
         <!-- 头部信息 -->
         <div class="u-comment-item__head">
           <span class="u-comment-item__author">{{ displayName }}</span>
+          <!-- 博客作者徽章 -->
+          <span v-if="isOwner" class="u-comment-item__badge u-comment-item__badge--author">作者</span>
           <!-- 仅「回复的回复」显示 回复@某人，直接回复根评论不显示 -->
           <template v-if="showReplyMention">
             <button
@@ -113,6 +115,7 @@
             :logged-in="loggedIn"
             :depth="currentDepth + 1"
             :show-children="showChildren"
+            :owner-user-id="ownerUserId"
             @reply="(c) => emit('reply', c)"
             @reply-submit="(content, c) => emit('reply-submit', content, c)"
             @reply-cancel="emit('reply-cancel')"
@@ -147,7 +150,8 @@ const props = withDefaults(defineProps<UCommentItemProps>(), {
   replyLoading: false,
   loggedIn: false,
   depth: 0,
-  showChildren: true
+  showChildren: true,
+  ownerUserId: null
 })
 const emit = defineEmits<UCommentItemEmits>()
 
@@ -155,6 +159,18 @@ const emit = defineEmits<UCommentItemEmits>()
 const MAX_INDENT_DEPTH = 3
 const currentDepth = computed(() => props.depth ?? 0)
 const isNested = computed(() => currentDepth.value > 0)
+
+/** 当前评论是否为博客作者发出（ownerUserId 匹配 或 user.role 为 super_admin） */
+const isOwner = computed(() => {
+  const c = props.comment
+  // 优先使用显式传入的博主 userId
+  if (props.ownerUserId != null) {
+    return c.userId === props.ownerUserId
+  }
+  // 回退：检查 user.role（API 关联查询会携带）
+  const role = (c.user as Record<string, unknown> | undefined | null)?.role
+  return role === 'super_admin'
+})
 
 /** 当前条目是否正在被回复 */
 const isReplying = computed(() => props.replyingId === props.comment.id)

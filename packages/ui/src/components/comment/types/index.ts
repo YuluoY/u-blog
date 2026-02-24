@@ -43,14 +43,93 @@ export function getQQAvatarUrl(email?: string | null): string | null {
 }
 
 /**
- * 为游客生成确定性随机头像 URL（基于 DiceBear Avatars）
- * 同一个 seed 始终产出同一头像，确保一致性
+ * DJB2 哈希：将字符串转为正整数（确定性、分布均匀）
+ */
+function djb2(str: string): number {
+  let h = 5381
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) + h + str.charCodeAt(i)) & 0x7fffffff
+  }
+  return h
+}
+
+/** 从哈希值中提取第 n 位十进制数字 */
+function digit(hash: number, n: number): number {
+  return Math.floor(hash / 10 ** n) % 10
+}
+
+/**
+ * 预设调色板：柔和明亮的配色，确保头像色彩丰富且协调
+ */
+const AVATAR_PALETTE = [
+  '#FF6B6B', '#FFA36B', '#FFD93D', '#6BCB77',
+  '#4D96FF', '#9B72CF', '#FF6BA3', '#45B7D1',
+  '#96CEB4', '#FFEAA7', '#DDA0DD', '#87CEEB',
+]
+
+/**
+ * 为游客生成确定性随机头像（本地 SVG，无需外部 API）
+ * 基于 seed 哈希生成可爱的面部头像，同一 seed 始终产出同一头像
  * @param seed - 用于生成头像的种子字符串（昵称、邮箱等）
- * @returns 头像 URL
+ * @returns data:image/svg+xml 格式的头像 URL
  */
 export function getRandomAvatarUrl(seed: string): string {
-  const encoded = encodeURIComponent(seed.trim().toLowerCase())
-  return `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${encoded}`
+  const name = seed.trim().toLowerCase()
+  const hash = djb2(name)
+  const hash2 = djb2(name + '~salt')          // 第二个哈希，增加变化
+
+  // 背景色 + 五官色分别从调色板中选取（保证对比度，避免同色）
+  const bgIdx = hash % AVATAR_PALETTE.length
+  let faceIdx = hash2 % AVATAR_PALETTE.length
+  if (faceIdx === bgIdx) faceIdx = (faceIdx + 1) % AVATAR_PALETTE.length
+  const bgColor = AVATAR_PALETTE[bgIdx]
+  const faceColor = AVATAR_PALETTE[faceIdx]
+
+  // 基于哈希数位生成五官参数
+  const faceRotate = digit(hash, 1) * 4 - 18              // 旋转 -18° ~ 18°
+  const eyeSpreadX = 10 + digit(hash, 2)                   // 眼间距 10 ~ 19
+  const eyeY       = -6 + digit(hash, 3) * 0.5 - 2         // 眼纵坐标微调
+  const eyeSize    = 3 + digit(hash, 4) * 0.3               // 眼大小 3 ~ 5.7
+  const mouthWidth = 6 + digit(hash, 5)                     // 嘴巴宽度 6 ~ 15
+  const mouthCurve = digit(hash, 6)                         // 嘴巴弯曲程度
+  const isHappy    = digit(hash, 7) % 3                     // 0=微笑 1=大笑 2=平嘴
+  const blushOn    = digit(hash2, 0) > 4                    // 是否有腮红
+
+  // 嘴巴路径
+  let mouthPath: string
+  const halfW = mouthWidth / 2
+  if (isHappy === 0) {
+    // 微笑弧线
+    mouthPath = `<path d="M${-halfW},6 Q0,${10 + mouthCurve} ${halfW},6" stroke="${faceColor}" stroke-width="2" fill="none" stroke-linecap="round"/>`
+  } else if (isHappy === 1) {
+    // 大笑（填充的半圆嘴）
+    mouthPath = `<path d="M${-halfW},5 Q0,${13 + mouthCurve} ${halfW},5" stroke="${faceColor}" stroke-width="2" fill="${faceColor}" opacity="0.3" stroke-linecap="round"/>`
+  } else {
+    // 平嘴
+    mouthPath = `<line x1="${-halfW}" y1="7" x2="${halfW}" y2="7" stroke="${faceColor}" stroke-width="2" stroke-linecap="round"/>`
+  }
+
+  // 腮红
+  const blush = blushOn
+    ? `<circle cx="-16" cy="4" r="5" fill="${faceColor}" opacity="0.15"/><circle cx="16" cy="4" r="5" fill="${faceColor}" opacity="0.15"/>`
+    : ''
+
+  const svg = [
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80">',
+    `<rect width="80" height="80" rx="40" fill="${bgColor}"/>`,
+    `<g transform="translate(40,40) rotate(${faceRotate})">`,
+    // 眼睛
+    `<circle cx="${-eyeSpreadX}" cy="${eyeY}" r="${eyeSize}" fill="${faceColor}"/>`,
+    `<circle cx="${eyeSpreadX}" cy="${eyeY}" r="${eyeSize}" fill="${faceColor}"/>`,
+    // 嘴巴
+    mouthPath,
+    // 腮红
+    blush,
+    '</g>',
+    '</svg>',
+  ].join('')
+
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`
 }
 
 /**
@@ -85,6 +164,8 @@ export interface UCommentItemProps {
   depth?: number
   /** 是否渲染子评论块（列表单级展示时由 List 统一渲染，设为 false） */
   showChildren?: boolean
+  /** 博客拥有者 userId，匹配时显示「作者」徽章 */
+  ownerUserId?: number | null
 }
 
 export interface UCommentItemEmits {
@@ -107,6 +188,8 @@ export interface UCommentListProps {
   loggedIn?: boolean
   /** 单条根评论下回复超过该数量时折叠，展示「展开更多 N 条回复」；0 表示不折叠 */
   replyFoldThreshold?: number
+  /** 博客拥有者 userId，匹配时显示「作者」徽章 */
+  ownerUserId?: number | null
 }
 
 export interface UCommentListEmits {

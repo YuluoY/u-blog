@@ -50,6 +50,15 @@
           >
             {{ navTitle(r) }}
           </router-link>
+          <!-- 查看后台入口（游客/普通用户可见） -->
+          <button
+            v-if="guestAdminVisible"
+            class="head-nav__mobile-link head-nav__mobile-admin-btn"
+            @click="handleMobileGuestAdmin"
+          >
+            <u-icon icon="fa-solid fa-eye" style="margin-right: 6px" />
+            {{ t('guestAdmin.label') }}
+          </button>
         </nav>
       </div>
     </Transition>
@@ -124,7 +133,7 @@
           </Transition>
         </div>
       </template>
-      <!-- 未登录：登录/注册按钮 -->
+      <!-- 未登录：登录按钮 -->
       <template v-else>
         <u-button class="head-nav__login-btn" size="small" type="primary" @click="router.push('/login')">
           {{ t('auth.login') }}
@@ -150,6 +159,8 @@ import { useBlogOwnerStore } from '@/stores/blogOwner'
 import { pxToRem } from '@u-blog/utils'
 import { useClickOutside } from '@u-blog/composables'
 import { UMessageFn } from '@u-blog/ui'
+import { useGuestAdmin } from '@/composables/useGuestAdmin'
+
 
 defineOptions({
   name: 'HeadNav',
@@ -163,12 +174,16 @@ const blogOwnerStore = useBlogOwnerStore()
 const router = useRouter()
 const route = useRoute()
 
+/* 游客查看后台 */
+const { visible: guestAdminVisible, openAdmin: openGuestAdmin } = useGuestAdmin()
+
 const isLoggedIn = computed(() => userStore.isLoggedIn)
 /** 当前用户是否拥有管理后台权限（admin / super_admin） */
 const isAdmin = computed(() => {
   const role = userStore.user?.role
   return role === 'admin' || role === 'super_admin'
 })
+
 const showDropdown = ref(false)
 const profileModalVisible = ref(false)
 const mobileMenuOpen = ref(false)
@@ -206,6 +221,8 @@ function navTitle(route: { name?: string | symbol | null; meta?: { title?: strin
   return key && t(key) !== key ? t(key) : (route.meta?.title ?? '')
 }
 
+
+
 const logo = computed(() => headerStore.logo)
 const siteName = computed(() => headerStore.siteName || t('common.blog'))
 const name = computed(
@@ -233,26 +250,62 @@ function handleGoMyPage() {
   }
 }
 
+/**
+ * 将文本写入剪贴板（兼容非安全上下文）
+ * 优先使用 Clipboard API，失败时回退到 execCommand
+ */
+async function copyToClipboard(text: string): Promise<boolean> {
+  // 优先尝试 Clipboard API（需要 HTTPS 或 localhost）
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text)
+      return true
+    } catch {
+      // 降级到 execCommand
+    }
+  }
+  // Fallback：创建临时 textarea 并执行 execCommand('copy')
+  try {
+    const textarea = document.createElement('textarea')
+    textarea.value = text
+    textarea.style.cssText = 'position:fixed;left:-9999px;top:-9999px;opacity:0'
+    document.body.appendChild(textarea)
+    textarea.select()
+    const ok = document.execCommand('copy')
+    document.body.removeChild(textarea)
+    return ok
+  } catch {
+    return false
+  }
+}
+
 /** 复制分享链接到剪贴板（子域名格式） */
 async function handleCopyShareLink() {
   showDropdown.value = false
   const username = userStore.user?.username
   if (!username) return
   const shareUrl = blogOwnerStore.buildShareUrl(username)
-  try {
-    await navigator.clipboard.writeText(shareUrl)
+  const ok = await copyToClipboard(shareUrl)
+  if (ok) {
     UMessageFn({ type: 'success', message: t('profile.shareLinkCopied') })
-  } catch {
+  } else {
     UMessageFn({ type: 'error', message: t('profile.shareLinkFailed') })
   }
 }
 
-/** 管理后台入口（dev: http://localhost:5174，prod 可通过 VITE_ADMIN_URL 配置） */
-const ADMIN_URL = import.meta.env.VITE_ADMIN_URL || 'http://localhost:5174'
+/** 管理后台入口（prod: /admin/，dev: http://localhost:5174） */
+const ADMIN_URL = import.meta.env.VITE_ADMIN_URL
+  || (import.meta.env.PROD ? '/admin/' : 'http://localhost:5174')
 
 function handleGoAdmin() {
   showDropdown.value = false
   window.open(ADMIN_URL, '_blank')
+}
+
+/** 移动端汉堡菜单中的查看后台入口 */
+function handleMobileGuestAdmin() {
+  mobileMenuOpen.value = false
+  openGuestAdmin()
 }
 </script>
 
@@ -491,6 +544,9 @@ function handleGoAdmin() {
     font-size: 1.3rem;
   }
 
+  /* 游客查看后台按钮 */
+
+
   /* 汉堡菜单按钮：仅移动端可见 */
   &__hamburger {
     display: none;
@@ -612,6 +668,19 @@ function handleGoAdmin() {
         color: var(--u-primary-0);
         font-weight: 600;
       }
+    }
+
+    /* 汉堡菜单中查看后台按钮：继承 mobile-link 样式，重置 button 默认 */
+    &__mobile-admin-btn {
+      width: 100%;
+      border: none;
+      background: none;
+      text-align: left;
+      cursor: pointer;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      border-top: 1px solid var(--u-border-1);
     }
   }
 }

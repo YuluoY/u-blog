@@ -20,6 +20,12 @@ export const useArticleStore = defineStore('article', () =>
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [archiveLoading, setArchiveLoading] = useState(false)
+  /** 归档分页：当前页码 */
+  const [archivePage, setArchivePage] = useState(1)
+  /** 归档分页：是否还有更多数据 */
+  const [archiveHasMore, setArchiveHasMore] = useState(true)
+  /** 归档每页条数（比首页大，因为归档卡片更紧凑） */
+  const ARCHIVE_PAGE_SIZE = 30
 
   /**
    * 获取过滤用的 userId：
@@ -72,13 +78,35 @@ export const useArticleStore = defineStore('article', () =>
     }
   }
 
-  /** 归档页：拉取全部文章（按时间倒序） */
+  /** 归档页：首次加载（重置列表，分页拉取） */
   const qryArchiveList = async() =>
   {
     setArchiveLoading(true)
+    setArchivePage(1)
+    setArchiveHasMore(true)
     try {
-      const list = await api(CTable.ARTICLE).getArticleListForArchive(500, getFilterUserId())
+      const list = await api(CTable.ARTICLE).getArticleListForArchive(ARCHIVE_PAGE_SIZE, 0, getFilterUserId())
       setArchiveList(list)
+      if (list.length < ARCHIVE_PAGE_SIZE) setArchiveHasMore(false)
+    } finally {
+      setArchiveLoading(false)
+    }
+  }
+
+  /** 归档页：加载更多（追加到列表） */
+  const loadMoreArchive = async() =>
+  {
+    if (archiveLoading.value || !archiveHasMore.value) return
+    setArchiveLoading(true)
+    const nextPage = archivePage.value + 1
+    try {
+      const skip = (nextPage - 1) * ARCHIVE_PAGE_SIZE
+      const list = await api(CTable.ARTICLE).getArticleListForArchive(ARCHIVE_PAGE_SIZE, skip, getFilterUserId())
+      if (list.length > 0) {
+        setArchiveList([...archiveList.value, ...list])
+        setArchivePage(nextPage)
+      }
+      if (list.length < ARCHIVE_PAGE_SIZE) setArchiveHasMore(false)
     } finally {
       setArchiveLoading(false)
     }
@@ -99,6 +127,22 @@ export const useArticleStore = defineStore('article', () =>
     return articleList.value.find(article => article.id === numId || String(article.id) === id)
   }
 
+  /**
+   * 同步文章点赞数（从 ReadView 点赞后回写到列表，避免回到首页/归档看到旧数据）
+   * 同时更新 articleList 和 archiveList 中匹配的条目
+   */
+  const updateArticleLikeCount = (articleId: number, likeCount: number) =>
+  {
+    const updateList = (list: IArticle[]) =>
+      list.map(a => a.id === articleId ? { ...a, likeCount } : a)
+    setArticleList(updateList(articleList.value))
+    setArchiveList(updateList(archiveList.value))
+    // 同步 currentArticle
+    if (currentArticle.value?.id === articleId) {
+      setCurrentArticle({ ...currentArticle.value, likeCount })
+    }
+  }
+
   return {
     articleList,
     archiveList,
@@ -107,12 +151,15 @@ export const useArticleStore = defineStore('article', () =>
     loading,
     hasMore,
     archiveLoading,
+    archiveHasMore,
     setArticleList,
     setArchiveList,
     setCurrentArticle,
     qryArticleList,
     qryArchiveList,
+    loadMoreArchive,
     qryArticleById,
+    updateArticleLikeCount,
     findArticleById,
     loadMore,
   }

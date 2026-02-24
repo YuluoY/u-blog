@@ -10,6 +10,7 @@ import { toModelName, getDataSource } from '@/utils'
 const PUBLIC_QUERY_MODELS = new Set([
 	'article', 'comment', 'category', 'tag',
 	'media', 'view', 'like', 'friend_link', 'page_block',
+	'subscriber',
 ])
 const AUTH_REQUIRED_MODELS = new Set([
 	'users', 'setting', 'user_setting', 'activity_log',

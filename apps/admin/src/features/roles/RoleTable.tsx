@@ -1,6 +1,11 @@
-import { Table, Button, Space, Popconfirm, Tag, Tooltip } from 'antd'
+import { Table, Button, Space, Popconfirm, Tag, Tooltip, Input } from 'antd'
+import { DownloadOutlined, SearchOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { formatDateTime, formatDateRelative } from '../../shared/utils/formatDate'
+import { exportToJSON } from '../../shared/utils/exportData'
+import { useTableFilter } from '../../shared/hooks/useTableFilter'
+import { WriteAction } from '../../shared/components/WriteAction'
+import { useGuestMode } from '../../contexts/GuestModeContext'
 import type { RoleItem } from './api'
 
 interface RoleTableProps {
@@ -22,8 +27,13 @@ export function RoleTable({
   deleteLoading,
   scrollY,
 }: RoleTableProps) {
+  const { isGuest } = useGuestMode()
+  const { filteredData, onSearch, pagination } = useTableFilter(
+    dataSource, ['id', 'name', 'desc'] as (keyof RoleItem)[], { defaultPageSize: 20 },
+  )
+
   const columns: ColumnsType<RoleItem> = [
-    { title: 'ID', dataIndex: 'id', width: 60, align: 'center' },
+    { title: 'ID', dataIndex: 'id', width: 60, align: 'center', sorter: (a, b) => a.id - b.id },
     { title: '角色名称', dataIndex: 'name', width: 120 },
     {
       title: '描述',
@@ -56,15 +66,16 @@ export function RoleTable({
       dataIndex: 'createdAt',
       width: 110,
       align: 'center',
+      sorter: (a, b) => new Date(a.createdAt ?? 0).getTime() - new Date(b.createdAt ?? 0).getTime(),
       render: (v: string) => v ? <Tooltip title={formatDateTime(v)}>{formatDateRelative(v)}</Tooltip> : '—',
     },
-    {
+    ...(!isGuest ? [{
       title: '操作',
       key: 'action',
       width: 160,
-      align: 'center',
-      fixed: 'right',
-      render: (_, record) => (
+      align: 'center' as const,
+      fixed: 'right' as const,
+      render: (_: unknown, record: RoleItem) => (
         <Space>
           <Button type="link" size="small" onClick={() => onEdit(record)}>
             编辑
@@ -80,22 +91,26 @@ export function RoleTable({
           </Popconfirm>
         </Space>
       ),
-    },
+    }] : []),
   ]
 
   return (
     <>
-      <div className="admin-content__toolbar">
-        <Button type="primary" onClick={onAdd}>
-          新增
-        </Button>
+      <div className="admin-content__toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Input.Search placeholder="搜索 ID / 名称 / 描述" allowClear onSearch={onSearch} style={{ width: 220 }} prefix={<SearchOutlined />} />
+        <WriteAction>
+          <Space>
+            <Button type="primary" onClick={onAdd}>新增</Button>
+            <Button icon={<DownloadOutlined />} onClick={() => exportToJSON(dataSource, 'roles')}>导出</Button>
+          </Space>
+        </WriteAction>
       </div>
       <Table
         rowKey="id"
         columns={columns}
-        dataSource={dataSource}
+        dataSource={filteredData}
         loading={loading}
-        pagination={false}
+        pagination={pagination}
         scroll={scrollY != null ? { y: scrollY } : undefined}
       />
     </>

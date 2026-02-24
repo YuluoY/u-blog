@@ -598,6 +598,11 @@ watch(
   display: flex;
   flex-direction: column;
   gap: 16px;
+
+  /* 移动端底部导航栏(56px + safe-area)会遮挡设置面板底部内容 */
+  @media (max-width: 767px) {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 16px);
+  }
 }
 
 .settings-drawer__card {

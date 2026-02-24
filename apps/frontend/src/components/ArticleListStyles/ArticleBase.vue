@@ -7,7 +7,10 @@
       @click="emit('jump', String(item.id))"
     >
       <div class="article-base-list__cover">
-        <img :src="item.cover" :alt="item.title" />
+        <img v-if="item.cover" :src="item.cover" :alt="item.title" />
+        <div v-else class="article-base-list__cover-placeholder">
+          <u-icon icon="fa-solid fa-image" />
+        </div>
       </div>
       <div class="article-base-list__main">
         <div class="article-base-list__title-row">
@@ -121,6 +124,18 @@ const emit = defineEmits<{
     height: 100%;
     object-fit: cover;
   }
+}
+
+.article-base-list__cover-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--u-background-3) 0%, var(--u-background-2) 100%);
+  color: var(--u-text-4);
+  font-size: 2.8rem;
+  opacity: 0.6;
 }
 
 .article-base-list__main {

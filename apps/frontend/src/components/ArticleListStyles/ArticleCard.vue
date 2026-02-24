@@ -7,11 +7,17 @@
       @click="emit('jump', String(item.id))"
     >
       <div class="article-card-list__cover">
-        <img :src="item.cover" :alt="item.title" />
+        <img v-if="item.cover" :src="item.cover" :alt="item.title" />
+        <div v-else class="article-card-list__cover-placeholder">
+          <u-icon icon="fa-solid fa-image" />
+        </div>
       </div>
       <div class="article-card-list__body">
         <div class="article-card-list__title-row">
           <h3 class="article-card-list__title">{{ item.title }}</h3>
+          <span v-if="item.isProtected" class="article-card-list__badge article-card-list__badge--locked" :title="t('article.locked')">
+            <u-icon icon="fa-solid fa-lock" />
+          </span>
           <span v-if="item.isTop" class="article-card-list__badge article-card-list__badge--pinned">{{ t('article.pinned') }}</span>
           <span v-if="isHot(item)" class="article-card-list__badge article-card-list__badge--hot">{{ t('article.hot') }}</span>
         </div>
@@ -110,6 +116,18 @@ const emit = defineEmits<{
     }
   }
 
+  &__cover-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--u-background-3) 0%, var(--u-background-2) 100%);
+    color: var(--u-text-4);
+    font-size: 3.2rem;
+    opacity: 0.6;
+  }
+
   &__body {
     padding: 16px;
     display: flex;
@@ -156,6 +174,13 @@ const emit = defineEmits<{
     &--hot {
       background: #fff1f0;
       color: #ff4d4f;
+    }
+
+    &--locked {
+      background: var(--u-background-3, #f0f0f0);
+      color: var(--u-text-3);
+      font-size: 1rem;
+      padding: 3px 6px;
     }
   }
 

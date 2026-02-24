@@ -10,6 +10,12 @@ class RestService {
     
     // 创建查询构建器，TypeORM 会自动处理软删除（deletedAt）
     const queryBuilder = model.createQueryBuilder(alias)
+
+    // Article 模型：额外加载 select: false 的 protect 列（用于标记密码保护状态）
+    const isArticle = metadata.name === 'Article'
+    if (isArticle) {
+      queryBuilder.addSelect(`${alias}.protect`)
+    }
     
     // 处理关联加载（如 category、tags、user、parent、parent.user 等嵌套）
     // 同一 alias 只 join 一次，避免 "table name specified more than once"

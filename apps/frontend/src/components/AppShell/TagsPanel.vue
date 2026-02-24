@@ -106,7 +106,9 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import VueWordCloud from 'vuewordcloud'
+// 异步加载 vuewordcloud，避免 ~40KB 打入首屏主 chunk
+import { defineAsyncComponent } from 'vue'
+const VueWordCloud = defineAsyncComponent(() => import('vuewordcloud'))
 import { useTagStore } from '@/stores/model/tag'
 import { useCategoryStore } from '@/stores/model/category'
 import { storeToRefs } from 'pinia'
@@ -114,7 +116,7 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { getCloudWeights } from '@/api/cloudWeights'
 import type { CloudWeightsData } from '@/api/cloudWeights'
 
-defineOptions({ name: 'TagsPanel', components: { VueWordCloud } })
+defineOptions({ name: 'TagsPanel' })
 
 const { t } = useI18n()
 const router = useRouter()
@@ -215,15 +217,50 @@ function goToArchive() {
   router.push({ path: '/archive', query })
 }
 
+/**
+ * 将任意 CSS 颜色字符串解析为 [r, g, b] 数组
+ * 支持 hex (#abc / #aabbcc)、rgb(r,g,b)、rgba(r,g,b,a) 以及渐变取首色
+ */
+function parseColorRGB(color: string): [number, number, number] | null {
+  // 如果是渐变，提取第一个颜色
+  const gradientMatch = color.match(/#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)/)
+  const c = gradientMatch ? gradientMatch[0] : color.trim()
+
+  // hex 格式
+  const hexMatch = c.match(/^#([0-9a-fA-F]{3,8})$/)
+  if (hexMatch) {
+    const hex = hexMatch[1]
+    if (hex.length === 3) {
+      return [parseInt(hex[0] + hex[0], 16), parseInt(hex[1] + hex[1], 16), parseInt(hex[2] + hex[2], 16)]
+    }
+    if (hex.length >= 6) {
+      return [parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)]
+    }
+  }
+
+  // rgb / rgba 格式
+  const rgbMatch = c.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/)
+  if (rgbMatch) {
+    return [Number(rgbMatch[1]), Number(rgbMatch[2]), Number(rgbMatch[3])]
+  }
+
+  return null
+}
+
 function tagStyle(tag: { color?: string }) {
   const c = tag.color
   if (!c) return {}
+
+  const rgb = parseColorRGB(c)
+  if (!rgb) return { color: c }
+
+  const [r, g, b] = rgb
   return {
-    '--tag-bg': c.replace('rgb(', 'rgba(').replace(')', ', 0.1)'),
+    '--tag-bg': `rgba(${r}, ${g}, ${b}, 0.1)`,
     '--tag-color': c,
-    color: c,
-    backgroundColor: c.replace('rgb(', 'rgba(').replace(')', ', 0.1)'),
-    borderColor: c.replace('rgb(', 'rgba(').replace(')', ', 0.25)'),
+    color: `rgb(${r}, ${g}, ${b})`,
+    backgroundColor: `rgba(${r}, ${g}, ${b}, 0.1)`,
+    borderColor: `rgba(${r}, ${g}, ${b}, 0.25)`,
   }
 }
 

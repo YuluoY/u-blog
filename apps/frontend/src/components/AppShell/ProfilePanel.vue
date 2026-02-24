@@ -61,6 +61,13 @@
         </a>
       </div>
     </div>
+    <!-- 订阅博客按钮 -->
+    <div class="profile-panel__subscribe-wrap">
+      <button type="button" class="profile-panel__subscribe-btn" @click="openSubscribeModal()">
+        <u-icon icon="fa-solid fa-bell" />
+        <span>{{ t('subscribe.subscribeBtn') }}</span>
+      </button>
+    </div>
   </div>
 </template>
 
@@ -68,6 +75,7 @@
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/model/user'
 import { useBlogOwnerStore } from '@/stores/blogOwner'
+import { useSubscribe } from '@/composables/useSubscribe'
 import { storeToRefs } from 'pinia'
 
 defineOptions({ name: 'ProfilePanel' })
@@ -75,6 +83,7 @@ defineOptions({ name: 'ProfilePanel' })
 const { t } = useI18n()
 const { user: authUser } = storeToRefs(useUserStore())
 const blogOwnerStore = useBlogOwnerStore()
+const { openSubscribeModal } = useSubscribe()
 
 /** 子域名模式下始终展示博客拥有者的资料 */
 const user = computed(() =>
@@ -275,6 +284,35 @@ function socialFavicon(s: { url: string }): string {
 
   &__social-label {
     white-space: nowrap;
+  }
+
+  /* 订阅按钮 */
+  &__subscribe-wrap {
+    width: 100%;
+    margin-top: 4px;
+    padding-top: 12px;
+    border-top: 1px solid var(--u-border-1);
+  }
+
+  &__subscribe-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 0;
+    border: 1px solid var(--u-primary-0);
+    border-radius: 8px;
+    font-size: 1.3rem;
+    font-weight: 500;
+    color: var(--u-primary-0);
+    background: transparent;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    &:hover {
+      background: var(--u-primary-0);
+      color: #fff;
+    }
   }
 }
 </style>

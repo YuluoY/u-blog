@@ -79,6 +79,16 @@
           @click="toggle(PANEL_ID.SITE_INFO)"
         />
       </u-tooltip>
+      <u-tooltip :content="t('subscribe.tooltip')" placement="right" trigger="hover" :width="0" show-arrow>
+        <u-button
+          class="icon-bar__item"
+          circle
+          :aria-label="t('subscribe.tooltip')"
+          icon="fa-solid fa-bell"
+          :icon-props="{ icon: '', size: 'md' }"
+          @click="openSubscribeModal()"
+        />
+      </u-tooltip>
     </div>
 
     <div class="icon-bar__divider" />
@@ -111,6 +121,24 @@
           @click="appStore.toggleTheme($event)"
         />
       </u-tooltip>
+      <!-- 查看后台入口（游客及普通用户可见，管理员不显示） -->
+      <u-tooltip
+        v-if="guestAdminVisible"
+        :content="t('guestAdmin.tooltip')"
+        placement="right"
+        trigger="hover"
+        :width="0"
+        show-arrow
+      >
+        <u-button
+          class="icon-bar__item"
+          circle
+          :aria-label="t('guestAdmin.label')"
+          icon="fa-solid fa-eye"
+          :icon-props="{ icon: '', size: 'md' }"
+          @click="openAdmin"
+        />
+      </u-tooltip>
       <u-tooltip :content="t('sidebar.settings')" placement="right" trigger="hover" :width="0" show-arrow>
         <u-button
           class="icon-bar__item"
@@ -133,6 +161,8 @@ import { useAppStore } from '@/stores/app'
 import { PANEL_ID, ICON_BAR_WIDTH_PX } from '@/constants/layout'
 import { CTheme, CLanguage } from '@u-blog/model'
 import { pxToRem } from '@u-blog/utils'
+import { useGuestAdmin } from '@/composables/useGuestAdmin'
+import { useSubscribe } from '@/composables/useSubscribe'
 import type { PanelId } from '@/constants/layout'
 
 defineOptions({ name: 'IconBar' })
@@ -143,6 +173,12 @@ const appStore = useAppStore()
 const { language, theme } = storeToRefs(appStore)
 
 const isDark = computed(() => String(theme.value ?? '') === CTheme.DARK)
+
+/* 游客查看后台 */
+const { visible: guestAdminVisible, openAdmin } = useGuestAdmin()
+
+/* 邮箱订阅 */
+const { openSubscribeModal } = useSubscribe()
 
 function toggle(id: PanelId) {
   sidebarStore.setActivePanel(id)

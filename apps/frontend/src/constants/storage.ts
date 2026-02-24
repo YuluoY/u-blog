@@ -62,4 +62,8 @@ export const STORAGE_KEYS = {
   XIAOHUI_CURRENT_SESSION: `${PREFIX}xiaohui-current-session`,
   /** 小惠侧栏是否展开 */
   XIAOHUI_SIDEBAR_VISIBLE: `${PREFIX}xiaohui-sidebar-visible`,
+  /** 小惠文件夹列表 JSON */
+  XIAOHUI_FOLDERS: `${PREFIX}xiaohui-folders`,
+  /** 小惠文件夹展开状态 JSON */
+  XIAOHUI_FOLDERS_OPEN: `${PREFIX}xiaohui-folders-open`,
 } as const

@@ -32,6 +32,8 @@ export interface IArticle extends IBaseSchema, Pick<IBaseFields, 'id'> {
   isPrivate: boolean
   isTop: boolean
   protect?: string
+  /** 后端注入：标记文章是否设置了密码保护（前端使用，protect 明文不暴露给前端） */
+  isProtected?: boolean
   commentCount: number
   likeCount: number
   viewCount: number

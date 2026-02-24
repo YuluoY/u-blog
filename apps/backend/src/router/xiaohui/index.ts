@@ -48,23 +48,39 @@ router.post('/chat', xiaohuiLimiter, async (req: Request, res: Response) => {
     return
   }
 
-  // 取最后一条用户消息做安全校验
-  const lastUserMsg = [...chatMessages].reverse().find(m => m.role === 'user')
-  if (lastUserMsg) {
-    const rejection = XiaohuiService.validateInput(lastUserMsg.content)
+  // 安全校验：只检查最后一条用户消息（当前输入）
+  // 之前被拦截的消息不会发送给 AI（返回了错误响应），
+  // 但前端仍保留在对话历史中，若全量校验会导致后续正常消息也被阻断
+  const lastUserMessage = [...chatMessages].reverse().find(m => m.role === 'user')
+  if (lastUserMessage) {
+    const rejection = XiaohuiService.validateInput(lastUserMessage.content)
     if (rejection) {
       res.json({ code: 1, message: rejection, data: null })
       return
     }
   }
 
+  // 清洗历史消息：过滤掉之前被拦截的危险用户消息，避免注入到 AI 上下文
+  // 仅保留安全的历史（被拦截的消息不应作为 AI 上下文）
+  chatMessages = chatMessages.filter(msg => {
+    if (msg.role !== 'user') return true
+    return !XiaohuiService.validateInput(msg.content)
+  })
+
   // 限制上下文长度（最多保留最近 20 条消息）
   if (chatMessages.length > 20) {
     chatMessages = chatMessages.slice(-20)
   }
 
+  // 取最后一条用户消息用于日志记录
+  const lastUserMsg = [...chatMessages].reverse().find(m => m.role === 'user')
+
   const sid = typeof sessionId === 'string' && sessionId ? sessionId : `anon_${Date.now()}`
   const startTime = Date.now()
+
+  // 构建用户上下文（IP、地理位置、身份信息），注入到 AI 系统提示词中
+  const { contextText: userContext, location: userLocation } =
+    await XiaohuiService.buildUserContext(req).catch(() => ({ contextText: '', location: null }))
 
   // 设置 SSE 响应头
   res.setHeader('Content-Type', 'text/event-stream; charset=utf-8')
@@ -77,7 +93,7 @@ router.post('/chat', xiaohuiLimiter, async (req: Request, res: Response) => {
   let status: 'success' | 'error' | 'aborted' = 'success'
 
   try {
-    const stream = await XiaohuiService.chatStream(chatMessages)
+    const stream = await XiaohuiService.chatStream(chatMessages, userContext)
 
     // SSE 超时保护：最长 3 分钟
     const SSE_TIMEOUT_MS = 3 * 60 * 1000
@@ -121,6 +137,25 @@ router.post('/chat', xiaohuiLimiter, async (req: Request, res: Response) => {
 
         try {
           const chunk = JSON.parse(jsonStr)
+
+          // 【绝对防御】拦截工具调用：阻断 AI 任何文件操作行为
+          // 即使 tool_choice:"none" 被绕过，这里也会拦截 tool_calls delta
+          const toolCalls = chunk.choices?.[0]?.delta?.tool_calls
+          if (toolCalls && Array.isArray(toolCalls) && toolCalls.length > 0) {
+            // 记录拦截日志（安全审计）
+            console.warn('[xiaohui] 拦截到工具调用:', JSON.stringify(toolCalls))
+            // 跳过此 chunk，不转发给客户端
+            continue
+          }
+
+          // finish_reason 为 tool_calls 时，也表示 AI 想调用工具，直接终止
+          const finishReason = chunk.choices?.[0]?.finish_reason
+          if (finishReason === 'tool_calls' || finishReason === 'function_call') {
+            console.warn('[xiaohui] 拦截到工具调用 finish_reason:', finishReason)
+            res.write(`data: ${JSON.stringify({ done: true })}\n\n`)
+            continue
+          }
+
           const delta = chunk.choices?.[0]?.delta?.content
           if (delta) {
             // 过滤敏感内容
@@ -129,7 +164,7 @@ router.post('/chat', xiaohuiLimiter, async (req: Request, res: Response) => {
             res.write(`data: ${JSON.stringify({ token: safeContent })}\n\n`)
           }
           // 非流式 finish_reason
-          if (chunk.choices?.[0]?.finish_reason) {
+          if (finishReason) {
             res.write(`data: ${JSON.stringify({ done: true })}\n\n`)
           }
         } catch {
@@ -158,7 +193,8 @@ router.post('/chat', xiaohuiLimiter, async (req: Request, res: Response) => {
       fullReply || null,
       chatMessages,
       latencyMs,
-      status
+      status,
+      userLocation
     ).catch(() => {})
   }
 })

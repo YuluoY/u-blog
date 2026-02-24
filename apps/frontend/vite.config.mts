@@ -1,5 +1,8 @@
 import { defineConfig } from 'vite'
 import { fileURLToPath, URL } from 'node:url'
+import { writeFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import crypto from 'node:crypto'
 
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
@@ -14,9 +17,73 @@ const GLOBAL_STYLES = `
   @use "@/assets/styles/variables.scss" as *;
 `
 
+// 构建哈希：每次构建产出唯一标识，前端用于检测版本更新
+const BUILD_HASH = crypto.randomBytes(8).toString('hex')
+const BUILD_TIME = new Date().toISOString()
+
+/**
+ * Vite 插件：构建完成后在 dist 目录输出 version.json
+ * 前端通过定时轮询该文件检测是否有新版本部署
+ */
+function versionJsonPlugin() {
+  return {
+    name: 'version-json',
+    apply: 'build' as const,
+    closeBundle() {
+      const outDir = resolve(__dirname, 'dist')
+      const versionData = JSON.stringify({ hash: BUILD_HASH, buildTime: BUILD_TIME })
+      writeFileSync(resolve(outDir, 'version.json'), versionData, 'utf-8')
+    }
+  }
+}
+
 export default defineConfig({
+  define: {
+    // 注入构建哈希，前端运行时可通过 __BUILD_HASH__ 访问当前版本标识
+    __BUILD_HASH__: JSON.stringify(BUILD_HASH),
+  },
   build: {
-    manifest: true
+    manifest: true,
+    rollupOptions: {
+      output: {
+        /**
+         * 手动分包策略：将大型第三方库拆分为独立 chunk，
+         * 减小首屏主 chunk 体积 + 提升浏览器缓存命中率
+         *
+         * 重要：Vue 生态 + UI 组件 + 图标必须在同一 chunk，
+         * 否则 ES Module 初始化顺序会导致 TDZ 循环引用错误
+         * (Cannot access 'ce' before initialization)
+         */
+        manualChunks(id) {
+          // Vue 生态 + @u-blog/ui + FontAwesome → vendor-core
+          // 合并为单 chunk 避免跨 chunk 循环依赖 TDZ 问题
+          if (id.includes('node_modules/vue') ||
+              id.includes('node_modules/@vue') ||
+              id.includes('node_modules/pinia') ||
+              id.includes('node_modules/vue-router') ||
+              id.includes('node_modules/vue-i18n') ||
+              id.includes('node_modules/@fortawesome') ||
+              id.includes('packages/ui/dist'))
+            return 'vendor-core'
+
+          // Markdown 编辑器/预览 → vendor-md（仅路由懒加载时引用）
+          if (id.includes('node_modules/md-editor-v3'))
+            return 'vendor-md'
+
+          // lodash → vendor-lodash
+          if (id.includes('node_modules/lodash-es'))
+            return 'vendor-lodash'
+
+          // animate.css → vendor-animate
+          if (id.includes('node_modules/animate.css'))
+            return 'vendor-animate'
+
+          // axios → vendor-axios
+          if (id.includes('node_modules/axios'))
+            return 'vendor-axios'
+        }
+      }
+    }
   },
   optimizeDeps: {
     // 不预构建 UI 包，避免 dist/es 内相对路径（如 ./vendors-xxx.js）解析失败
@@ -60,6 +127,8 @@ export default defineConfig({
     // eslintPlugin({
     //   cache: false
     // })
+    ,
+    versionJsonPlugin()
   ],
   server: {
     proxy: {

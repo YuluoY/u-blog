@@ -30,8 +30,34 @@
               <div v-if="article.commentCount != null" class="read-view__meta-stat"><dt>{{ t('read.comment') }}</dt><dd>{{ article.commentCount }}</dd></div>
             </dl>
           </header>
-          <component v-if="Preview && articleContent" :is="Preview" :key="route.params.id" />
-          <nav v-if="prevArticle || nextArticle" class="read-view__nav" aria-label="上下篇">
+          <!-- 密码保护遮罩：文章设置了密码且正文为空时，显示密码输入面板 -->
+          <div v-if="isProtectedLocked" class="read-view__protect">
+            <div class="read-view__protect-card">
+              <u-icon icon="fa-solid fa-lock" class="read-view__protect-icon" />
+              <p class="read-view__protect-hint">{{ t('read.protectHint') }}</p>
+              <form class="read-view__protect-form" @submit.prevent="handleProtectSubmit">
+                <input
+                  v-model="protectPassword"
+                  type="password"
+                  class="read-view__protect-input"
+                  :placeholder="t('read.protectPlaceholder')"
+                  autocomplete="off"
+                />
+                <button
+                  type="submit"
+                  class="read-view__protect-btn"
+                  :disabled="protectLoading || !protectPassword.trim()"
+                >
+                  <span v-if="protectLoading" class="read-view__protect-spinner" />
+                  {{ protectLoading ? t('read.protectVerifying') : t('read.protectSubmit') }}
+                </button>
+              </form>
+              <p v-if="protectError" class="read-view__protect-error">{{ protectError }}</p>
+            </div>
+          </div>
+          <!-- 正文渲染 -->
+          <component v-if="Preview && articleContent && !isProtectedLocked" :is="Preview" :key="route.params.id" />
+          <nav v-if="(prevArticle || nextArticle) && !isProtectedLocked" class="read-view__nav" aria-label="上下篇">
             <router-link v-if="prevArticle" :to="`/read/${prevArticle.id}`" class="read-view__nav-link read-view__nav-link--prev">
               <span class="read-view__nav-label">{{ t('read.prev') }}</span>
               <span class="read-view__nav-title">{{ prevArticle.title }}</span>
@@ -44,8 +70,8 @@
             <span v-else class="read-view__nav-placeholder" />
           </nav>
 
-          <!-- 点赞按钮 -->
-          <div class="read-view__like-action">
+          <!-- 点赞按钮（受保护且未解锁时隐藏） -->
+          <div v-if="!isProtectedLocked" class="read-view__like-action">
             <button
               type="button"
               class="read-view__like-btn"
@@ -57,10 +83,18 @@
               <span>{{ articleLiked ? t('read.liked') : t('read.likeAction') }}</span>
               <span class="read-view__like-count">{{ displayLikeCount }}</span>
             </button>
+            <button
+              type="button"
+              class="read-view__subscribe-btn"
+              @click="openSubscribeModal()"
+            >
+              <u-icon icon="fa-solid fa-bell" />
+              <span>{{ t('subscribe.subscribeBtn') }}</span>
+            </button>
           </div>
 
-          <!-- 评论区：按 path=/read/:id 拉取与发表，支持懒加载 -->
-          <section v-if="commentPath" class="read-view__comments" aria-label="评论区">
+          <!-- 评论区：受保护且未解锁时隐藏 -->
+          <section v-if="commentPath && !isProtectedLocked" class="read-view__comments" aria-label="评论区">
             <u-comment :title="t('read.commentSection')" :show-title="true">
               <!-- 登录用户：直接展示评论输入框 -->
               <template v-if="isLoggedIn">
@@ -169,6 +203,7 @@ import { UMessageFn } from '@u-blog/ui'
 import { getQQAvatarUrl } from '@u-blog/ui'
 import type { UCommentItemData } from '@u-blog/ui'
 import { filterSensitiveWords } from '@/utils/sensitiveFilter'
+import { useSubscribe } from '@/composables/useSubscribe'
 
 defineOptions({
   name: 'ReadView'
@@ -185,6 +220,8 @@ const { currentArticle, articleList } = storeToRefs(articleStore)
 const { user, isLoggedIn } = storeToRefs(userStore)
 
 const { Preview, Catalog, articleContent, scrollElement } = usePreviewMd({ articleId: route.params.id as string })
+
+const { openSubscribeModal } = useSubscribe()
 
 const article = computed(() => {
   const id = route.params.id as string
@@ -205,6 +242,43 @@ const canEdit = computed(() => {
   const articleUserId = article.value.userId ?? (article.value.user as any)?.id
   return user.value?.id === articleUserId
 })
+
+/* ---- 密码保护 ---- */
+const protectPassword = ref('')
+const protectLoading = ref(false)
+const protectError = ref('')
+/** 密码已验证后存储正文，用于替换空 content */
+const protectUnlockedContent = ref<string | null>(null)
+
+/** 文章是否处于密码保护锁定状态：isProtected=true 且尚未解锁 */
+const isProtectedLocked = computed(() => {
+  if (!article.value) return false
+  // 已解锁：protectUnlockedContent 有值
+  if (protectUnlockedContent.value !== null) return false
+  // 需要保护：isProtected 且正文为空（后端已剥离）
+  return article.value.isProtected === true && !article.value.content?.trim()
+})
+
+/** 提交密码验证 */
+async function handleProtectSubmit() {
+  if (!article.value || !protectPassword.value.trim()) return
+  protectLoading.value = true
+  protectError.value = ''
+  try {
+    const result = await api(CTable.ARTICLE).verifyArticleProtect(article.value.id, protectPassword.value.trim())
+    if (result && result.content) {
+      // 更新 store 中的文章正文
+      protectUnlockedContent.value = result.content
+      articleStore.setCurrentArticle({ ...article.value, content: result.content })
+    } else {
+      protectError.value = t('read.protectWrong')
+    }
+  } catch {
+    protectError.value = t('read.protectWrong')
+  } finally {
+    protectLoading.value = false
+  }
+}
 
 /** 实时浏览量（由后端返回的最新值覆盖，默认取 article 自带值） */
 const liveViewCount = ref<number | null>(null)
@@ -250,6 +324,8 @@ async function handleLikeToggle() {
     const result = await toggleArticleLike(articleId, fp)
     articleLiked.value = result.liked
     liveLikeCount.value = result.likeCount
+    // 同步到 Pinia store，首页/归档页数据实时更新
+    articleStore.updateArticleLikeCount(articleId, result.likeCount)
   } catch { /* 点赞失败静默 */ }
   finally { likePending.value = false }
 }
@@ -469,10 +545,13 @@ function toIso (d: Date | string) {
 }
 
 watch(() => route.params.id, async (newId) => {
-  // 切换文章时重置浏览量 / 点赞状态并重新记录
+  // 切换文章时重置浏览量 / 点赞状态 / 密码保护并重新记录
   liveViewCount.value = null
   liveLikeCount.value = null
   articleLiked.value = false
+  protectUnlockedContent.value = null
+  protectPassword.value = ''
+  protectError.value = ''
   if (newId) {
     const articleId = parseInt(newId as string, 10)
     if (articleId && !Number.isNaN(articleId)) {
@@ -634,6 +713,98 @@ watch(() => route.params.id, async (newId) => {
   }
 }
 
+/* 密码保护面板 */
+.read-view__protect {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+}
+.read-view__protect-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  max-width: 360px;
+  width: 100%;
+  padding: 32px 24px;
+  background: var(--u-background-2);
+  border: 1px solid var(--u-border-1);
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+.read-view__protect-icon {
+  font-size: 2.4rem;
+  color: var(--u-text-3);
+}
+.read-view__protect-hint {
+  margin: 0;
+  font-size: 1.3rem;
+  color: var(--u-text-2);
+  text-align: center;
+  line-height: 1.6;
+}
+.read-view__protect-form {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+.read-view__protect-input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  font-size: 1.25rem;
+  color: var(--u-text-1);
+  background: var(--u-background-1);
+  border: 1px solid var(--u-border-2);
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+
+  &:focus {
+    border-color: var(--u-primary);
+  }
+}
+.read-view__protect-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #fff;
+  background: var(--u-primary);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+
+  &:hover:not(:disabled) {
+    opacity: 0.85;
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+.read-view__protect-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: protect-spin 0.6s linear infinite;
+}
+@keyframes protect-spin {
+  to { transform: rotate(360deg); }
+}
+.read-view__protect-error {
+  margin: 0;
+  font-size: 1.15rem;
+  color: #e74c3c;
+}
+
 .read-view__nav {
   display: flex;
   justify-content: space-between;
@@ -694,6 +865,7 @@ watch(() => route.params.id, async (newId) => {
 .read-view__like-action {
   display: flex;
   justify-content: center;
+  gap: 12px;
   padding: 24px 0;
   margin-top: 24px;
   border-top: 1px solid var(--u-border-1);
@@ -752,10 +924,37 @@ watch(() => route.params.id, async (newId) => {
   text-align: center;
 }
 
+.read-view__subscribe-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  font-size: 1.35rem;
+  font-weight: 500;
+  color: var(--u-primary-0);
+  background: transparent;
+  border: 1px solid var(--u-primary-0);
+  border-radius: 24px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  user-select: none;
+
+  .u-icon {
+    font-size: 1.4rem;
+    transition: transform 0.25s ease;
+  }
+
+  &:hover {
+    background: var(--u-primary-0);
+    color: #fff;
+    .u-icon { transform: scale(1.1); }
+  }
+}
+
 @keyframes like-bounce {
   0% { transform: scale(1); }
   30% { transform: scale(1.3); }
-  60% { transform: scale(0.9); }
+  70% { transform: scale(0.9); }
   100% { transform: scale(1); }
 }
 

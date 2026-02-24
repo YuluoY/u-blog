@@ -146,24 +146,118 @@
           <u-icon icon="fa-solid fa-history" />
           <span>{{ t('xiaohui.history') }}</span>
         </div>
-        <button class="xiaohui-new-btn" @click="handleNewSession" :title="t('xiaohui.newChat')">
-          <u-icon icon="fa-solid fa-plus" />
-        </button>
+        <div class="xiaohui-sidebar__header-actions">
+          <button class="xiaohui-new-btn" @click="handleCreateFolder" :title="t('xiaohui.newFolder')">
+            <u-icon icon="fa-solid fa-folder-plus" />
+          </button>
+          <button class="xiaohui-new-btn" @click="handleNewSession" :title="t('xiaohui.newChat')">
+            <u-icon icon="fa-solid fa-plus" />
+          </button>
+        </div>
       </div>
 
       <div class="xiaohui-sidebar__content">
         <!-- 空状态 -->
-        <template v-if="sessions.length === 0">
+        <template v-if="sessions.length === 0 && sortedFolders.length === 0">
           <div class="xiaohui-sidebar__empty">
             <u-icon icon="fa-solid fa-comments" class="xiaohui-sidebar__empty-icon" />
             <span>{{ t('xiaohui.noHistory') }}</span>
           </div>
         </template>
-        <!-- 会话列表 -->
         <template v-else>
+          <!-- 文件夹分组 -->
+          <div
+            v-for="folder in sortedFolders"
+            :key="folder.id"
+            class="folder-group"
+          >
+            <div class="folder-header" @click="toggleFolder(folder.id)">
+              <u-icon :icon="isFolderOpen(folder.id) ? 'fa-solid fa-folder-open' : 'fa-solid fa-folder'" class="folder-header__icon" />
+              <span class="folder-header__name" @dblclick.stop="startFolderEditing(folder)">
+                <template v-if="editingFolderId !== folder.id">{{ folder.name }}</template>
+                <input
+                  v-else
+                  v-model="editingFolderName"
+                  class="folder-header__edit-input"
+                  @blur="finishFolderEditing"
+                  @keydown.enter.prevent="finishFolderEditing"
+                  @keydown.esc="cancelFolderEditing"
+                  @click.stop
+                />
+              </span>
+              <span class="folder-header__count">{{ getSessionsByFolder(folder.id).length }}</span>
+              <div class="folder-header__actions" @click.stop>
+                <button class="session-action-btn" :title="t('xiaohui.newChat')" @click="handleNewSessionInFolder(folder.id)">
+                  <u-icon icon="fa-solid fa-plus" />
+                </button>
+                <button class="session-action-btn session-action-btn--danger" :title="t('xiaohui.deleteFolder')" @click="handleDeleteFolder(folder.id)">
+                  <u-icon icon="fa-solid fa-trash" />
+                </button>
+              </div>
+            </div>
+            <div v-show="isFolderOpen(folder.id)" class="folder-sessions">
+              <div
+                v-for="session in getSessionsByFolder(folder.id)"
+                :key="session.id"
+                :class="['session-item', { 'session-item--active': session.id === currentSessionId }]"
+                @click="handleSessionClick(session.id)"
+              >
+                <div class="session-item__head">
+                  <div class="session-item__title" @dblclick="startEditing(session)">
+                    <template v-if="editingSessionId !== session.id">{{ session.title }}</template>
+                    <input
+                      v-else
+                      v-model="editingTitle"
+                      class="session-item__edit-input"
+                      @blur="finishEditing"
+                      @keydown.enter.prevent="finishEditing"
+                      @keydown.esc="cancelEditing"
+                      @click.stop
+                    />
+                  </div>
+                  <span class="session-item__time">{{ formatRelativeTime(session.updatedAt) }}</span>
+                </div>
+                <div class="session-item__foot">
+                  <span class="session-item__preview">{{ getLastMessage(session) || t('xiaohui.newSession') }}</span>
+                  <div class="session-item__actions" @click.stop>
+                    <!-- 移到其他文件夹下拉 -->
+                    <div v-if="sortedFolders.length > 1" class="session-move-dropdown">
+                      <button class="session-action-btn" :title="t('xiaohui.moveToFolder')" @click.stop="toggleMoveMenu(session.id)">
+                        <u-icon icon="fa-solid fa-file-arrow-down" />
+                      </button>
+                      <div v-if="moveMenuSessionId === session.id" class="session-move-dropdown__menu" @click.stop>
+                        <button
+                          v-for="f in sortedFolders.filter(f => f.id !== folder.id)"
+                          :key="f.id"
+                          class="session-move-dropdown__item"
+                          @click="handleMoveToFolder(session.id, f.id)"
+                        >
+                          <u-icon icon="fa-solid fa-folder" />
+                          {{ f.name }}
+                        </button>
+                      </div>
+                    </div>
+                    <button class="session-action-btn" :title="t('xiaohui.removeFromFolder')" @click="handleRemoveFromFolder(session.id)">
+                      <u-icon icon="fa-solid fa-arrow-right-from-bracket" />
+                    </button>
+                    <button class="session-action-btn session-action-btn--danger" :title="t('xiaohui.deleteSession')" @click="requestDelete(session.id)">
+                      <u-icon icon="fa-solid fa-trash" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 分隔线（仅当有文件夹且有未分类会话时显示） -->
+          <div v-if="sortedFolders.length > 0 && uncategorizedSessions.length > 0" class="sidebar-divider">
+            <span>{{ t('xiaohui.uncategorized') }}</span>
+          </div>
+
+          <!-- 未分类会话 -->
           <div class="session-list">
             <div
-              v-for="session in sessions"
+              v-for="session in uncategorizedSessions"
               :key="session.id"
               :class="['session-item', { 'session-item--active': session.id === currentSessionId }]"
               @click="handleSessionClick(session.id)"
@@ -186,6 +280,23 @@
               <div class="session-item__foot">
                 <span class="session-item__preview">{{ getLastMessage(session) || t('xiaohui.newSession') }}</span>
                 <div class="session-item__actions" @click.stop>
+                  <!-- 移到文件夹下拉 -->
+                  <div v-if="sortedFolders.length > 0" class="session-move-dropdown">
+                    <button class="session-action-btn" :title="t('xiaohui.moveToFolder')" @click.stop="toggleMoveMenu(session.id)">
+                      <u-icon icon="fa-solid fa-file-arrow-down" />
+                    </button>
+                    <div v-if="moveMenuSessionId === session.id" class="session-move-dropdown__menu" @click.stop>
+                      <button
+                        v-for="folder in sortedFolders"
+                        :key="folder.id"
+                        class="session-move-dropdown__item"
+                        @click="handleMoveToFolder(session.id, folder.id)"
+                      >
+                        <u-icon icon="fa-solid fa-folder" />
+                        {{ folder.name }}
+                      </button>
+                    </div>
+                  </div>
                   <button class="session-action-btn" :title="t('xiaohui.rename')" @click="startEditing(session)">
                     <u-icon icon="fa-solid fa-pen" />
                   </button>
@@ -254,6 +365,16 @@ interface XiaohuiSession {
   messages: LocalMessage[]
   createdAt: number
   updatedAt: number
+  /** 所属文件夹 id，undefined 表示未分类 */
+  folderId?: string
+}
+
+/** 会话文件夹 */
+interface XiaohuiFolder {
+  id: string
+  name: string
+  createdAt: number
+  order: number
 }
 
 /* ===================== 会话持久化 ===================== */
@@ -287,6 +408,38 @@ function saveCurrentSessionId(id: string) {
   } catch { /* ignore */ }
 }
 
+/* ===================== 文件夹持久化 ===================== */
+
+/** 从 localStorage 加载文件夹列表 */
+function loadFolders(): XiaohuiFolder[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.XIAOHUI_FOLDERS)
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+/** 保存文件夹列表到 localStorage */
+function saveFolders() {
+  try {
+    localStorage.setItem(STORAGE_KEYS.XIAOHUI_FOLDERS, JSON.stringify(folders.value))
+  } catch { /* ignore */ }
+}
+
+/** 加载文件夹展开状态 */
+function loadFolderOpenState(): Record<string, boolean> {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.XIAOHUI_FOLDERS_OPEN)
+    return raw ? JSON.parse(raw) : {}
+  } catch { return {} }
+}
+
+/** 保存文件夹展开状态 */
+function saveFolderOpenState() {
+  try {
+    localStorage.setItem(STORAGE_KEYS.XIAOHUI_FOLDERS_OPEN, JSON.stringify(folderOpenMap.value))
+  } catch { /* ignore */ }
+}
+
 /* ===================== 状态 ===================== */
 
 const sessions = ref<XiaohuiSession[]>(loadSessions())
@@ -297,6 +450,32 @@ const messageListRef = ref<HTMLElement | null>(null)
 const loading = ref(false)
 const streaming = ref(false)
 let abortController: AbortController | null = null
+
+/* ===================== 文件夹状态 ===================== */
+const folders = ref<XiaohuiFolder[]>(loadFolders())
+const folderOpenMap = ref<Record<string, boolean>>(loadFolderOpenState())
+const editingFolderId = ref<string | null>(null)
+const editingFolderName = ref('')
+const moveMenuSessionId = ref<string | null>(null)
+
+/** 按 order 升序排列的文件夹 */
+const sortedFolders = computed(() =>
+  [...folders.value].sort((a, b) => a.order - b.order),
+)
+
+/** 获取某个文件夹下的会话（按更新时间倒序） */
+function getSessionsByFolder(folderId: string): XiaohuiSession[] {
+  return sessions.value
+    .filter(s => s.folderId === folderId)
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+}
+
+/** 未分类会话（按更新时间倒序） */
+const uncategorizedSessions = computed(() =>
+  sessions.value
+    .filter(s => !s.folderId)
+    .sort((a, b) => b.updatedAt - a.updatedAt),
+)
 
 /* ===================== 侧栏 ===================== */
 function loadSidebarVisible(): boolean {
@@ -321,6 +500,125 @@ const editingSessionId = ref<string | null>(null)
 const editingTitle = ref('')
 const showDeleteDialog = ref(false)
 const sessionToDelete = ref<string | null>(null)
+
+/* ===================== 文件夹操作 ===================== */
+
+function isFolderOpen(folderId: string): boolean {
+  return folderOpenMap.value[folderId] !== false // 默认展开
+}
+
+function toggleFolder(folderId: string) {
+  folderOpenMap.value[folderId] = !isFolderOpen(folderId)
+  saveFolderOpenState()
+}
+
+/** 新建文件夹 */
+function handleCreateFolder() {
+  const name = t('xiaohui.newFolder')
+  const maxOrder = folders.value.reduce((max, f) => Math.max(max, f.order), 0)
+  const folder: XiaohuiFolder = {
+    id: generateId(),
+    name,
+    createdAt: Date.now(),
+    order: maxOrder + 1,
+  }
+  folders.value.push(folder)
+  saveFolders()
+  // 自动进入重命名状态
+  editingFolderId.value = folder.id
+  editingFolderName.value = name
+  nextTick(() => {
+    const input = document.querySelector('.folder-header__edit-input') as HTMLInputElement
+    input?.focus()
+    input?.select()
+  })
+}
+
+/** 开始编辑文件夹名 */
+function startFolderEditing(folder: XiaohuiFolder) {
+  editingFolderId.value = folder.id
+  editingFolderName.value = folder.name
+  nextTick(() => {
+    const input = document.querySelector('.folder-header__edit-input') as HTMLInputElement
+    input?.focus()
+    input?.select()
+  })
+}
+
+/** 完成文件夹重命名 */
+function finishFolderEditing() {
+  if (editingFolderId.value && editingFolderName.value.trim()) {
+    const folder = folders.value.find(f => f.id === editingFolderId.value)
+    if (folder) {
+      folder.name = editingFolderName.value.trim()
+      saveFolders()
+    }
+  }
+  editingFolderId.value = null
+  editingFolderName.value = ''
+}
+
+function cancelFolderEditing() {
+  editingFolderId.value = null
+  editingFolderName.value = ''
+}
+
+/** 删除文件夹（内部会话移至未分类） */
+function handleDeleteFolder(folderId: string) {
+  const idx = folders.value.findIndex(f => f.id === folderId)
+  if (idx === -1) return
+  folders.value.splice(idx, 1)
+  // 文件夹内会话移至未分类
+  sessions.value.forEach(s => {
+    if (s.folderId === folderId) s.folderId = undefined
+  })
+  saveFolders()
+  saveSessions()
+}
+
+/** 切换移动菜单显隐 */
+function toggleMoveMenu(sessionId: string) {
+  moveMenuSessionId.value = moveMenuSessionId.value === sessionId ? null : sessionId
+}
+
+/** 移动会话到指定文件夹 */
+function handleMoveToFolder(sessionId: string, folderId: string) {
+  const session = sessions.value.find(s => s.id === sessionId)
+  if (session) {
+    session.folderId = folderId
+    saveSessions()
+  }
+  moveMenuSessionId.value = null
+}
+
+/** 将会话移出文件夹（未分类） */
+function handleRemoveFromFolder(sessionId: string) {
+  const session = sessions.value.find(s => s.id === sessionId)
+  if (session) {
+    session.folderId = undefined
+    saveSessions()
+  }
+}
+
+/** 在指定文件夹中新建会话 */
+function handleNewSessionInFolder(folderId: string) {
+  const id = generateId()
+  const session: XiaohuiSession = {
+    id,
+    title: t('xiaohui.newSession'),
+    messages: [],
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    folderId,
+  }
+  sessions.value.unshift(session)
+  currentSessionId.value = id
+  saveCurrentSessionId(id)
+  saveSessions()
+  inputText.value = ''
+  loading.value = false
+  streaming.value = false
+}
 
 /* ===================== 计算属性 ===================== */
 
@@ -679,9 +977,6 @@ function handleSuggestionClick(text: string) {
   flex: 1;
   overflow-y: auto;
   padding: 2rem 0;
-  &::-webkit-scrollbar { width: 4px; }
-  &::-webkit-scrollbar-thumb { background: transparent; border-radius: 2px; }
-  &:hover::-webkit-scrollbar-thumb { background: var(--u-border-2); }
 }
 
 .xiaohui-messages-list {
@@ -691,6 +986,8 @@ function handleSuggestionClick(text: string) {
   display: flex;
   flex-direction: column;
   gap: 2.4rem;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 /* ===================== 空状态 ===================== */
@@ -820,6 +1117,7 @@ function handleSuggestionClick(text: string) {
         margin: 0.6em 0; width: 100%; border-collapse: collapse;
         border-radius: 8px; overflow: hidden;
         border: 1px solid var(--u-border-1); font-size: 0.92em;
+        display: block; overflow-x: auto;
       }
       th, td { border-color: var(--u-border-1); padding: 8px 12px; }
       th { background: var(--u-background-3) !important; color: var(--u-text-1); font-weight: 600; }
@@ -855,11 +1153,11 @@ function handleSuggestionClick(text: string) {
     font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
   }
 
-  &__content { flex: 1; max-width: 80%; display: flex; flex-direction: column; gap: 0.6rem; }
+  &__content { flex: 1; max-width: 80%; display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; overflow: hidden; }
   &__meta { display: flex; align-items: center; gap: 0.8rem; font-size: 1.2rem; color: var(--u-text-4); padding: 0 0.4rem; }
   &__name { font-weight: 600; color: var(--u-text-2); }
   &__time { font-size: 1.1rem; }
-  &__bubble { padding: 1.2rem 1.6rem; font-size: 1.5rem; line-height: 1.6; word-break: break-word; &--loading { padding: 1.6rem 2rem; } }
+  &__bubble { padding: 1.2rem 1.6rem; font-size: 1.5rem; line-height: 1.6; word-break: break-word; overflow-x: auto; &--loading { padding: 1.6rem 2rem; } }
   &__text { white-space: pre-wrap; }
   &__text--md { white-space: normal; }
 
@@ -975,6 +1273,10 @@ function handleSuggestionClick(text: string) {
   border-bottom: 1px solid var(--u-border-1);
 }
 
+.xiaohui-sidebar__header-actions {
+  display: flex; gap: 0.4rem;
+}
+
 .xiaohui-sidebar__title-area {
   display: flex; align-items: center; gap: 0.8rem;
   font-weight: 600; font-size: 1.6rem;
@@ -991,9 +1293,6 @@ function handleSuggestionClick(text: string) {
 
 .xiaohui-sidebar__content {
   flex: 1; overflow-y: auto; padding: 0.8rem;
-  &::-webkit-scrollbar { width: 4px; }
-  &::-webkit-scrollbar-thumb { background: transparent; border-radius: 2px; }
-  &:hover::-webkit-scrollbar-thumb { background: var(--u-border-2); }
 }
 
 .xiaohui-sidebar__empty {
@@ -1002,6 +1301,109 @@ function handleSuggestionClick(text: string) {
   gap: 1.2rem; color: var(--u-text-4);
 }
 .xiaohui-sidebar__empty-icon { font-size: 3.2rem; opacity: 0.3; }
+
+/* ===================== 文件夹 ===================== */
+.folder-group {
+  margin-bottom: 0.4rem;
+}
+
+.folder-header {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.8rem 1rem; border-radius: 10px;
+  cursor: pointer; user-select: none;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: var(--u-background-3);
+    .folder-header__actions { opacity: 1; }
+  }
+}
+
+.folder-header__icon {
+  font-size: 1.4rem; color: var(--u-text-3);
+  flex-shrink: 0; transition: color 0.2s;
+  .folder-header:hover & { color: #a78bfa; }
+}
+
+.folder-header__name {
+  flex: 1; min-width: 0; font-size: 1.3rem; font-weight: 500;
+  color: var(--u-text-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.folder-header__edit-input {
+  width: 100%; border: none; background: var(--u-background-3);
+  padding: 2px 6px; border-radius: 4px; font-size: 1.3rem;
+  color: var(--u-text-1); outline: 2px solid #7c3aed;
+}
+
+.folder-header__count {
+  font-size: 1.1rem; color: var(--u-text-4);
+  background: var(--u-background-3); padding: 0 0.5rem;
+  border-radius: 8px; line-height: 1.8; flex-shrink: 0;
+}
+
+.folder-header__actions {
+  display: flex; gap: 0.2rem; opacity: 0;
+  transition: opacity 0.2s;
+
+  button {
+    width: 24px; height: 24px; border: none; border-radius: 6px;
+    background: transparent; color: var(--u-text-3);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; transition: all 0.15s;
+
+    &:hover { background: var(--u-background-1); color: #7c3aed; }
+    &:last-child:hover { color: var(--u-danger); }
+  }
+}
+
+.folder-sessions {
+  padding-left: 1.2rem;
+  .session-item { margin-bottom: 0.2rem; }
+}
+
+/* ===================== 侧栏分隔线 ===================== */
+.sidebar-divider {
+  display: flex; align-items: center; gap: 0.8rem;
+  padding: 0.8rem 1rem; color: var(--u-text-4); font-size: 1.2rem;
+
+  &::before, &::after {
+    content: ''; flex: 1; height: 1px;
+    background: var(--u-border-1);
+  }
+}
+
+/* ===================== 移动到文件夹下拉 ===================== */
+.session-move-dropdown {
+  position: relative;
+}
+
+.session-move-dropdown__menu {
+  position: absolute; right: 0; top: 100%; z-index: 20;
+  min-width: 140px; padding: 0.4rem;
+  background: var(--u-background-1); border: 1px solid var(--u-border-1);
+  border-radius: 10px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  animation: slideDown 0.15s ease;
+}
+
+.session-move-dropdown__item {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.6rem 0.8rem; border-radius: 6px;
+  cursor: pointer; font-size: 1.2rem; color: var(--u-text-2);
+  transition: background 0.15s;
+  white-space: nowrap;
+  border: none; background: transparent; width: 100%;
+
+  &:hover { background: var(--u-background-3); color: #7c3aed; }
+
+  .u-icon { font-size: 1.2rem; color: var(--u-text-3); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 /* ===================== 会话列表 ===================== */
 .session-list { display: flex; flex-direction: column; gap: 0.4rem; }

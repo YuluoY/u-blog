@@ -5,6 +5,7 @@ import cors from 'cors'
 import rateLimit from 'express-rate-limit'
 import appCfg from '@/app'
 import database from '@/module'
+import { initRedis } from '@/service/cache'
 
 import { Router } from '@/router'
 import { I18n } from '@/plugin/i18n'
@@ -14,6 +15,9 @@ import { ResponseInterceptor } from '@/middleware'
 import { Swagger } from '@/plugin/swagger'
 
 const app = express()
+
+// 信任反代（Nginx / Cloudflare），使 req.ip 正确返回客户端真实 IP
+app.set('trust proxy', true)
 
 // 安全头（helmet）
 app.use(helmet({
@@ -56,6 +60,9 @@ app.use(I18n)
 database.install(app, {
 	database: appCfg.database
 })
+
+// 初始化 Redis 缓存（连接失败不阻塞应用启动）
+initRedis()
 
 // 解析 application/json（限制 1MB，防止超大 payload 攻击）
 app.use(express.json({ limit: '1mb' }))

@@ -307,7 +307,7 @@ onMounted(loadProfile)
     background: linear-gradient(110deg, var(--u-background-3) 30%, var(--u-background-2) 50%, var(--u-background-3) 70%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
-    &.w60 { width: 60%; }
+    &.w60 { width: 70%; }
     &.w40 { width: 40%; }
     &.card { width: 100%; height: 80px; border-radius: 12px; }
   }

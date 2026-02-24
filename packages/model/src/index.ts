@@ -16,6 +16,7 @@ export * from './schema/user'
 export * from './schema/pageBlock'
 export * from './schema/friendLink'
 export * from './schema/activityLog'
+export * from './schema/subscriber'
 export * from './base'
 
 export { CVisualStyle, type VisualStyle } from './base'

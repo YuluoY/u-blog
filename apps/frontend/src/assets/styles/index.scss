@@ -11,6 +11,60 @@
   --app-shell-spacing-xl: 32px;
 }
 
+/**
+ * 全局滚动条样式：悬浮后淡入显示，离开后淡出消失
+ *
+ * 技术方案：通过 @property 注册自定义颜色属性，使其支持 CSS transition，
+ * 从而实现 scrollbar thumb 颜色在 transparent ↔ 可见色之间平滑过渡。
+ * 兼容 Chrome 85+、Edge 85+、Safari 15.4+，Firefox 用 scrollbar-color 近似。
+ */
+
+/* 注册自定义属性为 <color> 类型，使 transition 能插值 */
+@property --sb-thumb {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+
+/* 所有元素默认：滚动条透明 + 300ms 过渡 */
+* {
+  --sb-thumb: transparent;
+  transition: --sb-thumb 0.3s ease;
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.3s ease, --sb-thumb 0.3s ease;
+}
+
+/* 悬浮时：滚动条淡入 */
+*:hover {
+  --sb-thumb: var(--u-border-2, rgba(0, 0, 0, 0.18));
+  scrollbar-color: var(--u-border-2, rgba(0, 0, 0, 0.18)) transparent;
+}
+
+/* WebKit 系浏览器 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--sb-thumb);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+/* 鼠标直接悬浮在滚动条上：主题色高亮 */
+*:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--u-primary-rgb, 64, 158, 255), 0.55);
+}
+*:hover::-webkit-scrollbar-thumb:active {
+  background: var(--u-primary, #409eff);
+}
+
 .text-base {
   font-size: 1.4rem;
 }

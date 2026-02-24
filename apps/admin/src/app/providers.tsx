@@ -6,6 +6,7 @@ import { useEffect, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import dayjs from 'dayjs'
 import { AuthProvider, useAuth, FRONTEND_LOGIN_URL } from '../features/auth/AuthContext'
+import { GuestModeProvider } from '../contexts/GuestModeContext'
 import { ThemeProvider, useTheme } from '../contexts/ThemeContext'
 import { setMessageInstance, setOnUnauthorized } from '../shared/api/client'
 
@@ -72,7 +73,9 @@ export function Providers({ children }: { children: ReactNode }) {
             <MessageRefSetup />
             <AuthProvider>
               <Auth401Setup />
-              {children}
+              <GuestModeProvider>
+                {children}
+              </GuestModeProvider>
             </AuthProvider>
           </AntdApp>
         </AntdConfigBridge>

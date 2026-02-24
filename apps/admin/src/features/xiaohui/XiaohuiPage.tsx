@@ -1,10 +1,13 @@
-import { useState } from 'react'
-import { Table, Button, Tag, Popconfirm, Space, Modal, Typography, Select } from 'antd'
-import { DeleteOutlined, EyeOutlined, ReloadOutlined } from '@ant-design/icons'
+import { useState, useMemo } from 'react'
+import { Table, Button, Tag, Popconfirm, Space, Modal, Typography, Select, Input } from 'antd'
+import { DeleteOutlined, EyeOutlined, ReloadOutlined, DownloadOutlined, SearchOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { useTableScrollY } from '../../shared/hooks/useTableScrollY'
 import { useXiaohuiConversations } from './useXiaohuiConversations'
 import { useXiaohuiMutations } from './useXiaohuiMutations'
+import { exportToJSON } from '../../shared/utils/exportData'
+import { WriteAction } from '../../shared/components/WriteAction'
+import { useGuestMode } from '../../contexts/GuestModeContext'
 import type { XiaohuiConversationItem } from './api'
 
 const { Paragraph, Text } = Typography
@@ -82,17 +85,32 @@ function ConversationDetailModal({
 
 export default function XiaohuiPage() {
   const [page, setPage] = useState(1)
-  const [pageSize] = useState(20)
+  const [pageSize, setPageSize] = useState(20)
   const [statusFilter, setStatusFilter] = useState<string>('')
+  const [keyword, setKeyword] = useState('')
   const { data: list = [], isLoading, refetch } = useXiaohuiConversations({
     take: pageSize,
     skip: (page - 1) * pageSize,
     status: statusFilter || undefined,
   })
   const { remove } = useXiaohuiMutations()
+  const { isGuest } = useGuestMode()
   const [detailRecord, setDetailRecord] = useState<XiaohuiConversationItem | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
   const { containerRef, scrollY } = useTableScrollY({ hasPagination: true })
+
+  // 客户端关键词过滤（对当前页数据）
+  const filteredData = useMemo(() => {
+    if (!keyword) return list
+    const kw = keyword.toLowerCase()
+    return list.filter((item) =>
+      String(item.id).includes(kw)
+      || (item.userMessage ?? '').toLowerCase().includes(kw)
+      || (item.assistantMessage ?? '').toLowerCase().includes(kw)
+      || (item.clientIp ?? '').toLowerCase().includes(kw)
+      || (item.status ?? '').toLowerCase().includes(kw),
+    )
+  }, [list, keyword])
 
   const columns: ColumnsType<XiaohuiConversationItem> = [
     {
@@ -159,7 +177,7 @@ export default function XiaohuiPage() {
     {
       title: '操作',
       width: 100,
-      render: (_, record) => (
+      render: (_: unknown, record: XiaohuiConversationItem) => (
         <Space size="small">
           <Button
             type="text"
@@ -170,18 +188,20 @@ export default function XiaohuiPage() {
               setDetailOpen(true)
             }}
           />
-          <Popconfirm
-            title="确定删除此对话记录？"
-            onConfirm={() => remove.mutate(record.id)}
-          >
-            <Button
-              type="text"
-              size="small"
-              danger
-              icon={<DeleteOutlined />}
-              loading={remove.isPending}
-            />
-          </Popconfirm>
+          {!isGuest && (
+            <Popconfirm
+              title="确定删除此对话记录？"
+              onConfirm={() => remove.mutate(record.id)}
+            >
+              <Button
+                type="text"
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+                loading={remove.isPending}
+              />
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -190,7 +210,14 @@ export default function XiaohuiPage() {
   return (
     <div className="admin-content">
       <h1>小惠对话管理</h1>
-      <div style={{ marginBottom: 16, display: 'flex', gap: 8, alignItems: 'center' }}>
+      <div style={{ marginBottom: 16, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Input.Search
+          placeholder="搜索 ID / 消息 / IP / 状态"
+          allowClear
+          onSearch={(v) => setKeyword(v)}
+          style={{ width: 220 }}
+          prefix={<SearchOutlined />}
+        />
         <Select
           placeholder="筛选状态"
           allowClear
@@ -206,6 +233,11 @@ export default function XiaohuiPage() {
         <Button icon={<ReloadOutlined />} onClick={() => refetch()}>
           刷新
         </Button>
+        <WriteAction>
+          <Button icon={<DownloadOutlined />} onClick={() => exportToJSON(list, 'xiaohui-conversations')}>
+            导出
+          </Button>
+        </WriteAction>
         <Text type="secondary" style={{ marginLeft: 'auto' }}>
           共 {list.length} 条记录
         </Text>
@@ -215,14 +247,15 @@ export default function XiaohuiPage() {
           <Table
             rowKey="id"
             columns={columns}
-            dataSource={list}
+            dataSource={filteredData}
             loading={isLoading}
             scroll={{ y: scrollY }}
             pagination={{
               current: page,
               pageSize,
-              onChange: (p) => setPage(p),
-              showSizeChanger: false,
+              onChange: (p, ps) => { setPage(p); setPageSize(ps) },
+              showSizeChanger: true,
+              pageSizeOptions: ['10', '20', '50', '100'],
               showTotal: (total) => `共 ${total} 条`,
             }}
             size="small"

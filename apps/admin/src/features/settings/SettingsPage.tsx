@@ -1,8 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Table, Button, Modal, Form, Input, Segmented, Tooltip, Card, Row, Col, Switch, message, Divider, Space } from 'antd'
+import { DownloadOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { useTableScrollY } from '../../shared/hooks/useTableScrollY'
 import { formatDateTime, formatDateRelative } from '../../shared/utils/formatDate'
+import { exportToJSON } from '../../shared/utils/exportData'
+import { WriteAction } from '../../shared/components/WriteAction'
+import { useGuestMode } from '../../contexts/GuestModeContext'
 import { useSettings } from './useSettings'
 import { useSettingMutations } from './useSettingMutations'
 import type { SettingItem } from './api'
@@ -108,6 +112,100 @@ function RegistrationControlCard() {
             保存注册配置
           </Button>
           <Button onClick={loadRegSettings}>重置</Button>
+        </Space>
+      </Form>
+    </Card>
+  )
+}
+
+/** 游客模式控制相关设置 key */
+const GUEST_KEYS = {
+  ENABLED: 'guest_admin_view_enabled',
+} as const
+
+/** ---- 游客模式控制配置子组件 ---- */
+function GuestModeControlCard() {
+  const [guestForm] = Form.useForm()
+  const [loading, setLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  /** 从后端加载游客模式设置 */
+  const loadGuestSettings = useCallback(async () => {
+    setLoading(true)
+    try {
+      const map = await getSettingsByKeys([GUEST_KEYS.ENABLED])
+      const raw = map[GUEST_KEYS.ENABLED]
+      const val = raw?.value
+      let enabled = false
+      if (val === true || val === 'true') enabled = true
+      else if (val && typeof val === 'object' && 'value' in val) {
+        const inner = (val as any).value
+        enabled = inner === true || inner === 'true'
+      }
+      guestForm.setFieldsValue({ guestEnabled: enabled })
+    } catch {
+      // 忽略
+    } finally {
+      setLoading(false)
+    }
+  }, [guestForm])
+
+  useEffect(() => { loadGuestSettings() }, [loadGuestSettings])
+
+  /** 保存游客模式设置 */
+  const handleSave = async () => {
+    const vals = guestForm.getFieldsValue()
+    setSaving(true)
+    try {
+      await saveSettings({
+        [GUEST_KEYS.ENABLED]: {
+          value: String(vals.guestEnabled ?? false),
+          desc: vals.guestEnabled
+            ? '游客可查看后台（只读模式）'
+            : '游客查看后台已关闭',
+        },
+      })
+      message.success('游客模式配置已保存')
+    } catch {
+      message.error('保存失败')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Card
+      title={
+        <Space>
+          <span>👁️</span>
+          <span>游客查看后台</span>
+        </Space>
+      }
+      size="small"
+      loading={loading}
+      style={{ marginBottom: 16 }}
+    >
+      <Form form={guestForm} layout="vertical">
+        <Row gutter={16} align="middle">
+          <Col xs={24} sm={12}>
+            <Form.Item
+              name="guestEnabled"
+              label="是否允许游客查看后台"
+              valuePropName="checked"
+              extra="开启后，前端博客页面会显示「查看后台」入口按钮，游客以只读模式浏览后台，无法进行编辑、删除、导出等操作。"
+            >
+              <Switch
+                checkedChildren="开放"
+                unCheckedChildren="关闭"
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+        <Space>
+          <Button type="primary" loading={saving} onClick={handleSave}>
+            保存游客配置
+          </Button>
+          <Button onClick={loadGuestSettings}>重置</Button>
         </Space>
       </Form>
     </Card>
@@ -237,6 +335,7 @@ function FooterConfigCard() {
 export default function SettingsPage() {
   const { data: list = [], isLoading } = useSettings()
   const { update } = useSettingMutations()
+  const { isGuest } = useGuestMode()
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<SettingItem | null>(null)
   const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit')
@@ -292,18 +391,18 @@ export default function SettingsPage() {
       align: 'center',
       render: (v: string) => (v ? <Tooltip title={formatDateTime(v)}>{formatDateRelative(v)}</Tooltip> : '—'),
     },
-    {
+    ...(!isGuest ? [{
       title: '操作',
       key: 'action',
       width: 80,
-      align: 'center',
-      fixed: 'right',
-      render: (_, record) => (
+      align: 'center' as const,
+      fixed: 'right' as const,
+      render: (_: unknown, record: SettingItem) => (
         <Button type="link" size="small" onClick={() => handleEdit(record)}>
           编辑
         </Button>
       ),
-    },
+    }] : []),
   ]
 
   const { containerRef, scrollY } = useTableScrollY({ hasPagination: false })
@@ -312,15 +411,23 @@ export default function SettingsPage() {
     <div className="admin-content">
       <h1>设置</h1>
 
-      {/* 注册控制配置区 */}
-      <RegistrationControlCard />
+      {/* 注册控制配置区（游客不可见） */}
+      {!isGuest && <RegistrationControlCard />}
 
-      {/* Footer 专属配置区 */}
-      <FooterConfigCard />
+      {/* 游客查看后台控制（游客不可见） */}
+      {!isGuest && <GuestModeControlCard />}
+
+      {/* Footer 专属配置区（游客不可见） */}
+      {!isGuest && <FooterConfigCard />}
 
       {/* 全部设置列表 */}
       <div className="admin-content__table-wrap">
         <div ref={containerRef} className="admin-content__table-body">
+          <div className="admin-content__toolbar">
+            <WriteAction>
+              <Button icon={<DownloadOutlined />} onClick={() => exportToJSON(list, 'settings')}>导出</Button>
+            </WriteAction>
+          </div>
           <Table
             rowKey="id"
             columns={columns}

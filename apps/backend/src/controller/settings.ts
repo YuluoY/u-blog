@@ -2,6 +2,7 @@ import type { Request, Response } from 'express'
 import { tryit } from '@u-blog/utils'
 import { formatResponse, toResponse } from '@/utils'
 import CommonService from '@/service/common'
+import { cacheWrap, CacheTTL, invalidateSettingsCache } from '@/service/cache'
 
 /**
  * GET /settings?keys=key1,key2
@@ -10,8 +11,10 @@ import CommonService from '@/service/common'
 export async function getSettings(req: Request, res: Response): Promise<void> {
   const keysParam = (req.query.keys as string) || ''
   const keys = keysParam ? keysParam.split(',').map(k => k.trim()).filter(Boolean) : undefined
+  // 生成缓存 key：按 keys 排序确保相同参数命中相同缓存
+  const cacheKey = `settings:${keys ? keys.slice().sort().join(',') : 'all'}`
   const result = await tryit<Record<string, { value: unknown; desc?: string | null; masked?: boolean }>, Error>(
-    () => CommonService.getSettings(req, keys)
+    () => cacheWrap(cacheKey, () => CommonService.getSettings(req, keys), CacheTTL.SETTINGS)
   )
   const data = formatResponse(result, 'ok', '获取设置失败')
   toResponse(data, res)
@@ -45,6 +48,8 @@ export async function putSettings(req: Request, res: Response): Promise<void> {
     }
   }
   const result = await tryit<void, Error>(() => CommonService.setSettings(req, record))
+  // 设置更新成功后清除设置缓存
+  if (result[0] == null) invalidateSettingsCache().catch(() => {})
   const data = formatResponse(result, '保存成功', '保存设置失败')
   toResponse(data, res)
 }

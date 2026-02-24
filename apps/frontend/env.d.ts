@@ -3,6 +3,9 @@
 
 import type { UserRole } from '@u-blog/model'
 
+/** 构建时注入的版本哈希（Vite define） */
+declare const __BUILD_HASH__: string
+
 /** 扩展 vue-router RouteMeta */
 declare module 'vue-router' {
   interface RouteMeta {

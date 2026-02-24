@@ -130,16 +130,42 @@ body {
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  /* 盒模型：border-box 确保 padding 不撑开高度 */
+  box-sizing: border-box;
 }
 
 .admin-content__table-body .ant-table-wrapper {
   height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
-.admin-content__table-body .ant-spin-nested-loading,
-.admin-content__table-body .ant-spin-container,
+.admin-content__table-body .ant-spin-nested-loading {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-content__table-body .ant-spin-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 分页区域：固定在底部，不被截断 */
+.admin-content__table-body .ant-table-pagination {
+  flex-shrink: 0;
+  margin: 8px 0 0 !important;
+  padding: 0 0 4px;
+}
+
 .admin-content__table-body .ant-table-container {
-  height: 100%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .admin-content__table-body .ant-table {
@@ -168,6 +194,12 @@ body {
 .admin-content__table-body .ant-table thead th,
 .admin-content__table-body .ant-table tbody td {
   text-align: center !important;
+}
+
+/* 操作列按钮不换行 */
+.admin-content__table-body .ant-table td .ant-space {
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
 
 /* 长内容列：两行省略，内容居中 */

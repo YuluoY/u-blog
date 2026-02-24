@@ -39,6 +39,7 @@ export const CTable = {
   USER_SETTING: 'user_setting',
   FRIEND_LINK: 'friend_link',
   XIAOHUI_CONVERSATION: 'xiaohui_conversation',
+  SUBSCRIBER: 'subscriber',
 } as const
 
 export const CLanguage = {

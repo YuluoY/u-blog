@@ -11,6 +11,7 @@ import { IUserLogin, CUserRole } from '@u-blog/model'
 import ChatService, { type ChatRequestMessage, type ModelConfigOverride } from '@/service/chat'
 import CommonService from '@/service/common'
 import { UserSetting } from '@/module/schema/UserSetting'
+import { getClientIp } from '@/utils'
 
 const router = express.Router() as Router
 
@@ -506,12 +507,17 @@ router.get('/fetch-site-meta', fetchMetaLimiter, async (req: Request, res: Respo
  */
 router.get('/ip-location', async (req: Request, res: Response) => {
   const TIMEOUT_MS = 5000
+  // 从请求头中获取真实客户端 IP（经 Nginx X-Forwarded-For / CF-Connecting-IP 转发）
+  const clientIp = getClientIp(req) || ''
 
-  // 主服务：ip.zhengbingdong.com（国内快，中文结果）
+  // 主服务：ip.zhengbingdong.com（国内快，中文结果）— 传入客户端 IP
   try {
     const ctrl1 = new AbortController()
     const t1 = setTimeout(() => ctrl1.abort(), TIMEOUT_MS)
-    const r1 = await fetch('https://ip.zhengbingdong.com/v1/get', { signal: ctrl1.signal })
+    const url1 = clientIp
+      ? `https://ip.zhengbingdong.com/v1/get?ip=${encodeURIComponent(clientIp)}`
+      : 'https://ip.zhengbingdong.com/v1/get'
+    const r1 = await fetch(url1, { signal: ctrl1.signal })
     clearTimeout(t1)
     if (r1.ok) {
       const json = await r1.json()
@@ -520,11 +526,12 @@ router.get('/ip-location', async (req: Request, res: Response) => {
     }
   } catch { /* 主服务不可用，尝试备用 */ }
 
-  // 备用服务：ip-api.com（无需 key，有速率限制）
+  // 备用服务：ip-api.com（无需 key，有速率限制）— 传入客户端 IP
   try {
     const ctrl2 = new AbortController()
     const t2 = setTimeout(() => ctrl2.abort(), TIMEOUT_MS)
-    const r2 = await fetch('http://ip-api.com/json/?fields=country,regionName,city,query,lat,lon&lang=zh-CN', { signal: ctrl2.signal })
+    const ipSegment = clientIp ? `/${encodeURIComponent(clientIp)}` : ''
+    const r2 = await fetch(`http://ip-api.com/json${ipSegment}?fields=country,regionName,city,query,lat,lon&lang=zh-CN`, { signal: ctrl2.signal })
     clearTimeout(t2)
     if (r2.ok) {
       const data = await r2.json() as Record<string, unknown>
@@ -532,7 +539,7 @@ router.get('/ip-location', async (req: Request, res: Response) => {
       res.json({
         ret: 200,
         data: {
-          ip: data.query,
+          ip: data.query || clientIp,
           city: data.city,
           prov: data.regionName,
           country: data.country,

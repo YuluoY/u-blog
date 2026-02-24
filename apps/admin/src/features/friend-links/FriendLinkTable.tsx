@@ -1,6 +1,10 @@
-import { Table, Button, Space, Popconfirm, Tag, Tooltip, Avatar } from 'antd'
+import { Table, Button, Space, Popconfirm, Tag, Tooltip, Avatar, Input } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { CheckOutlined, CloseOutlined, LinkOutlined } from '@ant-design/icons'
+import { CheckOutlined, CloseOutlined, LinkOutlined, DownloadOutlined, SearchOutlined } from '@ant-design/icons'
+import { exportToJSON } from '../../shared/utils/exportData'
+import { useTableFilter } from '../../shared/hooks/useTableFilter'
+import { WriteAction } from '../../shared/components/WriteAction'
+import { useGuestMode } from '../../contexts/GuestModeContext'
 import { formatDateTime, formatDateRelative } from '../../shared/utils/formatDate'
 import type { FriendLinkItem } from './api'
 
@@ -34,8 +38,14 @@ export function FriendLinkTable({
   reviewLoading,
   scrollY,
 }: FriendLinkTableProps) {
+  const { isGuest } = useGuestMode()
+  const searchFields: ((item: FriendLinkItem) => string)[] = [
+    (r) => String(r.id), (r) => r.title ?? '', (r) => r.url ?? '', (r) => r.description ?? '', (r) => r.status ?? '',
+  ]
+  const { filteredData, onSearch, pagination } = useTableFilter(dataSource, searchFields, { defaultPageSize: 20 })
+
   const columns: ColumnsType<FriendLinkItem> = [
-    { title: 'ID', dataIndex: 'id', width: 60, align: 'center' },
+    { title: 'ID', dataIndex: 'id', width: 60, align: 'center', sorter: (a, b) => a.id - b.id },
     {
       title: '图标',
       dataIndex: 'icon',
@@ -85,6 +95,12 @@ export function FriendLinkTable({
       dataIndex: 'status',
       width: 90,
       align: 'center',
+      filters: [
+        { text: '待审核', value: 'pending' },
+        { text: '已通过', value: 'approved' },
+        { text: '已拒绝', value: 'rejected' },
+      ],
+      onFilter: (value, record) => record.status === value,
       render: (v: string) => {
         const s = STATUS_MAP[v] || { color: 'default', label: v }
         return <Tag color={s.color}>{s.label}</Tag>
@@ -95,24 +111,25 @@ export function FriendLinkTable({
       dataIndex: 'sortOrder',
       width: 70,
       align: 'center',
+      sorter: (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0),
     },
     {
       title: '创建',
       dataIndex: 'createdAt',
       width: 110,
       align: 'center',
+      sorter: (a, b) => new Date(a.createdAt ?? 0).getTime() - new Date(b.createdAt ?? 0).getTime(),
       render: (v: string) =>
         v ? <Tooltip title={formatDateTime(v)}>{formatDateRelative(v)}</Tooltip> : '—',
     },
-    {
+    ...(!isGuest ? [{
       title: '操作',
       key: 'action',
-      width: 210,
-      align: 'center',
-      fixed: 'right',
-      render: (_, record) => (
+      width: 280,
+      align: 'center' as const,
+      fixed: 'right' as const,
+      render: (_: unknown, record: FriendLinkItem) => (
         <Space size={2}>
-          {/* 待审核时显示审核按钮 */}
           {record.status === 'pending' && (
             <>
               <Popconfirm
@@ -149,22 +166,26 @@ export function FriendLinkTable({
           </Popconfirm>
         </Space>
       ),
-    },
+    }] : []),
   ]
 
   return (
     <>
-      <div className="admin-content__toolbar">
-        <Button type="primary" onClick={onAdd}>
-          新增
-        </Button>
+      <div className="admin-content__toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Input.Search placeholder="搜索 ID / 标题 / URL / 描述" allowClear onSearch={onSearch} style={{ width: 260 }} prefix={<SearchOutlined />} />
+        <WriteAction>
+          <Space>
+            <Button type="primary" onClick={onAdd}>新增</Button>
+            <Button icon={<DownloadOutlined />} onClick={() => exportToJSON(dataSource, 'friend-links')}>导出</Button>
+          </Space>
+        </WriteAction>
       </div>
       <Table
         rowKey="id"
         columns={columns}
-        dataSource={dataSource}
+        dataSource={filteredData}
         loading={loading}
-        pagination={false}
+        pagination={pagination}
         scroll={scrollY != null ? { y: scrollY } : undefined}
       />
     </>

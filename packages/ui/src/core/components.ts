@@ -20,7 +20,7 @@ import {
   UCollapseItem,
   UTooltip,
   UPopconfirm,
-  UCodeEditor,
+  // UCodeEditor 不全局注册，避免 monaco-editor (~9MB) 被打入主 chunk
   USlider,
   UStatsBar,
   UDialog,
@@ -80,7 +80,6 @@ export default [
   UCollapseItem,
   UTooltip,
   UPopconfirm,
-  UCodeEditor,
   USlider,
   UStatsBar,
   UDialog,

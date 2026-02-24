@@ -462,7 +462,7 @@ onBeforeUnmount(() => { if (cooldownTimer) clearInterval(cooldownTimer) })
 
 /* ---- 根容器 ---- */
 .auth-page {
-  --_accent: 217 92% 60%;
+  --_accent: 217 92% 70%;
   --_accent-2: 250 76% 66%;
   --_glass-bg: rgba(255, 255, 255, 0.06);
   --_glass-border: rgba(255, 255, 255, 0.12);
@@ -938,7 +938,7 @@ onBeforeUnmount(() => { if (cooldownTimer) clearInterval(cooldownTimer) })
   justify-content: center;
   border-radius: 50%;
   background: rgba(255, 80, 80, 0.1);
-  color: hsl(0 75% 60%);
+  color: hsl(0 75% 70%);
   margin-bottom: 1.6rem;
 }
 
@@ -1033,7 +1033,7 @@ onBeforeUnmount(() => { if (cooldownTimer) clearInterval(cooldownTimer) })
 .auth-page.is-light {
   /* 覆盖局部 CSS 变量为亮色调 */
   --_accent: 217 92% 55%;
-  --_accent-2: 250 76% 60%;
+  --_accent-2: 250 76% 70%;
   --_glass-bg: rgba(255, 255, 255, 0.65);
   --_glass-border: rgba(0, 0, 0, 0.08);
   --_glass-blur: 20px;
@@ -1134,7 +1134,7 @@ onBeforeUnmount(() => { if (cooldownTimer) clearInterval(cooldownTimer) })
 
   .auth-page__toast--success {
     background: hsl(145 70% 42% / 0.08);
-    color: hsl(145 60% 35%);
+    color: hsl(145 70% 35%);
     border-color: hsl(145 70% 42% / 0.15);
   }
 }

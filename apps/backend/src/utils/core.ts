@@ -75,9 +75,14 @@ export const formatResponse = <T = any, E extends Error = Error>(
  * toModelName('users') // Users
  * toModelName('article_tag') // ArticleTag
  * toModelName('page_block') // PageBlock
+ * toModelName('like') // Likes
  * ```
  */
+const MODEL_NAME_OVERRIDES: Record<string, string> = {
+  like: 'Likes', // 实体类名为 Likes，而非 Like
+}
 export const toModelName = (tableName: string): string =>
+  MODEL_NAME_OVERRIDES[tableName] ??
   tableName
     .split('_')
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())

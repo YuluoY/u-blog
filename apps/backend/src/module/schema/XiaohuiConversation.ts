@@ -43,6 +43,12 @@ export class XiaohuiConversation {
   @IsString()
   clientIp?: string | null
 
+  /** IP 解析的地理位置 */
+  @Column({ type: 'varchar', length: 128, nullable: true, comment: 'IP地理位置' })
+  @IsOptional()
+  @IsString()
+  location?: string | null
+
   /** 用户发送的消息 */
   @Column({ type: 'text', comment: '用户消息' })
   @IsNotEmpty({ message: '用户消息不能为空' })

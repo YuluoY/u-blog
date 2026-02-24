@@ -1,6 +1,10 @@
-import { Table, Button, Space, Popconfirm, Tooltip } from 'antd'
+import { Table, Button, Space, Popconfirm, Tooltip, Input } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { CheckCircleFilled, CloseCircleFilled } from '@ant-design/icons'
+import { CheckCircleFilled, CloseCircleFilled, DownloadOutlined, SearchOutlined } from '@ant-design/icons'
+import { exportToJSON } from '../../shared/utils/exportData'
+import { useTableFilter } from '../../shared/hooks/useTableFilter'
+import { WriteAction } from '../../shared/components/WriteAction'
+import { useGuestMode } from '../../contexts/GuestModeContext'
 import { formatDateTime, formatDateRelative } from '../../shared/utils/formatDate'
 import type { RouteItem } from './api'
 
@@ -30,8 +34,13 @@ export function RouteTable({
   deleteLoading,
   scrollY,
 }: RouteTableProps) {
+  const { isGuest } = useGuestMode()
+  const { filteredData, onSearch, pagination } = useTableFilter(
+    dataSource, ['id', 'title', 'name', 'path', 'component'] as (keyof RouteItem)[], { defaultPageSize: 20 },
+  )
+
   const columns: ColumnsType<RouteItem> = [
-    { title: 'ID', dataIndex: 'id', width: 50, align: 'center' },
+    { title: 'ID', dataIndex: 'id', width: 50, align: 'center', sorter: (a, b) => a.id - b.id },
     { title: '标题', dataIndex: 'title', width: 100, render: (v: string | null) => v ?? '—' },
     { title: '名称', dataIndex: 'name', width: 100 },
     { title: '路径', dataIndex: 'path', width: 150, ellipsis: true },
@@ -61,15 +70,16 @@ export function RouteTable({
       dataIndex: 'createdAt',
       width: 110,
       align: 'center',
+      sorter: (a, b) => new Date(a.createdAt ?? 0).getTime() - new Date(b.createdAt ?? 0).getTime(),
       render: (v: string) => v ? <Tooltip title={formatDateTime(v)}>{formatDateRelative(v)}</Tooltip> : '—',
     },
-    {
+    ...(!isGuest ? [{
       title: '操作',
       key: 'action',
       width: 160,
-      align: 'center',
-      fixed: 'right',
-      render: (_, record) => (
+      align: 'center' as const,
+      fixed: 'right' as const,
+      render: (_: unknown, record: RouteItem) => (
         <Space>
           <Button type="link" size="small" onClick={() => onEdit(record)}>
             编辑
@@ -85,22 +95,26 @@ export function RouteTable({
           </Popconfirm>
         </Space>
       ),
-    },
+    }] : []),
   ]
 
   return (
     <>
-      <div className="admin-content__toolbar">
-        <Button type="primary" onClick={onAdd}>
-          新增
-        </Button>
+      <div className="admin-content__toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Input.Search placeholder="搜索 ID / 标题 / 名称 / 路径 / 组件" allowClear onSearch={onSearch} style={{ width: 280 }} prefix={<SearchOutlined />} />
+        <WriteAction>
+          <Space>
+            <Button type="primary" onClick={onAdd}>新增</Button>
+            <Button icon={<DownloadOutlined />} onClick={() => exportToJSON(dataSource, 'routes')}>导出</Button>
+          </Space>
+        </WriteAction>
       </div>
       <Table
         rowKey="id"
         columns={columns}
-        dataSource={dataSource}
+        dataSource={filteredData}
         loading={loading}
-        pagination={false}
+        pagination={pagination}
         scroll={scrollY != null ? { x: 1400, y: scrollY } : { x: 1400 }}
       />
     </>

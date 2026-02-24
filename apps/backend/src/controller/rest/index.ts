@@ -5,10 +5,41 @@ import { formatResponse, getClientIp, getDataSource, parseUserAgent, resolveIpLo
 import { tryit } from '@u-blog/utils'
 import RestService from '@/service/rest'
 import CommonService from '@/service/common'
+import SubscribeService from '@/service/subscribe'
 import { Article } from '@/module/schema/Article'
 import { Tag } from '@/module/schema/Tag'
 import sanitizeHtml from 'sanitize-html'
 import { USERS_SENSITIVE_FIELDS, stripSensitiveFields } from '@/middleware/RestWriteGuard'
+import {
+  invalidateArticleCache,
+  invalidateCommentCache,
+  invalidateTaxonomyCache,
+  invalidateSettingsCache,
+} from '@/service/cache'
+
+/**
+ * 根据模型名称触发对应的缓存失效
+ * 写操作（add/update/del）成功后异步调用，不阻塞响应
+ */
+function invalidateCacheForModel(req: Request): void {
+  const modelName = (req.params?.model || req.model?.metadata?.name || '').toLowerCase()
+  switch (modelName) {
+    case 'article':
+      invalidateArticleCache().catch(() => {})
+      break
+    case 'comment':
+      invalidateCommentCache().catch(() => {})
+      break
+    case 'category':
+    case 'tag':
+      invalidateTaxonomyCache().catch(() => {})
+      break
+    case 'setting':
+      invalidateSettingsCache().catch(() => {})
+      break
+    // 其他模型暂不缓存，无需失效
+  }
+}
 
 /** 评论内容允许的 HTML 标签和属性（严格白名单） */
 const COMMENT_SANITIZE_OPTS: sanitizeHtml.IOptions = {
@@ -64,6 +95,10 @@ class RestController
     if (tryData[0] == null && isUsersModel(req)) {
       sanitizeUsersResponse(tryData[1])
     }
+    // Article 表查询：非管理员请求时，密码保护文章隐藏正文、暴露 isProtected 标志
+    if (tryData[0] == null && isArticleModel(req)) {
+      sanitizeArticleProtect(tryData[1], req)
+    }
     return formatResponse(tryData, req.__('rest.querySuccess'), req.__('rest.queryFail'))
   }
 
@@ -74,6 +109,8 @@ class RestController
       return formatResponse([new Error('id 必填') as any, null], req.__('rest.delSuccess'), req.__('rest.delFail'))
     }
     const tryData = await tryit<void, Error>(() => RestService.del(req.model, id))
+    // 删除成功后异步清除相关缓存
+    if (tryData[0] == null) invalidateCacheForModel(req)
     return formatResponse(tryData, req.__('rest.delSuccess'), req.__('rest.delFail'))
   }
 
@@ -180,6 +217,20 @@ class RestController
       }
     }
 
+    // 添加成功后异步清除相关缓存
+    if (tryData[0] == null) invalidateCacheForModel(req)
+
+    // 新文章发布 → 异步通知所有订阅者
+    if (isArticle && tryData[0] == null) {
+      const saved = tryData[1]
+      if (saved?.id && saved?.title) {
+        SubscribeService.notifyNewArticle(
+          getDataSource(req),
+          { id: saved.id, title: saved.title, summary: saved.description || '' },
+        ).catch((err) => console.error('[Subscribe] 新文章通知失败:', err))
+      }
+    }
+
     return formatResponse(tryData, req.__('rest.addSuccess'), req.__('rest.addFail'))
   }
 
@@ -195,6 +246,8 @@ class RestController
     if (tryData[0] == null && isUsersModel(req)) {
       sanitizeUsersResponse(tryData[1])
     }
+    // 更新成功后异步清除相关缓存
+    if (tryData[0] == null) invalidateCacheForModel(req)
     return formatResponse(tryData, req.__('rest.updateSuccess'), req.__('rest.updateFail'))
   }
 }
@@ -206,6 +259,11 @@ function isUsersModel(req: Request): boolean {
   return req.model?.metadata?.name === 'Users' || req.params?.model === 'users'
 }
 
+/** 判断当前操作的是否为 Article 模型 */
+function isArticleModel(req: Request): boolean {
+  return req.model?.metadata?.name === 'Article' || req.params?.model === 'article'
+}
+
 /** 从用户数据（单条或数组）中移除敏感字段 */
 function sanitizeUsersResponse(data: any): void {
   if (!data) return
@@ -215,6 +273,34 @@ function sanitizeUsersResponse(data: any): void {
     })
   } else if (typeof data === 'object') {
     stripSensitiveFields(data, USERS_SENSITIVE_FIELDS)
+  }
+}
+
+/**
+ * 文章密码保护处理：
+ * - 管理员（super_admin / admin）保留完整数据，包括 protect 明文（用于后台编辑）
+ * - 普通用户/游客：有 protect 的文章隐藏 content，添加 isProtected: true，删除 protect 明文
+ */
+function sanitizeArticleProtect(data: any, req: Request): void {
+  if (!data) return
+  // 仅超级管理员豁免密码保护，普通管理员和用户均需验证密码
+  const isSuperAdmin = req.user?.role === 'super_admin'
+  const items = Array.isArray(data) ? data : [data]
+  for (const item of items) {
+    if (!item || typeof item !== 'object') continue
+    const hasProtect = !!item.protect
+    if (hasProtect) {
+      item.isProtected = true
+      if (!isSuperAdmin) {
+        // 非超级管理员：隐藏正文 + 删除密码明文
+        item.content = ''
+        delete item.protect
+      }
+      // 超级管理员：保留 protect 明文，用于后台表单编辑
+    } else {
+      item.isProtected = false
+      delete item.protect
+    }
   }
 }
 

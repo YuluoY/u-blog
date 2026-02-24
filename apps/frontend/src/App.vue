@@ -14,12 +14,18 @@
     </LayoutBase>
   </template>
   <Snowfall v-if="showSnowfall" :options="appStore.snowfallOptions" />
+  <!-- 网站版本更新提示（生产环境自动检测） -->
+  <UpdateToast />
+  <!-- 全局订阅弹窗 -->
+  <SubscribeModal v-model:visible="subscribeModalVisible" />
 </template>
 
 <script setup lang="ts">
 import { watch, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import LayoutBase from '@/components/LayoutBase.vue'
+import UpdateToast from '@/components/UpdateToast.vue'
+import SubscribeModal from '@/components/SubscribeModal.vue'
 import { useAppStore } from '@/stores/app'
 import { useBlogOwnerStore } from '@/stores/blogOwner'
 import { fetchTodayHasSnowByIP } from '@/api/snowfallWeather'
@@ -35,13 +41,19 @@ import { useFooterStore } from '@/stores/footer'
 import { setCurrentUser as setWriteDraftUser } from '@/utils/writeDraftDb'
 import { setCurrentUser as setPublishSettingsUser } from '@/utils/publishSettingsDb'
 import { useActivityTracker } from '@/composables/useActivityTracker'
+import { useSubscribe } from '@/composables/useSubscribe'
+import { UMessageFn } from '@u-blog/ui'
 import type { IUser } from '@u-blog/model'
 
 const appStore = useAppStore()
 const route = useRoute()
+const router = useRouter()
 
 // 初始化行为追踪
 useActivityTracker()
+
+// 订阅弹窗全局状态
+const { subscribeModalVisible } = useSubscribe()
 
 /** 需要独立全屏渲染的路由（不包裹 LayoutBase） */
 const FULLSCREEN_ROUTES = new Set(['login'])
@@ -133,5 +145,24 @@ onMounted(async () => {
 
   // 记录站点访问（后端按 IP 每日去重）
   recordSiteVisit().catch(() => {})
+
+  // 处理订阅验证/退订回调 query 参数
+  const subscribeStatus = route.query.subscribe as string | undefined
+  if (subscribeStatus) {
+    const { t } = i18n.global
+    const msgMap: Record<string, { type: 'success' | 'warning' | 'error'; key: string }> = {
+      success: { type: 'success', key: 'subscribe.verifySuccess' },
+      invalid: { type: 'error', key: 'subscribe.verifyInvalid' },
+      unsubscribed: { type: 'success', key: 'subscribe.unsubscribed' },
+    }
+    const cfg = msgMap[subscribeStatus]
+    if (cfg) {
+      UMessageFn({ type: cfg.type, message: t(cfg.key) })
+    }
+    // 清理 URL query 参数
+    const query = { ...route.query }
+    delete query.subscribe
+    router.replace({ path: route.path, query })
+  }
 })
 </script>

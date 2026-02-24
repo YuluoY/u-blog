@@ -778,12 +778,11 @@ class CommonService {
     const totalViews = Number(agg?.totalViews ?? 0)
     const totalLikes = Number(agg?.totalLikes ?? 0)
     const totalComments = Number(agg?.totalComments ?? 0)
-    const earliestCreated = agg?.earliestCreated ? new Date(agg.earliestCreated) : null
     const latestUpdated = agg?.latestUpdated ? new Date(agg.latestUpdated) : null
 
-    const runningDays = earliestCreated
-      ? Math.max(1, Math.floor((Date.now() - earliestCreated.getTime()) / 86400000))
-      : 0
+    // 网站上线日期（固定值），用于计算运行天数
+    const SITE_LAUNCH_DATE = new Date('2026-02-23T00:00:00+08:00')
+    const runningDays = Math.max(1, Math.floor((Date.now() - SITE_LAUNCH_DATE.getTime()) / 86400000))
 
     let lastUpdate = '--'
     if (latestUpdated) {

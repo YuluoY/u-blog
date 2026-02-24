@@ -192,11 +192,11 @@ const bodyOffsetStyle = computed(() => ({
       }
     }
 
-    /* 侧边栏折叠：60% 宽度居中 */
+    /* 侧边栏折叠：70% 宽度居中 */
     &--sidebar-collapsed {
-      flex: 0 1 60%;
-      width: 60%;
-      max-width: 60%;
+      flex: 0 1 70%;
+      width: 70%;
+      max-width: 70%;
       margin-left: auto;
       margin-right: auto;
       > * {

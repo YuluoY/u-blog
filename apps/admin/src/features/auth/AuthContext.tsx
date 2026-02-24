@@ -14,7 +14,9 @@ import type { LoginRes } from '../../shared/api/types'
 export const FRONTEND_LOGIN_URL =
   import.meta.env.VITE_FRONTEND_URL
     ? `${import.meta.env.VITE_FRONTEND_URL}/login`
-    : 'http://localhost:5173/login'
+    : import.meta.env.PROD
+      ? `${window.location.origin}/login`
+      : 'http://localhost:5173/login'
 
 /**
  * 模块级 Promise 去重：

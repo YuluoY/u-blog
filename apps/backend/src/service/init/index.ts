@@ -97,7 +97,7 @@ const DEFAULT_PERMISSIONS = [
   { name: '文章编辑', code: 'api:article:update', type: CPermission.API, action: CPermissionAction.UPDATE, resource: 'article', desc: '编辑文章' },
   { name: '文章删除', code: 'api:article:delete', type: CPermission.API, action: CPermissionAction.DELETE, resource: 'article', desc: '删除文章' },
   { name: '评论删除', code: 'api:comment:delete', type: CPermission.API, action: CPermissionAction.DELETE, resource: 'comment', desc: '删除评论' },
-  { name: '用户管理', code: 'api:user:update', type: CPermission.API, action: CPermissionAction.UPDATE, resource: 'users', desc: '编辑用户信息' },
+  { name: '用户编辑', code: 'api:user:update', type: CPermission.API, action: CPermissionAction.UPDATE, resource: 'users', desc: '编辑用户信息' },
   { name: '设置写入', code: 'api:setting:update', type: CPermission.API, action: CPermissionAction.UPDATE, resource: 'setting', desc: '修改系统设置' },
   { name: '媒体上传', code: 'api:media:create', type: CPermission.API, action: CPermissionAction.CREATE, resource: 'media', desc: '上传媒体文件' },
   { name: '友链审核', code: 'api:friend-link:update', type: CPermission.API, action: CPermissionAction.UPDATE, resource: 'friend_link', desc: '审核友链申请' },
@@ -167,22 +167,26 @@ export async function initRBAC(dataSource: DataSource): Promise<void> {
     console.log('  🔑 初始化权限...')
     const permissionMap = new Map<string, Permission>()
     for (const p of DEFAULT_PERMISSIONS) {
-      let existing = await permRepo.findOne({ where: { code: p.code } })
-      if (!existing) {
-        existing = permRepo.create({
-          name: p.name,
-          code: p.code,
-          type: p.type,
-          action: p.action,
-          resource: p.resource,
-          desc: p.desc,
-        })
-        existing = await permRepo.save(existing)
-        console.log(`    ✅ 权限创建: ${p.code}`)
-      } else {
-        console.log(`    ℹ️  权限已存在: ${p.code}`)
+      try {
+        let existing = await permRepo.findOne({ where: { code: p.code } })
+        if (!existing) {
+          existing = permRepo.create({
+            name: p.name,
+            code: p.code,
+            type: p.type,
+            action: p.action,
+            resource: p.resource,
+            desc: p.desc,
+          })
+          existing = await permRepo.save(existing)
+          console.log(`    ✅ 权限创建: ${p.code}`)
+        } else {
+          console.log(`    ℹ️  权限已存在: ${p.code}`)
+        }
+        permissionMap.set(p.code, existing)
+      } catch (err) {
+        console.warn(`    ⚠️  权限初始化失败: ${p.code}`, (err as Error).message)
       }
-      permissionMap.set(p.code, existing)
     }
 
     // 2. 角色（含权限绑定）

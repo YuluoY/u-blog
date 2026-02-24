@@ -73,6 +73,17 @@
             </div>
           </div>
         </section>
+
+        <!-- 归档加载更多触发器 -->
+        <div ref="archiveSentinelRef" class="archive-load-more">
+          <template v-if="articleStore.archiveLoading && articleStore.archiveList.length > 0">
+            <u-icon icon="fa-solid fa-spinner" spin />
+            <u-text>{{ t('archive.loading') }}</u-text>
+          </template>
+          <template v-else-if="!articleStore.archiveHasMore && articleStore.archiveList.length > 0">
+            <u-text class="archive-load-more__done">{{ t('archive.allLoaded') }}</u-text>
+          </template>
+        </div>
       </div>
     </div>
   </div>
@@ -297,10 +308,31 @@ function handleDotClick(id: string) {
   router.push(`/read/${id}`)
 }
 
+/** 触底加载哨兵 */
+const archiveSentinelRef = ref<HTMLElement | null>(null)
+let archiveObserver: IntersectionObserver | null = null
+
 onMounted(() => {
   articleStore.qryArchiveList()
   categoryStore.qryCategoryList()
   tagStore.qryTagList()
+
+  // IntersectionObserver：触底自动加载更多归档数据
+  archiveObserver = new IntersectionObserver(
+    (entries) => {
+      if (entries[0]?.isIntersecting && articleStore.archiveHasMore && !articleStore.archiveLoading) {
+        articleStore.loadMoreArchive()
+      }
+    },
+    { rootMargin: '200px' }
+  )
+  if (archiveSentinelRef.value) {
+    archiveObserver.observe(archiveSentinelRef.value)
+  }
+})
+
+onBeforeUnmount(() => {
+  archiveObserver?.disconnect()
 })
 </script>
 
@@ -487,7 +519,7 @@ onMounted(() => {
     position: absolute;
     top: 0;
     left: -100%;
-    width: 60%;
+    width: 70%;
     height: 100%;
     background: linear-gradient(
       90deg,
@@ -513,5 +545,22 @@ onMounted(() => {
   to {
     transform: translateX(350%);
   }
+}
+
+/* ---------- 加载更多 ---------- */
+.archive-load-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px 16px;
+  color: var(--u-text-3);
+  font-size: 0.9rem;
+  min-height: 48px;
+}
+
+.archive-load-more__done {
+  opacity: 0.6;
+  font-size: 0.85rem;
 }
 </style>

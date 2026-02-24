@@ -60,6 +60,8 @@ export const SETTING_KEYS = {
   FOOTER_MOE_ICP_VISIBLE: 'footer_moe_icp_visible',
   /** Footer：作者名称 */
   FOOTER_AUTHOR: 'footer_author',
+  /** 游客查看后台开关（'true' / 'false'） */
+  GUEST_ADMIN_VIEW_ENABLED: 'guest_admin_view_enabled',
 } as const
 
 /** 需要脱敏显示的 key（后端会返回 masked） */

@@ -36,10 +36,10 @@
             :class="['chat-message', `chat-message--${message.role}`]"
           >
             <div class="chat-message__avatar">
-              <!-- 用户消息：显示真实头像或兜底图标 -->
+              <!-- 用户消息：显示真实头像或随机访客头像 -->
               <template v-if="message.role === 'user'">
                 <img v-if="userStore.user?.avatar" :src="userStore.user.avatar" alt="avatar" class="chat-message__avatar-img" />
-                <u-icon v-else icon="fa-solid fa-user" />
+                <img v-else :src="guestAvatarUrl" alt="guest-avatar" class="chat-message__avatar-img" />
               </template>
               <!-- AI 消息：机器人图标 -->
               <u-icon v-else icon="fa-solid fa-robot" />
@@ -130,7 +130,8 @@
                 <u-slider v-model="chatFontSize" :min="12" :max="20" :step="1" />
               </div>
             </div>
-            <div class="model-popover__footer">
+            <!-- 游客模式下隐藏设置保存操作 -->
+            <div v-if="!isGuestChat" class="model-popover__footer">
               <button class="model-popover__link" @click="openFullSettings">
                 <u-icon icon="fa-solid fa-gear" />
                 <span>{{ t('chat.moreSettings') }}</span>
@@ -155,6 +156,7 @@
             @keydown="handleInputKeydown"
             @input="autoResizeTextarea"
           ></textarea>
+          <!-- 模型设置按钮 -->
           <button
             class="chat-input-bar__settings"
             :class="{ 'is-active': showModelPopover }"
@@ -287,7 +289,7 @@
                       <!-- 移到其他文件夹下拉 -->
                       <div v-if="chatStore.sortedFolders.length > 1" class="session-move-dropdown">
                         <button class="session-action-btn" :title="t('chat.moveToFolder')" @click.stop="toggleMoveMenu(session.id)">
-                          <u-icon icon="fa-solid fa-folder-arrow-down" />
+                          <u-icon icon="fa-solid fa-file-arrow-down" />
                         </button>
                         <div v-if="moveMenuSessionId === session.id" class="session-move-dropdown__menu" @click.stop>
                           <button
@@ -347,7 +349,7 @@
                     <!-- 移到文件夹下拉 -->
                     <div v-if="chatStore.sortedFolders.length > 0" class="session-move-dropdown">
                       <button class="session-action-btn" :title="t('chat.moveToFolder')" @click.stop="toggleMoveMenu(session.id)">
-                        <u-icon icon="fa-solid fa-folder-arrow-down" />
+                        <u-icon icon="fa-solid fa-file-arrow-down" />
                       </button>
                       <div v-if="moveMenuSessionId === session.id" class="session-move-dropdown__menu" @click.stop>
                         <button
@@ -400,7 +402,7 @@
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { UMessageFn } from '@u-blog/ui'
+import { UMessageFn, getRandomAvatarUrl } from '@u-blog/ui'
 import { sendChatMessageStream } from '@/api/chat'
 import type { ChatMessagePayload } from '@/api/chat'
 import { getSettings, updateSettings } from '@/api/settings'
@@ -425,6 +427,13 @@ const { search: ragSearch, formatContext } = useChatRAG()
 const inputText = ref('')
 const inputRef = ref<HTMLTextAreaElement | null>(null)
 const loading = ref(false)
+
+/** 游客随机头像（基于用户名或 "guest" 生成确定性头像） */
+const guestAvatarUrl = computed(() => {
+  const seed = userStore.user?.namec || userStore.user?.username || 'guest'
+  return getRandomAvatarUrl(seed)
+})
+
 /** 正在流式接收 token（用于显示光标闪烁效果） */
 const streaming = ref(false)
 /** 用于取消正在进行的 SSE 请求 */
@@ -436,6 +445,11 @@ const editingSessionId = ref<string | null>(null)
 const editingTitle = ref('')
 /** RAG 上下文检索开关 */
 const ragEnabled = ref(true)
+
+/** 是否为游客模式（子域名完整模式下未登录） */
+const isGuestChat = computed(() =>
+  blogOwnerStore.isSubdomainMode && !blogOwnerStore.isReadOnly && !userStore.isLoggedIn,
+)
 
 /* ===================== 文件夹管理 ===================== */
 const folderOpenMap = ref<Record<string, boolean>>(loadFolderOpenState())
@@ -623,6 +637,8 @@ async function loadModelParams() {
 
 /** 保存模型参数：保存到 localStorage 并同步到服务端（包含字号） */
 async function saveModelParams() {
+  // 游客禁止写入服务端设置
+  if (isGuestChat.value) return
   savingParams.value = true
   try {
     // 保存到 localStorage（本地快速恢复）
@@ -642,8 +658,9 @@ async function saveModelParams() {
   }
 }
 
-/** 关闭浮层并打开设置抽屉 */
+/** 关闭浮层并打开设置抽屉（游客不可用） */
 function openFullSettings() {
+  if (isGuestChat.value) return
   showModelPopover.value = false
   appStore.setSettingsDrawerVisible(true)
 }
@@ -979,9 +996,6 @@ function isLastMessage(msg: { id: string }): boolean {
   flex: 1;
   overflow-y: auto;
   padding: 2rem 0;
-  &::-webkit-scrollbar { width: 4px; }
-  &::-webkit-scrollbar-thumb { background: transparent; border-radius: 2px; }
-  &:hover::-webkit-scrollbar-thumb { background: var(--u-border-2); }
 }
 
 .chat-messages-list {
@@ -1441,9 +1455,6 @@ function isLastMessage(msg: { id: string }): boolean {
 
 .chat-sidebar__content {
   flex: 1; overflow-y: auto; padding: 0.8rem;
-  &::-webkit-scrollbar { width: 4px; }
-  &::-webkit-scrollbar-thumb { background: transparent; border-radius: 2px; }
-  &:hover::-webkit-scrollbar-thumb { background: var(--u-border-2); }
 }
 
 .chat-sidebar__empty {

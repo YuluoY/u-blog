@@ -7,6 +7,7 @@ import { Users } from '@/module/schema/Users'
 import { Repository } from 'typeorm'
 import { IUserLogin } from '@u-blog/model'
 import appCfg from '@/app'
+import { cacheWrap, CacheTTL } from '@/service/cache'
 
 class CommonController {
   /** 发送邮箱验证码 */
@@ -60,14 +61,18 @@ class CommonController {
   /** 网站概览统计（文章/分类/标签数、浏览/点赞/评论、运行天数、最后更新） */
   async getSiteOverview(req: Request, _res: Response): ControllerReturn
   {
-    const tryData = await tryit(() => CommonService.getSiteOverview(req))
+    const tryData = await tryit(() =>
+      cacheWrap('site-overview', () => CommonService.getSiteOverview(req), CacheTTL.OVERVIEW)
+    )
     return formatResponse(tryData, 'ok', '获取网站概览失败')
   }
 
   /** 类别/标签权重与声噪，供前端词云等可视化 */
   async getCloudWeights(req: Request, _res: Response): ControllerReturn
   {
-    const tryData = await tryit(() => CommonService.getCloudWeights(req))
+    const tryData = await tryit(() =>
+      cacheWrap('cloud-weights', () => CommonService.getCloudWeights(req), CacheTTL.OVERVIEW)
+    )
     return formatResponse(tryData, 'ok', '获取词云权重失败')
   }
 

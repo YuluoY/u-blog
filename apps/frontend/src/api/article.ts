@@ -2,6 +2,7 @@ import type { IArticle } from '@u-blog/model'
 import { CArticleStatus } from '@u-blog/model'
 import type { ApiMethod } from './types'
 import { restQuery, restAdd, restUpdate } from './request'
+import request from './request'
 
 /** 每页条数 */
 export const PAGE_SIZE = 10
@@ -52,21 +53,23 @@ export interface IArticleApis {
   [keyof: string]: ApiMethod
   /** 分页查询文章列表（仅已发布；order 置顶优先 + sort 对应排序） */
   getArticleList: (page?: number, pageSize?: number, sort?: HomeSortType, userId?: number) => Promise<IArticle[]>
-  /** 归档用：按时间倒序拉取全部（或大量）文章 */
-  getArticleListForArchive: (take?: number, userId?: number) => Promise<IArticle[]>
+  /** 归档用：按时间倒序分页拉取文章 */
+  getArticleListForArchive: (take?: number, skip?: number, userId?: number) => Promise<IArticle[]>
   /** 根据 id 查询单篇文章 */
   getArticleById: (id: string) => Promise<IArticle | null>
   /** 新建文章（草稿或发布） */
   createArticle: (payload: ICreateArticlePayload) => Promise<IArticle>
   /** 更新文章 */
   updateArticle: (id: number, payload: Partial<ICreateArticlePayload>) => Promise<IArticle>
+  /** 验证文章密码保护，成功返回正文 */
+  verifyArticleProtect: (id: number, password: string) => Promise<{ content: string } | null>
 }
 
 const apis: IArticleApis = {
   async getArticleList(page = 1, pageSize = PAGE_SIZE, sort: HomeSortType = HOME_SORT_DEFAULT, userId?: number) {
     try {
       const order = getArticleListOrder(sort)
-      const where: Record<string, unknown> = { status: CArticleStatus.PUBLISHED }
+      const where: Record<string, unknown> = { status: CArticleStatus.PUBLISHED, isPrivate: false }
       if (userId) where.userId = userId
       const list = await restQuery<IArticle[]>('article', {
         where,
@@ -81,14 +84,14 @@ const apis: IArticleApis = {
     }
   },
 
-  async getArticleListForArchive(take = 500, userId?: number) {
+  async getArticleListForArchive(take = 30, skip = 0, userId?: number) {
     try {
-      const where: Record<string, unknown> = { status: CArticleStatus.PUBLISHED }
+      const where: Record<string, unknown> = { status: CArticleStatus.PUBLISHED, isPrivate: false }
       if (userId) where.userId = userId
       const list = await restQuery<IArticle[]>('article', {
         where,
         take,
-        skip: 0,
+        skip,
         order: getArticleListOrder('date'),
         relations: ['category', 'tags', 'user']
       })
@@ -126,7 +129,23 @@ const apis: IArticleApis = {
   async updateArticle(id: number, payload: Partial<ICreateArticlePayload>) {
     const body: Record<string, unknown> = { ...payload }
     return restUpdate<IArticle>('article', id, body)
-  }
+  },
+
+  /** 验证文章密码保护 */
+  async verifyArticleProtect(id: number, password: string) {
+    try {
+      const res = await request.post<{ code: number; data: { content: string } | null; message: string }>(
+        '/rest/article/verify-protect',
+        { id, password },
+      )
+      if (res.data.code === 0 && res.data.data) {
+        return res.data.data
+      }
+      return null
+    } catch {
+      return null
+    }
+  },
 }
 
 export default apis

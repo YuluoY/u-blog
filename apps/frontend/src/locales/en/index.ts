@@ -238,6 +238,11 @@ export default {
     commentSubmitFailed: 'Failed to submit comment',
     guestFieldsRequired: 'Please fill in your nickname and email before commenting',
     editArticle: 'Edit Article',
+    protectHint: 'This article is password protected. Enter the password to view.',
+    protectPlaceholder: 'Enter password',
+    protectSubmit: 'Verify',
+    protectVerifying: 'Verifying…',
+    protectWrong: 'Incorrect password, please try again',
   },
   home: {
     loadMore: 'Load more',
@@ -245,6 +250,7 @@ export default {
   },
   archive: {
     loading: 'Loading archive...',
+    allLoaded: '— All articles loaded —',
     yearCount: '{count} articles',
     currentFilters: 'Current filters',
     clearFilters: 'Clear filters',
@@ -356,6 +362,7 @@ export default {
     browse: 'Browse',
     pinned: 'Pinned',
     hot: 'Hot',
+    locked: 'Protected',
     randomImage: 'Image',
   },
   search: {
@@ -484,6 +491,10 @@ export default {
   footer: {
     icp: 'Meng ICP 20261027',
   },
+  guestAdmin: {
+    label: 'View Admin',
+    tooltip: 'View admin panel as guest (read-only mode)',
+  },
   auth: {
     login: 'Login',
     register: 'Register',
@@ -601,5 +612,29 @@ export default {
     deleteSession: 'Delete Chat',
     confirmDelete: 'Confirm delete?',
     deleteWarning: 'This chat will be permanently deleted and cannot be recovered.',
+    newFolder: 'New Folder',
+    deleteFolder: 'Delete Folder',
+    moveToFolder: 'Move to Folder',
+    removeFromFolder: 'Remove from Folder',
+    uncategorized: 'Uncategorized',
+    deleteFolderWarning: 'Sessions in this folder will be moved to uncategorized.',
+  },
+  subscribe: {
+    tooltip: 'Subscribe',
+    title: 'Subscribe to Blog',
+    desc: 'Get notified when new articles are published',
+    email: 'Email',
+    emailPlaceholder: 'Enter your email',
+    name: 'Name',
+    namePlaceholder: 'What should we call you',
+    submit: 'Subscribe',
+    submitting: 'Submitting…',
+    subscribeBtn: 'Subscribe',
+    failed: 'Subscription failed, please try again later',
+    successTitle: 'Verification Email Sent',
+    successDesc: 'Please check your inbox and click the confirmation link',
+    verifySuccess: 'Subscribed successfully! Thank you for following',
+    verifyInvalid: 'Invalid or expired verification link',
+    unsubscribed: 'You have been unsubscribed successfully',
   },
 }

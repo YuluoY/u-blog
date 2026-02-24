@@ -29,11 +29,37 @@
       <span class="mobile-nav__label">{{ isDark ? t('sidebar.themeLight') : t('sidebar.themeDark') }}</span>
     </button>
 
-    <!-- 更多 (设置) -->
-    <button class="mobile-nav__item" @click="appStore.setSettingsDrawerVisible(true)">
+    <!--
+      当有"查看后台"入口时显示"更多"弹出菜单；
+      否则直接作为"设置"按钮，省去多余的弹出步骤
+    -->
+    <button v-if="guestAdminVisible" class="mobile-nav__item" @click="toggleMoreMenu">
       <u-icon icon="fa-solid fa-ellipsis" />
+      <span class="mobile-nav__label">{{ t('common.more') }}</span>
+    </button>
+    <button v-else class="mobile-nav__item" @click="appStore.setSettingsDrawerVisible(true)">
+      <u-icon icon="fa-solid fa-gear" />
       <span class="mobile-nav__label">{{ t('sidebar.settings') }}</span>
     </button>
+
+    <!-- 更多菜单弹窗（仅 guestAdminVisible 时可能弹出） -->
+    <Transition name="mobile-menu-fade">
+      <div v-if="moreMenuOpen" class="mobile-more-backdrop" @click="moreMenuOpen = false" />
+    </Transition>
+    <Transition name="mobile-menu-slide">
+      <div v-if="moreMenuOpen" class="mobile-more-menu">
+        <!-- 查看后台 -->
+        <button class="mobile-more-menu__item" @click="handleOpenAdmin">
+          <u-icon icon="fa-solid fa-eye" />
+          <span>{{ t('guestAdmin.label') }}</span>
+        </button>
+        <!-- 设置 -->
+        <button class="mobile-more-menu__item" @click="handleOpenSettings">
+          <u-icon icon="fa-solid fa-gear" />
+          <span>{{ t('sidebar.settings') }}</span>
+        </button>
+      </div>
+    </Transition>
   </nav>
 </template>
 
@@ -43,6 +69,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { useSidebarStore } from '@/stores/sidebar'
+import { useGuestAdmin } from '@/composables/useGuestAdmin'
 import { PANEL_ID } from '@/constants/layout'
 import { CTheme } from '@u-blog/model'
 
@@ -56,6 +83,26 @@ const sidebarStore = useSidebarStore()
 const { theme } = storeToRefs(appStore)
 
 const isDark = computed(() => String(theme.value ?? '') === CTheme.DARK)
+
+/* 游客查看后台 */
+const { visible: guestAdminVisible, openAdmin } = useGuestAdmin()
+
+/* 更多菜单开关 */
+const moreMenuOpen = ref(false)
+
+function toggleMoreMenu() {
+  moreMenuOpen.value = !moreMenuOpen.value
+}
+
+function handleOpenAdmin() {
+  moreMenuOpen.value = false
+  openAdmin()
+}
+
+function handleOpenSettings() {
+  moreMenuOpen.value = false
+  appStore.setSettingsDrawerVisible(true)
+}
 
 /** 打开搜索面板（确保走 Popover 模式） */
 function handleSearch() {
@@ -142,5 +189,82 @@ function handleTags() {
 /* 暗色主题下调整毛玻璃背景 */
 :root.dark .mobile-nav {
   background: rgba(var(--u-background-1-rgb, 30, 30, 30), 0.82);
+}
+
+/* ---- 更多菜单弹窗 ---- */
+
+/* 遮罩层 */
+.mobile-more-backdrop {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .mobile-more-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 10003;
+    background: rgba(0, 0, 0, 0.3);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 弹出菜单：固定在底部导航栏正上方 */
+  .mobile-more-menu {
+    position: fixed;
+    right: 8px;
+    bottom: calc(56px + env(safe-area-inset-bottom, 0) + 8px);
+    z-index: 10004;
+    min-width: 160px;
+    padding: 6px 0;
+    border-radius: 12px;
+    background: var(--u-background-1);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+    border: 0.5px solid var(--u-border-1);
+
+    &__item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 12px 16px;
+      border: none;
+      background: none;
+      color: var(--u-text-1);
+      font-size: 14px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.15s ease;
+
+      &:active {
+        background: var(--u-background-2);
+      }
+    }
+  }
+}
+
+/* 遮罩渐现动画 */
+.mobile-menu-fade-enter-active,
+.mobile-menu-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.mobile-menu-fade-enter-from,
+.mobile-menu-fade-leave-to {
+  opacity: 0;
+}
+
+/* 菜单滑入动画 */
+.mobile-menu-slide-enter-active,
+.mobile-menu-slide-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.mobile-menu-slide-enter-from,
+.mobile-menu-slide-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+/* 暗色主题阴影加深 */
+:root.dark .mobile-more-menu {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
 }
 </style>

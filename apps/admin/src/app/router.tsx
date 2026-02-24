@@ -36,6 +36,10 @@ const Roles = lazy(() => import('../features/roles/RolesPage'))
 const Permissions = lazy(() => import('../features/permissions/PermissionsPage'))
 const Routes = lazy(() => import('../features/routes/RoutesPage'))
 const Xiaohui = lazy(() => import('../features/xiaohui/XiaohuiPage'))
+const System = lazy(() => import('../features/system/SystemPage'))
+const Likes = lazy(() => import('../features/likes/LikesPage'))
+const Views = lazy(() => import('../features/views/ViewsPage'))
+const Subscribers = lazy(() => import('../features/subscribers/SubscribersPage'))
 
 function Lazy({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<Spin size="large" style={{ display: 'block', margin: '48px auto' }} />}>{children}</Suspense>
@@ -69,6 +73,10 @@ const router = createBrowserRouter([
       { path: 'permissions', element: <Lazy><Permissions /></Lazy> },
       { path: 'routes', element: <Lazy><Routes /></Lazy> },
       { path: 'xiaohui', element: <Lazy><Xiaohui /></Lazy> },
+      { path: 'likes', element: <Lazy><Likes /></Lazy> },
+      { path: 'views', element: <Lazy><Views /></Lazy> },
+      { path: 'subscribers', element: <Lazy><Subscribers /></Lazy> },
+      { path: 'system', element: <Lazy><System /></Lazy> },
     ],
   },
   { path: '*', element: <Navigate to="/" replace /> },

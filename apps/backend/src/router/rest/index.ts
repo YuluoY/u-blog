@@ -3,8 +3,53 @@ import type { Request, Response } from 'express'
 import RestController from '@/controller/rest'
 import { requireAuth } from '@/middleware/AuthGuard'
 import { restWriteGuard, userSettingQueryGuard } from '@/middleware/RestWriteGuard'
+import { Article } from '@/module/schema/Article'
+import { getDataSource } from '@/utils'
 
 const router = express.Router({ mergeParams: true }) as Router
+
+/**
+ * 文章密码验证：匹配密码后返回完整正文
+ * POST /rest/article/verify-protect  body: { id, password }
+ */
+router.post('/verify-protect', async (req: Request, res: Response) => {
+  // 仅 article 模型可调用
+  if (req.params?.model !== 'article') {
+    res.status(400).json({ code: 400, data: null, message: '仅支持文章模型' })
+    return
+  }
+  const { id, password } = req.body || {}
+  if (!id || !password) {
+    res.json({ code: 1, data: null, message: '参数不完整' })
+    return
+  }
+  try {
+    const ds = getDataSource(req)
+    const repo = ds.getRepository(Article)
+    // 显式查询 protect 列（select: false 的列必须手动 addSelect）
+    const article = await repo
+      .createQueryBuilder('article')
+      .addSelect('article.protect')
+      .where('article.id = :id', { id: Number(id) })
+      .getOne()
+    if (!article) {
+      res.json({ code: 1, data: null, message: '文章不存在' })
+      return
+    }
+    if (!article.protect) {
+      res.json({ code: 1, data: null, message: '该文章无密码保护' })
+      return
+    }
+    if (article.protect !== String(password)) {
+      res.json({ code: 1, data: null, message: '密码错误' })
+      return
+    }
+    // 密码正确：返回完整正文
+    res.json({ code: 0, data: { content: article.content }, message: '验证成功' })
+  } catch {
+    res.json({ code: 1, data: null, message: '验证失败' })
+  }
+})
 
 /**
  * 通用查询（公开）

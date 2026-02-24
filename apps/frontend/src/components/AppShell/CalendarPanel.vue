@@ -96,7 +96,11 @@
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { CalendarHeatmap } from 'vue3-calendar-heatmap'
+// 异步加载 calendar-heatmap，避免打入首屏主 chunk
+import { defineAsyncComponent } from 'vue'
+const CalendarHeatmap = defineAsyncComponent(() =>
+  import('vue3-calendar-heatmap').then(m => m.CalendarHeatmap || m.default)
+)
 import 'vue3-calendar-heatmap/dist/style.css'
 import type { IArticle } from '@u-blog/model'
 import { useArticleStore } from '@/stores/model/article'
@@ -337,14 +341,6 @@ function handleClose() {
     overflow-x: auto;
     overflow-y: hidden;
     padding-bottom: 4px;
-    /* 自定义滚动条 */
-    &::-webkit-scrollbar {
-      height: 4px;
-    }
-    &::-webkit-scrollbar-thumb {
-      background: var(--u-border-1);
-      border-radius: 2px;
-    }
     :deep(.vch__container) {
       /* 固定宽度保证格子足够大，超出面板宽度后横向滚动 */
       min-width: 680px;

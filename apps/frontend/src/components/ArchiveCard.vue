@@ -1,5 +1,9 @@
 <template>
-  <div class="archive-card" :class="[`archive-card--${mode}`]">
+  <div class="archive-card" :class="[`archive-card--${mode}`, { 'archive-card--protected': article.isProtected }]">
+    <!-- 密码保护标记 -->
+    <span v-if="article.isProtected" class="archive-card__lock-badge" :title="t('article.locked')">
+      <u-icon icon="fa-solid fa-lock" />
+    </span>
     <!-- 方案一：摘要 + 标签行 -->
     <template v-if="mode === CArchiveCardStyle.SUMMARY_TAGS">
       <h3 class="archive-card__title archive-card__title--ellipsis">{{ article.title }}</h3>
@@ -260,6 +264,24 @@ const statsBarMax = computed(() => {
   position: relative;
   z-index: 0;
   box-sizing: border-box;
+}
+
+/* 密码保护锁标记 */
+.archive-card__lock-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  font-size: 0.9rem;
+  color: var(--u-text-3);
+  background: var(--u-background-2);
+  border: 1px solid var(--u-border-1);
+  border-radius: 50%;
 }
 
 .archive-card__title {

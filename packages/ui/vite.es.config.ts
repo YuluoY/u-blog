@@ -68,9 +68,13 @@ export default defineConfig({
         'vue',
         '@fortawesome/fontawesome-svg-core',
         '@fortawesome/free-solid-svg-icons',
+        '@fortawesome/free-regular-svg-icons',
+        '@fortawesome/free-brands-svg-icons',
         '@fortawesome/vue-fontawesome',
         '@popperjs/core',
         'async-validator',
+        // monaco-editor 不再全局导入，设为 external 避免打入 vendors
+        'monaco-editor',
         // 内部包设为 external，支持 tree-shaking
         '@ucc-blog/utils',
         '@ucc-blog/composables',
