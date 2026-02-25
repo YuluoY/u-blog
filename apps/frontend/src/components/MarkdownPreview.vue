@@ -40,7 +40,17 @@ withDefaults(defineProps<{
 </script>
 
 <style lang="scss">
-/* 代码块亮 / 暗主题 CSS 变量覆盖已移至全局 assets/styles/md-code-theme.scss */
+/**
+ * md-editor-v3 代码块主题覆盖（随组件懒加载，不污染首屏）
+ * 亮色模式下将代码块背景改为浅色，暗色由库默认处理
+ */
+.md-editor:not(.md-editor-dark) .md-editor-preview {
+  --md-theme-code-block-bg-color: #f6f8fa;
+  --md-theme-code-block-color: #383a42;
+  --md-theme-code-before-bg-color: var(--md-theme-code-block-bg-color);
+  --md-theme-code-copy-tips-bg-color: #fff;
+  --md-theme-code-copy-tips-color: #141414;
+}
 
 .markdown-preview {
   background: transparent !important;

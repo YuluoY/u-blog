@@ -19,6 +19,8 @@ declare global {
       pid?: number | null
       articleId?: number | null
     }) => Promise<unknown>
+    /** 首屏 splash 开始时间戳 */
+    __splashStart?: number
   }
 }
 

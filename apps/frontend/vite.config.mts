@@ -55,6 +55,10 @@ export default defineConfig({
          * (Cannot access 'ce' before initialization)
          */
         manualChunks(id) {
+          // Vite 的 __vitePreload 辅助函数：强制拆分为独立微型 chunk，
+          // 避免被 Rollup 自动归入 vendor-md 导致 entry 静态依赖 870KB 的 md-editor
+          if (id.includes('vite/preload-helper'))
+            return 'vendor-preload'
           // Vue 生态 + @u-blog/ui + FontAwesome → vendor-core
           // 合并为单 chunk 避免跨 chunk 循环依赖 TDZ 问题
           if (id.includes('node_modules/vue') ||
