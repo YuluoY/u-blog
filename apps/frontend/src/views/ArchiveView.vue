@@ -11,7 +11,7 @@
         />
       </div>
 
-      <template v-if="articleStore.archiveLoading">
+      <template v-if="articleStore.archiveLoading && articleStore.archiveList.length === 0">
         <div class="archive-loading">
           <u-icon icon="fa-solid fa-spinner" spin />
           <u-text>{{ t('archive.loading') }}</u-text>
@@ -312,23 +312,38 @@ function handleDotClick(id: string) {
 const archiveSentinelRef = ref<HTMLElement | null>(null)
 let archiveObserver: IntersectionObserver | null = null
 
-onMounted(() => {
-  articleStore.qryArchiveList()
-  categoryStore.qryCategoryList()
-  tagStore.qryTagList()
-
-  // IntersectionObserver：触底自动加载更多归档数据
+/** 创建 IntersectionObserver 并开始观察哨兵元素 */
+function setupArchiveObserver() {
+  if (archiveObserver || !archiveSentinelRef.value) return
+  // root 指定为实际滚动容器，避免嵌套 overflow 导致哨兵不触发
+  const scrollRoot = document.querySelector('.layout-base__main') as HTMLElement | null
   archiveObserver = new IntersectionObserver(
     (entries) => {
       if (entries[0]?.isIntersecting && articleStore.archiveHasMore && !articleStore.archiveLoading) {
         articleStore.loadMoreArchive()
       }
     },
-    { rootMargin: '200px' }
+    { root: scrollRoot, rootMargin: '200px' }
   )
-  if (archiveSentinelRef.value) {
-    archiveObserver.observe(archiveSentinelRef.value)
+  archiveObserver.observe(archiveSentinelRef.value)
+}
+
+onMounted(() => {
+  // 增量加载：store 已有缓存数据时跳过首次请求，直接复用
+  if (articleStore.archiveList.length === 0) {
+    articleStore.qryArchiveList()
   }
+  categoryStore.qryCategoryList()
+  tagStore.qryTagList()
+
+  // 哨兵在 v-else 条件块内，数据加载前可能尚未渲染
+  // 使用 watch 监听 ref，当哨兵元素出现时再绑定 observer
+  setupArchiveObserver()
+})
+
+// 当哨兵元素从 null → HTMLElement（数据加载后 v-else 分支渲染）时，立即绑定 observer
+watch(archiveSentinelRef, (el) => {
+  if (el) setupArchiveObserver()
 })
 
 onBeforeUnmount(() => {

@@ -3,6 +3,16 @@
     <u-region region="center" class="read-view__center">
       <div class="read-view__body">
         <div class="read-view__content">
+          <!-- 文章标题区 -->
+          <div v-if="article" class="read-view__title-block">
+            <img
+              v-if="article.cover"
+              :src="article.cover"
+              :alt="article.title"
+              class="read-view__cover"
+            />
+            <h1 class="read-view__title">{{ article.title }}</h1>
+          </div>
           <header v-if="article" class="read-view__meta" role="doc-subtitle">
             <div class="read-view__meta-top">
               <div class="read-view__meta-taxonomy">
@@ -173,7 +183,8 @@
             </u-comment>
           </section>
         </div>
-        <aside class="read-view__catalog" :aria-label="t('read.catalog')">
+        <!-- 目录侧栏：仅当文章含有标题时显示 -->
+        <aside v-if="hasHeadings" class="read-view__catalog" :aria-label="t('read.catalog')">
           <component
             v-if="Catalog"
             :is="Catalog"
@@ -195,7 +206,7 @@ import { useUserStore } from '@/stores/model/user'
 import { useAppStore } from '@/stores/app'
 import { useBlogOwnerStore } from '@/stores/blogOwner'
 import { storeToRefs } from 'pinia'
-import { watch, computed, nextTick } from 'vue'
+import { watch, computed, nextTick, onBeforeUnmount } from 'vue'
 import api from '@/api'
 import { recordArticleView, toggleArticleLike, getArticleLikeStatus, fetchQQNickname } from '@/api/request'
 import { CTable, CTheme } from '@u-blog/model'
@@ -204,6 +215,7 @@ import { getQQAvatarUrl } from '@u-blog/ui'
 import type { UCommentItemData } from '@u-blog/ui'
 import { filterSensitiveWords } from '@/utils/sensitiveFilter'
 import { useSubscribe } from '@/composables/useSubscribe'
+import { setMobileToc, clearMobileToc } from '@/composables/useMobileToc'
 
 defineOptions({
   name: 'ReadView'
@@ -279,6 +291,21 @@ async function handleProtectSubmit() {
     protectLoading.value = false
   }
 }
+
+/** 文章是否包含标题（用于决定是否显示右侧目录） */
+const hasHeadings = computed(() => {
+  const content = articleContent.value || article.value?.content || ''
+  // 匹配 Markdown 标题（# ~ ######）
+  return /^#{1,6}\s+.+/m.test(content)
+})
+
+/* ---- 移动端目录：设置全局响应式状态，供 MobileBottomNav / MobileTocSheet 消费 ---- */
+setMobileToc(
+  Catalog as import('vue').ShallowRef<import('vue').Component | null>,
+  scrollElement,
+  hasHeadings,
+)
+onBeforeUnmount(() => clearMobileToc())
 
 /** 实时浏览量（由后端返回的最新值覆盖，默认取 article 自带值） */
 const liveViewCount = ref<number | null>(null)
@@ -558,6 +585,8 @@ watch(() => route.params.id, async (newId) => {
       try {
         const { viewCount } = await recordArticleView(articleId)
         liveViewCount.value = viewCount
+        // 同步浏览量到列表，返回首页/归档时即可看到最新值
+        articleStore.updateArticleViewCount(articleId, viewCount)
       } catch { /* 统计失败不阻断 */ }
       // 异步查询点赞状态
       fetchLikeStatus(articleId)
@@ -598,6 +627,29 @@ watch(() => route.params.id, async (newId) => {
   min-width: 0;
   max-width: 100%;
   overflow-x: hidden;
+}
+
+/* ---- 文章标题区 ---- */
+.read-view__title-block {
+  margin-bottom: 20px;
+}
+
+.read-view__cover {
+  width: 100%;
+  max-height: 360px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.read-view__title {
+  margin: 0;
+  font-size: 2.6rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--u-text-1);
+  word-break: break-word;
 }
 
 .read-view__meta {
@@ -1031,6 +1083,20 @@ watch(() => route.params.id, async (newId) => {
 @media (max-width: 767px) {
   .read-view__body {
     gap: 0;
+  }
+
+  /* 标题区：手机端缩小 */
+  .read-view__title-block {
+    margin-bottom: 14px;
+  }
+  .read-view__cover {
+    max-height: 200px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+  }
+  .read-view__title {
+    font-size: 2rem;
+    text-align: center;
   }
 
   /* 头部元信息：缩减间距，排列更紧凑 */

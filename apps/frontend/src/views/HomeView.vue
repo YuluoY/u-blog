@@ -56,6 +56,8 @@ let observer: IntersectionObserver | null = null
 onMounted(() =>
 {
   if (!sentinelRef.value) return
+  // root 指定为实际滚动容器，避免嵌套 overflow 导致哨兵不触发
+  const scrollRoot = document.querySelector('.layout-base__main') as HTMLElement | null
   observer = new IntersectionObserver(
     (entries) =>
     {
@@ -63,7 +65,7 @@ onMounted(() =>
         articleStore.loadMore()
       }
     },
-    { rootMargin: '200px' }
+    { root: scrollRoot, rootMargin: '200px' }
   )
   observer.observe(sentinelRef.value)
 })

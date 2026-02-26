@@ -99,7 +99,8 @@ const props = withDefaults(defineProps<UDialogProps>(), {
   zIndex: 2000,
   showCloseIcon: true,
   showFooter: true,
-  isLimitBounds: false
+  isLimitBounds: false,
+  autoFitViewport: true
 })
 const uid = `u-dialog-${useId()}`
 const titleId = `${uid}-title`
@@ -260,8 +261,19 @@ function initDialogPos()
 {
   const vw = document.documentElement.clientWidth
   const vh = document.documentElement.clientHeight
+  // 视口边距（上下/左右各留 24px）
+  const VIEWPORT_MARGIN = 24
   w.value = props.width <= 1 ? vw * props.width : props.width
   h.value = props.height <= 1 ? vh * props.height : props.height
+
+  // autoFitViewport: 将宽高限制在可视区域内
+  if (props.autoFitViewport) {
+    const maxW = vw - VIEWPORT_MARGIN * 2
+    const maxH = vh - VIEWPORT_MARGIN * 2
+    if (w.value > maxW) w.value = maxW
+    if (h.value > maxH) h.value = maxH
+  }
+
   const top = vh - h.value < 0 ? 0 : (vh - h.value) / 3
   const left = vw - w.value < 0 ? 0 : (vw - w.value) / 2
   window.requestAnimationFrame(() =>

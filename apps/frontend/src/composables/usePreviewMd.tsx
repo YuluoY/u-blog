@@ -1,5 +1,6 @@
 import { useAppStore } from '@/stores/app'
 import { useArticleStore } from '@/stores/model/article'
+import { HEADER_HEIGHT_PX } from '@/constants/layout'
 import { watchFn } from '@u-blog/utils'
 import { CTheme } from '@u-blog/model'
 import { MdCatalog, MdPreview } from 'md-editor-v3'
@@ -138,6 +139,8 @@ export const usePreviewMd = ({
           editorId={id}
           scrollElement={scrollEl.value}
           theme={catalogTheme.value}
+          scrollElementOffsetTop={HEADER_HEIGHT_PX}
+          offsetTop={HEADER_HEIGHT_PX + 20}
         />
       )
     }

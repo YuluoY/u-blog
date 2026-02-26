@@ -179,6 +179,7 @@ async function onSaveSubmit(payload: {
   isPrivate: boolean
   isTop: boolean
   cover?: string | null
+  protect?: string | null
 }) {
   const userId = userStore.user?.id
   if (userId == null) return

@@ -5,6 +5,22 @@
     首页 / 搜索 / 分类标签 / 主题切换 / 更多
   -->
   <nav class="mobile-nav" role="navigation" :aria-label="t('sidebar.ariaTools')">
+    <!-- 返回按钮：在文章阅读页等子页面显示 -->
+    <button v-if="showBack" class="mobile-nav__item" @click="handleBack">
+      <u-icon icon="fa-solid fa-arrow-left" />
+      <span class="mobile-nav__label">{{ t('common.back') }}</span>
+    </button>
+
+    <!-- 目录按钮：仅在阅读页且文章有标题时显示 -->
+    <button
+      v-if="showTocBtn"
+      class="mobile-nav__item"
+      @click="handleOpenToc"
+    >
+      <u-icon icon="fa-solid fa-list-ul" />
+      <span class="mobile-nav__label">{{ t('read.catalog') }}</span>
+    </button>
+
     <!-- 首页 -->
     <router-link to="/home" class="mobile-nav__item" :class="{ 'is-active': route.path === '/home' }">
       <u-icon icon="fa-solid fa-house" />
@@ -60,6 +76,9 @@
         </button>
       </div>
     </Transition>
+
+    <!-- 移动端目录底部抽屉 -->
+    <MobileTocSheet />
   </nav>
 </template>
 
@@ -72,6 +91,8 @@ import { useSidebarStore } from '@/stores/sidebar'
 import { useGuestAdmin } from '@/composables/useGuestAdmin'
 import { PANEL_ID } from '@/constants/layout'
 import { CTheme } from '@u-blog/model'
+import { useMobileToc } from '@/composables/useMobileToc'
+import MobileTocSheet from '@/components/MobileTocSheet.vue'
 
 defineOptions({ name: 'MobileBottomNav' })
 
@@ -83,6 +104,29 @@ const sidebarStore = useSidebarStore()
 const { theme } = storeToRefs(appStore)
 
 const isDark = computed(() => String(theme.value ?? '') === CTheme.DARK)
+
+/** 是否显示返回按钮（文章阅读页、撰写页等子页面） */
+const showBack = computed(() => /^\/(read|write)\//.test(route.path) || route.path === '/write')
+
+/* ---- 移动端目录 ---- */
+const tocCtx = useMobileToc()
+/** 是否显示目录按钮：阅读页 + 文章有标题 */
+const showTocBtn = computed(() => {
+  return /^\/read\//.test(route.path) && tocCtx.hasHeadings.value === true
+})
+/** 打开目录抽屉 */
+function handleOpenToc() {
+  tocCtx.sheetVisible.value = true
+}
+
+/** 返回上一页，无历史时回首页 */
+function handleBack() {
+  if (window.history.length > 1) {
+    router.back()
+  } else {
+    router.push('/home')
+  }
+}
 
 /* 游客查看后台 */
 const { visible: guestAdminVisible, openAdmin } = useGuestAdmin()

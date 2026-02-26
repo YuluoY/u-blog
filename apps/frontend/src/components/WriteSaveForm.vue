@@ -125,7 +125,25 @@
         <div class="write-save-form__switches">
           <u-checkbox v-model="form.isPrivate">{{ t('write.isPrivate') }}</u-checkbox>
           <u-checkbox v-model="form.isTop">{{ t('write.isTop') }}</u-checkbox>
+          <u-checkbox v-model="form.isProtected">{{ t('write.isProtected') }}</u-checkbox>
         </div>
+        <!-- 密码保护输入（勾选后展开） -->
+        <Transition name="slide-fade">
+          <u-form-item v-if="form.isProtected" :label="t('write.protectPassword')" class="write-save-form__protect-field">
+            <u-input
+              v-model="form.protectPassword"
+              type="password"
+              :placeholder="t('write.protectPasswordPlaceholder')"
+              :max-length="50"
+              show-word-limit
+              autocomplete="new-password"
+            />
+            <p class="write-save-form__protect-hint">
+              <u-icon :icon="['fas', 'shield-halved']" />
+              {{ t('write.protectHint') }}
+            </p>
+          </u-form-item>
+        </Transition>
       </div>
     </section>
 
@@ -148,6 +166,7 @@ import type { ICategory, ITag } from '@u-blog/model'
 import type { UploadFile } from '@u-blog/ui'
 import { uploadFile, deleteMedia } from '@/api/request'
 import { getPublishSettings, putPublishSettings, clearPublishSettings, type PublishSettingsRecord } from '@/utils/publishSettingsDb'
+import { encryptForTransport } from '@/utils/transportCrypto'
 
 export interface WriteSaveFormPayload {
   title: string
@@ -160,6 +179,8 @@ export interface WriteSaveFormPayload {
   isPrivate: boolean
   isTop: boolean
   cover?: string | null
+  /** 密码保护（加密后的密文，null 表示取消保护） */
+  protect?: string | null
 }
 
 /** 日期格式化为 datetime-local 输入值 */
@@ -204,6 +225,8 @@ const form = reactive<{
   status: ArticleStatus
   isPrivate: boolean
   isTop: boolean
+  isProtected: boolean
+  protectPassword: string
   cover: string
   publishedAt: string
 }>({
@@ -214,6 +237,8 @@ const form = reactive<{
   status: CArticleStatus.PUBLISHED,
   isPrivate: false,
   isTop: false,
+  isProtected: false,
+  protectPassword: '',
   cover: '',
   publishedAt: ''
 })
@@ -353,6 +378,8 @@ async function initForm() {
     form.status = CArticleStatus.PUBLISHED
     form.isPrivate = false
     form.isTop = false
+    form.isProtected = false
+    form.protectPassword = ''
     form.cover = ''
     form.publishedAt = toDatetimeLocal(new Date())
     publishNow.value = true
@@ -416,7 +443,7 @@ watch(publishNow, (now) => {
 /** 监听表单字段变化，防抖保存 */
 watch(
   () => [form.title, form.desc, form.categoryId, form.tags, form.status,
-    form.isPrivate, form.isTop, form.cover, form.publishedAt, coverUrlMode.value],
+    form.isPrivate, form.isTop, form.isProtected, form.cover, form.publishedAt, coverUrlMode.value],
   () => { savePublishSettingsDebounced() },
   { deep: true },
 )
@@ -452,6 +479,13 @@ async function handleSubmit() {
   const categoryId = form.categoryId === '' || form.categoryId == null
     ? undefined
     : Number(form.categoryId)
+
+  // 密码保护：勾选且填写了密码则加密传输，否则传 null 表示取消
+  let encryptedProtect: string | null = null
+  if (form.isProtected && form.protectPassword.trim()) {
+    encryptedProtect = await encryptForTransport(form.protectPassword.trim())
+  }
+
   const payload: WriteSaveFormPayload = {
     title,
     content: props.content,
@@ -462,7 +496,8 @@ async function handleSubmit() {
     tags: form.tags.length > 0 ? form.tags : undefined,
     isPrivate: form.isPrivate,
     isTop: form.isTop,
-    cover: form.cover || undefined
+    cover: form.cover || undefined,
+    protect: encryptedProtect,
   }
   emit('submit', payload)
 }
@@ -481,6 +516,10 @@ function loadEditData(article: {
   isTop?: boolean
   cover?: string
   publishedAt?: string
+  /** 密码保护（超级管理员编辑时后端会返回明文） */
+  protect?: string | null
+  /** 是否受密码保护（前端标记） */
+  isProtected?: boolean
 }) {
   form.title = article.title || ''
   form.desc = article.desc || ''
@@ -491,6 +530,9 @@ function loadEditData(article: {
   form.isPrivate = article.isPrivate ?? false
   form.isTop = article.isTop ?? false
   form.cover = article.cover || ''
+  // 密码保护：超管编辑时后端返回明文 protect，否则通过 isProtected 标记还原状态
+  form.isProtected = !!(article.protect || article.isProtected)
+  form.protectPassword = article.protect || ''
   if (article.publishedAt) {
     form.publishedAt = toDatetimeLocal(new Date(article.publishedAt))
     publishNow.value = false
@@ -621,5 +663,35 @@ defineExpose({
   padding: 0.5rem 0.75rem;
   background: var(--u-background-2, #fafafa);
   border-radius: var(--u-border-radius-4, 0.4rem);
+}
+
+/* ---------- 密码保护字段 ---------- */
+.write-save-form__protect-field {
+  margin-top: 0.5rem;
+}
+
+.write-save-form__protect-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin: 0.375rem 0 0;
+  font-size: 0.75rem;
+  color: var(--u-text-3, #999);
+  line-height: 1.4;
+}
+
+/* ---------- 展开/收起过渡 ---------- */
+.slide-fade-enter-active {
+  transition: all 0.25s ease-out;
+}
+
+.slide-fade-leave-active {
+  transition: all 0.2s ease-in;
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
 }
 </style>

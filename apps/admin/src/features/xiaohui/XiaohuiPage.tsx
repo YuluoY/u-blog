@@ -57,6 +57,28 @@ function ConversationDetailModal({
             </Paragraph>
           </div>
         ))}
+        {/* context 只包含发送给 AI 的历史消息，最新的 AI 回复在 assistantMessage 中 */}
+        {record.context?.length && record.assistantMessage && (
+          <div
+            style={{
+              marginBottom: 12,
+              padding: '8px 12px',
+              borderRadius: 8,
+              background: '#f6f6f6',
+            }}
+          >
+            <Text strong style={{ color: '#333' }}>小惠</Text>
+            <Text type="secondary" style={{ marginLeft: 8, fontSize: 12 }}>
+              {new Date(record.createdAt).toLocaleString()}
+            </Text>
+            <Paragraph
+              style={{ marginTop: 4, marginBottom: 0, whiteSpace: 'pre-wrap' }}
+              ellipsis={{ rows: 10, expandable: true }}
+            >
+              {record.assistantMessage}
+            </Paragraph>
+          </div>
+        )}
         {!record.context?.length && (
           <div style={{ padding: 12 }}>
             <div style={{ marginBottom: 8 }}>

@@ -47,6 +47,8 @@ export interface ICreateArticlePayload {
   isPrivate?: boolean
   isTop?: boolean
   cover?: string | null
+  /** 密码保护（加密后的密文，空字符串表示取消保护） */
+  protect?: string | null
 }
 
 export interface IArticleApis {

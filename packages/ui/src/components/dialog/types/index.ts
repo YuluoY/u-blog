@@ -132,6 +132,13 @@ export interface UDialogProps {
    * @default false
    */
   isLimitBounds?: boolean
+
+  /**
+   * @description 弹窗打开时自动将宽高限制在可视区域内（留 margin）
+   * @type {boolean}
+   * @default true
+   */
+  autoFitViewport?: boolean
 }
 
 export interface UDialogEmits {

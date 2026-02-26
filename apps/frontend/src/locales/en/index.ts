@@ -14,6 +14,7 @@ export default {
     justNow: 'Just now',
     error: 'Error',
     optional: 'Optional',
+    back: 'Back',
   },
   nav: {
     mainNav: 'Main navigation',
@@ -333,6 +334,10 @@ export default {
     statusPublished: 'Published',
     isPrivate: 'Private',
     isTop: 'Top',
+    isProtected: 'Password',
+    protectPassword: 'Access Password',
+    protectPasswordPlaceholder: 'Set article access password',
+    protectHint: 'Password is encrypted during transmission. Readers must enter it to view the content.',
     loginRequired: 'Please log in to save to server',
     saveSuccess: 'Saved successfully',
     saveFail: 'Save failed',

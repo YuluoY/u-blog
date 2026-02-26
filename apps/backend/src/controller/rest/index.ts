@@ -1,7 +1,7 @@
 import type { Request } from 'express'
 import type { ControllerReturn } from '@u-blog/types'
 import { In } from 'typeorm'
-import { formatResponse, getClientIp, getDataSource, parseUserAgent, resolveIpLocation } from '@/utils'
+import { formatResponse, getClientIp, getDataSource, parseUserAgent, resolveIpLocation, decryptTransport } from '@/utils'
 import { tryit } from '@u-blog/utils'
 import RestService from '@/service/rest'
 import CommonService from '@/service/common'
@@ -173,6 +173,10 @@ class RestController
     if (isArticle && data && typeof data === 'object' && !Array.isArray(data)) {
       const { tags: tagIds, content, ...rest } = data as Record<string, unknown>
       const processedContent = typeof content === 'string' ? CommonService.processArticleContent(content) : content
+      // 传输层解密：前端对 protect 字段加密传输，需在落库前还原明文
+      if (typeof rest.protect === 'string' && rest.protect) {
+        rest.protect = decryptTransport(rest.protect)
+      }
       payload = { ...rest, content: processedContent } as typeof data
     }
 
@@ -240,6 +244,10 @@ class RestController
     const numId = Number(id)
     if (!numId || Number.isNaN(numId)) {
       return formatResponse([new Error('id 必填') as any, null], req.__('rest.updateSuccess'), req.__('rest.updateFail'))
+    }
+    // Article protect 字段传输解密
+    if (isArticleModel(req) && typeof rest.protect === 'string' && rest.protect) {
+      rest.protect = decryptTransport(rest.protect)
     }
     const tryData = await tryit<any, Error>(() => RestService.update(req.model, numId, rest))
     // Users 表更新：过滤响应中的敏感字段

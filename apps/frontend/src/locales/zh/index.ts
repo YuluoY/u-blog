@@ -14,6 +14,7 @@ export default {
     justNow: '刚刚',
     error: '错误',
     optional: '可选',
+    back: '返回',
   },
   nav: {
     mainNav: '主导航',
@@ -314,6 +315,10 @@ export default {
     statusPublished: '已发布',
     isPrivate: '私密',
     isTop: '置顶',
+    isProtected: '密码保护',
+    protectPassword: '访问密码',
+    protectPasswordPlaceholder: '设置文章访问密码',
+    protectHint: '密码将加密传输，读者需输入正确密码才能查看正文',
     loginRequired: '请先登录后再保存到服务器',
     saveSuccess: '保存成功',
     saveFail: '保存失败',

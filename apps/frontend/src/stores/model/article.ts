@@ -128,6 +128,20 @@ export const useArticleStore = defineStore('article', () =>
   }
 
   /**
+   * 同步文章浏览量（从 ReadView 浏览后回写到列表，避免回到首页/归档看到旧数据）
+   */
+  const updateArticleViewCount = (articleId: number, viewCount: number) =>
+  {
+    const updateList = (list: IArticle[]) =>
+      list.map(a => a.id === articleId ? { ...a, viewCount } : a)
+    setArticleList(updateList(articleList.value))
+    setArchiveList(updateList(archiveList.value))
+    if (currentArticle.value?.id === articleId) {
+      setCurrentArticle({ ...currentArticle.value, viewCount })
+    }
+  }
+
+  /**
    * 同步文章点赞数（从 ReadView 点赞后回写到列表，避免回到首页/归档看到旧数据）
    * 同时更新 articleList 和 archiveList 中匹配的条目
    */
@@ -160,6 +174,7 @@ export const useArticleStore = defineStore('article', () =>
     loadMoreArchive,
     qryArticleById,
     updateArticleLikeCount,
+    updateArticleViewCount,
     findArticleById,
     loadMore,
   }

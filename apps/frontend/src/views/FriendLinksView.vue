@@ -21,31 +21,37 @@
       </div>
       <template v-else-if="links.length > 0">
         <a
-          v-for="link in links"
+          v-for="(link, index) in links"
           :key="link.id"
           :href="link.url"
           target="_blank"
           rel="noopener noreferrer"
           class="links-page__card"
+          :style="{ '--card-delay': index * 60 + 'ms' }"
         >
-          <div class="links-page__card-icon">
-            <u-image
-              v-if="link.icon"
-              :src="link.icon"
-              :alt="link.title"
-              fit="cover"
-              :width="48"
-              :height="48"
-            >
-              <template #error>
-                <span class="links-page__card-letter">{{ link.title.charAt(0).toUpperCase() }}</span>
-              </template>
-            </u-image>
-            <span v-else class="links-page__card-letter">{{ link.title.charAt(0).toUpperCase() }}</span>
-          </div>
-          <div class="links-page__card-body">
-            <u-text tag="h3" ellipsis class="links-page__card-title">{{ link.title }}</u-text>
-            <u-text type="info" size="small" ellipsis>{{ link.description || link.url }}</u-text>
+          <!-- 装饰性渐变条 -->
+          <div class="links-page__card-accent" />
+          <div class="links-page__card-content">
+            <div class="links-page__card-avatar">
+              <u-image
+                v-if="link.icon"
+                :src="link.icon"
+                :alt="link.title"
+                fit="cover"
+                :width="52"
+                :height="52"
+              >
+                <template #error>
+                  <span class="links-page__card-letter">{{ link.title.charAt(0).toUpperCase() }}</span>
+                </template>
+              </u-image>
+              <span v-else class="links-page__card-letter">{{ link.title.charAt(0).toUpperCase() }}</span>
+            </div>
+            <div class="links-page__card-info">
+              <h3 class="links-page__card-title">{{ link.title }}</h3>
+              <p class="links-page__card-desc">{{ link.description || link.url }}</p>
+            </div>
+            <u-icon class="links-page__card-arrow" icon="fa-solid fa-arrow-up-right-from-square" />
           </div>
         </a>
       </template>
@@ -414,18 +420,18 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .links-page {
-  max-width: 900px;
+  max-width: 960px;
   margin: 0 auto;
-  padding: 0 16px 40px;
+  padding: 0 20px 48px;
 
-  /* Hero 区域 */
+  /* ========== Hero 区域 ========== */
   &__hero {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 32px 0 24px;
+    padding: 36px 0 28px;
     border-bottom: 1px solid var(--u-border-1);
-    margin-bottom: 24px;
+    margin-bottom: 28px;
   }
   &__title {
     font-size: 28px;
@@ -453,12 +459,12 @@ onMounted(() => {
     margin-top: 4px;
   }
 
-  /* 卡片网格 */
+  /* ========== 卡片网格 ========== */
   &__grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 16px;
-    margin-bottom: 32px;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    margin-bottom: 36px;
   }
   &__loading,
   &__empty {
@@ -467,59 +473,120 @@ onMounted(() => {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 48px 0;
+    padding: 56px 0;
     color: var(--u-text-3);
     font-size: 14px;
   }
 
-  /* 单个友链卡片 */
+  /* ========== 友链卡片 ========== */
   &__card {
     box-sizing: border-box;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 16px;
-    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
     border: 1px solid var(--u-border-1);
     background: var(--u-background-1);
     text-decoration: none;
     color: inherit;
-    transition: all 0.25s ease;
     cursor: pointer;
+    animation: card-fade-in 0.4s ease both;
+    animation-delay: var(--card-delay, 0ms);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.3s ease,
+                border-color 0.3s ease;
 
     &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 32px rgba(102, 126, 234, 0.18),
+                  0 4px 12px rgba(0, 0, 0, 0.06);
       border-color: var(--u-primary);
+
+      .links-page__card-accent {
+        opacity: 1;
+      }
+      .links-page__card-arrow {
+        opacity: 1;
+        transform: translateX(0);
+      }
+      .links-page__card-avatar {
+        transform: scale(1.05);
+      }
     }
   }
-  &__card-icon {
+
+  /* 顶部装饰渐变条 */
+  &__card-accent {
+    height: 3px;
+    background: linear-gradient(90deg, var(--u-primary), var(--u-primary-1, #a78bfa), #60a5fa);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  &__card-content {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 20px;
+  }
+
+  /* 头像 */
+  &__card-avatar {
     flex-shrink: 0;
-    width: 48px;
-    height: 48px;
-    border-radius: 10px;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--u-primary) 0%, var(--u-primary-1) 100%);
+    background: linear-gradient(135deg, var(--u-primary) 0%, var(--u-primary-1, #a78bfa) 100%);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    transition: transform 0.3s ease;
   }
+
   &__card-letter {
-    font-size: 20px;
+    font-size: 22px;
     font-weight: 700;
     color: #fff;
+    line-height: 1;
   }
-  &__card-body {
+
+  &__card-info {
     flex: 1;
     min-width: 0;
   }
+
   &__card-title {
     font-size: 15px;
     font-weight: 600;
-    margin: 0;
+    margin: 0 0 4px;
+    color: var(--u-text-1);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  /* 操作按钮区 */
+  &__card-desc {
+    font-size: 12px;
+    margin: 0;
+    color: var(--u-text-3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+  }
+
+  /* 箭头图标 */
+  &__card-arrow {
+    flex-shrink: 0;
+    font-size: 12px;
+    color: var(--u-text-3);
+    opacity: 0;
+    transform: translateX(-6px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+
+  /* ========== 操作按钮区 ========== */
   &__actions {
     display: flex;
     gap: 12px;
@@ -527,7 +594,7 @@ onMounted(() => {
     margin-bottom: 32px;
   }
 
-  /* 表单辅助布局 */
+  /* ========== 表单辅助布局 ========== */
   &__form-row {
     display: flex;
     gap: 8px;
@@ -538,7 +605,7 @@ onMounted(() => {
     gap: 8px;
   }
 
-  /* 管理面板 */
+  /* ========== 管理面板 ========== */
   &__manage {
     border-top: 1px solid var(--u-border-1);
     padding-top: 24px;
@@ -583,18 +650,36 @@ onMounted(() => {
   }
 }
 
+/* 卡片入场动画 */
+@keyframes card-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* 响应式 */
 @media (max-width: 640px) {
   .links-page {
+    padding: 0 12px 32px;
+
     &__grid {
       grid-template-columns: 1fr;
+      gap: 12px;
     }
     &__hero {
       flex-direction: column;
       align-items: flex-start;
       gap: 12px;
     }
-    &__manage-item {
+    &__card-content {
+      padding: 14px 16px;
+    }
+    &__manage-item-inner {
       flex-wrap: wrap;
     }
     &__manage-item-actions {

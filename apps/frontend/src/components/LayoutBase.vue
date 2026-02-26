@@ -78,6 +78,7 @@ import SettingsDrawer from '@/components/AppShell/SettingsDrawer.vue'
 import { useSidebarStore } from '@/stores/sidebar'
 import { useAppStore } from '@/stores/app'
 import { useProgressBar, registerProgressBar } from '@/composables/useProgressBar'
+import { useScrollRestore } from '@/composables/useScrollRestore'
 import type { UProgressBarExposes } from '@u-blog/ui'
 import { HEADER_HEIGHT_PX, FOOTER_HEIGHT_PX, ICON_BAR_WIDTH_PX, SIDE_PANEL_WIDTH_PX } from '@/constants/layout'
 import { useRoute } from 'vue-router'
@@ -89,6 +90,9 @@ defineOptions({
 const route = useRoute()
 const sidebarStore = useSidebarStore()
 const appStore = useAppStore()
+
+/* ---- 路由切换时保存/恢复 .layout-base__main 的滚动位置 ---- */
+useScrollRestore('.layout-base__main')
 
 /* ---- 全局加载进度条：注册实例到 composable，供 axios 拦截器调用 ---- */
 const progressBarRefEl = ref<UProgressBarExposes | null>(null)
