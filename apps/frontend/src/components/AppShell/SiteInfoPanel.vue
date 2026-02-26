@@ -6,11 +6,17 @@
       <u-text class="site-info-panel__loading">{{ t('siteInfo.loading') }}</u-text>
     </template>
     <template v-else>
+    <!-- 统计卡片：浏览量(PV)、独立访客(UV)、点赞、评论 -->
     <div class="site-info-panel__cards">
       <div class="site-info-panel__card">
         <u-icon icon="fa-solid fa-eye" />
         <u-text class="site-info-panel__card-num">{{ totalViews }}</u-text>
         <u-text class="site-info-panel__card-label">{{ t('siteInfo.views') }}</u-text>
+      </div>
+      <div class="site-info-panel__card">
+        <u-icon icon="fa-solid fa-users" />
+        <u-text class="site-info-panel__card-num">{{ totalUniqueVisitors }}</u-text>
+        <u-text class="site-info-panel__card-label">{{ t('siteInfo.uniqueVisitors') }}</u-text>
       </div>
       <div class="site-info-panel__card">
         <u-icon icon="fa-solid fa-heart" />
@@ -68,6 +74,7 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 
 const totalViews = computed(() => overview.value?.totalViews ?? 0)
+const totalUniqueVisitors = computed(() => overview.value?.totalUniqueVisitors ?? 0)
 const totalLikes = computed(() => overview.value?.totalLikes ?? 0)
 const totalComments = computed(() => overview.value?.totalComments ?? 0)
 const runningDays = computed(() => overview.value?.runningDays ?? 0)
@@ -113,10 +120,10 @@ onMounted(async () => {
     color: var(--u-text-3);
   }
 
-  /* 三个数字卡片并排 */
+  /* 四个统计卡片 2×2 网格 */
   &__cards {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 8px;
   }
 
@@ -168,6 +175,40 @@ onMounted(async () => {
     margin-left: auto;
     font-weight: 600;
     color: var(--u-text-1);
+  }
+
+  /* 移动端自适应：缩小字号、间距 */
+  @media (max-width: 767px) {
+    padding: 12px;
+    gap: 10px;
+
+    &__title {
+      font-size: 1.4rem;
+    }
+
+    &__cards {
+      gap: 6px;
+    }
+
+    &__card {
+      padding: 8px 0;
+      gap: 2px;
+      .u-icon { font-size: 1.1rem; }
+    }
+
+    &__card-num {
+      font-size: 1.5rem;
+    }
+
+    &__card-label {
+      font-size: 1rem;
+    }
+
+    &__row {
+      padding: 6px;
+      gap: 6px;
+      font-size: 1.15rem;
+    }
   }
 }
 </style>

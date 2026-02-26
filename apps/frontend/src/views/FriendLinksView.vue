@@ -14,51 +14,113 @@
       </div>
     </header>
 
-    <!-- 友链卡片列表 -->
-    <section class="links-page__grid">
-      <div v-if="loading" class="links-page__loading">
+    <!-- 蜂窝布局友链列表 -->
+    <section ref="honeycombRef" class="honeycomb" @click.self="activeId = -1">
+      <div v-if="loading" class="honeycomb__loading">
         <u-icon icon="fa-solid fa-spinner" spin />
       </div>
-      <template v-else-if="links.length > 0">
-        <a
-          v-for="(link, index) in links"
-          :key="link.id"
-          :href="link.url"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="links-page__card"
-          :style="{ '--card-delay': index * 60 + 'ms' }"
+      <template v-else-if="displayLinks.length > 0">
+        <div
+          class="honeycomb__stage"
+          :style="{ width: gridTotalWidth + 'px', height: gridHeight + 'px' }"
         >
-          <!-- 装饰性渐变条 -->
-          <div class="links-page__card-accent" />
-          <div class="links-page__card-content">
-            <div class="links-page__card-avatar">
-              <u-image
-                v-if="link.icon"
-                :src="link.icon"
-                :alt="link.title"
-                fit="cover"
-                :width="52"
-                :height="52"
-              >
-                <template #error>
-                  <span class="links-page__card-letter">{{ link.title.charAt(0).toUpperCase() }}</span>
-                </template>
-              </u-image>
-              <span v-else class="links-page__card-letter">{{ link.title.charAt(0).toUpperCase() }}</span>
+          <a
+            v-for="(cell, index) in cellLayout"
+            :key="cell.id"
+            :href="cell.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="honeycomb__cell"
+            :class="{ 'is-active': activeId === cell.id }"
+            :style="{
+              left: cell.x + 'px',
+              top: cell.y + 'px',
+              width: hexW + 'px',
+              height: hexH + 'px',
+              animationDelay: index * 50 + 'ms',
+              '--hex-hue': cell.hue,
+            }"
+            @mouseenter="handleCellEnter(cell.id)"
+            @mouseleave="handleCellLeave"
+            @click.prevent="handleCellClick($event, cell)"
+          >
+            <!-- 六边形外发光层 -->
+            <div class="honeycomb__glow" />
+            <div class="honeycomb__hex">
+              <div class="honeycomb__avatar">
+                <u-image
+                  v-if="cell.icon"
+                  :src="cell.icon"
+                  :alt="cell.title"
+                  fit="cover"
+                  :width="48"
+                  :height="48"
+                >
+                  <template #error>
+                    <span class="honeycomb__letter">{{ cell.title.charAt(0).toUpperCase() }}</span>
+                  </template>
+                </u-image>
+                <span v-else class="honeycomb__letter">{{ cell.title.charAt(0).toUpperCase() }}</span>
+              </div>
+              <span class="honeycomb__name">{{ cell.title }}</span>
             </div>
-            <div class="links-page__card-info">
-              <h3 class="links-page__card-title">{{ link.title }}</h3>
-              <p class="links-page__card-desc">{{ link.description || link.url }}</p>
-            </div>
-            <u-icon class="links-page__card-arrow" icon="fa-solid fa-arrow-up-right-from-square" />
-          </div>
-        </a>
+            <!-- 桌面端悬浮提示 -->
+            <Transition name="hex-tip">
+              <div v-show="hoveredId === cell.id" class="honeycomb__tip">
+                <strong class="honeycomb__tip-title">{{ cell.title }}</strong>
+                <p v-if="cell.description" class="honeycomb__tip-desc">{{ cell.description }}</p>
+                <span class="honeycomb__tip-url">
+                  <u-icon icon="fa-solid fa-arrow-up-right-from-square" />
+                  {{ cell.url }}
+                </span>
+              </div>
+            </Transition>
+          </a>
+        </div>
       </template>
-      <div v-else class="links-page__empty">
+      <div v-else class="honeycomb__empty">
         <u-icon icon="fa-solid fa-link" />
         <span>{{ t('friendLinks.empty') }}</span>
       </div>
+
+      <!-- 移动端：点击展开的详情浮层 -->
+      <Transition name="hex-detail">
+        <div v-if="activeCell" class="honeycomb__detail" @click.stop>
+          <button class="honeycomb__detail-close" @click="activeId = -1">
+            <u-icon icon="fa-solid fa-xmark" />
+          </button>
+          <div class="honeycomb__detail-header">
+            <div class="honeycomb__detail-avatar" :style="{ '--hex-hue': activeCell.hue }">
+              <u-image
+                v-if="activeCell.icon"
+                :src="activeCell.icon"
+                :alt="activeCell.title"
+                fit="cover"
+                :width="40"
+                :height="40"
+              >
+                <template #error>
+                  <span class="honeycomb__letter">{{ activeCell.title.charAt(0).toUpperCase() }}</span>
+                </template>
+              </u-image>
+              <span v-else class="honeycomb__letter">{{ activeCell.title.charAt(0).toUpperCase() }}</span>
+            </div>
+            <div class="honeycomb__detail-info">
+              <strong>{{ activeCell.title }}</strong>
+              <p v-if="activeCell.description">{{ activeCell.description }}</p>
+            </div>
+          </div>
+          <a
+            class="honeycomb__detail-visit"
+            :href="activeCell.url"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <u-icon icon="fa-solid fa-arrow-up-right-from-square" />
+            {{ t('friendLinks.visitSite') }}
+          </a>
+        </div>
+      </Transition>
     </section>
 
     <!-- 申请 / 管理按钮 -->
@@ -242,7 +304,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch, reactive } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch, reactive, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/model/user'
 import { useBlogOwnerStore } from '@/stores/blogOwner'
@@ -413,8 +475,135 @@ watch(showManage, (val) => {
   if (val) loadManageList()
 })
 
+/* ---------- 蜂窝布局计算 ---------- */
+const honeycombRef = ref<HTMLElement | null>(null)
+const hoveredId = ref<number>(-1)
+const activeId = ref<number>(-1)
+const containerWidth = ref(900)
+let resizeObserver: ResizeObserver | null = null
+
+/** 检测触控设备 */
+const isTouch = ref(false)
+
+/** 开发预览：注入模拟数据以测试蜂窝多格效果 */
+const mockLink = (id: number, title: string, url: string, desc: string, icon = ''): IFriendLink =>
+  ({ id, userId: 0, title, url, icon, description: desc, status: 'approved', sortOrder: 0 }) as IFriendLink
+const MOCK_LINKS: IFriendLink[] = import.meta.env.DEV ? [
+  mockLink(-1, 'GitHub', 'https://github.com', '全球最大的代码托管平台，开源项目的聚集地', 'https://github.githubassets.com/favicons/favicon-dark.svg'),
+  mockLink(-2, 'Vue.js', 'https://vuejs.org', '渐进式 JavaScript 框架，易学易用，性能出色', 'https://vuejs.org/logo.svg'),
+  mockLink(-3, 'MDN Web Docs', 'https://developer.mozilla.org', 'Mozilla 开发者网络，前端开发权威文档参考'),
+  mockLink(-4, 'Tailwind CSS', 'https://tailwindcss.com', '功能类优先的 CSS 框架，快速构建现代界面'),
+  mockLink(-5, 'Stack Overflow', 'https://stackoverflow.com', '面向程序员的技术问答社区'),
+  mockLink(-6, 'Vite', 'https://vitejs.dev', '下一代前端构建工具，极速热更新'),
+  mockLink(-7, 'TypeScript', 'https://typescriptlang.org', 'JavaScript 的超集，带有类型系统'),
+  mockLink(-8, 'Pinia', 'https://pinia.vuejs.org', 'Vue 官方状态管理库，轻量且灵活'),
+  mockLink(-9, '阮一峰的博客', 'https://ruanyifeng.com', '科技爱好者周刊，前端与技术趋势分享'),
+  mockLink(-10, 'Vercel', 'https://vercel.com', '前端部署平台，Next.js 背后的公司'),
+  mockLink(-11, 'Figma', 'https://figma.com', '在线协作设计工具，UI 设计首选'),
+] : []
+
+/** 展示用的友链列表（真实数据 + 开发预览数据） */
+const displayLinks = computed(() => {
+  if (import.meta.env.DEV && links.value.length < 3) {
+    return [...links.value, ...MOCK_LINKS]
+  }
+  return links.value
+})
+
+/** 六边形尺寸（根据容器宽度响应式调整） */
+const hexW = computed(() => containerWidth.value <= 480 ? 90 : containerWidth.value <= 700 ? 110 : 130)
+const hexH = computed(() => Math.round(hexW.value * 1.1547))
+const hexGap = computed(() => containerWidth.value <= 480 ? 4 : 6)
+
+/** 色相调色板 */
+const HEX_HUES = [215, 260, 330, 165, 25, 290, 140, 50, 195, 310, 180, 350]
+
+/** 蜂窝网格布局坐标计算 */
+const cellLayout = computed(() => {
+  const W = hexW.value, H = hexH.value, G = hexGap.value
+  const maxCols = Math.max(2, Math.floor((containerWidth.value + G) / (W + G)))
+  const rowH = H * 0.75 + G
+  let row = 0, col = 0
+  const colsInRow = (r: number) => r % 2 === 0 ? maxCols : Math.max(1, maxCols - 1)
+  return displayLinks.value.map((link, i) => {
+    if (col >= colsInRow(row)) { row++; col = 0 }
+    const odd = row % 2 === 1
+    const x = col * (W + G) + (odd ? (W + G) / 2 : 0)
+    const y = row * rowH
+    col++
+    return { ...link, x, y, hue: HEX_HUES[i % HEX_HUES.length] }
+  })
+})
+
+/** 当前被激活（移动端点击选中）的格子数据 */
+const activeCell = computed(() => {
+  if (activeId.value === -1) return null
+  return cellLayout.value.find(c => c.id === activeId.value) ?? null
+})
+
+const gridTotalWidth = computed(() => {
+  if (cellLayout.value.length === 0) return 0
+  return Math.max(...cellLayout.value.map(c => c.x)) + hexW.value
+})
+
+const gridHeight = computed(() => {
+  if (cellLayout.value.length === 0) return 0
+  return Math.max(...cellLayout.value.map(c => c.y)) + hexH.value
+})
+
+/** 桌面端 hover 进入 */
+function handleCellEnter(id: number) {
+  if (!isTouch.value) hoveredId.value = id
+}
+/** 桌面端 hover 离开 */
+function handleCellLeave() {
+  if (!isTouch.value) hoveredId.value = -1
+}
+
+/** 统一 click 处理：桌面端直接跳转，移动端先展开详情 */
+function handleCellClick(e: MouseEvent | TouchEvent, cell: { id: number; url: string }) {
+  if (isTouch.value) {
+    // 移动端：首次点击展示详情，已激活状态再点击跳转
+    if (activeId.value === cell.id) {
+      window.open(cell.url, '_blank', 'noopener,noreferrer')
+    } else {
+      activeId.value = cell.id
+    }
+  } else {
+    // 桌面端：直接跳转
+    window.open(cell.url, '_blank', 'noopener,noreferrer')
+  }
+}
+
+/** 点击空白区域关闭移动端详情 */
+function handleClickOutside(e: Event) {
+  if (activeId.value === -1) return
+  const detail = document.querySelector('.honeycomb__detail')
+  const target = e.target as HTMLElement
+  if (detail && detail.contains(target)) return
+  if (target.closest('.honeycomb__cell')) return
+  activeId.value = -1
+}
+
 onMounted(() => {
   loadLinks()
+  // 检测触控设备
+  isTouch.value = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+  document.addEventListener('click', handleClickOutside)
+  nextTick(() => {
+    if (honeycombRef.value) {
+      containerWidth.value = honeycombRef.value.clientWidth
+      resizeObserver = new ResizeObserver((entries) => {
+        containerWidth.value = entries[0].contentRect.width
+      })
+      resizeObserver.observe(honeycombRef.value)
+    }
+  })
+})
+
+onUnmounted(() => {
+  resizeObserver?.disconnect()
+  document.removeEventListener('click', handleClickOutside)
 })
 </script>
 
@@ -457,133 +646,6 @@ onMounted(() => {
     font-size: 12px;
     color: var(--u-text-3);
     margin-top: 4px;
-  }
-
-  /* ========== 卡片网格 ========== */
-  &__grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 20px;
-    margin-bottom: 36px;
-  }
-  &__loading,
-  &__empty {
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 56px 0;
-    color: var(--u-text-3);
-    font-size: 14px;
-  }
-
-  /* ========== 友链卡片 ========== */
-  &__card {
-    box-sizing: border-box;
-    position: relative;
-    overflow: hidden;
-    border-radius: 16px;
-    border: 1px solid var(--u-border-1);
-    background: var(--u-background-1);
-    text-decoration: none;
-    color: inherit;
-    cursor: pointer;
-    animation: card-fade-in 0.4s ease both;
-    animation-delay: var(--card-delay, 0ms);
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
-                box-shadow 0.3s ease,
-                border-color 0.3s ease;
-
-    &:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 32px rgba(102, 126, 234, 0.18),
-                  0 4px 12px rgba(0, 0, 0, 0.06);
-      border-color: var(--u-primary);
-
-      .links-page__card-accent {
-        opacity: 1;
-      }
-      .links-page__card-arrow {
-        opacity: 1;
-        transform: translateX(0);
-      }
-      .links-page__card-avatar {
-        transform: scale(1.05);
-      }
-    }
-  }
-
-  /* 顶部装饰渐变条 */
-  &__card-accent {
-    height: 3px;
-    background: linear-gradient(90deg, var(--u-primary), var(--u-primary-1, #a78bfa), #60a5fa);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-
-  &__card-content {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 18px 20px;
-  }
-
-  /* 头像 */
-  &__card-avatar {
-    flex-shrink: 0;
-    width: 52px;
-    height: 52px;
-    border-radius: 14px;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, var(--u-primary) 0%, var(--u-primary-1, #a78bfa) 100%);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
-    transition: transform 0.3s ease;
-  }
-
-  &__card-letter {
-    font-size: 22px;
-    font-weight: 700;
-    color: #fff;
-    line-height: 1;
-  }
-
-  &__card-info {
-    flex: 1;
-    min-width: 0;
-  }
-
-  &__card-title {
-    font-size: 15px;
-    font-weight: 600;
-    margin: 0 0 4px;
-    color: var(--u-text-1);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  &__card-desc {
-    font-size: 12px;
-    margin: 0;
-    color: var(--u-text-3);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    line-height: 1.4;
-  }
-
-  /* 箭头图标 */
-  &__card-arrow {
-    flex-shrink: 0;
-    font-size: 12px;
-    color: var(--u-text-3);
-    opacity: 0;
-    transform: translateX(-6px);
-    transition: opacity 0.25s ease, transform 0.25s ease;
   }
 
   /* ========== 操作按钮区 ========== */
@@ -650,34 +712,222 @@ onMounted(() => {
   }
 }
 
-/* 卡片入场动画 */
-@keyframes card-fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
+/* ========== 蜂窝布局 ========== */
+.honeycomb {
+  margin-bottom: 36px;
+  min-height: 200px;
+  overflow: visible;
+  position: relative;
+
+  &__loading,
+  &__empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 56px 0;
+    color: var(--u-text-3);
+    font-size: 14px;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  /* 定位舞台 */
+  &__stage {
+    position: relative;
+    margin: 0 auto;
+  }
+
+  /* 单个蜂窝格子 */
+  &__cell {
+    position: absolute;
+    text-decoration: none;
+    color: inherit;
+    animation: hex-pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    z-index: 1;
+    -webkit-tap-highlight-color: transparent;
+
+    &:hover,
+    &.is-active {
+      z-index: 10;
+      .honeycomb__hex { transform: scale(1.1); }
+      .honeycomb__glow { opacity: 1; }
+    }
+  }
+
+  /* 外发光层（clip-path 裁剪成略大的六边形） */
+  &__glow {
+    position: absolute;
+    inset: -3px;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    background: hsl(var(--hex-hue, 210), 60%, 65%);
+    opacity: 0;
+    filter: blur(6px);
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+
+  /* 六边形主体 */
+  &__hex {
+    width: 100%;
+    height: 100%;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    background: linear-gradient(
+      160deg,
+      hsl(var(--hex-hue, 210), 55%, 92%) 0%,
+      hsl(var(--hex-hue, 210), 50%, 85%) 100%
+    );
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* 头像 */
+  &__avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: hsl(var(--hex-hue, 210), 45%, 55%);
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  &__letter {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+  }
+
+  /* 站点名称 */
+  &__name {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--u-text-1);
+    max-width: 80%;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.2;
+  }
+
+  /* 桌面端悬浮提示卡片 */
+  &__tip {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: -6px;
+    width: 230px;
+    padding: 12px 14px;
+    background: var(--u-background-1);
+    border: 1px solid var(--u-border-1);
+    border-radius: 12px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+    z-index: 100;
+    pointer-events: none;
+  }
+
+  &__tip-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--u-text-1);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  &__tip-desc {
+    font-size: 12px;
+    color: var(--u-text-3);
+    margin: 0 0 6px;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  &__tip-url {
+    font-size: 11px;
+    color: var(--u-primary);
+    word-break: break-all;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* 移动端详情悬浮面板 */
+  &__detail {
+    display: none;
   }
 }
 
-/* 响应式 */
+/* ====== 暗色主题 ====== */
+:root.dark {
+  .honeycomb__hex {
+    background: linear-gradient(
+      160deg,
+      hsl(var(--hex-hue, 210), 28%, 24%) 0%,
+      hsl(var(--hex-hue, 210), 25%, 18%) 100%
+    );
+  }
+  .honeycomb__avatar {
+    background: hsl(var(--hex-hue, 210), 32%, 38%);
+  }
+  .honeycomb__glow {
+    background: hsl(var(--hex-hue, 210), 40%, 45%);
+  }
+  .honeycomb__tip {
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* ====== 动画 ====== */
+@keyframes hex-pop-in {
+  from { opacity: 0; transform: scale(0.6) rotate(-8deg); }
+  to { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+/* 桌面端提示过渡 */
+.hex-tip-enter-active,
+.hex-tip-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.hex-tip-enter-from,
+.hex-tip-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(6px);
+}
+
+/* 移动端详情面板过渡 */
+.hex-detail-enter-active,
+.hex-detail-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.hex-detail-enter-from,
+.hex-detail-leave-to {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+/* ====== 响应式 ====== */
 @media (max-width: 640px) {
   .links-page {
     padding: 0 12px 32px;
 
-    &__grid {
-      grid-template-columns: 1fr;
-      gap: 12px;
-    }
     &__hero {
       flex-direction: column;
       align-items: flex-start;
       gap: 12px;
-    }
-    &__card-content {
-      padding: 14px 16px;
     }
     &__manage-item-inner {
       flex-wrap: wrap;
@@ -686,6 +936,103 @@ onMounted(() => {
       width: 100%;
       justify-content: flex-end;
     }
+  }
+
+  /* 移动端：隐藏桌面端提示，启用详情面板 */
+  .honeycomb__tip {
+    display: none !important;
+  }
+
+  .honeycomb__detail {
+    display: flex !important;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px 16px 14px;
+    background: var(--u-background-2);
+    border-top: 1px solid var(--u-border-1);
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+    z-index: 999;
+  }
+
+  .honeycomb__detail-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: var(--u-background-3);
+    border-radius: 50%;
+    color: var(--u-text-3);
+    cursor: pointer;
+    font-size: 12px;
+    -webkit-tap-highlight-color: transparent;
+    &:active { opacity: 0.6; }
+  }
+
+  .honeycomb__detail-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .honeycomb__detail-avatar {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: hsl(var(--hex-hue, 210), 45%, 55%);
+  }
+
+  .honeycomb__detail-info {
+    flex: 1;
+    min-width: 0;
+
+    strong {
+      display: block;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--u-text-1);
+      margin-bottom: 2px;
+    }
+    p {
+      font-size: 12px;
+      color: var(--u-text-3);
+      margin: 0;
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  }
+
+  .honeycomb__detail-visit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 0;
+    background: var(--u-primary);
+    color: #fff;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    -webkit-tap-highlight-color: transparent;
+    &:active { opacity: 0.8; }
   }
 }
 </style>

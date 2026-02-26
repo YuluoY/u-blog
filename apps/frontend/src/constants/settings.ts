@@ -62,6 +62,14 @@ export const SETTING_KEYS = {
   FOOTER_AUTHOR: 'footer_author',
   /** 游客查看后台开关（'true' / 'false'） */
   GUEST_ADMIN_VIEW_ENABLED: 'guest_admin_view_enabled',
+  /** 全局字号缩放（百分比 80~130） */
+  FONT_SIZE_SCALE: 'font_size_scale',
+  /** 全局行高缩放（百分比 100~200） */
+  LINE_HEIGHT_SCALE: 'line_height_scale',
+  /** 全局内容间距缩放（百分比 50~150） */
+  CONTENT_SPACING_SCALE: 'content_spacing_scale',
+  /** 全局字体族 preset（system / serif / mono） */
+  FONT_FAMILY_PRESET: 'font_family_preset',
 } as const
 
 /** 需要脱敏显示的 key（后端会返回 masked） */

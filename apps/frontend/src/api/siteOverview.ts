@@ -7,6 +7,7 @@ export interface SiteOverviewData {
   categoryCount: number
   tagCount: number
   totalViews: number
+  totalUniqueVisitors: number
   totalLikes: number
   totalComments: number
   runningDays: number

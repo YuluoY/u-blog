@@ -1521,9 +1521,66 @@ function handleSuggestionClick(text: string) {
 
 /* ===================== 响应式 ===================== */
 @media (max-width: 768px) {
+  /* 侧栏隐藏 */
   .xiaohui-sidebar, .sidebar-toggle { display: none; }
-  .xiaohui-messages-list { padding: 0 1.6rem; }
-  .xiaohui-input-container { padding: 0 1.6rem 1.6rem; }
-  .xiaohui-empty__suggestions { grid-template-columns: 1fr; }
+
+  /* 消息列表 */
+  .xiaohui-messages { padding: 0.8rem 0; }
+  .xiaohui-messages-list { padding: 0 1.2rem; gap: 1.6rem; }
+
+  /* 空状态整体收紧 */
+  .xiaohui-empty {
+    padding: 1.2rem 1.6rem;
+    justify-content: center;
+
+    /* Logo 缩小 */
+    &__logo { margin-bottom: 1.2rem; }
+    &__icon-wrap { width: 52px; height: 52px; border-radius: 14px; }
+    &__icon-wrap .xiaohui-empty__avatar { font-size: 24px; }
+    &__glow { width: 72px; height: 72px; }
+
+    /* 标题 & 描述 */
+    &__title { font-size: 1.8rem; margin-bottom: 0.3rem; }
+    &__desc { font-size: 1.3rem; margin: 0 0 1.6rem; max-width: 90%; }
+
+    /* 建议卡片 - 单列布局 */
+    &__suggestions {
+      grid-template-columns: 1fr;
+      gap: 0.6rem;
+      max-width: 100%;
+    }
+
+    &__suggestion {
+      padding: 0.9rem 1.2rem;
+      gap: 1rem;
+      border-radius: 1.2rem;
+    }
+    &__suggestion-icon-wrap { width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0; }
+    &__suggestion-icon { font-size: 1.2rem; }
+    &__suggestion-text { font-size: 1.3rem; }
+  }
+
+  /* 输入区 */
+  .xiaohui-input-container { padding: 0 1.2rem 1rem; }
+  .xiaohui-input-bar {
+    border-radius: 2rem;
+    padding: 0.4rem 0.4rem 0.4rem 1.4rem;
+    &__textarea { font-size: 1.3rem; min-height: 3.2rem; line-height: 2.2rem; }
+    &__send { width: 3.2rem; height: 3.2rem; font-size: 1.2rem; }
+    &__stop { height: 3.2rem; font-size: 1.1rem; padding: 0 1rem; }
+  }
+  .xiaohui-input-hint { font-size: 1rem; margin-top: 0.4rem; }
+
+  /* 消息气泡 */
+  .xiaohui-msg {
+    gap: 0.8rem;
+    &__avatar { width: 32px; height: 32px; border-radius: 10px; font-size: 1.3rem; }
+    &__bot-avatar { font-size: 14px; }
+    &__content { max-width: 85%; }
+    &__meta { font-size: 1.1rem; gap: 0.4rem; }
+    &__name { font-size: 1.1rem; }
+    &__time { font-size: 1rem; }
+    &__bubble { padding: 1rem 1.2rem; font-size: 1.35rem; }
+  }
 }
 </style>

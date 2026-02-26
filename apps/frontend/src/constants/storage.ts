@@ -66,4 +66,12 @@ export const STORAGE_KEYS = {
   XIAOHUI_FOLDERS: `${PREFIX}xiaohui-folders`,
   /** 小惠文件夹展开状态 JSON */
   XIAOHUI_FOLDERS_OPEN: `${PREFIX}xiaohui-folders-open`,
+  /** 全局字号缩放（百分比 80~130，默认 100） */
+  FONT_SIZE_SCALE: `${PREFIX}font-size-scale`,
+  /** 全局行高缩放（百分比 100~200，默认 150） */
+  LINE_HEIGHT_SCALE: `${PREFIX}line-height-scale`,
+  /** 全局内容间距缩放（百分比 50~150，默认 100） */
+  CONTENT_SPACING_SCALE: `${PREFIX}content-spacing-scale`,
+  /** 全局字体族 preset（system / serif / mono） */
+  FONT_FAMILY_PRESET: `${PREFIX}font-family-preset`,
 } as const

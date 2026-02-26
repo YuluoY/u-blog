@@ -6,8 +6,15 @@
  * 后端 `decryptTransport()` 使用相同密钥解密
  */
 
-/** 与后端共享的传输密钥种子（通过 SHA-256 派生 256-bit 密钥） */
-const TRANSPORT_SEED = 'u-blog-transport-key-2024!!@#$%'
+/**
+ * 与后端共享的传输密钥种子
+ * 通过 Vite 环境变量注入，构建时内联到产物中
+ * 生产/开发环境使用不同密钥，确保隔离安全
+ */
+const TRANSPORT_SEED = import.meta.env.VITE_TRANSPORT_KEY
+if (!TRANSPORT_SEED) {
+  console.error('[transportCrypto] VITE_TRANSPORT_KEY 未设置，传输加密将不可用')
+}
 
 /** 将 ArrayBuffer / TypedArray 转为 base64 字符串 */
 function bufToBase64(buf: ArrayBuffer | Uint8Array): string {

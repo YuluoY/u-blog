@@ -269,6 +269,12 @@ const bodyOffsetStyle = computed(() => ({
     max-width: none !important;
     margin-left: 0 !important;
     margin-right: 0 !important;
+
+    /* Chat/Xiaohui 页自行控制布局，不需要额外底部 padding */
+    &--chat {
+      padding: 0;
+      padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+    }
   }
 }
 </style>

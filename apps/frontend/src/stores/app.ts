@@ -138,6 +138,58 @@ function loadSnowfallDistribution(): number {
   return 100
 }
 
+/* ---------- 排版配置加载 ---------- */
+export type FontFamilyPreset = 'system' | 'serif' | 'mono'
+export const C_FONT_FAMILY_PRESET = { SYSTEM: 'system', SERIF: 'serif', MONO: 'mono' } as const
+
+/** 字体族预设映射 */
+const FONT_FAMILY_MAP: Record<FontFamilyPreset, string> = {
+  system: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+  serif: 'Georgia, "Noto Serif SC", "Source Han Serif SC", "Times New Roman", serif',
+  mono: '"Fira Code", "JetBrains Mono", "SF Mono", Menlo, Consolas, "Courier New", monospace',
+}
+
+function loadFontSizeScale(): number {
+  try {
+    const v = localStorage.getItem(STORAGE_KEYS.FONT_SIZE_SCALE)
+    if (v != null) {
+      const n = parseInt(v, 10)
+      if (!Number.isNaN(n) && n >= 80 && n <= 130) return n
+    }
+  } catch {}
+  return 100
+}
+
+function loadLineHeightScale(): number {
+  try {
+    const v = localStorage.getItem(STORAGE_KEYS.LINE_HEIGHT_SCALE)
+    if (v != null) {
+      const n = parseInt(v, 10)
+      if (!Number.isNaN(n) && n >= 100 && n <= 200) return n
+    }
+  } catch {}
+  return 150
+}
+
+function loadContentSpacingScale(): number {
+  try {
+    const v = localStorage.getItem(STORAGE_KEYS.CONTENT_SPACING_SCALE)
+    if (v != null) {
+      const n = parseInt(v, 10)
+      if (!Number.isNaN(n) && n >= 50 && n <= 150) return n
+    }
+  } catch {}
+  return 100
+}
+
+function loadFontFamilyPreset(): FontFamilyPreset {
+  try {
+    const v = localStorage.getItem(STORAGE_KEYS.FONT_FAMILY_PRESET)
+    if (v === 'system' || v === 'serif' || v === 'mono') return v
+  } catch {}
+  return 'system'
+}
+
 export const useAppStore = defineStore('app', () =>
 {
   const {
@@ -267,6 +319,69 @@ export const useAppStore = defineStore('app', () =>
   /** 是否仅展示当前用户自己的文章 */
   const onlyOwnArticles = ref(false)
   function setOnlyOwnArticles(v: boolean) { onlyOwnArticles.value = v }
+
+  /* ---------- 排版配置 ---------- */
+
+  /** 将排版设置应用到 CSS 自定义属性 */
+  function applyTypography(
+    fontScale: number,
+    lineHeightScale: number,
+    spacingScale: number,
+    fontPreset: FontFamilyPreset
+  ) {
+    const el = document.documentElement
+    // 根 font-size 基准为 10px(62.5%)，按比例缩放
+    el.style.setProperty('--u-global-font-scale', String(fontScale / 100))
+    // 使用百分比缩放行高，配合具体组件使用
+    el.style.setProperty('--u-global-line-height', String(lineHeightScale / 100))
+    // 间距缩放因子
+    el.style.setProperty('--u-global-spacing-scale', String(spacingScale / 100))
+    // 字体族
+    el.style.setProperty('--u-font-family', FONT_FAMILY_MAP[fontPreset])
+    // 同步缩放 html 根 font-size（默认为 62.5%，即 10px 基准）
+    el.style.fontSize = `${62.5 * (fontScale / 100)}%`
+  }
+
+  const [fontSizeScaleState, setFontSizeScaleState] = useState(loadFontSizeScale())
+  const fontSizeScale = computed(() => fontSizeScaleState.value ?? 100)
+  const [lineHeightScaleState, setLineHeightScaleState] = useState(loadLineHeightScale())
+  const lineHeightScale = computed(() => lineHeightScaleState.value ?? 150)
+  const [contentSpacingScaleState, setContentSpacingScaleState] = useState(loadContentSpacingScale())
+  const contentSpacingScale = computed(() => contentSpacingScaleState.value ?? 100)
+  const [fontFamilyPresetState, setFontFamilyPresetState] = useState<FontFamilyPreset>(loadFontFamilyPreset())
+  const fontFamilyPreset = computed<FontFamilyPreset>(() => fontFamilyPresetState.value ?? 'system')
+
+  // 初始化时立即应用
+  applyTypography(fontSizeScale.value, lineHeightScale.value, contentSpacingScale.value, fontFamilyPreset.value)
+
+  // 监听排版变化并应用
+  watch([fontSizeScale, lineHeightScale, contentSpacingScale, fontFamilyPreset], ([fs, lh, sp, ff]) => {
+    applyTypography(fs, lh, sp, ff)
+  })
+
+  function setFontSizeScale(v: number) {
+    const n = Math.max(80, Math.min(130, v))
+    setFontSizeScaleState(n)
+    try { localStorage.setItem(STORAGE_KEYS.FONT_SIZE_SCALE, String(n)) } catch { /* ignore */ }
+    updateSettings({ [SETTING_KEYS.FONT_SIZE_SCALE]: { value: String(n) } }).catch(() => {})
+  }
+  function setLineHeightScale(v: number) {
+    const n = Math.max(100, Math.min(200, v))
+    setLineHeightScaleState(n)
+    try { localStorage.setItem(STORAGE_KEYS.LINE_HEIGHT_SCALE, String(n)) } catch { /* ignore */ }
+    updateSettings({ [SETTING_KEYS.LINE_HEIGHT_SCALE]: { value: String(n) } }).catch(() => {})
+  }
+  function setContentSpacingScale(v: number) {
+    const n = Math.max(50, Math.min(150, v))
+    setContentSpacingScaleState(n)
+    try { localStorage.setItem(STORAGE_KEYS.CONTENT_SPACING_SCALE, String(n)) } catch { /* ignore */ }
+    updateSettings({ [SETTING_KEYS.CONTENT_SPACING_SCALE]: { value: String(n) } }).catch(() => {})
+  }
+  function setFontFamilyPreset(v: FontFamilyPreset) {
+    setFontFamilyPresetState(v)
+    try { localStorage.setItem(STORAGE_KEYS.FONT_FAMILY_PRESET, v) } catch { /* ignore */ }
+    updateSettings({ [SETTING_KEYS.FONT_FAMILY_PRESET]: { value: v } }).catch(() => {})
+  }
 
   function setSiteName(name: string) {
     siteName.value = name || DEFAULT_SITE_NAME
@@ -486,6 +601,42 @@ export const useAppStore = defineStore('app', () =>
     if (onlyOwnVal != null) {
       setOnlyOwnArticles(String(onlyOwnVal) === 'true')
     }
+    // 排版：字号缩放
+    const fontScaleVal = toScalar(settingsMap[SETTING_KEYS.FONT_SIZE_SCALE])
+    if (fontScaleVal != null) {
+      const n = parseInt(String(fontScaleVal), 10)
+      if (!Number.isNaN(n) && n >= 80 && n <= 130) {
+        setFontSizeScaleState(n)
+        try { localStorage.setItem(STORAGE_KEYS.FONT_SIZE_SCALE, String(n)) } catch { /* ignore */ }
+      }
+    }
+    // 排版：行高缩放
+    const lineHeightVal = toScalar(settingsMap[SETTING_KEYS.LINE_HEIGHT_SCALE])
+    if (lineHeightVal != null) {
+      const n = parseInt(String(lineHeightVal), 10)
+      if (!Number.isNaN(n) && n >= 100 && n <= 200) {
+        setLineHeightScaleState(n)
+        try { localStorage.setItem(STORAGE_KEYS.LINE_HEIGHT_SCALE, String(n)) } catch { /* ignore */ }
+      }
+    }
+    // 排版：间距缩放
+    const spacingVal = toScalar(settingsMap[SETTING_KEYS.CONTENT_SPACING_SCALE])
+    if (spacingVal != null) {
+      const n = parseInt(String(spacingVal), 10)
+      if (!Number.isNaN(n) && n >= 50 && n <= 150) {
+        setContentSpacingScaleState(n)
+        try { localStorage.setItem(STORAGE_KEYS.CONTENT_SPACING_SCALE, String(n)) } catch { /* ignore */ }
+      }
+    }
+    // 排版：字体族
+    const fontFamilyVal = toScalar(settingsMap[SETTING_KEYS.FONT_FAMILY_PRESET])
+    if (fontFamilyVal != null) {
+      const v = String(fontFamilyVal).trim()
+      if (v === 'system' || v === 'serif' || v === 'mono') {
+        setFontFamilyPresetState(v)
+        try { localStorage.setItem(STORAGE_KEYS.FONT_FAMILY_PRESET, v) } catch { /* ignore */ }
+      }
+    }
   }
 
   /** 设置主题（不带动画），watch 会同步到 DOM 和本地缓存，并入库 */
@@ -597,5 +748,14 @@ export const useAppStore = defineStore('app', () =>
     setSnowfallSpeed,
     setSnowfallDistribution,
     setTodayHasSnow,
+
+    fontSizeScale,
+    lineHeightScale,
+    contentSpacingScale,
+    fontFamilyPreset,
+    setFontSizeScale,
+    setLineHeightScale,
+    setContentSpacingScale,
+    setFontFamilyPreset,
   }
 })

@@ -73,6 +73,7 @@ export interface SiteOverviewData {
   categoryCount: number
   tagCount: number
   totalViews: number
+  totalUniqueVisitors: number
   totalLikes: number
   totalComments: number
   runningDays: number
@@ -759,6 +760,14 @@ class CommonService {
       tagRepo.count(),
     ])
 
+    /* 统计独立访客数（按 IP 去重） */
+    const viewRepo = ds.getRepository(View)
+    const uvResult = await viewRepo
+      .createQueryBuilder('v')
+      .select('COUNT(DISTINCT v.ip)', 'totalUv')
+      .getRawOne<{ totalUv: string }>()
+    const totalUniqueVisitors = Number(uvResult?.totalUv ?? 0)
+
     const agg = await articleRepo
       .createQueryBuilder('a')
       .select('COALESCE(SUM(a.viewCount), 0)', 'totalViews')
@@ -790,7 +799,7 @@ class CommonService {
       lastUpdate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
     }
 
-    return { articleCount, categoryCount, tagCount, totalViews, totalLikes, totalComments, runningDays, lastUpdate }
+    return { articleCount, categoryCount, tagCount, totalViews, totalUniqueVisitors, totalLikes, totalComments, runningDays, lastUpdate }
   }
 
   /* ---------- 浏览量统计 ---------- */

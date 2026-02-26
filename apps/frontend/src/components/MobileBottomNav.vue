@@ -164,6 +164,12 @@ function handleTags() {
   }
   sidebarStore.setActivePanel(PANEL_ID.TAGS)
 }
+
+/** 路由变化时自动关闭弹出面板（分类/搜索 Popover） */
+watch(() => route.path, () => {
+  sidebarStore.closePanel()
+  moreMenuOpen.value = false
+})
 </script>
 
 <style lang="scss" scoped>

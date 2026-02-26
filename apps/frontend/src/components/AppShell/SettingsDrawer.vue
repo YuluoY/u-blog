@@ -314,6 +314,83 @@
               </div>
             </div>
           </div>
+          <!-- 排版配置 -->
+          <div class="settings-drawer__card">
+            <div class="settings-drawer__item">
+              <div class="settings-drawer__item-head">
+                <span class="settings-drawer__title-box">
+                  <span class="settings-drawer__label">{{ t('settings.typography') }}</span>
+                  <u-tooltip :content="t('settings.typographyHint')" placement="top" trigger="hover" :width="0" show-arrow>
+                    <span class="settings-drawer__help" aria-label="?">
+                      <u-icon icon="fa-solid fa-circle-question" />
+                    </span>
+                  </u-tooltip>
+                </span>
+              </div>
+            </div>
+            <!-- 字号缩放 -->
+            <div class="settings-drawer__item settings-drawer__item--spaced">
+              <div class="settings-drawer__item-head">
+                <span class="settings-drawer__label">{{ t('settings.fontSizeScale') }}</span>
+                <span class="settings-drawer__value">{{ appStore.fontSizeScale }}%</span>
+              </div>
+              <u-slider v-model="fontSizeScaleLocal" :min="80" :max="130" :step="5" />
+              <div class="settings-drawer__hint">{{ t('settings.fontSizeScaleHint') }}</div>
+            </div>
+            <!-- 行高缩放 -->
+            <div class="settings-drawer__item settings-drawer__item--spaced">
+              <div class="settings-drawer__item-head">
+                <span class="settings-drawer__label">{{ t('settings.lineHeightScale') }}</span>
+                <span class="settings-drawer__value">{{ appStore.lineHeightScale }}%</span>
+              </div>
+              <u-slider v-model="lineHeightScaleLocal" :min="100" :max="200" :step="10" />
+              <div class="settings-drawer__hint">{{ t('settings.lineHeightScaleHint') }}</div>
+            </div>
+            <!-- 间距缩放 -->
+            <div class="settings-drawer__item settings-drawer__item--spaced">
+              <div class="settings-drawer__item-head">
+                <span class="settings-drawer__label">{{ t('settings.contentSpacingScale') }}</span>
+                <span class="settings-drawer__value">{{ appStore.contentSpacingScale }}%</span>
+              </div>
+              <u-slider v-model="contentSpacingScaleLocal" :min="50" :max="150" :step="10" />
+              <div class="settings-drawer__hint">{{ t('settings.contentSpacingScaleHint') }}</div>
+            </div>
+            <!-- 字体族 -->
+            <div class="settings-drawer__item settings-drawer__item--spaced">
+              <div class="settings-drawer__item-head">
+                <span class="settings-drawer__label">{{ t('settings.fontFamily') }}</span>
+              </div>
+              <div class="settings-drawer__control">
+                <u-button
+                  :type="appStore.fontFamilyPreset === 'system' ? 'primary' : undefined"
+                  :plain="appStore.fontFamilyPreset !== 'system'"
+                  size="small"
+                  class="settings-drawer__block"
+                  @click="appStore.setFontFamilyPreset('system')"
+                >
+                  {{ t('settings.fontFamilySystem') }}
+                </u-button>
+                <u-button
+                  :type="appStore.fontFamilyPreset === 'serif' ? 'primary' : undefined"
+                  :plain="appStore.fontFamilyPreset !== 'serif'"
+                  size="small"
+                  class="settings-drawer__block"
+                  @click="appStore.setFontFamilyPreset('serif')"
+                >
+                  {{ t('settings.fontFamilySerif') }}
+                </u-button>
+                <u-button
+                  :type="appStore.fontFamilyPreset === 'mono' ? 'primary' : undefined"
+                  :plain="appStore.fontFamilyPreset !== 'mono'"
+                  size="small"
+                  class="settings-drawer__block"
+                  @click="appStore.setFontFamilyPreset('mono')"
+                >
+                  {{ t('settings.fontFamilyMono') }}
+                </u-button>
+              </div>
+            </div>
+          </div>
         </div>
         <!-- 在线模型 -->
         <div v-show="activeKey === 'model'" class="settings-drawer__pane">
@@ -566,6 +643,26 @@ function commitSnowfallZIndex() {
   if (!Number.isNaN(n)) appStore.setSnowfallZIndex(n)
   else snowfallZIndexLocal.value = appStore.snowfallZIndex
 }
+
+/* ---------- 排版配置 local refs ---------- */
+const fontSizeScaleLocal = ref(appStore.fontSizeScale)
+const lineHeightScaleLocal = ref(appStore.lineHeightScale)
+const contentSpacingScaleLocal = ref(appStore.contentSpacingScale)
+watch(() => appStore.fontSizeScale, (v) => { fontSizeScaleLocal.value = v })
+watch(() => appStore.lineHeightScale, (v) => { lineHeightScaleLocal.value = v })
+watch(() => appStore.contentSpacingScale, (v) => { contentSpacingScaleLocal.value = v })
+watch(fontSizeScaleLocal, (v) => {
+  const n = Number(v)
+  if (!Number.isNaN(n)) appStore.setFontSizeScale(n)
+})
+watch(lineHeightScaleLocal, (v) => {
+  const n = Number(v)
+  if (!Number.isNaN(n)) appStore.setLineHeightScale(n)
+})
+watch(contentSpacingScaleLocal, (v) => {
+  const n = Number(v)
+  if (!Number.isNaN(n)) appStore.setContentSpacingScale(n)
+})
 
 const tabOptions = computed(() => [
   { key: 'appearance', label: t('settings.tabAppearance'), icon: 'fa-solid fa-palette' },

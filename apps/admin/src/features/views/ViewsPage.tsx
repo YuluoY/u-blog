@@ -1,6 +1,6 @@
-import { useRef } from 'react'
-import { Table, Button, Popconfirm, Tooltip, Input, Tag } from 'antd'
-import { DownloadOutlined, SearchOutlined } from '@ant-design/icons'
+import { useRef, useState, useMemo, useCallback } from 'react'
+import { Table, Button, Popconfirm, Tooltip, Input, Tag, Select, Space } from 'antd'
+import { DownloadOutlined, SearchOutlined, FilterOutlined, CloseCircleOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { useTableScrollY } from '../../shared/hooks/useTableScrollY'
 import { useTableFilter } from '../../shared/hooks/useTableFilter'
@@ -12,16 +12,37 @@ import { useViews } from './useViews'
 import { useViewMutations } from './useViewMutations'
 import type { ViewItem } from './api'
 
-/** 浏览记录管理页面（只读 + 删除） */
+/** 浏览记录管理页面（只读 + 删除 + IP 过滤） */
 export default function ViewsPage() {
   const { data: list = [], isLoading } = useViews()
   const { remove } = useViewMutations()
   const { isGuest } = useGuestMode()
-  const { filteredData, onSearch, pagination } = useTableFilter(
+  const { filteredData: searchFiltered, onSearch, pagination } = useTableFilter(
     list,
     ['id', 'ip', 'address', 'agent'] as (keyof ViewItem)[],
     { defaultPageSize: 20 },
   )
+
+  /* ---------- 多 IP 过滤 ---------- */
+  const [filterIps, setFilterIps] = useState<string[]>([])
+
+  /** 从完整列表中提取去重 IP 列表，用于下拉选项 */
+  const ipOptions = useMemo(() => {
+    const set = new Set<string>()
+    list.forEach((item) => {
+      if (item.ip) set.add(item.ip)
+    })
+    return Array.from(set).sort().map((ip) => ({ label: ip, value: ip }))
+  }, [list])
+
+  /** 经搜索 + IP 过滤后的最终数据 */
+  const filteredData = useMemo(() => {
+    if (filterIps.length === 0) return searchFiltered
+    const ipSet = new Set(filterIps)
+    return searchFiltered.filter((item) => item.ip && ipSet.has(item.ip))
+  }, [searchFiltered, filterIps])
+
+  const clearIpFilter = useCallback(() => setFilterIps([]), [])
 
   const columns: ColumnsType<ViewItem> = [
     {
@@ -137,15 +158,42 @@ export default function ViewsPage() {
           <div
             ref={toolbarRef}
             className="admin-content__toolbar"
-            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}
           >
-            <Input.Search
-              placeholder="搜索 ID / IP / 地址 / 浏览器"
-              allowClear
-              onSearch={onSearch}
-              style={{ width: 260 }}
-              prefix={<SearchOutlined />}
-            />
+            <Space wrap>
+              <Input.Search
+                placeholder="搜索 ID / IP / 地址 / 浏览器"
+                allowClear
+                onSearch={onSearch}
+                style={{ width: 260 }}
+                prefix={<SearchOutlined />}
+              />
+              <Select
+                mode="multiple"
+                allowClear
+                placeholder="按 IP 过滤"
+                value={filterIps}
+                onChange={setFilterIps}
+                options={ipOptions}
+                style={{ minWidth: 200, maxWidth: 400 }}
+                maxTagCount="responsive"
+                suffixIcon={<FilterOutlined />}
+                showSearch
+                filterOption={(input, option) =>
+                  (option?.label as string)?.includes(input) ?? false
+                }
+              />
+              {filterIps.length > 0 && (
+                <Button
+                  type="link"
+                  size="small"
+                  icon={<CloseCircleOutlined />}
+                  onClick={clearIpFilter}
+                >
+                  清除 IP 过滤
+                </Button>
+              )}
+            </Space>
             <WriteAction>
               <Button icon={<DownloadOutlined />} onClick={() => exportToJSON(list, 'views')}>
                 导出
