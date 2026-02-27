@@ -16,6 +16,7 @@ export interface RouteItem {
   isHero: boolean
   isLeftSide: boolean
   isRightSide: boolean
+  isVisible: boolean
   pid?: number | null
   createdAt?: string
   updatedAt?: string

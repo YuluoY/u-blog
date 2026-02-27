@@ -62,7 +62,8 @@ export const useArticleStore = defineStore('article', () =>
   /** 加载更多（追加到列表末尾），排序依 appStore.homeSort */
   const loadMore = async() =>
   {
-    if (loading.value || !hasMore.value) return
+    // 首页尚未加载初始数据时，不触发加载更多（避免 Observer 在空列表时误触发）
+    if (loading.value || !hasMore.value || articleList.value.length === 0) return
     setLoading(true)
     const nextPage = page.value + 1
     try {

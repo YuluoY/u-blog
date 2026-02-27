@@ -7,7 +7,7 @@
       @click="emit('jump', String(item.id))"
     >
       <div v-if="item.cover" class="article-waterfall__cover">
-        <img :src="item.cover" :alt="item.title" />
+        <img :src="item.cover" :alt="item.title" loading="lazy" />
       </div>
       <div class="article-waterfall__body">
         <div class="article-waterfall__title-row">

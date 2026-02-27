@@ -21,11 +21,11 @@ import {
   faLanguage, faForward, faMagnifyingGlass, faTags, faChartSimple,
   faSun, faMoon, faCalendarDays, faClock, faHeart, faComment, faFileLines,
   faThumbtack, faHouse, faPaperPlane, faBookOpen, faFeather, faCalendar,
-  faImage, faAlignLeft, faPalette, faMicrochip, faSquare, faGlassWater,
+  faImage, faAlignLeft, faPalette, faMicrochip, faSquare, faGlassWater, faWater,
   faRobot, faSave, faUpload, faSliders, faBrain, faLayerGroup, faCube,
   faPuzzlePiece, faSitemap, faRocket, faCalendarCheck, faUndo,
   faEllipsis, faFileArrowDown, faCamera, faFire, faZ, faCodeBranch, faRss,
-  faBell, faEnvelopeCircleCheck
+  faBell, faEnvelopeCircleCheck, faList, faTableCellsLarge, faArrowUpRightFromSquare
 } from '@fortawesome/free-solid-svg-icons'
 
 // 按需导入 regular 图标
@@ -64,11 +64,11 @@ library.add(
   faLanguage, faForward, faMagnifyingGlass, faTags, faChartSimple,
   faSun, faMoon, faCalendarDays, faClock, faHeart, faComment, faFileLines,
   faThumbtack, faHouse, faPaperPlane, faBookOpen, faFeather, faCalendar,
-  faImage, faAlignLeft, faPalette, faMicrochip, faSquare, faGlassWater,
+  faImage, faAlignLeft, faPalette, faMicrochip, faSquare, faGlassWater, faWater,
   faRobot, faSave, faUpload, faSliders, faBrain, faLayerGroup, faCube,
   faPuzzlePiece, faSitemap, faRocket, faCalendarCheck, faUndo,
   faEllipsis, faFileArrowDown, faCamera, faFire, faZ, faCodeBranch, faRss,
-  faBell, faEnvelopeCircleCheck,
+  faBell, faEnvelopeCircleCheck, faList, faTableCellsLarge, faArrowUpRightFromSquare,
   // regular
   farCommentDots, farComment, farFaceSmile, farEye, farHeart, farUser,
   // brands

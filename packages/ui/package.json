@@ -9,7 +9,7 @@
     "build:es": "vite build --config vite.es.config.ts && pnpm run copy-package && pnpm run generate-components-dts",
     "build:es:watch": "vite build --config vite.es.config.ts --watch",
     "build:umd": "vite build --config vite.umd.config.ts && pnpm run copy-package && pnpm run generate-components-dts",
-    "copy-package": "node -e \"require('fs').copyFileSync('package.json','dist/package.json')\"",
+    "copy-package": "node --input-type=module -e \"import{copyFileSync}from'fs';copyFileSync('package.json','dist/package.json')\"",
     "generate-components-dts": "node scripts/generate-components-dts.js",
     "dev": "pnpm run build:es:watch",
     "test": "vitest run",

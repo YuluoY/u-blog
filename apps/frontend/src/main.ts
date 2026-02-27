@@ -21,10 +21,10 @@ app.use(pinia)
 app.use(stores)
 app.use(router)
 app.use(i18n)
+app.use(UccUI)
 
 // 语言同步统一在 App.vue 的 watch(language) 中完成，此处不再重复
 
-app.use(UccUI)
 app.use(SnowfallPlugin)
 
 beforehand(app).then(() =>

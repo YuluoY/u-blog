@@ -19,10 +19,19 @@ const permission = (router: Router) =>
     }
 
     const userStore = useUserStore()
+    const appStore = useAppStore()
 
     // 等待认证状态初始化完成（首次访问时 fetchUser 还在进行中）
     if (!userStore.authReady) {
       await userStore.fetchUser()
+    }
+
+    // 后台控制的路由可见性：被隐藏的路由不可访问，重定向到首页
+    // 排除基础路由（NotFound、根路径重定向）
+    const routeName = to.name ? String(to.name) : ''
+    if (routeName && routeName !== 'NotFound' && routeName !== 'home' && appStore.isRouteHidden(routeName)) {
+      next({ name: 'home', replace: true })
+      return
     }
 
     const isLoggedIn = userStore.isLoggedIn

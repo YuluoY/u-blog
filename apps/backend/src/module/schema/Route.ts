@@ -77,6 +77,10 @@ export class Route {
 	@IsBoolean({ message: '是否显示右侧信息必须是布尔值' })
 	isRightSide!: boolean
 
+	@Column({ name: 'isVisible', type: 'boolean', default: true, comment: '是否在导航中显示（不显示则不可访问）' })
+	@IsBoolean({ message: '是否显示必须是布尔值' })
+	isVisible!: boolean
+
 	@Column({ name: 'pid', type: 'smallint', nullable: true, comment: '父级路由ID' })
 	@IsOptional()
 	@IsInt({ message: '父级路由ID必须为整数' })

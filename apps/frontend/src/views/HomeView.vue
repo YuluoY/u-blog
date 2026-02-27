@@ -65,7 +65,7 @@ onMounted(() =>
         articleStore.loadMore()
       }
     },
-    { root: scrollRoot, rootMargin: '200px' }
+    { root: scrollRoot, rootMargin: '0px' }
   )
   observer.observe(sentinelRef.value)
 })

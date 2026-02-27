@@ -68,7 +68,7 @@ export interface BackendResponse<T = unknown> {
  */
 export async function restQuery<T = unknown>(
   model: string,
-  body: { where?: Record<string, unknown>; take?: number; skip?: number; order?: Record<string, 'ASC' | 'DESC'>; relations?: string[] } = {}
+  body: { where?: Record<string, unknown>; take?: number; skip?: number; order?: Record<string, 'ASC' | 'DESC'>; relations?: string[]; select?: string[] } = {}
 ): Promise<T> {
   const res = await instance.post<BackendResponse<T>>(`/rest/${model}/query`, body)
   const payload = res.data

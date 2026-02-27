@@ -8,7 +8,7 @@
     >
       <div class="article-compact__index">{{ index + 1 }}</div>
       <div v-if="item.cover" class="article-compact__thumb">
-        <img :src="item.cover" :alt="item.title" />
+        <img :src="item.cover" :alt="item.title" loading="lazy" />
       </div>
       <div class="article-compact__main">
         <div class="article-compact__title-row">

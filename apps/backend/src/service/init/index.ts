@@ -139,16 +139,17 @@ const DEFAULT_ROLES: Array<{ name: string; desc: string; permissionCodes: string
 
 /** 默认前端路由种子 */
 const DEFAULT_ROUTES = [
-  { name: 'home',     path: '/home',       title: '首页',     icon: 'HomeOutlined',    isKeepAlive: true,  isAffix: true,  isExact: false, isProtected: false, isHero: false, isLeftSide: true,  isRightSide: true  },
-  { name: 'archive',  path: '/archive',    title: '归档',     icon: 'ContainerOutlined', isKeepAlive: true,  isAffix: true,  isExact: false, isProtected: false, isHero: false, isLeftSide: true,  isRightSide: true  },
-  { name: 'about',    path: '/about',      title: '关于',     icon: 'UserOutlined',    isKeepAlive: true,  isAffix: true,  isExact: false, isProtected: false, isHero: false, isLeftSide: false, isRightSide: false },
-  { name: 'message',  path: '/message',    title: '留言',     icon: 'MessageOutlined', isKeepAlive: true,  isAffix: true,  isExact: false, isProtected: false, isHero: false, isLeftSide: false, isRightSide: false },
-  { name: 'links',    path: '/links',      title: '友链',     icon: 'LinkOutlined',    isKeepAlive: true,  isAffix: true,  isExact: false, isProtected: false, isHero: false, isLeftSide: false, isRightSide: false },
-  { name: 'chat',     path: '/chat',       title: '助手',     icon: 'RobotOutlined',   isKeepAlive: true,  isAffix: true,  isExact: false, isProtected: true,  isHero: false, isLeftSide: false, isRightSide: false },
-  { name: 'read',     path: '/read/:id',   title: '阅读',     icon: 'ReadOutlined',    isKeepAlive: false, isAffix: false, isExact: false, isProtected: false, isHero: false, isLeftSide: false, isRightSide: false },
-  { name: 'userBlog', path: '/@:username', title: '用户博客', icon: 'TeamOutlined',    isKeepAlive: false, isAffix: false, isExact: false, isProtected: false, isHero: false, isLeftSide: false, isRightSide: false },
-  { name: 'login',    path: '/login',      title: '登录',     icon: 'LoginOutlined',   isKeepAlive: false, isAffix: false, isExact: false, isProtected: false, isHero: false, isLeftSide: false, isRightSide: false },
-  { name: 'write',    path: '/write',      title: '写作',     icon: 'EditOutlined',    isKeepAlive: false, isAffix: false, isExact: false, isProtected: true,  isHero: false, isLeftSide: false, isRightSide: false },
+  { name: 'home',     path: '/home',       title: '首页',     icon: 'HomeOutlined',      isKeepAlive: true,  isAffix: true,  isExact: false, isProtected: false, isHero: false, isLeftSide: true,  isRightSide: true,  isVisible: true  },
+  { name: 'archive',  path: '/archive',    title: '归档',     icon: 'ContainerOutlined', isKeepAlive: true,  isAffix: true,  isExact: false, isProtected: false, isHero: false, isLeftSide: true,  isRightSide: true,  isVisible: true  },
+  { name: 'about',    path: '/about',      title: '关于',     icon: 'UserOutlined',      isKeepAlive: true,  isAffix: true,  isExact: false, isProtected: false, isHero: false, isLeftSide: false, isRightSide: false, isVisible: true  },
+  { name: 'message',  path: '/message',    title: '留言',     icon: 'MessageOutlined',   isKeepAlive: true,  isAffix: true,  isExact: false, isProtected: false, isHero: false, isLeftSide: false, isRightSide: false, isVisible: true  },
+  { name: 'links',    path: '/links',      title: '友链',     icon: 'LinkOutlined',      isKeepAlive: true,  isAffix: true,  isExact: false, isProtected: false, isHero: false, isLeftSide: false, isRightSide: false, isVisible: true  },
+  { name: 'chat',     path: '/chat',       title: '助手',     icon: 'RobotOutlined',     isKeepAlive: true,  isAffix: true,  isExact: false, isProtected: true,  isHero: false, isLeftSide: false, isRightSide: false, isVisible: true  },
+  { name: 'xiaohui',  path: '/xiaohui',    title: '小惠',     icon: 'SmileOutlined',     isKeepAlive: true,  isAffix: true,  isExact: false, isProtected: false, isHero: false, isLeftSide: false, isRightSide: false, isVisible: true  },
+  { name: 'read',     path: '/read/:id',   title: '阅读',     icon: 'ReadOutlined',      isKeepAlive: false, isAffix: false, isExact: false, isProtected: false, isHero: false, isLeftSide: false, isRightSide: false, isVisible: true  },
+  { name: 'userBlog', path: '/@:username', title: '用户博客', icon: 'TeamOutlined',      isKeepAlive: false, isAffix: false, isExact: false, isProtected: false, isHero: false, isLeftSide: false, isRightSide: false, isVisible: true  },
+  { name: 'login',    path: '/login',      title: '登录',     icon: 'LoginOutlined',     isKeepAlive: false, isAffix: false, isExact: false, isProtected: false, isHero: false, isLeftSide: false, isRightSide: false, isVisible: true  },
+  { name: 'write',    path: '/write',      title: '写作',     icon: 'EditOutlined',      isKeepAlive: false, isAffix: false, isExact: false, isProtected: true,  isHero: false, isLeftSide: false, isRightSide: false, isVisible: true  },
 ]
 
 /**
@@ -215,7 +216,14 @@ export async function initRBAC(dataSource: DataSource): Promise<void> {
         await routeRepo.save(existing)
         console.log(`    ✅ 路由创建: ${rt.name} (${rt.path})`)
       } else {
-        console.log(`    ℹ️  路由已存在: ${rt.name}`)
+        // 补全已有路由缺失的 isVisible 字段（旧数据可能为 NULL）
+        if (existing.isVisible === undefined || existing.isVisible === null) {
+          existing.isVisible = rt.isVisible ?? true
+          await routeRepo.save(existing)
+          console.log(`    🔧 路由补全 isVisible: ${rt.name}`)
+        } else {
+          console.log(`    ℹ️  路由已存在: ${rt.name}`)
+        }
       }
     }
 

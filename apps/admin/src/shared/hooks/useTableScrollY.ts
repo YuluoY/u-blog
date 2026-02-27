@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback, type RefObject } from 'react'
 
-const TABLE_HEADER_HEIGHT = 55
+/** 表头高度回退值（首次渲染 DOM 尚未就绪时使用） */
+const TABLE_HEADER_HEIGHT_FALLBACK = 55
 const PAGINATION_HEIGHT = 64
 
 export interface UseTableScrollYOptions {
@@ -11,7 +12,8 @@ export interface UseTableScrollYOptions {
 
 /**
  * 测量表格容器高度，返回适合 antd Table scroll.y，使表头（与分页）留在视口内、仅表体滚动。
- * 支持传入 toolbarRef，自动扣除 toolbar 占用高度，避免分页被截断。
+ * 动态测量实际表头高度（.ant-table-header），避免硬编码与实际不符导致截断。
+ * 支持传入 toolbarRef，自动扣除 toolbar 占用高度。
  */
 export function useTableScrollY(options: UseTableScrollYOptions = {}) {
   const { hasPagination = true, toolbarRef } = options
@@ -23,7 +25,10 @@ export function useTableScrollY(options: UseTableScrollYOptions = {}) {
     if (!el) return
     const h = el.clientHeight
     const toolbarH = toolbarRef?.current?.offsetHeight ?? 0
-    const subtract = TABLE_HEADER_HEIGHT + (hasPagination ? PAGINATION_HEIGHT : 0) + toolbarH
+    // 动态测量 antd Table 表头实际高度，兼容多行表头、不同列数等场景
+    const headerEl = el.querySelector<HTMLElement>('.ant-table-header')
+    const headerH = headerEl?.offsetHeight ?? TABLE_HEADER_HEIGHT_FALLBACK
+    const subtract = headerH + (hasPagination ? PAGINATION_HEIGHT : 0) + toolbarH
     const y = Math.max(200, h - subtract)
     setScrollY(y)
   }, [hasPagination, toolbarRef])
@@ -37,7 +42,12 @@ export function useTableScrollY(options: UseTableScrollYOptions = {}) {
     ro.observe(container)
     // 同时观察 toolbar，应对其高度变化（如换行）
     if (toolbar) ro.observe(toolbar)
-    return () => ro.disconnect()
+    // 延迟再次计算，确保 antd Table 完成渲染后拿到正确表头高度
+    const timer = setTimeout(update, 100)
+    return () => {
+      ro.disconnect()
+      clearTimeout(timer)
+    }
   }, [update, toolbarRef])
 
   return { containerRef, scrollY }

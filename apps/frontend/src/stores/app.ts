@@ -14,6 +14,7 @@ import { updateSettings } from '@/api/settings'
 import type { SettingsMap } from '@/api/settings'
 import type { HomeSortType } from '@/api/article'
 import { HOME_SORT_DEFAULT } from '@/api/article'
+import { fetchRouteVisibility } from '@/api/route'
 
 function loadTheme(): Theme {
   try {
@@ -199,6 +200,43 @@ export const useAppStore = defineStore('app', () =>
     refreshRoutes,
     sortedRoutes
   } = useRoutes()
+
+  /**
+   * 路由可见性集合：存储后端标记为 isVisible=false 的路由名称
+   * 不在此集合中的路由默认可见
+   */
+  const hiddenRouteNames = ref<Set<string>>(new Set())
+
+  /** 是否已完成可见性初始化 */
+  const routeVisibilityReady = ref(false)
+
+  /**
+   * 从后端加载路由可见性配置
+   * 将不可见的路由名加入 hiddenRouteNames 集合
+   */
+  async function loadRouteVisibility() {
+    try {
+      const list = await fetchRouteVisibility()
+      const hidden = new Set<string>()
+      for (const item of list) {
+        // 严格判断：只有明确设为 false 才隐藏，null/undefined 视为可见
+        if (item.isVisible === false) {
+          hidden.add(item.name)
+        }
+      }
+      hiddenRouteNames.value = hidden
+    } catch (e) {
+      console.warn('加载路由可见性失败，所有路由默认可见', e)
+      hiddenRouteNames.value = new Set()
+    } finally {
+      routeVisibilityReady.value = true
+    }
+  }
+
+  /** 判断路由是否被后台隐藏 */
+  function isRouteHidden(routeName: string): boolean {
+    return hiddenRouteNames.value.has(routeName)
+  }
 
   /** 应用主题到 DOM：同时设 attribute 和 class（兼容 UI 库 :root.dark） */
   function applyTheme(t: Theme | null) {
@@ -637,6 +675,9 @@ export const useAppStore = defineStore('app', () =>
         try { localStorage.setItem(STORAGE_KEYS.FONT_FAMILY_PRESET, v) } catch { /* ignore */ }
       }
     }
+
+    // 加载路由可见性配置（异步，不阻塞页面渲染）
+    loadRouteVisibility()
   }
 
   /** 设置主题（不带动画），watch 会同步到 DOM 和本地缓存，并入库 */
@@ -757,5 +798,10 @@ export const useAppStore = defineStore('app', () =>
     setLineHeightScale,
     setContentSpacingScale,
     setFontFamilyPreset,
+
+    hiddenRouteNames,
+    routeVisibilityReady,
+    loadRouteVisibility,
+    isRouteHidden,
   }
 })

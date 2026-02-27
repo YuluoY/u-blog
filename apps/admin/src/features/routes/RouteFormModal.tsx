@@ -39,6 +39,7 @@ export function RouteFormModal({
         isHero: initial?.isHero ?? false,
         isLeftSide: initial?.isLeftSide ?? false,
         isRightSide: initial?.isRightSide ?? false,
+        isVisible: initial?.isVisible ?? true,
       })
     }
   }, [open, initial, form])
@@ -126,6 +127,9 @@ export function RouteFormModal({
             <Switch />
           </Form.Item>
           <Form.Item name="isRightSide" label="右侧栏" valuePropName="checked">
+            <Switch />
+          </Form.Item>
+          <Form.Item name="isVisible" label="导航显示" valuePropName="checked">
             <Switch />
           </Form.Item>
         </div>

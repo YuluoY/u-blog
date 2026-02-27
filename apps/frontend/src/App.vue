@@ -120,7 +120,6 @@ onMounted(async () => {
     SETTING_KEYS.FOOTER_AUTHOR,
   ])
     .then((data: SettingsMap) => {
-      const prevOnlyOwn = appStore.onlyOwnArticles
       appStore.hydrateAppearance(data)
       appStore.updateDocumentTitle(route.meta.title as string | undefined)
 
@@ -128,11 +127,8 @@ onMounted(async () => {
       useFooterStore().hydrateFromSettings(data)
 
       // settings 确认后再加载文章列表（排序依赖 homeSort）
+      // hydrateAppearance 已更新 homeSort/onlyOwnArticles，无需条件判断二次刷新
       useArticleStore().qryArticleList()
-      // 若"仅展示我的文章"设置变化，强制刷新
-      if (appStore.onlyOwnArticles !== prevOnlyOwn) {
-        useArticleStore().qryArticleList()
-      }
     })
     .catch(() => {
       // settings 请求失败也要保证文章列表加载

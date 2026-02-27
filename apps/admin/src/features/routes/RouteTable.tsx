@@ -1,3 +1,4 @@
+import type { RefObject } from 'react'
 import { Table, Button, Space, Popconfirm, Tooltip, Input } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { CheckCircleFilled, CloseCircleFilled, DownloadOutlined, SearchOutlined } from '@ant-design/icons'
@@ -23,6 +24,8 @@ interface RouteTableProps {
   onDelete: (id: number) => void
   deleteLoading?: boolean
   scrollY?: number
+  /** 工具栏 ref，用于 useTableScrollY 扣除高度 */
+  toolbarRef?: RefObject<HTMLDivElement | null>
 }
 
 export function RouteTable({
@@ -33,10 +36,11 @@ export function RouteTable({
   onDelete,
   deleteLoading,
   scrollY,
+  toolbarRef,
 }: RouteTableProps) {
   const { isGuest } = useGuestMode()
-  const { filteredData, onSearch, pagination } = useTableFilter(
-    dataSource, ['id', 'title', 'name', 'path', 'component'] as (keyof RouteItem)[], { defaultPageSize: 20 },
+  const { filteredData, onSearch } = useTableFilter(
+    dataSource, ['id', 'title', 'name', 'path', 'component'] as (keyof RouteItem)[], { defaultPageSize: 200 },
   )
 
   const columns: ColumnsType<RouteItem> = [
@@ -65,6 +69,7 @@ export function RouteTable({
     { title: 'Hero', dataIndex: 'isHero', width: 55, align: 'center', render: (v: boolean) => <BoolTag value={v} /> },
     { title: '左栏', dataIndex: 'isLeftSide', width: 55, align: 'center', render: (v: boolean) => <BoolTag value={v} /> },
     { title: '右栏', dataIndex: 'isRightSide', width: 55, align: 'center', render: (v: boolean) => <BoolTag value={v} /> },
+    { title: '显示', dataIndex: 'isVisible', width: 55, align: 'center', render: (v: boolean) => <BoolTag value={v} /> },
     {
       title: '创建',
       dataIndex: 'createdAt',
@@ -100,7 +105,7 @@ export function RouteTable({
 
   return (
     <>
-      <div className="admin-content__toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div ref={toolbarRef} className="admin-content__toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Input.Search placeholder="搜索 ID / 标题 / 名称 / 路径 / 组件" allowClear onSearch={onSearch} style={{ width: 280 }} prefix={<SearchOutlined />} />
         <WriteAction>
           <Space>
@@ -114,7 +119,7 @@ export function RouteTable({
         columns={columns}
         dataSource={filteredData}
         loading={loading}
-        pagination={pagination}
+        pagination={false}
         scroll={scrollY != null ? { x: 1400, y: scrollY } : { x: 1400 }}
       />
     </>

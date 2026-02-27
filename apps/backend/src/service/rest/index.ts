@@ -4,12 +4,22 @@ import type { Request } from 'express'
 class RestService {
   async query<T = any>(model: Repository<T>, req: Request)
   {
-    const { where, take, skip, order, relations } = req.body || {}
+    const { where, take, skip, order, relations, select } = req.body || {}
     const metadata = model.metadata
     const alias = metadata.name.toLowerCase()
     
     // 创建查询构建器，TypeORM 会自动处理软删除（deletedAt）
     const queryBuilder = model.createQueryBuilder(alias)
+
+    // 处理字段筛选：只返回指定的列（减少传输体积，如列表页排除 content）
+    if (Array.isArray(select) && select.length > 0) {
+      const validColumns = select.filter((col: string) =>
+        typeof col === 'string' && metadata.findColumnWithPropertyName(col)
+      )
+      if (validColumns.length > 0) {
+        queryBuilder.select(validColumns.map((col: string) => `${alias}.${col}`))
+      }
+    }
 
     // Article 模型：额外加载 select: false 的 protect 列（用于标记密码保护状态）
     const isArticle = metadata.name === 'Article'

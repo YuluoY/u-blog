@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTableScrollY } from '../../shared/hooks/useTableScrollY'
 import { useRoutes } from './useRoutes'
 import { useRouteMutations } from './useRouteMutations'
@@ -30,7 +30,8 @@ export default function RoutesPage() {
     }
   }
 
-  const { containerRef, scrollY } = useTableScrollY({ hasPagination: false })
+  const toolbarRef = useRef<HTMLDivElement>(null)
+  const { containerRef, scrollY } = useTableScrollY({ hasPagination: false, toolbarRef })
 
   return (
     <div className="admin-content">
@@ -45,6 +46,7 @@ export default function RoutesPage() {
             onDelete={(id) => remove.mutate(id)}
             deleteLoading={remove.isPending}
             scrollY={scrollY}
+            toolbarRef={toolbarRef}
           />
         </div>
       </div>

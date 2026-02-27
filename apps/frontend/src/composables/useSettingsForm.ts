@@ -23,7 +23,7 @@ export function useSettingsForm() {
   const currentListType = ref<ArticleList>(CArticleList.BASE)
   const listTypeOptions = computed(() => [
     { value: CArticleList.BASE as ArticleList, label: t('settings.list'), icon: 'fa-solid fa-list' },
-    { value: CArticleList.CARD as ArticleList, label: t('settings.card'), icon: 'fa-solid fa-th-large' },
+    { value: CArticleList.CARD as ArticleList, label: t('settings.card'), icon: 'fa-solid fa-table-cells-large' },
     { value: CArticleList.WATERFALL as ArticleList, label: t('settings.waterfall'), icon: 'fa-solid fa-water' },
     { value: CArticleList.COMPACT as ArticleList, label: t('settings.compact'), icon: 'fa-solid fa-compress' },
   ])
@@ -195,9 +195,9 @@ export function useSettingsForm() {
     }
   }
 
-  onMounted(() => {
-    loadServerSettings()
-  })
+  // 不再在 onMounted 中自动加载设置：
+  // 避免 SettingsDrawer 组件挂载时触发重复的 settings + route 请求
+  // SettingsDrawer 通过 watch(modelValue) 在抽屉打开时按需加载
 
   return {
     form,

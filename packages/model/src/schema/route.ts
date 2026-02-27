@@ -15,6 +15,7 @@ export interface IRoute extends IBaseSchema, Pick<IBaseFields, 'id'> {
   isHero: boolean
   isLeftSide: boolean
   isRightSide: boolean
+  isVisible: boolean
   pid?: number
   parent?: IRoute
   settings?: ISetting[]

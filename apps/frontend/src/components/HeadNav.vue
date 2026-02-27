@@ -196,6 +196,7 @@ useClickOutside(userMenuRef, () => {
 
 /**
  * 导航路由过滤：
+ * - 后台标记 isVisible=false 的路由不显示
  * - 需认证路由（write / chat）对未登录用户隐藏
  * - 例外：子域名「完整模式」允许游客看到 chat 导航
  * - write 始终需要登录（游客无法创作）
@@ -203,6 +204,8 @@ useClickOutside(userMenuRef, () => {
 const visibleRoutes = computed(() =>
   appStore.routes?.filter((v: RouteRecordRaw) => {
     if (!v.name || !v.meta?.isAffix) return false
+    // 后台控制的路由可见性
+    if (appStore.isRouteHidden(String(v.name))) return false
     if (v.meta?.requiresAuth && !isLoggedIn.value) {
       // 子域名完整模式：允许游客看到 chat 入口
       const routeName = String(v.name)

@@ -16,6 +16,17 @@ export const HOME_SORT_DEFAULT: HomeSortType = 'date'
 /** 文章列表排序：按创建日期倒序（新在前） */
 export const ARTICLE_LIST_ORDER = { createdAt: 'DESC' } as const
 
+/**
+ * 文章列表查询字段（排除 content 正文，减少传输体积）
+ * 只在用户浏览具体文章时才加载 content
+ */
+const ARTICLE_LIST_FIELDS = [
+  'id', 'title', 'desc', 'cover', 'status',
+  'isPrivate', 'isTop', 'commentCount', 'likeCount', 'viewCount',
+  'publishedAt', 'createdAt', 'updatedAt',
+  'userId', 'categoryId',
+]
+
 type OrderSpec = Record<string, 'ASC' | 'DESC'>
 
 /** 根据首页排序方式得到 order 对象（置顶优先 + 第二排序键 + createdAt 兜底） */
@@ -78,7 +89,9 @@ const apis: IArticleApis = {
         take: pageSize,
         skip: (page - 1) * pageSize,
         order,
-        relations: ['category', 'tags', 'user']
+        relations: ['category', 'tags', 'user'],
+        // 列表页不需要文章正文，减少传输体积
+        select: ARTICLE_LIST_FIELDS,
       })
       return Array.isArray(list) ? list : []
     } catch {
@@ -95,7 +108,9 @@ const apis: IArticleApis = {
         take,
         skip,
         order: getArticleListOrder('date'),
-        relations: ['category', 'tags', 'user']
+        relations: ['category', 'tags', 'user'],
+        // 归档页不需要文章正文，减少传输体积
+        select: ARTICLE_LIST_FIELDS,
       })
       return Array.isArray(list) ? list : []
     } catch {

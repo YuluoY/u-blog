@@ -37,7 +37,7 @@
     <!-- 方案二：封面图 + 右侧信息块 -->
     <template v-else-if="mode === CArchiveCardStyle.COVER_INFO">
       <div class="archive-card__cover-wrap">
-        <img v-if="article.cover" :src="article.cover" alt="" class="archive-card__cover" />
+        <img v-if="article.cover" :src="article.cover" alt="" class="archive-card__cover" loading="lazy" />
         <div v-else class="archive-card__cover-placeholder">
           <u-icon icon="fa-solid fa-file-lines" class="archive-card__cover-icon" />
         </div>

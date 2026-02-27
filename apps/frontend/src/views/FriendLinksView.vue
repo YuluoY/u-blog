@@ -15,7 +15,7 @@
     </header>
 
     <!-- 蜂窝布局友链列表 -->
-    <section ref="honeycombRef" class="honeycomb" @click.self="activeId = -1">
+    <section ref="honeycombRef" class="honeycomb" @click.self="activeId = null">
       <div v-if="loading" class="honeycomb__loading">
         <u-icon icon="fa-solid fa-spinner" spin />
       </div>
@@ -31,7 +31,7 @@
             target="_blank"
             rel="noopener noreferrer"
             class="honeycomb__cell"
-            :class="{ 'is-active': activeId === cell.id }"
+            :class="{ 'is-active': activeId === cell.id, 'is-hovered': hoveredId === cell.id }"
             :style="{
               left: cell.x + 'px',
               top: cell.y + 'px',
@@ -40,13 +40,16 @@
               animationDelay: index * 50 + 'ms',
               '--hex-hue': cell.hue,
             }"
-            @mouseenter="handleCellEnter(cell.id)"
-            @mouseleave="handleCellLeave"
-            @click.prevent="handleCellClick($event, cell)"
+            @click.prevent
           >
             <!-- 六边形外发光层 -->
             <div class="honeycomb__glow" />
-            <div class="honeycomb__hex">
+            <div
+              class="honeycomb__hex"
+              @mouseenter="handleCellEnter(cell.id)"
+              @mouseleave="handleCellLeave"
+              @click.stop="handleCellClick($event, cell)"
+            >
               <div class="honeycomb__avatar">
                 <u-image
                   v-if="cell.icon"
@@ -64,9 +67,14 @@
               </div>
               <span class="honeycomb__name">{{ cell.title }}</span>
             </div>
-            <!-- 桌面端悬浮提示 -->
+            <!-- 桌面端悬浮提示：可交互，支持鼠标移入 -->
             <Transition name="hex-tip">
-              <div v-show="hoveredId === cell.id" class="honeycomb__tip">
+              <div
+                v-show="hoveredId === cell.id"
+                class="honeycomb__tip"
+                @mouseenter="handleTipEnter"
+                @mouseleave="handleTipLeave"
+              >
                 <strong class="honeycomb__tip-title">{{ cell.title }}</strong>
                 <p v-if="cell.description" class="honeycomb__tip-desc">{{ cell.description }}</p>
                 <span class="honeycomb__tip-url">
@@ -86,7 +94,7 @@
       <!-- 移动端：点击展开的详情浮层 -->
       <Transition name="hex-detail">
         <div v-if="activeCell" class="honeycomb__detail" @click.stop>
-          <button class="honeycomb__detail-close" @click="activeId = -1">
+          <button class="honeycomb__detail-close" @click="activeId = null">
             <u-icon icon="fa-solid fa-xmark" />
           </button>
           <div class="honeycomb__detail-header">
@@ -477,10 +485,11 @@ watch(showManage, (val) => {
 
 /* ---------- 蜂窝布局计算 ---------- */
 const honeycombRef = ref<HTMLElement | null>(null)
-const hoveredId = ref<number>(-1)
-const activeId = ref<number>(-1)
+const hoveredId = ref<number | null>(null)
+const activeId = ref<number | null>(null)
 const containerWidth = ref(900)
 let resizeObserver: ResizeObserver | null = null
+let hoverHideTimer: ReturnType<typeof setTimeout> | null = null
 
 /** 检测触控设备 */
 const isTouch = ref(false)
@@ -537,7 +546,7 @@ const cellLayout = computed(() => {
 
 /** 当前被激活（移动端点击选中）的格子数据 */
 const activeCell = computed(() => {
-  if (activeId.value === -1) return null
+  if (activeId.value === null) return null
   return cellLayout.value.find(c => c.id === activeId.value) ?? null
 })
 
@@ -551,13 +560,27 @@ const gridHeight = computed(() => {
   return Math.max(...cellLayout.value.map(c => c.y)) + hexH.value
 })
 
-/** 桌面端 hover 进入 */
+/** 桌面端 hover 进入——立即显示 tip，取消延迟隐藏 */
 function handleCellEnter(id: number) {
-  if (!isTouch.value) hoveredId.value = id
+  if (isTouch.value) return
+  if (hoverHideTimer) { clearTimeout(hoverHideTimer); hoverHideTimer = null }
+  hoveredId.value = id
 }
-/** 桌面端 hover 离开 */
+/** 桌面端 hover 离开——延迟 150ms 隐藏 tip，方便用户移动到 tip 上 */
 function handleCellLeave() {
-  if (!isTouch.value) hoveredId.value = -1
+  if (isTouch.value) return
+  hoverHideTimer = setTimeout(() => {
+    hoveredId.value = null
+    hoverHideTimer = null
+  }, 150)
+}
+/** tip 鼠标进入——取消隐藏定时器 */
+function handleTipEnter() {
+  if (hoverHideTimer) { clearTimeout(hoverHideTimer); hoverHideTimer = null }
+}
+/** tip 鼠标离开——立即隐藏 */
+function handleTipLeave() {
+  hoveredId.value = null
 }
 
 /** 统一 click 处理：桌面端直接跳转，移动端先展开详情 */
@@ -567,7 +590,7 @@ function handleCellClick(e: MouseEvent | TouchEvent, cell: { id: number; url: st
     if (activeId.value === cell.id) {
       window.open(cell.url, '_blank', 'noopener,noreferrer')
     } else {
-      activeId.value = cell.id
+      activeId.value = cell.id as number
     }
   } else {
     // 桌面端：直接跳转
@@ -577,12 +600,12 @@ function handleCellClick(e: MouseEvent | TouchEvent, cell: { id: number; url: st
 
 /** 点击空白区域关闭移动端详情 */
 function handleClickOutside(e: Event) {
-  if (activeId.value === -1) return
+  if (activeId.value === null) return
   const detail = document.querySelector('.honeycomb__detail')
   const target = e.target as HTMLElement
   if (detail && detail.contains(target)) return
   if (target.closest('.honeycomb__cell')) return
-  activeId.value = -1
+  activeId.value = null
 }
 
 onMounted(() => {
@@ -604,6 +627,7 @@ onMounted(() => {
 onUnmounted(() => {
   resizeObserver?.disconnect()
   document.removeEventListener('click', handleClickOutside)
+  if (hoverHideTimer) { clearTimeout(hoverHideTimer); hoverHideTimer = null }
 })
 </script>
 
@@ -744,8 +768,10 @@ onUnmounted(() => {
     animation: hex-pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
     z-index: 1;
     -webkit-tap-highlight-color: transparent;
+    /* 矩形区域不拦截鼠标，避免与相邻六边形的 hitbox 重叠 */
+    pointer-events: none;
 
-    &:hover,
+    &.is-hovered,
     &.is-active {
       z-index: 10;
       .honeycomb__hex { transform: scale(1.1); }
@@ -784,6 +810,8 @@ onUnmounted(() => {
     cursor: pointer;
     position: relative;
     z-index: 1;
+    /* 只在 clip-path 裁剪后的六边形区域响应鼠标事件 */
+    pointer-events: auto;
   }
 
   /* 头像 */
@@ -834,7 +862,8 @@ onUnmounted(() => {
     border-radius: 12px;
     box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
     z-index: 100;
-    pointer-events: none;
+    pointer-events: auto;
+    cursor: default;
   }
 
   &__tip-title {

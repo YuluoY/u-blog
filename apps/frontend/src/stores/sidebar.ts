@@ -71,19 +71,28 @@ export const useSidebarStore = defineStore('sidebar', () =>
   }, { immediate: true })
 
   /**
-   * 切换折叠/展开。
-   * 展开→折叠：同时取消激活（关闭面板）。
-   * 折叠→展开且无激活：用本地缓存的面板，没有才用第一个，避免 dock 空白。
+   * 切换折叠/展开 —— 以「面板 dock 是否可见」为判断基准，
+   * 与按钮图标（angles-left / angles-right）保持一致：
+   *
+   * | 状态               | 图标          | 点击行为                          |
+   * |--------------------|---------------|-----------------------------------|
+   * | 展开 + 有面板      | angles-left   | 折叠并关闭面板                    |
+   * | 展开 + 无面板      | angles-right  | 打开默认面板（不改折叠态）        |
+   * | 折叠 + 无面板      | angles-right  | 展开并打开默认面板                |
+   * | 折叠 + 有面板(Pop) | angles-right  | 展开，保留当前面板到 dock 显示    |
    */
   const toggleCollapsed = () =>
   {
-    if (collapsed.value) {
+    const panelVisible = !collapsed.value && activePanel.value != null
+    if (panelVisible) {
+      // 面板 dock 可见 → 折叠并关闭
+      setCollapsed(true)
+      setActivePanel(null)
+    } else {
+      // 面板 dock 不可见（折叠或无面板）→ 展开并确保有面板
       setCollapsed(false)
       if (activePanel.value == null)
         setActivePanel(getPreferredPanel())
-    } else {
-      setCollapsed(true)
-      setActivePanel(null)
     }
   }
 

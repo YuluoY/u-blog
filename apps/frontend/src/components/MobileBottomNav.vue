@@ -165,8 +165,10 @@ function handleTags() {
   sidebarStore.setActivePanel(PANEL_ID.TAGS)
 }
 
-/** 路由变化时自动关闭弹出面板（分类/搜索 Popover） */
+/** 路由变化时自动关闭弹出面板（分类/搜索 Popover），仅移动端生效 */
 watch(() => route.path, () => {
+  // 桌面端侧栏面板不应被路由变化关闭
+  if (window.innerWidth > 767) return
   sidebarStore.closePanel()
   moreMenuOpen.value = false
 })

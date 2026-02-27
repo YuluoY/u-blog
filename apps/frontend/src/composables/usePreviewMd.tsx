@@ -42,17 +42,18 @@ export const usePreviewMd = ({
     return ''
   })
 
-  // 如果文章不存在，尝试获取
+  // 如果文章不存在或缺少 content（列表查询排除了正文），则请求完整数据
   watch(() => articleId, async (id) => {
     if (id) {
       try {
-        // 先尝试从列表查找
         const found = articleStore.findArticleById(id)
         const currentId = currentArticle.value?.id
         const idNum = parseInt(id)
-        
-        // 如果列表中没有，且当前文章不匹配，则获取
-        if (!found && (!currentArticle.value || (currentId !== idNum && String(currentId) !== id))) {
+        const currentMatch = currentArticle.value && (currentId === idNum || String(currentId) === id)
+
+        // 列表中的文章没有 content，或 currentArticle 不匹配/无 content，需要请求完整数据
+        const hasContent = (found?.content) || (currentMatch && currentArticle.value?.content)
+        if (!hasContent) {
           await articleStore.qryArticleById(id)
         }
       } catch (error) {
@@ -80,15 +81,17 @@ export const usePreviewMd = ({
       const { currentArticle: currentArticleRef } = storeToRefs(articleStore)
       const previewTheme = computed(() => appStore.theme === CTheme.DARK ? 'dark' : 'light')
       
-      // 监听路由变化，获取文章
+      // 监听路由变化，获取文章（列表中的文章不含 content，需请求完整数据）
       watch(() => route.params.id, async (id) => {
         if (id) {
           try {
             const found = articleStore.findArticleById(id as string)
             const currentId = currentArticleRef.value?.id
             const idNum = parseInt(id as string)
-            
-            if (!found && (!currentArticleRef.value || (currentId !== idNum && String(currentId) !== id))) {
+            const currentMatch = currentArticleRef.value && (currentId === idNum || String(currentId) === id)
+
+            const hasContent = (found?.content) || (currentMatch && currentArticleRef.value?.content)
+            if (!hasContent) {
               await articleStore.qryArticleById(id as string)
             }
           } catch (error) {

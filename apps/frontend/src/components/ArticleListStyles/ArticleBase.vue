@@ -7,7 +7,7 @@
       @click="emit('jump', String(item.id))"
     >
       <div class="article-base-list__cover">
-        <img v-if="item.cover" :src="item.cover" :alt="item.title" />
+        <img v-if="item.cover" :src="item.cover" :alt="item.title" loading="lazy" />
         <div v-else class="article-base-list__cover-placeholder">
           <u-icon icon="fa-solid fa-image" />
         </div>
