@@ -1,6 +1,6 @@
 import { onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import { getAccessToken } from '@/api/request'
 
 /** 前端上报事件 DTO */
 interface TrackEvent {
@@ -48,18 +48,22 @@ function enqueue(dto: Omit<TrackEvent, 'sessionId'>) {
   if (buffer.length >= MAX_BUFFER_SIZE) flush()
 }
 
-/** 把缓冲区发送到后端 */
+/** 把缓冲区发送到后端（使用 fetch + keepalive 替代 sendBeacon 以携带 JWT 认证头） */
 function flush() {
   if (!buffer.length) return
   const events = [...buffer]
   buffer = []
-  // 使用 sendBeacon 在页面卸载时也能保证送达
-  const blob = new Blob([JSON.stringify({ events })], { type: 'application/json' })
-  if (navigator.sendBeacon) {
-    navigator.sendBeacon(TRACK_URL, blob)
-  } else {
-    axios.post(TRACK_URL, { events }).catch(() => {})
-  }
+
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  const token = getAccessToken()
+  if (token) headers['Authorization'] = `Bearer ${token}`
+
+  fetch(TRACK_URL, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ events }),
+    keepalive: true, // 确保页面卸载时请求仍能完成
+  }).catch(() => {})
 }
 
 /** 结束当前页面的停留统计 */

@@ -336,9 +336,11 @@
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { UMessageFn, getRandomAvatarUrl } from '@u-blog/ui'
 import { sendXiaohuiStream, type XiaohuiMessage } from '@/api/xiaohui'
 import { useUserStore } from '@/stores/model/user'
+import { useAppStore } from '@/stores/app'
 import { STORAGE_KEYS } from '@/constants/storage'
 import MarkdownPreview from '@/components/MarkdownPreview.vue'
 import { normalizeStreamingMarkdown } from '@/utils/markdownStreaming'
@@ -346,7 +348,9 @@ import { normalizeStreamingMarkdown } from '@/utils/markdownStreaming'
 defineOptions({ name: 'XiaohuiView' })
 
 const { t } = useI18n()
+const router = useRouter()
 const userStore = useUserStore()
+const appStore = useAppStore()
 
 /* ===================== 类型定义 ===================== */
 
@@ -651,10 +655,10 @@ const currentMessages = computed(() => {
 
 /** 快捷提示词 */
 const suggestions = computed(() => [
-  { icon: 'fa-solid fa-face-smile', text: t('xiaohui.promptGreet') },
-  { icon: 'fa-solid fa-pen-nib', text: t('xiaohui.promptWrite') },
-  { icon: 'fa-solid fa-lightbulb', text: t('xiaohui.promptIdea') },
-  { icon: 'fa-solid fa-globe', text: t('xiaohui.promptKnowledge') },
+  { icon: 'fa-solid fa-fire', text: t('xiaohui.promptHotArticles') },
+  { icon: 'fa-solid fa-clock', text: t('xiaohui.promptLatestArticles') },
+  { icon: 'fa-solid fa-palette', text: t('xiaohui.promptToggleTheme') },
+  { icon: 'fa-solid fa-lightbulb', text: t('xiaohui.promptRecommend') },
 ])
 
 /* ===================== 生命周期 ===================== */
@@ -838,6 +842,72 @@ function autoResizeTextarea() {
   el.style.overflowY = next >= TEXTAREA_MAX_H ? 'auto' : 'hidden'
 }
 
+/* ===================== XCMD 命令协议解析 ===================== */
+
+/** XCMD 正则：匹配 <!--XCMD:ACTION:VALUE--> */
+const XCMD_PATTERN = /<!--XCMD:(\w+):(.+?)-->/g
+
+/**
+ * 解析并执行 AI 回复中的 XCMD 命令
+ * 命令格式：<!--XCMD:ACTION:VALUE-->（HTML注释，Markdown 渲染时不可见）
+ * @param content AI 回复全文
+ * @returns 去除 XCMD 命令后的纯内容
+ */
+function parseAndExecuteCommands(content: string): string {
+  const commands: Array<{ action: string; value: string }> = []
+  let match: RegExpExecArray | null
+  const regex = new RegExp(XCMD_PATTERN.source, 'g')
+
+  // 收集所有命令
+  while ((match = regex.exec(content)) !== null) {
+    commands.push({ action: match[1], value: match[2] })
+  }
+
+  // 执行命令
+  for (const cmd of commands) {
+    try {
+      switch (cmd.action) {
+        case 'SET_THEME': {
+          if (cmd.value === 'toggle') {
+            // 深浅互换
+            appStore.toggleTheme()
+          } else {
+            appStore.setTheme(cmd.value as any)
+          }
+          break
+        }
+        case 'SET_LANG': {
+          appStore.setLanguage(cmd.value as any)
+          break
+        }
+        case 'SET_LIST_STYLE': {
+          appStore.setArticleListType(cmd.value as any)
+          break
+        }
+        case 'SET_VISUAL_STYLE': {
+          appStore.setVisualStyle(cmd.value as any)
+          break
+        }
+        case 'NAVIGATE': {
+          // 延迟导航，等消息渲染完成
+          const path = cmd.value
+          setTimeout(() => {
+            router.push(path).catch(() => {})
+          }, 500)
+          break
+        }
+        default:
+          console.warn('[XCMD] 未知命令:', cmd.action)
+      }
+    } catch (err) {
+      console.error('[XCMD] 执行失败:', cmd, err)
+    }
+  }
+
+  // 从内容中移除 XCMD 命令（包括前后空行），保持干净的显示
+  return content.replace(/\n*<!--XCMD:\w+:.+?-->\n*/g, '').trim()
+}
+
 /* ===================== 发送消息 ===================== */
 
 async function handleSend() {
@@ -934,6 +1004,13 @@ async function handleSend() {
     loading.value = false
     streaming.value = false
     abortController = null
+
+    // 解析并执行 AI 回复中的 XCMD 命令
+    const lastMsg = session.messages[session.messages.length - 1]
+    if (lastMsg && lastMsg.role === 'assistant' && lastMsg.content) {
+      lastMsg.content = parseAndExecuteCommands(lastMsg.content)
+    }
+
     session.updatedAt = Date.now()
     saveSessions()
   }

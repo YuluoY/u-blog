@@ -1,9 +1,34 @@
 import express, { type Router, type Request, type Response } from 'express'
 import rateLimit from 'express-rate-limit'
 import XiaohuiService from '@/service/xiaohui'
+import { detectBlogIntent, BlogContextBuilder } from '@/service/xiaohui/blogContext'
 import type { IXiaohuiMessage } from '@/module/schema/XiaohuiConversation'
 
 const router = express.Router() as Router
+
+/** 延迟工具函数 */
+const sleep = (ms: number) => new Promise<void>(r => setTimeout(r, ms))
+
+/**
+ * 将文本拆分为适合打字机效果的小片段
+ * - XCMD 命令 / URL / Markdown 链接：保持完整不拆分
+ * - CJK 字符：每 1-2 个一组
+ * - 英文单词：整词一组（含尾随空格）
+ * - 其他（标点、emoji、空白）：单个一组
+ */
+function splitIntoSegments(text: string): string[] {
+  // 已经足够短，无需拆分
+  if (text.length <= 4) return [text]
+
+  const segments: string[] = []
+  // 顺序优先级：长特殊模式 → 英文单词 → CJK 字符 → 其余单字符
+  const re = /<!--XCMD:[^>]+-->|https?:\/\/[^\s)\]]+|\[[^\]]*?\]\([^)]*?\)|[a-zA-Z0-9_]+\s?|[\u4e00-\u9fff\u3400-\u4dbf]{1,2}|[\s\S]/gu
+  let m: RegExpExecArray | null
+  while ((m = re.exec(text)) !== null) {
+    segments.push(m[0])
+  }
+  return segments.length > 0 ? segments : [text]
+}
 
 const _isDev = process.env.NODE_ENV !== 'production'
 
@@ -78,9 +103,27 @@ router.post('/chat', xiaohuiLimiter, async (req: Request, res: Response) => {
   const sid = typeof sessionId === 'string' && sessionId ? sessionId : `anon_${Date.now()}`
   const startTime = Date.now()
 
-  // 构建用户上下文（IP、地理位置、身份信息），注入到 AI 系统提示词中
-  const { contextText: userContext, location: userLocation } =
-    await XiaohuiService.buildUserContext(req).catch(() => ({ contextText: '', location: null }))
+  // 并行构建：用户上下文（IP/地理/天气）+ 博客数据上下文，避免串行等待
+  const userContextPromise = XiaohuiService.buildUserContext(req)
+    .catch(() => ({ contextText: '', location: null }))
+
+  let blogContextPromise: Promise<string> = Promise.resolve('')
+  if (lastUserMsg) {
+    const intent = detectBlogIntent(lastUserMsg.content)
+    if (intent) {
+      blogContextPromise = BlogContextBuilder.buildBlogContext(req, intent).catch((err) => {
+        console.error('[xiaohui] 博客上下文构建失败:', err)
+        return ''
+      })
+    }
+  }
+
+  // 等待两者同时完成
+  const [{ contextText: userContext, location: userLocation }, blogContext] =
+    await Promise.all([userContextPromise, blogContextPromise])
+
+  // 合并用户上下文和博客上下文
+  const fullContext = userContext + blogContext
 
   // 设置 SSE 响应头
   res.setHeader('Content-Type', 'text/event-stream; charset=utf-8')
@@ -93,7 +136,7 @@ router.post('/chat', xiaohuiLimiter, async (req: Request, res: Response) => {
   let status: 'success' | 'error' | 'aborted' = 'success'
 
   try {
-    const stream = await XiaohuiService.chatStream(chatMessages, userContext)
+    const stream = await XiaohuiService.chatStream(chatMessages, fullContext)
 
     // SSE 超时保护：最长 3 分钟
     const SSE_TIMEOUT_MS = 3 * 60 * 1000
@@ -161,7 +204,16 @@ router.post('/chat', xiaohuiLimiter, async (req: Request, res: Response) => {
             // 过滤敏感内容
             const safeContent = XiaohuiService.sanitizeResponse(delta)
             fullReply += safeContent
-            res.write(`data: ${JSON.stringify({ token: safeContent })}\n\n`)
+
+            // 拆分为小片段逐个推送，前端打字机效果
+            const segments = splitIntoSegments(safeContent)
+            for (let si = 0; si < segments.length; si++) {
+              res.write(`data: ${JSON.stringify({ token: segments[si] })}\n\n`)
+              // 多片段间加 20ms 延迟实现平滑输出
+              if (segments.length > 1 && si < segments.length - 1) {
+                await sleep(20)
+              }
+            }
           }
           // 非流式 finish_reason
           if (finishReason) {

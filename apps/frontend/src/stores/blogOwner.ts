@@ -108,11 +108,9 @@ export const useBlogOwnerStore = defineStore('blogOwner', () => {
       const data = await getUserBlogProfile(username)
       profile.value = data
 
-      // 覆盖 header store 的 logo 和站点名
+      // 覆盖 header store 的站点名，logo 统一使用 /logo.svg
       const headerStore = useHeaderStore()
-      if (data.user?.avatar) {
-        headerStore.setLogo(data.user.avatar)
-      }
+      headerStore.setLogo('/logo.svg')
       if (ownerSiteName.value) {
         headerStore.setSiteName(ownerSiteName.value)
       }

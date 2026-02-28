@@ -5,6 +5,10 @@
 const GEO_TIMEOUT_MS = 3000
 const LOCALHOST_LABEL = '本地'
 
+/** IP 地理缓存，避免重复查询同一 IP，TTL 30 分钟 */
+const geoCache = new Map<string, { result: string | null; expireAt: number }>()
+const GEO_CACHE_TTL = 30 * 60 * 1000
+
 /** 国内友好：ip.zhengbingdong.com，无需 key，600 次/分钟，返回中文 */
 const GEO_ZHENG = 'https://ip.zhengbingdong.com/v1/get'
 /** 备用：ip-api.com，免费非商业，国内可能较慢 */
@@ -43,7 +47,15 @@ export async function resolveIpLocation(ip: string | undefined): Promise<string 
   if (!trimmed) return null
   if (trimmed === '::1' || trimmed === '::ffff:127.0.0.1') return LOCALHOST_LABEL
   if (/^127\.|^10\.|^172\.(1[6-9]|2\d|3[01])\.|^192\.168\./.test(trimmed)) return LOCALHOST_LABEL
+
+  // 缓存命中则直接返回
+  const cached = geoCache.get(trimmed)
+  if (cached && Date.now() < cached.expireAt) return cached.result
+
   const fromZhengbingdong = await fetchGeoZhengbingdong(trimmed).catch(() => null)
-  if (fromZhengbingdong) return fromZhengbingdong
-  return fetchGeoIpApi(trimmed).catch(() => null) ?? null
+  const result = fromZhengbingdong ?? await fetchGeoIpApi(trimmed).catch(() => null) ?? null
+
+  // 写入缓存
+  geoCache.set(trimmed, { result, expireAt: Date.now() + GEO_CACHE_TTL })
+  return result
 }

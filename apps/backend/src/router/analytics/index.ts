@@ -1,6 +1,6 @@
 import express, { type Router, type Request, type Response } from 'express'
 import rateLimit from 'express-rate-limit'
-import { requireAuth } from '@/middleware/AuthGuard'
+import { AuthGuard, requireAuth } from '@/middleware/AuthGuard'
 import { requireRole } from '@/middleware/RoleGuard'
 import { CUserRole } from '@u-blog/model'
 import AnalyticsService from '@/service/analytics'
@@ -33,7 +33,7 @@ const adminOnly = requireRole(CUserRole.ADMIN)
  * POST /activity/track — 公开接口，前端上报行为事件
  * Body: { events: IActivityLogDto[] } 或单条 IActivityLogDto
  */
-router.post('/track', trackLimiter, async (req: Request, res: Response) => {
+router.post('/track', trackLimiter, AuthGuard, async (req: Request, res: Response) => {
   try {
     const svc = await AnalyticsService.fromRequest(req)
     const body = req.body
