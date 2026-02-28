@@ -253,6 +253,7 @@ import { useAppStore } from '@/stores/app'
 import { getRegistrationStatus, type RegistrationStatus } from '@/api/request'
 import { CTheme } from '@u-blog/model'
 import type { UFormExposes, FormRules } from '@u-blog/ui'
+import { trackLogin, trackRegister } from '@/composables/useActivityTracker'
 
 defineOptions({ name: 'LoginView' })
 
@@ -406,6 +407,7 @@ async function handleLogin() {
   loading.value = true
   try {
     await userStore.login({ username: loginForm.username, password: loginForm.password })
+    trackLogin()
     redirectAfterAuth()
   } catch (e: any) {
     flashError(e.message || t('common.error'))
@@ -429,6 +431,7 @@ async function handleRegister() {
       role: 'user',
       isActive: true,
     })
+    trackRegister()
     redirectAfterAuth()
   } catch (e: any) {
     flashError(e.message || t('common.error'))

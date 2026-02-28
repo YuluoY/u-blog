@@ -14,7 +14,7 @@
         'is-transition': transition
       },
     ]"
-    :style="{backgroundColor: color}"
+    :style="customColorStyle"
     :role="closable ? 'button' : undefined"
     :tabindex="closable ? 0 : undefined"
     @click="onClick"
@@ -44,6 +44,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import type { CSSProperties } from 'vue'
 import type { UTagEmits, UTagProps } from '../types'
 import { CTagClosePosition } from '../consts'
 import { UIcon } from '@/components/icon'
@@ -62,6 +63,49 @@ const props = withDefaults(defineProps<UTagProps>(), {
 const emits = defineEmits<UTagEmits>()
 
 const isCloseIconLeft = computed(() => props.closePosition === CTagClosePosition.LEFT)
+
+/**
+ * 将 hex 颜色转为 rgba，用于生成半透明背景
+ * 支持 #RGB / #RRGGBB / #RRGGBBAA 格式
+ */
+function hexToRgba(hex: string, alpha: number): string {
+  const h = hex.replace('#', '')
+  let r: number, g: number, b: number
+  if (h.length === 3) {
+    r = parseInt(h[0] + h[0], 16)
+    g = parseInt(h[1] + h[1], 16)
+    b = parseInt(h[2] + h[2], 16)
+  } else {
+    r = parseInt(h.slice(0, 2), 16)
+    g = parseInt(h.slice(2, 4), 16)
+    b = parseInt(h.slice(4, 6), 16)
+  }
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
+/**
+ * 计算自定义颜色的动态样式：
+ * - 背景：color 的 15% 透明度（柔和半透明）
+ * - 文字：color 原色
+ * - 如果显式传了 textColor，优先使用 textColor
+ */
+const customColorStyle = computed<CSSProperties | undefined>(() => {
+  if (!props.color) return undefined
+  const c = props.color as string
+  // 仅处理 hex 格式的颜色值
+  if (c.startsWith('#')) {
+    return {
+      backgroundColor: hexToRgba(c, 0.12),
+      color: props.textColor || c,
+      borderColor: 'transparent',
+    }
+  }
+  // 非 hex 格式（如 CSS 渐变），回退为直接 backgroundColor
+  return {
+    backgroundColor: c,
+    color: props.textColor || undefined,
+  }
+})
 
 /** 点击关闭图标时派发 close，可选同时派发 click；否则仅派发 click */
 const onClick = (event: MouseEvent): void => {

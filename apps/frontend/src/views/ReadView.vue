@@ -16,9 +16,10 @@
           <header v-if="article" class="read-view__meta" role="doc-subtitle">
             <div class="read-view__meta-top">
               <div class="read-view__meta-taxonomy">
+                <span class="read-view__meta-origin" :class="article.isOriginal !== false ? 'read-view__meta-origin--original' : 'read-view__meta-origin--repost'">{{ article.isOriginal !== false ? t('article.original') : t('article.repost') }}</span>
                 <span v-if="article.category" class="read-view__meta-category">{{ article.category.name }}</span>
                 <template v-if="article.tags?.length">
-                  <span v-for="tag in article.tags" :key="tag.id" class="read-view__meta-tag" :style="tag.color ? { borderColor: tag.color, color: tag.color } : undefined">{{ tag.name }}</span>
+                  <span v-for="tag in article.tags" :key="tag.id" class="read-view__meta-tag" :style="tag.color ? { borderColor: 'transparent', backgroundColor: `${tag.color}1f`, color: tag.color } : undefined">{{ tag.name }}</span>
                 </template>
               </div>
               <div class="read-view__meta-byline">
@@ -216,6 +217,7 @@ import type { UCommentItemData } from '@u-blog/ui'
 import { filterSensitiveWords } from '@/utils/sensitiveFilter'
 import { useSubscribe } from '@/composables/useSubscribe'
 import { setMobileToc, clearMobileToc } from '@/composables/useMobileToc'
+import { trackArticleView, trackArticleLike, trackComment } from '@/composables/useActivityTracker'
 
 defineOptions({
   name: 'ReadView'
@@ -231,7 +233,7 @@ const blogOwnerStore = useBlogOwnerStore()
 const { currentArticle, articleList } = storeToRefs(articleStore)
 const { user, isLoggedIn } = storeToRefs(userStore)
 
-const { Preview, Catalog, articleContent, scrollElement } = usePreviewMd({ articleId: route.params.id as string })
+const { Preview, Catalog, articleContent, scrollElement } = usePreviewMd()
 
 const { openSubscribeModal } = useSubscribe()
 
@@ -353,6 +355,8 @@ async function handleLikeToggle() {
     liveLikeCount.value = result.likeCount
     // 同步到 Pinia store，首页/归档页数据实时更新
     articleStore.updateArticleLikeCount(articleId, result.likeCount)
+    // 行为追踪：点赞
+    if (result.liked) trackArticleLike(articleId)
   } catch { /* 点赞失败静默 */ }
   finally { likePending.value = false }
 }
@@ -479,6 +483,8 @@ async function handleCommentSubmit() {
     }
     await api(CTable.COMMENT).addComment(payload)
     commentContent.value = ''
+    // 行为追踪：评论
+    if (articleId && !Number.isNaN(articleId)) trackComment(articleId)
     // 重新拉取第一页以包含新评论（服务端排序一致）
     await commentStore.qryCommentListByPath(commentPath.value, false)
     // 同步当前文章评论数展示
@@ -587,6 +593,8 @@ watch(() => route.params.id, async (newId) => {
         liveViewCount.value = viewCount
         // 同步浏览量到列表，返回首页/归档时即可看到最新值
         articleStore.updateArticleViewCount(articleId, viewCount)
+        // 行为追踪：文章阅读
+        trackArticleView(articleId, article.value?.title)
       } catch { /* 统计失败不阻断 */ }
       // 异步查询点赞状态
       fetchLikeStatus(articleId)
@@ -670,6 +678,22 @@ watch(() => route.params.id, async (newId) => {
     flex-wrap: wrap;
     align-items: center;
     gap: 8px;
+  }
+  &-origin {
+    font-size: 1.15rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+
+    &--original {
+      background: rgba(16, 185, 129, 0.12);
+      color: #059669;
+    }
+
+    &--repost {
+      background: rgba(107, 114, 128, 0.12);
+      color: #6b7280;
+    }
   }
   &-category {
     font-size: 1.2rem;

@@ -360,6 +360,8 @@ export default {
     browse: '浏览',
     pinned: '置顶',
     hot: '火热',
+    original: '原创',
+    repost: '转载',
     locked: '密码保护',
     randomImage: '随机图片',
   },

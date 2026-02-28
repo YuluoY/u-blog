@@ -14,6 +14,7 @@
           <h3 class="article-waterfall__title">{{ item.title }}</h3>
           <span v-if="item.isTop" class="article-waterfall__badge article-waterfall__badge--pinned">{{ t('article.pinned') }}</span>
           <span v-if="isHot(item)" class="article-waterfall__badge article-waterfall__badge--hot">{{ t('article.hot') }}</span>
+          <span class="article-waterfall__badge" :class="item.isOriginal !== false ? 'article-waterfall__badge--original' : 'article-waterfall__badge--repost'">{{ item.isOriginal !== false ? t('article.original') : t('article.repost') }}</span>
         </div>
         <div v-if="item.tags?.length" class="article-waterfall__tags">
           <u-tag
@@ -147,6 +148,16 @@ const emit = defineEmits<{
     &--hot {
       background: #fff1f0;
       color: #ff4d4f;
+    }
+
+    &--original {
+      background: rgba(16, 185, 129, 0.12);
+      color: #059669;
+    }
+
+    &--repost {
+      background: rgba(107, 114, 128, 0.12);
+      color: #6b7280;
     }
   }
 

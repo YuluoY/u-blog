@@ -57,6 +57,7 @@ export default function ArticlesPage() {
       status: values.status,
       isPrivate: values.isPrivate,
       isTop: values.isTop,
+      isOriginal: values.isOriginal,
       categoryId: values.categoryId ?? null,
       publishedAt: values.publishedAt,
     })
@@ -102,6 +103,22 @@ export default function ArticlesPage() {
           checked={v}
           disabled={isGuest}
           onChange={(checked) => update.mutate({ id: record.id, isPrivate: checked })}
+        />
+      ),
+    },
+    {
+      title: '原创',
+      dataIndex: 'isOriginal',
+      width: 68,
+      align: 'center',
+      filters: [{ text: '原创', value: true }, { text: '转载', value: false }],
+      onFilter: (value, record) => record.isOriginal === value,
+      render: (v: boolean, record: ArticleItem) => (
+        <Switch
+          size="small"
+          checked={v ?? true}
+          disabled={isGuest}
+          onChange={(checked) => update.mutate({ id: record.id, isOriginal: checked })}
         />
       ),
     },

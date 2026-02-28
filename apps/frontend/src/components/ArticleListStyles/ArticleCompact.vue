@@ -15,6 +15,7 @@
           <h3 class="article-compact__title">{{ item.title }}</h3>
           <span v-if="item.isTop" class="article-compact__badge article-compact__badge--pinned">{{ t('article.pinned') }}</span>
           <span v-if="isHot(item)" class="article-compact__badge article-compact__badge--hot">{{ t('article.hot') }}</span>
+          <span class="article-compact__badge" :class="item.isOriginal !== false ? 'article-compact__badge--original' : 'article-compact__badge--repost'">{{ item.isOriginal !== false ? t('article.original') : t('article.repost') }}</span>
         </div>
         <div class="article-compact__meta">
           <span v-if="item.user" class="article-compact__author">
@@ -150,6 +151,16 @@ const emit = defineEmits<{
     &--hot {
       background: #fff1f0;
       color: #ff4d4f;
+    }
+
+    &--original {
+      background: rgba(16, 185, 129, 0.12);
+      color: #059669;
+    }
+
+    &--repost {
+      background: rgba(107, 114, 128, 0.12);
+      color: #6b7280;
     }
   }
 

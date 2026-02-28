@@ -53,6 +53,7 @@ export interface ArticleFormValues {
   categoryId?: number | null
   isTop: boolean
   isPrivate: boolean
+  isOriginal: boolean
   /** 密码保护（留空则不设密码） */
   protect?: string
   publishedAt?: string
@@ -79,6 +80,7 @@ export function ArticleEditorDrawer({
         categoryId: article.categoryId ?? undefined,
         isTop: article.isTop,
         isPrivate: article.isPrivate,
+        isOriginal: article.isOriginal ?? true,
         protect: article.protect ?? '',
         publishedAt: article.publishedAt?.slice(0, 16) ?? '',
       })
@@ -139,6 +141,9 @@ export function ArticleEditorDrawer({
           <Switch />
         </Form.Item>
         <Form.Item name="isPrivate" label="私密" valuePropName="checked">
+          <Switch />
+        </Form.Item>
+        <Form.Item name="isOriginal" label="原创" valuePropName="checked">
           <Switch />
         </Form.Item>
         <Form.Item name="protect" label="密码保护" extra="设置后读者需输入密码才能查看正文；留空则取消密码保护">

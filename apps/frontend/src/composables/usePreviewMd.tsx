@@ -9,11 +9,7 @@ import { defineComponent, type Component, type CSSProperties, watch, computed, s
 import { storeToRefs } from 'pinia'
 import 'md-editor-v3/lib/preview.css'
 
-export const usePreviewMd = ({
-  articleId
-}: {
-  articleId: string
-}): {
+export const usePreviewMd = (): {
   Preview: Component | null
   Catalog: Component | null
   articleContent: ComputedRef<string>
@@ -21,6 +17,11 @@ export const usePreviewMd = ({
 } =>
 {
   const id = 'preview-only'
+  const route = useRoute()
+  const currentArticleId = computed(() => {
+    const paramId = Array.isArray(route.params.id) ? route.params.id[0] : route.params.id
+    return paramId != null ? String(paramId) : ''
+  })
   const scrollElement = shallowRef<HTMLElement | undefined>(undefined)
   watchFn<HTMLElement>(
     () => document.querySelector('.layout-base__main') as HTMLElement,
@@ -32,18 +33,21 @@ export const usePreviewMd = ({
   
   // 响应式的文章内容
   const articleContent = computed(() => {
-    const found = articleStore.findArticleById(articleId)
+    const idStr = currentArticleId.value
+    if (!idStr) return ''
+
+    const found = articleStore.findArticleById(idStr)
     if (found?.content) return found.content
     
     if (currentArticle.value &&
-        (String(currentArticle.value.id) === articleId || currentArticle.value.id === parseInt(articleId, 10))) {
+        (String(currentArticle.value.id) === idStr || currentArticle.value.id === parseInt(idStr, 10))) {
       return currentArticle.value.content || ''
     }
     return ''
   })
 
   // 如果文章不存在或缺少 content（列表查询排除了正文），则请求完整数据
-  watch(() => articleId, async (id) => {
+  watch(currentArticleId, async (id) => {
     if (id) {
       try {
         const found = articleStore.findArticleById(id)

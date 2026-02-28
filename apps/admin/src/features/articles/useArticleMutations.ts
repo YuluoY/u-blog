@@ -14,6 +14,7 @@ type ArticleUpdateBody = {
   status?: string
   isPrivate?: boolean
   isTop?: boolean
+  isOriginal?: boolean
   categoryId?: number | null
   publishedAt?: string
 }

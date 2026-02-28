@@ -10,6 +10,8 @@ export interface ArticleItem {
   status: string
   isPrivate: boolean
   isTop: boolean
+  /** 是否原创（true=原创，false=转载） */
+  isOriginal: boolean
   /** 密码保护（仅管理员查询时返回） */
   protect?: string | null
   userId: number
@@ -54,6 +56,7 @@ export async function updateArticle(
     status?: string
     isPrivate?: boolean
     isTop?: boolean
+    isOriginal?: boolean
     categoryId?: number | null
     publishedAt?: string
   }

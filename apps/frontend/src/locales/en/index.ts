@@ -379,6 +379,8 @@ export default {
     browse: 'Browse',
     pinned: 'Pinned',
     hot: 'Hot',
+    original: 'Original',
+    repost: 'Repost',
     locked: 'Protected',
     randomImage: 'Image',
   },

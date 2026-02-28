@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Table, Button, Tag, Popconfirm, Space, Modal, Typography, Select, Input } from 'antd'
+import { Table, Button, Tag, Popconfirm, Space, Modal, Typography, Select, Input, theme } from 'antd'
 import { DeleteOutlined, EyeOutlined, ReloadOutlined, DownloadOutlined, SearchOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { useTableScrollY } from '../../shared/hooks/useTableScrollY'
@@ -12,7 +12,7 @@ import type { XiaohuiConversationItem } from './api'
 
 const { Paragraph, Text } = Typography
 
-/** 对话详情预览弹窗 */
+/** 对话详情预览弹窗 — 使用 Ant Design token 适配暗色/亮色主题 */
 function ConversationDetailModal({
   record,
   open,
@@ -22,7 +22,17 @@ function ConversationDetailModal({
   open: boolean
   onClose: () => void
 }) {
+  const { token } = theme.useToken()
   if (!record) return null
+
+  /** 用户消息气泡背景 */
+  const userBubbleBg = token.colorPrimaryBg
+  /** 助手消息气泡背景 */
+  const assistantBubbleBg = token.colorFillAlter
+  /** 用户名称颜色 */
+  const userNameColor = token.colorPrimary
+  /** 助手名称颜色 */
+  const assistantNameColor = token.colorText
 
   return (
     <Modal
@@ -40,10 +50,10 @@ function ConversationDetailModal({
               marginBottom: 12,
               padding: '8px 12px',
               borderRadius: 8,
-              background: msg.role === 'user' ? '#f0f0ff' : '#f6f6f6',
+              background: msg.role === 'user' ? userBubbleBg : assistantBubbleBg,
             }}
           >
-            <Text strong style={{ color: msg.role === 'user' ? '#7c3aed' : '#333' }}>
+            <Text strong style={{ color: msg.role === 'user' ? userNameColor : assistantNameColor }}>
               {msg.role === 'user' ? '用户' : '小惠'}
             </Text>
             <Text type="secondary" style={{ marginLeft: 8, fontSize: 12 }}>
@@ -64,10 +74,10 @@ function ConversationDetailModal({
               marginBottom: 12,
               padding: '8px 12px',
               borderRadius: 8,
-              background: '#f6f6f6',
+              background: assistantBubbleBg,
             }}
           >
-            <Text strong style={{ color: '#333' }}>小惠</Text>
+            <Text strong style={{ color: assistantNameColor }}>小惠</Text>
             <Text type="secondary" style={{ marginLeft: 8, fontSize: 12 }}>
               {new Date(record.createdAt).toLocaleString()}
             </Text>
@@ -82,14 +92,14 @@ function ConversationDetailModal({
         {!record.context?.length && (
           <div style={{ padding: 12 }}>
             <div style={{ marginBottom: 8 }}>
-              <Text strong style={{ color: '#7c3aed' }}>用户：</Text>
+              <Text strong style={{ color: userNameColor }}>用户：</Text>
               <Paragraph style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
                 {record.userMessage}
               </Paragraph>
             </div>
             {record.assistantMessage && (
               <div>
-                <Text strong>小惠：</Text>
+                <Text strong style={{ color: assistantNameColor }}>小惠：</Text>
                 <Paragraph style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
                   {record.assistantMessage}
                 </Paragraph>
@@ -98,7 +108,7 @@ function ConversationDetailModal({
           </div>
         )}
       </div>
-      <div style={{ marginTop: 12, color: '#888', fontSize: 12 }}>
+      <div style={{ marginTop: 12, color: token.colorTextDescription, fontSize: 12 }}>
         会话ID: {record.sessionId} | IP: {record.clientIp || '未知'} | 耗时: {record.latencyMs ?? '-'}ms
       </div>
     </Modal>

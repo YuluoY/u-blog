@@ -68,6 +68,7 @@
 import { useI18n } from 'vue-i18n'
 import { getArticleSearch } from '@/api/articleSearch'
 import type { ArticleSearchItem, SearchScope } from '@/api/articleSearch'
+import { trackSearch } from '@/composables/useActivityTracker'
 
 defineOptions({ name: 'SearchPanel' })
 
@@ -99,6 +100,7 @@ function fetchSearch() {
     return
   }
   loading.value = true
+  trackSearch(k)
   getArticleSearch(k, scope.value, 20)
     .then((list) => {
       resultList.value = list

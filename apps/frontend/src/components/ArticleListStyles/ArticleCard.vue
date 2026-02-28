@@ -20,6 +20,7 @@
           </span>
           <span v-if="item.isTop" class="article-card-list__badge article-card-list__badge--pinned">{{ t('article.pinned') }}</span>
           <span v-if="isHot(item)" class="article-card-list__badge article-card-list__badge--hot">{{ t('article.hot') }}</span>
+          <span class="article-card-list__badge" :class="item.isOriginal !== false ? 'article-card-list__badge--original' : 'article-card-list__badge--repost'">{{ item.isOriginal !== false ? t('article.original') : t('article.repost') }}</span>
         </div>
         <div v-if="item.user" class="article-card-list__author">
           {{ item.user.namec || item.user.username }}
@@ -181,6 +182,16 @@ const emit = defineEmits<{
       color: var(--u-text-3);
       font-size: 1rem;
       padding: 3px 6px;
+    }
+
+    &--original {
+      background: rgba(16, 185, 129, 0.12);
+      color: #059669;
+    }
+
+    &--repost {
+      background: rgba(107, 114, 128, 0.12);
+      color: #6b7280;
     }
   }
 

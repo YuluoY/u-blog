@@ -31,6 +31,8 @@ export interface IArticle extends IBaseSchema, Pick<IBaseFields, 'id'> {
   status: ArticleStatus
   isPrivate: boolean
   isTop: boolean
+  /** 是否原创（true=原创，false=转载） */
+  isOriginal: boolean
   protect?: string
   /** 后端注入：标记文章是否设置了密码保护（前端使用，protect 明文不暴露给前端） */
   isProtected?: boolean

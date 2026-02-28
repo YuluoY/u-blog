@@ -17,6 +17,7 @@
           <h3 class="article-base-list__title">{{ item.title }}</h3>
           <span v-if="item.isTop" class="article-base-list__badge article-base-list__badge--pinned">{{ t('article.pinned') }}</span>
           <span v-if="isHot(item)" class="article-base-list__badge article-base-list__badge--hot">{{ t('article.hot') }}</span>
+          <span class="article-base-list__badge" :class="item.isOriginal !== false ? 'article-base-list__badge--original' : 'article-base-list__badge--repost'">{{ item.isOriginal !== false ? t('article.original') : t('article.repost') }}</span>
         </div>
         <div v-if="item.user" class="article-base-list__author">
           {{ t('article.author') }} {{ item.user.namec || item.user.username }}
@@ -186,6 +187,16 @@ const emit = defineEmits<{
   &--hot {
     background: #fff1f0;
     color: #ff4d4f;
+  }
+
+  &--original {
+    background: rgba(16, 185, 129, 0.12);
+    color: #059669;
+  }
+
+  &--repost {
+    background: rgba(107, 114, 128, 0.12);
+    color: #6b7280;
   }
 }
 

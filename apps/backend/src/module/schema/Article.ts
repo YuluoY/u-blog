@@ -81,6 +81,10 @@ export class Article {
 	@IsBoolean({ message: '是否置顶必须是布尔值' })
 	isTop!: boolean
 
+	@Column({ name: 'isOriginal', type: 'boolean', default: true, comment: '是否原创（true=原创，false=转载）' })
+	@IsBoolean({ message: '是否原创必须是布尔值' })
+	isOriginal!: boolean
+
 	@Column({ type: 'varchar', length: 50, select: false, nullable: true, comment: '密码保护' })
 	@IsOptional()
 	@IsString({ message: '密码保护必须为字符串' })

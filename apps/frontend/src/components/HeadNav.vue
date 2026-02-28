@@ -160,6 +160,7 @@ import { pxToRem } from '@u-blog/utils'
 import { useClickOutside } from '@u-blog/composables'
 import { UMessageFn } from '@u-blog/ui'
 import { useGuestAdmin } from '@/composables/useGuestAdmin'
+import { trackLogout } from '@/composables/useActivityTracker'
 
 
 defineOptions({
@@ -235,6 +236,7 @@ const navHeight = computed(() => pxToRem(HEADER_HEIGHT_PX))
 
 async function handleLogout() {
   showDropdown.value = false
+  trackLogout()
   await userStore.logout()
   router.push('/home')
 }
