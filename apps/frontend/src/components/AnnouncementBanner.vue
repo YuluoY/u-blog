@@ -2,7 +2,7 @@
   <!-- 横幅公告 —— 位于 main 顶部，可关闭，localStorage 记住关闭状态 -->
   <Transition name="banner-slide">
     <div
-      v-if="visible && currentAnnouncement"
+      v-if="currentAnnouncement"
       class="announcement-banner"
       :style="bannerStyle"
       :class="{ 'announcement-banner--clickable': hasDetail }"
@@ -43,11 +43,11 @@ const DISMISSED_KEY = 'u-blog:dismissed-announcements'
 const announcements = ref<AnnouncementItem[]>([])
 /** 是否已加载完成 */
 const loaded = ref(false)
-/** 是否显示横幅 */
-const visible = ref(true)
+/** 响应式已关闭 id 集合（同步到 localStorage） */
+const dismissedIds = ref<Set<number>>(new Set())
 
-/** 读取 localStorage 中已关闭的公告 id */
-function getDismissedIds(): Set<number> {
+/** 从 localStorage 恢复已关闭列表 */
+function loadDismissedIds(): Set<number> {
   try {
     const raw = localStorage.getItem(DISMISSED_KEY)
     if (!raw) return new Set()
@@ -57,19 +57,18 @@ function getDismissedIds(): Set<number> {
   }
 }
 
-/** 保存已关闭的公告 id 到 localStorage */
-function saveDismissedId(id: number) {
-  const ids = getDismissedIds()
-  ids.add(id)
-  const arr = [...ids].slice(-50)
+/** 关闭某条公告，同时持久化 */
+function addDismissedId(id: number) {
+  dismissedIds.value = new Set([...dismissedIds.value, id])
+  // 只保留最近 50 条，防止 localStorage 无限膨胀
+  const arr = [...dismissedIds.value].slice(-50)
   localStorage.setItem(DISMISSED_KEY, JSON.stringify(arr))
 }
 
 /** 当前展示的公告（第一条未关闭的启用公告） */
 const currentAnnouncement = computed<AnnouncementItem | null>(() => {
   if (!loaded.value) return null
-  const dismissed = getDismissedIds()
-  return announcements.value.find(a => !dismissed.has(a.id)) ?? null
+  return announcements.value.find(a => !dismissedIds.value.has(a.id)) ?? null
 })
 
 /** 是否有详情内容 */
@@ -92,13 +91,8 @@ const bannerStyle = computed(() => {
 /** 关闭横幅 */
 function dismiss() {
   if (currentAnnouncement.value) {
-    saveDismissedId(currentAnnouncement.value.id)
+    addDismissedId(currentAnnouncement.value.id)
   }
-  visible.value = false
-  // 延迟后检查是否还有下一条未关闭的公告
-  setTimeout(() => {
-    visible.value = true
-  }, 350)
 }
 
 /** 点击横幅 */
@@ -109,6 +103,8 @@ function handleClick() {
 }
 
 onMounted(async () => {
+  // 从 localStorage 恢复已关闭列表
+  dismissedIds.value = loadDismissedIds()
   try {
     announcements.value = await fetchActiveAnnouncements()
   } catch {
