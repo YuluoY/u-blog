@@ -40,6 +40,7 @@ const System = lazy(() => import('../features/system/SystemPage'))
 const Likes = lazy(() => import('../features/likes/LikesPage'))
 const Views = lazy(() => import('../features/views/ViewsPage'))
 const Subscribers = lazy(() => import('../features/subscribers/SubscribersPage'))
+const Announcements = lazy(() => import('../features/announcements/AnnouncementsPage'))
 
 function Lazy({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<Spin size="large" style={{ display: 'block', margin: '48px auto' }} />}>{children}</Suspense>
@@ -76,6 +77,7 @@ const router = createBrowserRouter([
       { path: 'likes', element: <Lazy><Likes /></Lazy> },
       { path: 'views', element: <Lazy><Views /></Lazy> },
       { path: 'subscribers', element: <Lazy><Subscribers /></Lazy> },
+      { path: 'announcements', element: <Lazy><Announcements /></Lazy> },
       { path: 'system', element: <Lazy><System /></Lazy> },
     ],
   },

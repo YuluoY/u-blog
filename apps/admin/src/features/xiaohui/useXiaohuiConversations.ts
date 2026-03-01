@@ -3,6 +3,7 @@ import { queryConversations } from './api'
 
 export const xiaohuiQueryKey = ['xiaohui-conversations'] as const
 
+/** 返回分页数据 { list, total } */
 export function useXiaohuiConversations(params: {
   take?: number
   skip?: number

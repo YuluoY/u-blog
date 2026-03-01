@@ -13,6 +13,7 @@ const XiaohuiView = () => import('@/views/XiaohuiView.vue')
 const LoginView = () => import('@/views/LoginView.vue')
 const FriendLinksView = () => import('@/views/FriendLinksView.vue')
 const UserBlogView = () => import('@/views/UserBlogView.vue')
+const AnnouncementView = () => import('@/views/AnnouncementView.vue')
 
 const routes: RouteRecordRaw[] = [
   {
@@ -109,6 +110,15 @@ const routes: RouteRecordRaw[] = [
     component: ReadView,
     meta: {
       title: '阅读',
+      isAffix: false
+    }
+  },
+  {
+    path: '/announcement/:id',
+    name: 'announcement',
+    component: AnnouncementView,
+    meta: {
+      title: '公告',
       isAffix: false
     }
   },

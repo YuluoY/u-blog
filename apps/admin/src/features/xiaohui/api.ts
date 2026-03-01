@@ -1,4 +1,5 @@
-import { restQuery, restDel } from '../../shared/api/rest'
+import { restQueryPaged, restDel } from '../../shared/api/rest'
+import type { PagedResult } from '../../shared/api/rest'
 
 /** 小惠对话日志项 */
 export interface XiaohuiConversationItem {
@@ -18,18 +19,18 @@ export interface XiaohuiConversationItem {
 
 const MODEL = 'xiaohui_conversation'
 
-/** 查询对话日志列表（分页） */
+/** 查询对话日志列表（分页，含总数） */
 export async function queryConversations(params: {
   take?: number
   skip?: number
   status?: string
   sessionId?: string
-} = {}) {
+} = {}): Promise<PagedResult<XiaohuiConversationItem>> {
   const where: Record<string, unknown> = {}
   if (params.status) where.status = params.status
   if (params.sessionId) where.sessionId = params.sessionId
 
-  return restQuery<XiaohuiConversationItem[]>(MODEL, {
+  return restQueryPaged<XiaohuiConversationItem>(MODEL, {
     take: params.take ?? 50,
     skip: params.skip ?? 0,
     order: { id: 'DESC' },

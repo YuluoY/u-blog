@@ -661,4 +661,12 @@ export default {
     verifyInvalid: '验证链接无效或已过期',
     unsubscribed: '您已成功退订',
   },
+  announcement: {
+    close: '关闭公告',
+    viewDetail: '查看详情',
+    loading: '加载中…',
+    notFound: '公告不存在或已下线',
+    backHome: '返回首页',
+    back: '返回',
+  },
 }

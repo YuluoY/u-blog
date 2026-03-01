@@ -7,6 +7,13 @@ export interface RestQueryBody {
   skip?: number
   order?: Record<string, 'ASC' | 'DESC'>
   relations?: string[]
+  withCount?: boolean
+}
+
+/** 分页查询返回结构 */
+export interface PagedResult<T> {
+  list: T[]
+  total: number
 }
 
 export async function restQuery<T = unknown>(
@@ -16,6 +23,19 @@ export async function restQuery<T = unknown>(
   const res = await apiClient.post<BackendResponse<T>>(`/rest/${model}/query`, body)
   const payload = res.data
   return payload.data as T
+}
+
+/** 带总数的分页查询 */
+export async function restQueryPaged<T = unknown>(
+  model: string,
+  body: Omit<RestQueryBody, 'withCount'> = {}
+): Promise<PagedResult<T>> {
+  const res = await apiClient.post<BackendResponse<PagedResult<T>>>(`/rest/${model}/query`, {
+    ...body,
+    withCount: true,
+  })
+  const payload = res.data
+  return payload.data as PagedResult<T>
 }
 
 export async function restAdd<T = unknown>(

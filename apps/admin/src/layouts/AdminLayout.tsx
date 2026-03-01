@@ -32,6 +32,7 @@ import {
   LikeOutlined,
   EyeOutlined,
   MailOutlined,
+  NotificationOutlined,
 } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { useAuth, FRONTEND_LOGIN_URL } from '../features/auth/AuthContext'
@@ -74,6 +75,7 @@ function buildMenuConfig(t: (key: string) => string): {
           { key: '/tags', icon: TagsOutlined, label: t('menu.tags') },
           { key: '/media', icon: PictureOutlined, label: t('menu.media') },
           { key: '/about-blocks', icon: ReadOutlined, label: t('menu.aboutBlocks') },
+          { key: '/announcements', icon: NotificationOutlined, label: t('menu.announcements') },
           { key: '/likes', icon: LikeOutlined, label: t('menu.likes') },
           { key: '/views', icon: EyeOutlined, label: t('menu.views') },
         ],
@@ -125,6 +127,7 @@ const GUEST_ALLOWED_PATHS = new Set([
   '/articles', '/categories', '/tags', '/media', '/about-blocks',
   '/likes', '/views',
   '/comments', '/friend-links', '/subscribers', '/xiaohui',
+  '/announcements',
   '/analytics',
 ])
 

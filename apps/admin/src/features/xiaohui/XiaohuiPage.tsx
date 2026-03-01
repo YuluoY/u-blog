@@ -120,11 +120,13 @@ export default function XiaohuiPage() {
   const [pageSize, setPageSize] = useState(20)
   const [statusFilter, setStatusFilter] = useState<string>('')
   const [keyword, setKeyword] = useState('')
-  const { data: list = [], isLoading, refetch } = useXiaohuiConversations({
+  const { data, isLoading, refetch } = useXiaohuiConversations({
     take: pageSize,
     skip: (page - 1) * pageSize,
     status: statusFilter || undefined,
   })
+  const list = data?.list ?? []
+  const total = data?.total ?? 0
   const { remove } = useXiaohuiMutations()
   const { isGuest } = useGuestMode()
   const [detailRecord, setDetailRecord] = useState<XiaohuiConversationItem | null>(null)
@@ -271,7 +273,7 @@ export default function XiaohuiPage() {
           </Button>
         </WriteAction>
         <Text type="secondary" style={{ marginLeft: 'auto' }}>
-          共 {list.length} 条记录
+          共 {total} 条记录
         </Text>
       </div>
       <div className="admin-content__table-wrap">
@@ -285,10 +287,11 @@ export default function XiaohuiPage() {
             pagination={{
               current: page,
               pageSize,
+              total,
               onChange: (p, ps) => { setPage(p); setPageSize(ps) },
               showSizeChanger: true,
               pageSizeOptions: ['10', '20', '50', '100'],
-              showTotal: (total) => `共 ${total} 条`,
+              showTotal: (t) => `共 ${t} 条`,
             }}
             size="small"
           />

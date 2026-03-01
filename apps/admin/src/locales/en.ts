@@ -44,6 +44,7 @@ export const en = {
     likes: 'Likes',
     views: 'Views',
     subscribers: 'Subscribers',
+    announcements: 'Announcements',
     group: {
       content: 'Content',
       interact: 'Interact',

@@ -661,4 +661,12 @@ export default {
     verifyInvalid: 'Invalid or expired verification link',
     unsubscribed: 'You have been unsubscribed successfully',
   },
+  announcement: {
+    close: 'Dismiss',
+    viewDetail: 'View details',
+    loading: 'Loading…',
+    notFound: 'Announcement not found or has been removed',
+    backHome: 'Back to Home',
+    back: 'Go Back',
+  },
 }

@@ -52,13 +52,21 @@ if (!content.includes('readonly SKILLS:')) {
   patched = true
 }
 
-// 注入 CTable 中缺失的 FRIEND_LINK 字段
-if (!content.includes('FRIEND_LINK')) {
-  content = content.replace(
-    /(readonly USER_SETTING: "user_setting";)\n(};)/,
-    '$1\n    readonly FRIEND_LINK: "friend_link";\n$2'
-  )
-  patched = true
+// 注入 CTable 中缺失的字段（FRIEND_LINK / XIAOHUI_CONVERSATION / SUBSCRIBER / ANNOUNCEMENT）
+const ctableMissing = [
+  ['FRIEND_LINK', 'friend_link'],
+  ['XIAOHUI_CONVERSATION', 'xiaohui_conversation'],
+  ['SUBSCRIBER', 'subscriber'],
+  ['ANNOUNCEMENT', 'announcement'],
+]
+for (const [key, val] of ctableMissing) {
+  if (!content.includes(key)) {
+    content = content.replace(
+      /(declare const CTable:[\s\S]*?)(\n};)/,
+      `$1\n    readonly ${key}: "${val}";$2`
+    )
+    patched = true
+  }
 }
 
 // 注入 CGender 和 Gender 类型定义

@@ -44,6 +44,7 @@ export const zh = {
     likes: '点赞记录',
     views: '浏览记录',
     subscribers: '订阅管理',
+    announcements: '公告管理',
     group: {
       content: '内容管理',
       interact: '互动',

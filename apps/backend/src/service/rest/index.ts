@@ -4,7 +4,7 @@ import type { Request } from 'express'
 class RestService {
   async query<T = any>(model: Repository<T>, req: Request)
   {
-    const { where, take, skip, order, relations, select } = req.body || {}
+    const { where, take, skip, order, relations, select, withCount } = req.body || {}
     const metadata = model.metadata
     const alias = metadata.name.toLowerCase()
     
@@ -89,6 +89,12 @@ class RestService {
       queryBuilder.take(Number(take))
     }
     
+    // 带总数分页：返回 { list, total }；否则只返回数组
+    if (withCount) {
+      const [list, total] = await queryBuilder.getManyAndCount()
+      return { list, total }
+    }
+
     const result = await queryBuilder.getMany()
     return result
   }

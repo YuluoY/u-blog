@@ -7,6 +7,8 @@
 
     <!-- 中间：Body = IconBar + SidePanel + Main -->
     <u-region region="center" class="layout-base__body" :style="bodyOffsetStyle">
+      <!-- 横幅公告：紧贴 Header 下方，通栏显示 -->
+      <AnnouncementBanner />
       <!--
         三列容器用原生 flex 而非 u-layout mode="row"，
         因为 u-layout 的 span 网格会覆盖固定宽+自适应的 flex 规则。
@@ -71,6 +73,7 @@ import { pxToRem } from '@u-blog/utils'
 import HeadNav from '@/components/HeadNav.vue'
 import BottomInfo from '@/components/BottomInfo.vue'
 import MobileBottomNav from '@/components/MobileBottomNav.vue'
+import AnnouncementBanner from '@/components/AnnouncementBanner.vue'
 import IconBar from '@/components/AppShell/IconBar.vue'
 import SidePanel from '@/components/AppShell/SidePanel.vue'
 import PopoverPanel from '@/components/AppShell/PopoverPanel.vue'
