@@ -31,6 +31,7 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { code: 429, data: null, message: '操作过于频繁，请稍后再试' },
+  validate: { trustProxy: false },
   skip: skipLocalhost,
 })
 
@@ -41,6 +42,7 @@ const fetchMetaLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { code: 429, data: null, message: '请求过于频繁，请稍后再试' },
+  validate: { trustProxy: false },
   skip: skipLocalhost,
 })
 

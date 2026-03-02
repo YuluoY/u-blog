@@ -39,6 +39,7 @@ const xiaohuiLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { code: 429, data: null, message: '小惠有点忙，请稍后再试~' },
+  validate: { trustProxy: false },
   skip: (req) => {
     if (!_isDev) return false
     const ip = req.ip || req.socket?.remoteAddress || ''

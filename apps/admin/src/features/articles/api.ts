@@ -1,6 +1,8 @@
 import { restQuery, restAdd, restUpdate, restDel } from '../../shared/api/rest'
 import { apiClient } from '../../shared/api/client'
 
+import type { TagItem } from '../tags/api'
+
 export interface ArticleItem {
   id: number
   title: string
@@ -16,6 +18,8 @@ export interface ArticleItem {
   protect?: string | null
   userId: number
   categoryId?: number | null
+  /** 关联标签 */
+  tags?: TagItem[]
   commentCount?: number
   likeCount?: number
   viewCount?: number
@@ -31,6 +35,7 @@ export async function queryArticles(params: { take?: number; skip?: number } = {
     take: params.take ?? 9999,
     skip: params.skip ?? 0,
     order: { id: 'DESC' },
+    relations: ['tags'],
   })
 }
 
@@ -58,6 +63,8 @@ export async function updateArticle(
     isTop?: boolean
     isOriginal?: boolean
     categoryId?: number | null
+    /** 标签 ID 数组 */
+    tags?: number[]
     publishedAt?: string
   }
 ) {

@@ -343,6 +343,63 @@ function extractFirstHeading(mdContent: string): string {
   return m ? m[1].trim() : ''
 }
 
+/**
+ * 从 Markdown 内容提取简介：
+ * 去除标题、图片、链接、代码块、HTML 标签等标记，取前 200 个有效字符
+ */
+function extractSummary(mdContent: string, maxLen = 200): string {
+  let text = mdContent
+    // 移除代码块（```...```）
+    .replace(/```[\s\S]*?```/g, '')
+    // 移除行内代码
+    .replace(/`[^`]+`/g, '')
+    // 移除图片（![alt](url)）
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+    // 移除链接，保留文字
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    // 移除标题行
+    .replace(/^#{1,6}\s+.*$/gm, '')
+    // 移除 HTML 标签
+    .replace(/<[^>]+>/g, '')
+    // 移除引用标记
+    .replace(/^>\s?/gm, '')
+    // 移除加粗、斜体、删除线标记
+    .replace(/[*_~]{1,3}/g, '')
+    // 移除分割线
+    .replace(/^[-*_]{3,}$/gm, '')
+    // 压缩空白
+    .replace(/\n{2,}/g, '\n')
+    .trim()
+  // 取前 maxLen 个字符
+  if (text.length > maxLen) {
+    text = text.slice(0, maxLen) + '...'
+  }
+  return text
+}
+
+/**
+ * 从 Markdown 内容提取首张图片 URL 作为封面图
+ * 支持 ![alt](url) 和 <img src="url"> 两种格式
+ * 排除 base64 data URI（体积过大，不适合做封面）
+ */
+function extractFirstImage(mdContent: string): string {
+  // 匹配所有 Markdown 图片语法
+  const mdImgRe = /!\[[^\]]*\]\(([^)]+)\)/g
+  let match: RegExpExecArray | null
+  while ((match = mdImgRe.exec(mdContent)) !== null) {
+    const url = match[1].trim()
+    // 跳过 base64 data URI
+    if (!url.startsWith('data:')) return url
+  }
+  // 匹配所有 HTML img 标签
+  const htmlImgRe = /<img[^>]+src=["']([^"']+)["']/gi
+  while ((match = htmlImgRe.exec(mdContent)) !== null) {
+    const url = match[1].trim()
+    if (!url.startsWith('data:')) return url
+  }
+  return ''
+}
+
 /* ---------- 初始化表单 ---------- */
 let initDone = false
 
@@ -359,20 +416,25 @@ async function initForm() {
   const cached = await restorePublishSettings()
   if (cached) {
     form.title = cached.title || extractFirstHeading(props.content)
-    form.desc = cached.desc || ''
+    // 自动提取简介：仅当缓存中无简介且有内容时自动填充
+    form.desc = cached.desc || extractSummary(props.content)
     form.categoryId = cached.categoryId ?? ''
     form.tags = cached.tags ?? []
     form.status = (cached.status as ArticleStatus) || CArticleStatus.PUBLISHED
     form.isPrivate = cached.isPrivate ?? false
     form.isTop = cached.isTop ?? false
-    form.cover = cached.cover || ''
+    // 自动提取封面图：仅当缓存中无封面且有内容时自动填充
+    form.cover = cached.cover || extractFirstImage(props.content)
     form.publishedAt = cached.publishedAt || toDatetimeLocal(new Date())
     publishNow.value = cached.publishNow ?? true
     coverUrlMode.value = cached.coverUrlMode ?? false
     coverMediaId.value = cached.coverMediaId ?? null
+    form.isProtected = cached.isProtected ?? false
+    form.protectPassword = cached.protectPassword ?? ''
   } else {
     form.title = extractFirstHeading(props.content)
-    form.desc = ''
+    // 新建模式：自动提取简介和封面图
+    form.desc = extractSummary(props.content)
     form.categoryId = ''
     form.tags = []
     form.status = CArticleStatus.PUBLISHED
@@ -380,7 +442,7 @@ async function initForm() {
     form.isTop = false
     form.isProtected = false
     form.protectPassword = ''
-    form.cover = ''
+    form.cover = extractFirstImage(props.content)
     form.publishedAt = toDatetimeLocal(new Date())
     publishNow.value = true
     coverMediaId.value = null
@@ -419,6 +481,8 @@ function savePublishSettingsDebounced() {
       publishedAt: form.publishedAt,
       publishNow: publishNow.value,
       coverUrlMode: coverUrlMode.value,
+      isProtected: form.isProtected,
+      protectPassword: form.protectPassword,
     }).catch(() => {})
     saveTimer = null
   }, 500)
@@ -426,10 +490,31 @@ function savePublishSettingsDebounced() {
 
 onMounted(initForm)
 
-/** content 变化时只更新标题（如果用户未手动修改过） */
+/** content 变化时自动补全标题、简介和封面图（仅当用户未手动填写时） */
+/** 记录用户是否手动修改过简介 / 封面，避免覆盖用户输入 */
+let descManuallyEdited = false
+let coverManuallyEdited = false
+
+watch(() => form.desc, () => {
+  if (initDone) descManuallyEdited = true
+})
+watch(() => form.cover, () => {
+  if (initDone) coverManuallyEdited = true
+})
+
 watch(() => props.content, (newContent) => {
-  if (initDone && form.title === '') {
+  if (!initDone) return
+  // 标题为空时从内容提取
+  if (form.title === '') {
     form.title = extractFirstHeading(newContent)
+  }
+  // 简介为空且用户未手动编辑过时，自动提取
+  if (!descManuallyEdited && form.desc === '') {
+    form.desc = extractSummary(newContent)
+  }
+  // 封面为空且用户未手动编辑过时，自动提取首张图片
+  if (!coverManuallyEdited && form.cover === '') {
+    form.cover = extractFirstImage(newContent)
   }
 })
 
@@ -443,7 +528,7 @@ watch(publishNow, (now) => {
 /** 监听表单字段变化，防抖保存 */
 watch(
   () => [form.title, form.desc, form.categoryId, form.tags, form.status,
-    form.isPrivate, form.isTop, form.isProtected, form.cover, form.publishedAt, coverUrlMode.value],
+    form.isPrivate, form.isTop, form.isProtected, form.protectPassword, form.cover, form.publishedAt, coverUrlMode.value],
   () => { savePublishSettingsDebounced() },
   { deep: true },
 )

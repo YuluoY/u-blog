@@ -58,7 +58,7 @@
         <div class="user-blog__meta-row">
           <span v-if="profile.user.location" class="user-blog__meta-tag">
             <u-icon icon="fa-solid fa-location-dot" />
-            {{ profile.user.location }}
+            {{ locationText }}
           </span>
           <span v-if="siteName" class="user-blog__meta-tag">
             <u-icon icon="fa-solid fa-globe" />
@@ -93,9 +93,9 @@
           <h2 class="user-blog__section-title">
             {{ t('userBlog.articles') }}
           </h2>
-          <span class="user-blog__section-count">{{ articles.length }}</span>
+          <span class="user-blog__section-count">{{ profile.stats.articleCount }}</span>
         </div>
-        <div v-if="articlesLoading" class="user-blog__skeleton">
+        <div v-if="articlesLoading && articles.length === 0" class="user-blog__skeleton">
           <div v-for="i in 3" :key="i" class="user-blog__skeleton-line card" />
         </div>
         <div v-else-if="articles.length === 0" class="user-blog__empty">
@@ -129,6 +129,13 @@
               </div>
             </div>
           </router-link>
+          <!-- 加载更多 / 已全部加载 -->
+          <div v-if="articlesHasMore" ref="loadMoreRef" class="user-blog__load-more">
+            <span v-if="articlesLoading" class="user-blog__load-more-text">加载中...</span>
+          </div>
+          <div v-else-if="articles.length > 0" class="user-blog__load-more">
+            <span class="user-blog__load-more-text">已加载全部文章</span>
+          </div>
         </div>
       </section>
 
@@ -160,7 +167,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import type { IArticle, IFriendLink } from '@u-blog/model'
@@ -180,6 +187,10 @@ const error = ref('')
 const profile = ref<UserBlogProfile | null>(null)
 const articles = ref<IArticle[]>([])
 const articlesLoading = ref(false)
+const articlesHasMore = ref(true)
+const articlesPage = ref(0)
+const ARTICLES_PAGE_SIZE = 20
+const loadMoreRef = ref<HTMLElement | null>(null)
 const friendLinks = ref<IFriendLink[]>([])
 
 /** 显示名称：优先昵称，兜底用户名 */
@@ -187,6 +198,31 @@ const displayName = computed(() => profile.value?.user.namec || profile.value?.u
 
 /** 用户自定义站点名称 */
 const siteName = computed(() => (profile.value?.settings.site_name as string) || '')
+
+/**
+ * 解析 location 字段：可能是 JSON 对象（{labels:[...]}）或纯字符串
+ */
+const locationText = computed(() => {
+  const loc = profile.value?.user.location
+  if (!loc) return ''
+  // 如果是对象，直接取 labels
+  if (typeof loc === 'object' && loc !== null) {
+    const labels = (loc as any).labels
+    if (Array.isArray(labels)) return labels.join(' ')
+    return JSON.stringify(loc)
+  }
+  // 如果是字符串，尝试当作 JSON 解析
+  if (typeof loc === 'string') {
+    try {
+      const parsed = JSON.parse(loc)
+      if (parsed && Array.isArray(parsed.labels)) return parsed.labels.join(' ')
+      return loc
+    } catch {
+      return loc
+    }
+  }
+  return String(loc)
+})
 
 /** 角色标签 */
 const roleLabel = computed(() => {
@@ -237,6 +273,8 @@ async function loadProfile() {
       loadArticles(userId),
       loadFriendLinksForUser(userId),
     ])
+    // 初始加载完成后启动滚动监听
+    setupObserver()
   } catch (err: any) {
     error.value = err?.message || '获取用户信息失败'
   } finally {
@@ -244,24 +282,67 @@ async function loadProfile() {
   }
 }
 
-/** 加载用户文章 */
-async function loadArticles(userId: number) {
+/** 加载用户文章（分页追加） */
+async function loadArticles(userId: number, append = false) {
+  if (articlesLoading.value) return
   articlesLoading.value = true
   try {
+    const skip = append ? articles.value.length : 0
     const list = await restQuery<IArticle[]>('article', {
       where: { userId, status: CArticleStatus.PUBLISHED },
-      take: 20,
-      skip: 0,
+      take: ARTICLES_PAGE_SIZE,
+      skip,
       order: { createdAt: 'DESC' },
       relations: ['category', 'tags'],
     })
-    articles.value = Array.isArray(list) ? list : []
+    const fetched = Array.isArray(list) ? list : []
+    if (append) {
+      articles.value = [...articles.value, ...fetched]
+    } else {
+      articles.value = fetched
+    }
+    articlesHasMore.value = fetched.length >= ARTICLES_PAGE_SIZE
+    articlesPage.value++
   } catch {
-    articles.value = []
+    if (!append) articles.value = []
+    articlesHasMore.value = false
   } finally {
     articlesLoading.value = false
   }
 }
+
+/** 加载更多文章 */
+function loadMoreArticles() {
+  const userId = profile.value?.user.id
+  if (userId && articlesHasMore.value && !articlesLoading.value) {
+    loadArticles(userId, true)
+  }
+}
+
+/* IntersectionObserver 实现滚动自动加载 */
+let observer: IntersectionObserver | null = null
+
+function setupObserver() {
+  if (observer) observer.disconnect()
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0]?.isIntersecting) loadMoreArticles()
+    },
+    { rootMargin: '200px' }
+  )
+  nextTick(() => {
+    if (loadMoreRef.value) observer!.observe(loadMoreRef.value)
+  })
+}
+
+watch(loadMoreRef, (el) => {
+  if (el && observer) observer.observe(el)
+})
+
+onUnmounted(() => {
+  observer?.disconnect()
+  observer = null
+})
 
 /** 加载用户友链 */
 async function loadFriendLinksForUser(userId: number) {
@@ -599,6 +680,17 @@ onMounted(loadProfile)
       align-items: center;
       gap: 4px;
     }
+  }
+
+  /* ---- 加载更多 ---- */
+  &__load-more {
+    display: flex;
+    justify-content: center;
+    padding: 20px 0 8px;
+  }
+  &__load-more-text {
+    font-size: 13px;
+    color: var(--u-text-3);
   }
 
   /* ---- 友链 ---- */

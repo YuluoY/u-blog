@@ -59,6 +59,7 @@ export default function ArticlesPage() {
       isTop: values.isTop,
       isOriginal: values.isOriginal,
       categoryId: values.categoryId ?? null,
+      tags: values.tags,
       publishedAt: values.publishedAt,
     })
     setDrawerOpen(false)

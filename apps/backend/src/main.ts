@@ -42,6 +42,7 @@ app.use(rateLimit({
 	standardHeaders: true,
 	legacyHeaders: false,
 	message: { code: 429, data: null, message: '请求过于频繁，请稍后再试' },
+	validate: { trustProxy: false },
 	skip: (req) => {
 		if (!isDev) return false
 		const ip = req.ip || req.socket?.remoteAddress || ''
@@ -64,11 +65,11 @@ database.install(app, {
 // 初始化 Redis 缓存（连接失败不阻塞应用启动）
 initRedis()
 
-// 解析 application/json（限制 1MB，防止超大 payload 攻击）
-app.use(express.json({ limit: '1mb' }))
+// 解析 application/json（限制 50MB，支持大文章内容）
+app.use(express.json({ limit: '50mb' }))
 
-// 解析 application/x-www-form-urlencoded（限制 1MB）
-app.use(express.urlencoded({ extended: true, limit: '1mb' }))
+// 解析 application/x-www-form-urlencoded（限制 50MB）
+app.use(express.urlencoded({ extended: true, limit: '50mb' }))
 
 // 解析cookie
 app.use(cookieParser())

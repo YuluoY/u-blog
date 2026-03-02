@@ -16,6 +16,8 @@ type ArticleUpdateBody = {
   isTop?: boolean
   isOriginal?: boolean
   categoryId?: number | null
+  /** 标签 ID 数组 */
+  tags?: number[]
   publishedAt?: string
 }
 

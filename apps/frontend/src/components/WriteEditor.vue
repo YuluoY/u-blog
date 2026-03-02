@@ -196,6 +196,11 @@ defineExpose({
   min-height: 320px;
 }
 
+/* 压低代码块 sticky header 的 z-index，避免穿透 UDrawer 遮罩层（md-editor-v3 默认 10000） */
+.write-editor-wrap :deep(.md-editor-code-head) {
+  z-index: 10 !important;
+}
+
 /* ========== 编辑器选中文本高亮 ========== */
 
 /* 预览区 / 非 CodeMirror 区域：原生 ::selection */

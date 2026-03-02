@@ -23,6 +23,7 @@ const trackLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { code: 429, data: null, message: '上报过于频繁' },
+  validate: { trustProxy: false },
   skip: skipLocalhost,
 })
 

@@ -235,6 +235,9 @@ class RestController
       }
     }
 
+    // 唯一约束冲突 → 友好提示
+    humanizeDuplicateError(tryData, req)
+
     return formatResponse(tryData, req.__('rest.addSuccess'), req.__('rest.addFail'))
   }
 
@@ -249,13 +252,35 @@ class RestController
     if (isArticleModel(req) && typeof rest.protect === 'string' && rest.protect) {
       rest.protect = decryptTransport(rest.protect)
     }
+    // 更新文章前先提取 tags 字段，避免传入 RestService.update 导致异常
+    const isArticle = isArticleModel(req)
+    const tagIds: number[] = isArticle && Array.isArray(rest.tags)
+      ? (rest.tags as number[]).filter((t): t is number => Number.isInteger(t))
+      : []
+    if (isArticle) delete rest.tags
+
     const tryData = await tryit<any, Error>(() => RestService.update(req.model, numId, rest))
+
+    // 文章 tags ManyToMany 关联更新
+    if (isArticle && tryData[0] == null) {
+      const ds = getDataSource(req)
+      const articleRepo = ds.getRepository(Article)
+      const tagRepo = ds.getRepository(Tag)
+      const article = await articleRepo.findOne({ where: { id: numId }, relations: ['tags'] })
+      if (article) {
+        const tags = tagIds.length > 0 ? await tagRepo.find({ where: { id: In(tagIds) } }) : []
+        ;(article as Article & { tags?: Tag[] }).tags = tags
+        await articleRepo.save(article)
+      }
+    }
     // Users 表更新：过滤响应中的敏感字段
     if (tryData[0] == null && isUsersModel(req)) {
       sanitizeUsersResponse(tryData[1])
     }
     // 更新成功后异步清除相关缓存
     if (tryData[0] == null) invalidateCacheForModel(req)
+    // 唯一约束冲突 → 友好提示
+    humanizeDuplicateError(tryData, req)
     return formatResponse(tryData, req.__('rest.updateSuccess'), req.__('rest.updateFail'))
   }
 }
@@ -310,6 +335,38 @@ function sanitizeArticleProtect(data: any, req: Request): void {
       delete item.protect
     }
   }
+}
+
+/**
+ * 唯一约束冲突列 → 用户友好字段名映射
+ * key: 数据库列名（小写），value: 显示名称
+ */
+const UNIQUE_COLUMN_LABELS: Record<string, string> = {
+  title: '标题',
+  name: '名称',
+  email: '邮箱',
+  username: '用户名',
+}
+
+/**
+ * 拦截 PostgreSQL 唯一约束冲突（错误码 23505），替换为用户可读的错误信息。
+ * 直接 in-place 修改 tryData[0] 的 message。
+ */
+function humanizeDuplicateError(tryData: [Error | null, any], req: Request): void {
+  const err = tryData[0]
+  if (!err) return
+  // TypeORM 的 QueryFailedError 将 PG 错误码挂在 (err as any).code 上
+  const pgCode = (err as any).code || (err as any).driverError?.code
+  if (pgCode !== '23505') return
+
+  // 从 detail 中提取冲突列名，格式: Key (column)=(value) already exists.
+  const detail: string = (err as any).detail || (err as any).driverError?.detail || ''
+  const colMatch = detail.match(/Key \("?(\w+)"?\)/)
+  const column = colMatch ? colMatch[1].toLowerCase() : ''
+  const label = UNIQUE_COLUMN_LABELS[column] || column || '字段'
+
+  // 替换错误消息为友好文案
+  err.message = `${label}已存在，请更换后重试`
 }
 
 export default new RestController()

@@ -65,7 +65,7 @@ const props = withDefaults(defineProps<UDrawerProps>(), {
   closeOnClickModal: true,
   closeOnPressEscape: true,
   showCloseIcon: true,
-  zIndex: 2000,
+  zIndex: 10001,
 })
 
 const emit = defineEmits<UDrawerEmits>()

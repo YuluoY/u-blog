@@ -44,6 +44,10 @@ export interface PublishSettingsRecord {
   publishedAt: string
   publishNow: boolean
   coverUrlMode: boolean
+  /** 是否启用密码保护 */
+  isProtected: boolean
+  /** 密码保护密码（明文缓存在本地，提交时加密） */
+  protectPassword: string
   updatedAt: number
 }
 
