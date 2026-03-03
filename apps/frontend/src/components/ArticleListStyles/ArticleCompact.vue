@@ -12,7 +12,15 @@
       </div>
       <div class="article-compact__main">
         <div class="article-compact__title-row">
-          <h3 class="article-compact__title">{{ item.title }}</h3>
+          <h3 class="article-compact__title">
+            <a
+              class="article-compact__title-link"
+              :href="`/read/${item.id}`"
+              @click.stop.prevent="emit('jump', String(item.id))"
+            >
+              {{ item.title }}
+            </a>
+          </h3>
           <span v-if="item.isTop" class="article-compact__badge article-compact__badge--pinned">{{ t('article.pinned') }}</span>
           <span v-if="isHot(item)" class="article-compact__badge article-compact__badge--hot">{{ t('article.hot') }}</span>
           <span class="article-compact__badge" :class="item.isOriginal !== false ? 'article-compact__badge--original' : 'article-compact__badge--repost'">{{ item.isOriginal !== false ? t('article.original') : t('article.repost') }}</span>
@@ -134,6 +142,11 @@ const emit = defineEmits<{
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  &__title-link {
+    color: inherit;
+    text-decoration: none;
   }
 
   &__badge {

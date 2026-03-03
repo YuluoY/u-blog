@@ -494,6 +494,8 @@ export default {
     heatmap: 'Heatmap',
     prevMonth: 'Previous month',
     nextMonth: 'Next month',
+    prevYear: 'Previous year',
+    nextYear: 'Next year',
     year: 'Year',
     yearMonthSep: ' / ',
     yearMonth: '{month}/{year}',

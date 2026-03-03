@@ -11,7 +11,15 @@
       </div>
       <div class="article-waterfall__body">
         <div class="article-waterfall__title-row">
-          <h3 class="article-waterfall__title">{{ item.title }}</h3>
+          <h3 class="article-waterfall__title">
+            <a
+              class="article-waterfall__title-link"
+              :href="`/read/${item.id}`"
+              @click.stop.prevent="emit('jump', String(item.id))"
+            >
+              {{ item.title }}
+            </a>
+          </h3>
           <span v-if="item.isTop" class="article-waterfall__badge article-waterfall__badge--pinned">{{ t('article.pinned') }}</span>
           <span v-if="isHot(item)" class="article-waterfall__badge article-waterfall__badge--hot">{{ t('article.hot') }}</span>
           <span class="article-waterfall__badge" :class="item.isOriginal !== false ? 'article-waterfall__badge--original' : 'article-waterfall__badge--repost'">{{ item.isOriginal !== false ? t('article.original') : t('article.repost') }}</span>
@@ -131,6 +139,11 @@ const emit = defineEmits<{
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  &__title-link {
+    color: inherit;
+    text-decoration: none;
   }
 
   &__badge {

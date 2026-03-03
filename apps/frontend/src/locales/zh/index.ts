@@ -494,6 +494,8 @@ export default {
     heatmap: '热力图',
     prevMonth: '上一月',
     nextMonth: '下一月',
+    prevYear: '上一年',
+    nextYear: '下一年',
     year: '年份',
     yearMonthSep: '年',
     yearMonth: '{year}年 {month}月',

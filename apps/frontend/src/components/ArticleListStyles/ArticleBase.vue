@@ -14,7 +14,15 @@
       </div>
       <div class="article-base-list__main">
         <div class="article-base-list__title-row">
-          <h3 class="article-base-list__title">{{ item.title }}</h3>
+          <h3 class="article-base-list__title">
+            <a
+              class="article-base-list__title-link"
+              :href="`/read/${item.id}`"
+              @click.stop.prevent="emit('jump', String(item.id))"
+            >
+              {{ item.title }}
+            </a>
+          </h3>
           <span v-if="item.isTop" class="article-base-list__badge article-base-list__badge--pinned">{{ t('article.pinned') }}</span>
           <span v-if="isHot(item)" class="article-base-list__badge article-base-list__badge--hot">{{ t('article.hot') }}</span>
           <span class="article-base-list__badge" :class="item.isOriginal !== false ? 'article-base-list__badge--original' : 'article-base-list__badge--repost'">{{ item.isOriginal !== false ? t('article.original') : t('article.repost') }}</span>
@@ -170,6 +178,11 @@ const emit = defineEmits<{
   text-align: left;
   flex: 1;
   min-width: 0;
+}
+
+.article-base-list__title-link {
+  color: inherit;
+  text-decoration: none;
 }
 
 .article-base-list__badge {

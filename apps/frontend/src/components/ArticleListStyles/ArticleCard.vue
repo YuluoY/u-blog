@@ -14,7 +14,15 @@
       </div>
       <div class="article-card-list__body">
         <div class="article-card-list__title-row">
-          <h3 class="article-card-list__title">{{ item.title }}</h3>
+          <h3 class="article-card-list__title">
+            <a
+              class="article-card-list__title-link"
+              :href="`/read/${item.id}`"
+              @click.stop.prevent="emit('jump', String(item.id))"
+            >
+              {{ item.title }}
+            </a>
+          </h3>
           <span v-if="item.isProtected" class="article-card-list__badge article-card-list__badge--locked" :title="t('article.locked')">
             <u-icon icon="fa-solid fa-lock" />
           </span>
@@ -158,6 +166,11 @@ const emit = defineEmits<{
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  &__title-link {
+    color: inherit;
+    text-decoration: none;
   }
 
   &__badge {

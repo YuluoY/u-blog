@@ -65,6 +65,39 @@
     </template>
 
     <template v-else>
+      <div class="calendar-panel__heatmap-header">
+        <u-button
+          type="primary"
+          plain
+          circle
+          size="small"
+          class="calendar-panel__year-nav"
+          :disabled="!canPrevHeatmapYear"
+          :aria-label="t('calendar.prevYear')"
+          @click="prevHeatmapYear"
+        >
+          <u-icon icon="fa-solid fa-chevron-left" size="xs" />
+        </u-button>
+        <u-select
+          v-model="heatmapYear"
+          :options="heatmapYearOptions"
+          size="small"
+          class="calendar-panel__year-select"
+          :aria-label="t('calendar.year')"
+        />
+        <u-button
+          type="primary"
+          plain
+          circle
+          size="small"
+          class="calendar-panel__year-nav"
+          :disabled="!canNextHeatmapYear"
+          :aria-label="t('calendar.nextYear')"
+          @click="nextHeatmapYear"
+        >
+          <u-icon icon="fa-solid fa-chevron-right" size="xs" />
+        </u-button>
+      </div>
       <div ref="heatmapContainerRef" class="calendar-panel__heatmap">
         <CalendarHeatmap
           :end-date="heatmapEndDate"
@@ -135,6 +168,7 @@ const year = ref(now.getFullYear())
 const month = ref(now.getMonth() + 1)
 const selectedDate = ref<string | null>(null)
 const heatmapSelectedDate = ref<string | null>(null)
+const heatmapYear = ref(now.getFullYear())
 const heatmapContainerRef = ref<HTMLElement | null>(null)
 
 /** 热力图横向滚动到最右侧，以展示最新日期 */
@@ -157,6 +191,10 @@ watch(viewMode, (mode) => {
   if (mode === 'heatmap') scrollHeatmapToEnd()
 })
 
+watch(heatmapYear, () => {
+  if (viewMode.value === 'heatmap') scrollHeatmapToEnd()
+})
+
 /** 有文章数据时，将月历默认切到最新发布月份（仅同步一次） */
 watch(
   () => articleList.value,
@@ -165,6 +203,7 @@ watch(
     const { year: y, month: m } = getLatestArticleYearMonth(list)
     year.value = y
     month.value = m
+    heatmapYear.value = y
   },
   { once: true, immediate: true }
 )
@@ -265,18 +304,49 @@ const dayArticles = computed(() => {
   return articleList.value.filter((a: IArticle) => formatDate(a.publishedAt ?? a.createdAt) === selectedDate.value)
 })
 
-/** 热力图仅展示最新月份：结束日为当月最后一天，数据仅含当月 */
-const heatmapLatestMonth = computed(() => {
-  const { year: y, month: m } = getLatestArticleYearMonth(articleList.value)
-  return { year: y, month: m }
+const heatmapYearRange = computed(() => {
+  const options = yearOptions.value
+  return {
+    min: options.length ? Math.min(...options) : now.getFullYear(),
+    max: options.length ? Math.max(...options) : now.getFullYear(),
+  }
 })
+const canPrevHeatmapYear = computed(() => heatmapYear.value > heatmapYearRange.value.min)
+const canNextHeatmapYear = computed(() => heatmapYear.value < heatmapYearRange.value.max)
+const heatmapYearOptions = computed(() =>
+  yearOptions.value.map((y) => ({
+    value: y,
+    label: String(y),
+  }))
+)
+
+function prevHeatmapYear() {
+  if (!canPrevHeatmapYear.value) return
+  heatmapYear.value -= 1
+  heatmapSelectedDate.value = null
+}
+
+function nextHeatmapYear() {
+  if (!canNextHeatmapYear.value) return
+  heatmapYear.value += 1
+  heatmapSelectedDate.value = null
+}
+
+watch(
+  () => heatmapYearRange.value,
+  ({ min, max }) => {
+    if (heatmapYear.value < min) heatmapYear.value = min
+    if (heatmapYear.value > max) heatmapYear.value = max
+  },
+  { immediate: true }
+)
+
 const heatmapEndDate = computed(() => {
-  const { year: y, month: m } = heatmapLatestMonth.value
-  return new Date(y, m, 0) // 当月最后一天
+  const y = heatmapYear.value
+  return y === now.getFullYear() ? now : new Date(y, 11, 31)
 })
 const heatmapValues = computed(() => {
-  const { year: y, month: m } = heatmapLatestMonth.value
-  const prefix = `${y}-${String(m).padStart(2, '0')}-`
+  const prefix = `${heatmapYear.value}-`
   const map: Record<string, number> = {}
   articleList.value.forEach((a: IArticle) => {
     const d = formatDate(a.publishedAt ?? a.createdAt)
@@ -333,6 +403,22 @@ function handleClose() {
       height: 2.4rem;
       font-size: 1.2rem;
     }
+  }
+
+  &__heatmap-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+  }
+
+  &__year-nav {
+    flex-shrink: 0;
+  }
+
+  &__year-select {
+    flex: 1;
+    min-width: 4em;
   }
 
   /* 热力图容器：横向展示，支持左右滚动 */
