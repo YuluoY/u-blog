@@ -1,11 +1,12 @@
 # 线上性能优化与排障（站点打开卡顿）
 
-- Version: 1.0.0
-- Last Updated: 2026-03-03
+- Version: 1.0.1
+- Last Updated: 2026-03-04
 - Code Paths:
   - `deploy/nginx/u-blog.conf`
   - `apps/frontend/src/components/AppShell/SidePanel.vue`
   - `apps/frontend/src/components/AppShell/PopoverPanel.vue`
+  - `apps/frontend/src/components/LayoutBase.vue`
 - Owner: 平台工程
 
 ## 功能目的
@@ -60,6 +61,7 @@ ON view (ip);
 - 若接入 Cloudflare，请同时核查缓存规则与回源延迟（TTFB）。
 
 ## Changelog
+- 2026-03-04 **Update**: 主体宽度判定改为基于 side panel 可见性；点击面板 icon 关闭面板与点击折叠 icon 时，main 宽度表现一致。
 - 2026-03-03 **Perf**: 拆分 API 代理缓冲策略，SSE 与普通 JSON 路由分离。
 - 2026-03-03 **Perf**: 侧边栏/弹出面板重组件改为异步加载，降低首屏主包压力。
 - 2026-03-03 **Doc**: 新增线上性能排障与数据库索引执行指引。

@@ -27,7 +27,7 @@
               'layout-base__main--chat': isChatRoute || isXiaohuiRoute,
               'layout-base__main--about': isAboutRoute,
               'layout-base__main--sidebar-collapsed':
-              sidebarStore.collapsed && !isWriteRoute && !isChatRoute && !isXiaohuiRoute,
+              !isSidePanelVisible && !isWriteRoute && !isChatRoute && !isXiaohuiRoute,
             },
           ]"
         >
@@ -107,6 +107,9 @@ const isChatRoute = computed(() => route.name === 'chat')
 const isXiaohuiRoute = computed(() => route.name === 'xiaohui')
 const isAboutRoute = computed(() => route.name === 'about')
 const isWriteRoute = computed(() => route.name === 'write')
+const isSidePanelVisible = computed(
+  () => !sidebarStore.collapsed && sidebarStore.activePanel != null
+)
 
 /** Icon Bar 固定宽度 */
 const iconBarWrapStyle = computed(() => ({
@@ -116,7 +119,7 @@ const iconBarWrapStyle = computed(() => ({
 
 /** Side Panel：展开时固定宽度，折叠/无面板时宽度为 0 */
 const sidePanelWrapStyle = computed(() => {
-  const visible = !sidebarStore.collapsed && sidebarStore.activePanel != null
+  const visible = isSidePanelVisible.value
   return {
     width: visible ? pxToRem(SIDE_PANEL_WIDTH_PX) : '0',
     minWidth: visible ? pxToRem(SIDE_PANEL_WIDTH_PX) : '0',
