@@ -100,8 +100,16 @@ import { formatDateTime } from '@/utils/date'
 import { useAppStore } from '@/stores/app'
 import ArchiveCard from '@/components/ArchiveCard.vue'
 import type { IArticle } from '@u-blog/model'
+import { useSeo } from '@/composables/useSeo'
 
 const { t } = useI18n()
+
+/* SEO 元信息 */
+useSeo({
+  title: '归档',
+  description: 'U-Blog 文章归档列表，按时间、分类、标签浏览所有文章',
+  keywords: '文章归档,分类,标签,技术文章',
+})
 const route = useRoute()
 const router = useRouter()
 const articleStore = useArticleStore()

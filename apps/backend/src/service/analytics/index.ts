@@ -308,6 +308,23 @@ export default class AnalyticsService {
     }
   }
 
+  /** 按精确 IP 清理行为日志，返回删除条数 */
+  async clearLogsByIp(ip: string): Promise<number> {
+    const targetIp = ip.trim()
+    if (!targetIp) {
+      throw new Error('IP 不能为空')
+    }
+
+    const result = await this.repo
+      .createQueryBuilder()
+      .delete()
+      .from(ActivityLog)
+      .where('ip = :ip', { ip: targetIp })
+      .execute()
+
+    return result.affected ?? 0
+  }
+
   /** 通用分布统计内部方法 */
   private async _getDistribution(field: string, limit: number): Promise<DistItem[]> {
     const raw = await this.repo

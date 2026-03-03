@@ -114,6 +114,14 @@ defineOptions({ name: 'AboutView' })
 
 const { t } = useI18n()
 
+/* SEO 元信息 */
+import { useSeo } from '@/composables/useSeo'
+useSeo({
+  title: '关于',
+  description: '关于 U-Blog 与博主，了解技术栈、开发理念与联系方式',
+  keywords: '关于,博主,技术栈,开发理念',
+})
+
 /** 区块类型常量 */
 const PAGE_BLOCK_TYPE = {
   INTRO: 'intro',

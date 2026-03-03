@@ -18,14 +18,16 @@
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { defineAsyncComponent } from 'vue'
 import { useSidebarStore } from '@/stores/sidebar'
 import { PANEL_ID, SIDE_PANEL_WIDTH_PX } from '@/constants/layout'
 import { pxToRem } from '@u-blog/utils'
-import ProfilePanel from './ProfilePanel.vue'
-import CalendarPanel from './CalendarPanel.vue'
 import SearchPanel from './SearchPanel.vue'
-import TagsPanel from './TagsPanel.vue'
-import SiteInfoPanel from './SiteInfoPanel.vue'
+
+const ProfilePanel = defineAsyncComponent(() => import('./ProfilePanel.vue'))
+const CalendarPanel = defineAsyncComponent(() => import('./CalendarPanel.vue'))
+const TagsPanel = defineAsyncComponent(() => import('./TagsPanel.vue'))
+const SiteInfoPanel = defineAsyncComponent(() => import('./SiteInfoPanel.vue'))
 
 defineOptions({ name: 'SidePanel' })
 

@@ -139,4 +139,20 @@ router.get('/logs', requireAuth, adminOnly, async (req: Request, res: Response) 
   }
 })
 
+/** DELETE /activity/logs/by-ip — 按精确 IP 清理行为日志 */
+router.delete('/logs/by-ip', requireAuth, adminOnly, async (req: Request, res: Response) => {
+  try {
+    const ip = String(req.body?.ip || '').trim()
+    if (!ip) {
+      return res.json({ code: 1, data: null, message: 'IP 不能为空' })
+    }
+
+    const svc = await AnalyticsService.fromRequest(req)
+    const deleted = await svc.clearLogsByIp(ip)
+    return res.json({ code: 0, data: { deleted }, message: '清理成功' })
+  } catch (err: any) {
+    return res.json({ code: 1, data: null, message: err.message })
+  }
+})
+
 export default router

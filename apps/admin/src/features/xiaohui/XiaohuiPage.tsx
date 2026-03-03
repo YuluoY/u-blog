@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Table, Button, Tag, Popconfirm, Space, Modal, Typography, Select, Input, theme } from 'antd'
+import { Table, Button, Tag, Popconfirm, Space, Modal, Typography, Select, Input, InputNumber, theme } from 'antd'
 import { DeleteOutlined, EyeOutlined, ReloadOutlined, DownloadOutlined, SearchOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { useTableScrollY } from '../../shared/hooks/useTableScrollY'
@@ -9,6 +9,7 @@ import { exportToJSON } from '../../shared/utils/exportData'
 import { WriteAction } from '../../shared/components/WriteAction'
 import { useGuestMode } from '../../contexts/GuestModeContext'
 import type { XiaohuiConversationItem } from './api'
+import { useXiaohuiIpGuardList, useXiaohuiIpGuardMutations } from './useXiaohuiIpGuard'
 
 const { Paragraph, Text } = Typography
 
@@ -132,6 +133,11 @@ export default function XiaohuiPage() {
   const [detailRecord, setDetailRecord] = useState<XiaohuiConversationItem | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
   const { containerRef, scrollY } = useTableScrollY({ hasPagination: true })
+  const { data: ipGuardData, isLoading: ipGuardLoading, refetch: refetchIpGuard } = useXiaohuiIpGuardList()
+  const { ban, unban } = useXiaohuiIpGuardMutations()
+  const [banIp, setBanIp] = useState('')
+  const [banMinutes, setBanMinutes] = useState<number>(60)
+  const [banReason, setBanReason] = useState('')
 
   // 客户端关键词过滤（对当前页数据）
   const filteredData = useMemo(() => {
@@ -241,6 +247,58 @@ export default function XiaohuiPage() {
     },
   ]
 
+  const ipGuardColumns: ColumnsType<{
+    ip: string
+    reason: string
+    source: 'auto' | 'manual'
+    createdAt: number
+    until: number
+    triggerCount?: number
+    retryAfterSec: number
+  }> = [
+    { title: 'IP', dataIndex: 'ip', width: 150 },
+    {
+      title: '来源',
+      dataIndex: 'source',
+      width: 90,
+      render: (v: 'auto' | 'manual') => <Tag color={v === 'auto' ? 'orange' : 'blue'}>{v}</Tag>,
+    },
+    {
+      title: '原因',
+      dataIndex: 'reason',
+      ellipsis: true,
+      render: (v: string, r) => (
+        <span title={v}>{v}{r.triggerCount ? `（触发${r.triggerCount}次）` : ''}</span>
+      ),
+    },
+    {
+      title: '剩余',
+      dataIndex: 'retryAfterSec',
+      width: 90,
+      render: (v: number) => `${v}s`,
+    },
+    {
+      title: '封禁到',
+      dataIndex: 'until',
+      width: 180,
+      render: (v: number) => new Date(v).toLocaleString(),
+    },
+    {
+      title: '操作',
+      width: 90,
+      render: (_, record) => (
+        <WriteAction>
+          <Popconfirm
+            title="确认解除该 IP 封禁？"
+            onConfirm={() => unban.mutate({ ip: record.ip })}
+          >
+            <Button size="small" danger loading={unban.isPending}>解封</Button>
+          </Popconfirm>
+        </WriteAction>
+      ),
+    },
+  ]
+
   return (
     <div className="admin-content">
       <h1>小惠对话管理</h1>
@@ -297,6 +355,55 @@ export default function XiaohuiPage() {
           />
         </div>
       </div>
+
+      <h2 style={{ marginTop: 24 }}>小惠 IP 黑名单</h2>
+      <div style={{ marginBottom: 12, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Input
+          placeholder="IP，例如 1.2.3.4"
+          value={banIp}
+          onChange={(e) => setBanIp(e.target.value)}
+          style={{ width: 180 }}
+        />
+        <InputNumber
+          min={1}
+          max={1440}
+          value={banMinutes}
+          onChange={(v) => setBanMinutes(Number(v || 60))}
+          addonAfter="分钟"
+        />
+        <Input
+          placeholder="原因（可选）"
+          value={banReason}
+          onChange={(e) => setBanReason(e.target.value)}
+          style={{ width: 240 }}
+        />
+        <WriteAction>
+          <Button
+            type="primary"
+            loading={ban.isPending}
+            onClick={() => {
+              const ip = banIp.trim()
+              if (!ip) return
+              ban.mutate({ ip, minutes: banMinutes, reason: banReason.trim() || undefined })
+              setBanIp('')
+              setBanReason('')
+            }}
+          >
+            手动拉黑
+          </Button>
+        </WriteAction>
+        <Button icon={<ReloadOutlined />} onClick={() => refetchIpGuard()}>刷新黑名单</Button>
+      </div>
+
+      <Table
+        rowKey="ip"
+        size="small"
+        columns={ipGuardColumns}
+        dataSource={ipGuardData?.list ?? []}
+        loading={ipGuardLoading}
+        pagination={false}
+      />
+
       <ConversationDetailModal
         record={detailRecord}
         open={detailOpen}

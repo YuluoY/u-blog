@@ -1,10 +1,15 @@
-import express, { type Router, type Request, type Response } from 'express'
+import express, { type Router, type Request, type Response, type NextFunction } from 'express'
 import rateLimit from 'express-rate-limit'
 import XiaohuiService from '@/service/xiaohui'
 import { detectBlogIntent, BlogContextBuilder } from '@/service/xiaohui/blogContext'
 import type { IXiaohuiMessage } from '@/module/schema/XiaohuiConversation'
+import { getClientIp } from '@/utils'
+import { requireAuth } from '@/middleware/AuthGuard'
+import { requireRole } from '@/middleware/RoleGuard'
+import { CUserRole } from '@u-blog/model'
 
 const router = express.Router() as Router
+const adminOnly = [requireAuth, requireRole(CUserRole.ADMIN)]
 
 /** 延迟工具函数 */
 const sleep = (ms: number) => new Promise<void>(r => setTimeout(r, ms))
@@ -32,6 +37,109 @@ function splitIntoSegments(text: string): string[] {
 
 const _isDev = process.env.NODE_ENV !== 'production'
 
+/** 反刷规则：5 秒内 >= 3 次请求，判定恶意 */
+const BURST_WINDOW_MS = 5 * 1000
+const BURST_THRESHOLD = 3
+/** 自动封禁时长（毫秒） */
+const AUTO_BAN_MS = 10 * 60 * 1000
+
+interface IpBanRecord {
+  ip: string
+  reason: string
+  source: 'auto' | 'manual'
+  createdAt: number
+  until: number
+  triggerCount?: number
+}
+
+/** 最近请求时间戳窗口：Map<ip, timestamps[]> */
+const xiaohuiBurstMap = new Map<string, number[]>()
+/** 当前封禁列表：Map<ip, banRecord> */
+const xiaohuiBanMap = new Map<string, IpBanRecord>()
+
+function isLocalIp(ip: string): boolean {
+  return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1'
+}
+
+/** 清理过期封禁与过期窗口，避免内存累积 */
+setInterval(() => {
+  const now = Date.now()
+
+  for (const [ip, record] of xiaohuiBanMap) {
+    if (record.until <= now) xiaohuiBanMap.delete(ip)
+  }
+
+  for (const [ip, timestamps] of xiaohuiBurstMap) {
+    const valid = timestamps.filter(ts => now - ts <= BURST_WINDOW_MS)
+    if (valid.length === 0) xiaohuiBurstMap.delete(ip)
+    else xiaohuiBurstMap.set(ip, valid)
+  }
+}, 60_000)
+
+/**
+ * 小惠接口反刷中间件
+ * 规则：同一 IP 在 5 秒窗口内请求数 >= 3，立即封禁（默认 10 分钟）
+ */
+function xiaohuiAbuseGuard(req: Request, res: Response, next: NextFunction): void {
+  const ip = getClientIp(req) || req.ip || req.socket?.remoteAddress || ''
+  if (!ip) {
+    next()
+    return
+  }
+
+  if (_isDev && isLocalIp(ip)) {
+    next()
+    return
+  }
+
+  const now = Date.now()
+  const ban = xiaohuiBanMap.get(ip)
+
+  if (ban && ban.until > now) {
+    const retryAfterSec = Math.ceil((ban.until - now) / 1000)
+    res.setHeader('Retry-After', String(retryAfterSec))
+    res.status(429).json({
+      code: 429,
+      data: { retryAfterSec, source: ban.source },
+      message: `该 IP 已被限制访问，请 ${retryAfterSec}s 后重试`,
+    })
+    return
+  }
+
+  if (ban && ban.until <= now) {
+    xiaohuiBanMap.delete(ip)
+  }
+
+  const history = (xiaohuiBurstMap.get(ip) || []).filter(ts => now - ts <= BURST_WINDOW_MS)
+  history.push(now)
+  xiaohuiBurstMap.set(ip, history)
+
+  if (history.length >= BURST_THRESHOLD) {
+    const until = now + AUTO_BAN_MS
+    xiaohuiBanMap.set(ip, {
+      ip,
+      reason: `5秒内请求达到${history.length}次（阈值${BURST_THRESHOLD}）`,
+      source: 'auto',
+      createdAt: now,
+      until,
+      triggerCount: history.length,
+    })
+    xiaohuiBurstMap.delete(ip)
+    console.warn(`[xiaohui][abuse] auto ban ip=${ip}, hits=${history.length}, until=${new Date(until).toISOString()}`)
+
+    const retryAfterSec = Math.ceil((until - now) / 1000)
+    res.setHeader('Retry-After', String(retryAfterSec))
+    res.status(429).json({
+      code: 429,
+      data: { retryAfterSec, source: 'auto' },
+      message: '请求过于频繁，已触发风控限制，请稍后再试',
+    })
+    return
+  }
+
+  next()
+}
+
 /** 小惠对话限流：同一 IP 每分钟最多 20 条消息 */
 const xiaohuiLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -51,7 +159,7 @@ const xiaohuiLimiter = rateLimit({
  * POST /xiaohui/chat — 小惠 AI 流式对话
  * 游客和已登录用户均可使用，所有对话记录到数据库
  */
-router.post('/chat', xiaohuiLimiter, async (req: Request, res: Response) => {
+router.post('/chat', xiaohuiAbuseGuard, xiaohuiLimiter, async (req: Request, res: Response) => {
   const { message, messages, sessionId } = req.body || {}
 
   // 兼容两种传参：messages 数组（多轮）或 message 字符串（单条）
@@ -250,6 +358,63 @@ router.post('/chat', xiaohuiLimiter, async (req: Request, res: Response) => {
       userLocation
     ).catch(() => {})
   }
+})
+
+/**
+ * GET /xiaohui/ip-guard/list — 获取当前封禁 IP 列表（admin）
+ */
+router.get('/ip-guard/list', ...adminOnly, (_req: Request, res: Response) => {
+  const now = Date.now()
+  const list = [...xiaohuiBanMap.values()]
+    .filter(item => item.until > now)
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .map(item => ({
+      ...item,
+      retryAfterSec: Math.ceil((item.until - now) / 1000),
+    }))
+  res.json({ code: 0, data: { list, total: list.length }, message: 'ok' })
+})
+
+/**
+ * POST /xiaohui/ip-guard/ban — 手动封禁 IP（admin）
+ * body: { ip: string, minutes?: number, reason?: string }
+ */
+router.post('/ip-guard/ban', ...adminOnly, (req: Request, res: Response) => {
+  const ip = String(req.body?.ip || '').trim()
+  const minutes = Math.max(1, Number(req.body?.minutes || 60))
+  const reason = String(req.body?.reason || '管理员手动封禁').trim() || '管理员手动封禁'
+
+  if (!ip) {
+    res.json({ code: 1, data: null, message: '缺少 IP 参数' })
+    return
+  }
+
+  const now = Date.now()
+  const until = now + minutes * 60 * 1000
+  xiaohuiBanMap.set(ip, {
+    ip,
+    reason,
+    source: 'manual',
+    createdAt: now,
+    until,
+  })
+  xiaohuiBurstMap.delete(ip)
+  res.json({ code: 0, data: { ip, until }, message: '封禁成功' })
+})
+
+/**
+ * POST /xiaohui/ip-guard/unban — 解除封禁（admin）
+ * body: { ip: string }
+ */
+router.post('/ip-guard/unban', ...adminOnly, (req: Request, res: Response) => {
+  const ip = String(req.body?.ip || '').trim()
+  if (!ip) {
+    res.json({ code: 1, data: null, message: '缺少 IP 参数' })
+    return
+  }
+  xiaohuiBanMap.delete(ip)
+  xiaohuiBurstMap.delete(ip)
+  res.json({ code: 0, data: { ip }, message: '已解除封禁' })
 })
 
 /**

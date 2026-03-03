@@ -37,6 +37,7 @@ const Permissions = lazy(() => import('../features/permissions/PermissionsPage')
 const Routes = lazy(() => import('../features/routes/RoutesPage'))
 const Xiaohui = lazy(() => import('../features/xiaohui/XiaohuiPage'))
 const System = lazy(() => import('../features/system/SystemPage'))
+const CrawlerMonitor = lazy(() => import('../features/crawler-monitor/CrawlerMonitorPage'))
 const Likes = lazy(() => import('../features/likes/LikesPage'))
 const Views = lazy(() => import('../features/views/ViewsPage'))
 const Subscribers = lazy(() => import('../features/subscribers/SubscribersPage'))
@@ -78,6 +79,8 @@ const router = createBrowserRouter([
       { path: 'views', element: <Lazy><Views /></Lazy> },
       { path: 'subscribers', element: <Lazy><Subscribers /></Lazy> },
       { path: 'announcements', element: <Lazy><Announcements /></Lazy> },
+      { path: 'seo-monitor', element: <Lazy><CrawlerMonitor /></Lazy> },
+      { path: 'crawler-monitor', element: <Navigate to="/seo-monitor" replace /> },
       { path: 'system', element: <Lazy><System /></Lazy> },
     ],
   },

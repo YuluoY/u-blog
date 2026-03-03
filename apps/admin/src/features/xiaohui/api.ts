@@ -1,5 +1,7 @@
 import { restQueryPaged, restDel } from '../../shared/api/rest'
 import type { PagedResult } from '../../shared/api/rest'
+import { apiClient } from '../../shared/api/client'
+import type { BackendResponse } from '../../shared/api/types'
 
 /** 小惠对话日志项 */
 export interface XiaohuiConversationItem {
@@ -42,4 +44,29 @@ export async function queryConversations(params: {
 /** 删除对话记录 */
 export async function deleteConversation(id: number) {
   return restDel(MODEL, id)
+}
+
+export interface XiaohuiIpBanItem {
+  ip: string
+  reason: string
+  source: 'auto' | 'manual'
+  createdAt: number
+  until: number
+  triggerCount?: number
+  retryAfterSec: number
+}
+
+export async function queryXiaohuiIpGuardList(): Promise<{ list: XiaohuiIpBanItem[]; total: number }> {
+  const res = await apiClient.get<BackendResponse<{ list: XiaohuiIpBanItem[]; total: number }>>('/xiaohui/ip-guard/list')
+  return res.data.data || { list: [], total: 0 }
+}
+
+export async function createXiaohuiIpBan(payload: { ip: string; minutes?: number; reason?: string }) {
+  const res = await apiClient.post<BackendResponse<{ ip: string; until: number }>>('/xiaohui/ip-guard/ban', payload)
+  return res.data.data
+}
+
+export async function removeXiaohuiIpBan(payload: { ip: string }) {
+  const res = await apiClient.post<BackendResponse<{ ip: string }>>('/xiaohui/ip-guard/unban', payload)
+  return res.data.data
 }

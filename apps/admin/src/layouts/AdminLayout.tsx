@@ -109,6 +109,7 @@ function buildMenuConfig(t: (key: string) => string): {
         children: [
           { key: '/settings', icon: SettingOutlined, label: t('menu.settings') },
           { key: '/analytics', icon: BarChartOutlined, label: t('menu.analytics') },
+          { key: '/seo-monitor', icon: GlobalOutlined, label: t('menu.crawlerMonitor') },
           { key: '/system', icon: ControlOutlined, label: t('menu.system') },
         ],
       },
@@ -129,6 +130,8 @@ const GUEST_ALLOWED_PATHS = new Set([
   '/comments', '/friend-links', '/subscribers', '/xiaohui',
   '/announcements',
   '/analytics',
+  '/seo-monitor',
+  '/crawler-monitor',
 ])
 
 const ADMIN_HIDDEN_PATHS = new Set([

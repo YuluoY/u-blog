@@ -120,3 +120,11 @@ export async function fetchLogs(params: LogListParams = {}) {
   const res = await apiClient.get<BackendResponse<LogListResult>>('/activity/logs', { params })
   return res.data.data
 }
+
+/** 按 IP 清理行为日志 */
+export async function clearLogsByIp(ip: string) {
+  const res = await apiClient.delete<BackendResponse<{ deleted: number }>>('/activity/logs/by-ip', {
+    data: { ip },
+  })
+  return res.data.data
+}

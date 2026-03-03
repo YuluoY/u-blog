@@ -41,6 +41,7 @@ export const zh = {
     routes: '路由管理',
     xiaohui: '小惠对话',
     system: '系统管理',
+    crawlerMonitor: 'SEO监控',
     likes: '点赞记录',
     views: '浏览记录',
     subscribers: '订阅管理',

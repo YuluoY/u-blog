@@ -344,6 +344,16 @@ function extractFirstHeading(mdContent: string): string {
 }
 
 /**
+ * 每次发布时自动提取标题：优先首个 Markdown 标题，其次正文摘要前 60 字
+ */
+function extractAutoTitle(mdContent: string): string {
+  const heading = extractFirstHeading(mdContent)
+  if (heading) return heading
+  const fallback = extractSummary(mdContent, 60)
+  return fallback.replace(/\.\.\.$/, '').trim()
+}
+
+/**
  * 从 Markdown 内容提取简介：
  * 去除标题、图片、链接、代码块、HTML 标签等标记，取前 200 个有效字符
  */
@@ -554,8 +564,17 @@ async function loadTags() {
 
 /* ---------- 提交处理 ---------- */
 async function handleSubmit() {
-  const title = form.title.trim()
-  if (!title || !props.userId) return
+  if (!props.userId) return
+  const autoTitle = extractAutoTitle(props.content)
+  if (!autoTitle) return
+  const autoDesc = extractSummary(props.content)
+  const autoCover = extractFirstImage(props.content)
+
+  // 每次点击发布都同步表单展示值，确保 UI 与提交值一致
+  form.title = autoTitle
+  form.desc = autoDesc
+  form.cover = autoCover
+
   const publishedAt = publishNow.value
     ? new Date().toISOString()
     : form.publishedAt
@@ -572,16 +591,16 @@ async function handleSubmit() {
   }
 
   const payload: WriteSaveFormPayload = {
-    title,
+    title: autoTitle,
     content: props.content,
-    desc: form.desc.trim() || undefined,
+    desc: autoDesc || undefined,
     status: form.status,
     publishedAt,
     categoryId: categoryId ?? null,
     tags: form.tags.length > 0 ? form.tags : undefined,
     isPrivate: form.isPrivate,
     isTop: form.isTop,
-    cover: form.cover || undefined,
+    cover: autoCover || undefined,
     protect: encryptedProtect,
   }
   emit('submit', payload)

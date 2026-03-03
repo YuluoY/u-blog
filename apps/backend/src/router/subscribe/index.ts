@@ -3,7 +3,7 @@ import { getDataSource } from '@/utils'
 import SubscribeService from '@/service/subscribe'
 import rateLimit from 'express-rate-limit'
 
-const router = Router()
+const router: Router = Router()
 
 /** 订阅接口限流：同 IP 每小时最多 10 次 */
 const subscribeLimiter = rateLimit({

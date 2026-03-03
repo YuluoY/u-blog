@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { FRONTEND_LOGIN_URL } from './AuthContext'
 
 const mockUseAuth = vi.fn()
@@ -35,17 +36,21 @@ afterEach(() => {
 
 const { default: ProtectedRoute } = await import('./ProtectedRoute')
 
+function renderWithRouter(ui: React.ReactElement) {
+  return render(<MemoryRouter initialEntries={["/dashboard"]}>{ui}</MemoryRouter>)
+}
+
 describe('ProtectedRoute', () => {
   it('shows loading indicator while checking auth', () => {
     mockUseAuth.mockReturnValue({ user: null, loading: true })
-    render(<ProtectedRoute><div data-testid="child">OK</div></ProtectedRoute>)
+    renderWithRouter(<ProtectedRoute><div data-testid="child">OK</div></ProtectedRoute>)
     expect(screen.getByText('加载中…')).toBeTruthy()
     expect(screen.queryByTestId('child')).toBeNull()
   })
 
   it('redirects to frontend login when not authenticated', async () => {
     mockUseAuth.mockReturnValue({ user: null, loading: false })
-    render(<ProtectedRoute><div data-testid="child">OK</div></ProtectedRoute>)
+    renderWithRouter(<ProtectedRoute><div data-testid="child">OK</div></ProtectedRoute>)
     expect(screen.queryByTestId('child')).toBeNull()
     await waitFor(() => {
       expect(hrefSetter).toHaveBeenCalled()
@@ -57,7 +62,7 @@ describe('ProtectedRoute', () => {
 
   it('renders children when authenticated', () => {
     mockUseAuth.mockReturnValue({ user: { id: 1, username: 'admin' }, loading: false })
-    render(<ProtectedRoute><div data-testid="child">OK</div></ProtectedRoute>)
+    renderWithRouter(<ProtectedRoute><div data-testid="child">OK</div></ProtectedRoute>)
     expect(screen.getByTestId('child')).toBeTruthy()
     expect(screen.getByTestId('child').textContent).toBe('OK')
   })

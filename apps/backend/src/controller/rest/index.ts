@@ -1,6 +1,11 @@
 import type { Request } from 'express'
 import type { ControllerReturn } from '@u-blog/types'
 import { In } from 'typeorm'
+import { join } from 'node:path'
+import { existsSync, mkdirSync } from 'node:fs'
+import { randomBytes } from 'node:crypto'
+import sharp from 'sharp'
+import appCfg from '@/app'
 import { formatResponse, getClientIp, getDataSource, parseUserAgent, resolveIpLocation, decryptTransport } from '@/utils'
 import { tryit } from '@u-blog/utils'
 import RestService from '@/service/rest'
@@ -16,6 +21,9 @@ import {
   invalidateTaxonomyCache,
   invalidateSettingsCache,
 } from '@/service/cache'
+
+const DEFAULT_COVER_WIDTH = 1200
+const DEFAULT_COVER_HEIGHT = 630
 
 /**
  * 根据模型名称触发对应的缓存失效
@@ -173,11 +181,23 @@ class RestController
     if (isArticle && data && typeof data === 'object' && !Array.isArray(data)) {
       const { tags: tagIds, content, ...rest } = data as Record<string, unknown>
       const processedContent = typeof content === 'string' ? CommonService.processArticleContent(content) : content
+      const normalizedMeta = await normalizeArticleMeta({
+        title: rest.title,
+        desc: rest.desc,
+        cover: rest.cover,
+        content: typeof processedContent === 'string' ? processedContent : '',
+      }, true)
       // 传输层解密：前端对 protect 字段加密传输，需在落库前还原明文
       if (typeof rest.protect === 'string' && rest.protect) {
         rest.protect = decryptTransport(rest.protect)
       }
-      payload = { ...rest, content: processedContent } as typeof data
+      payload = {
+        ...rest,
+        title: normalizedMeta.title ?? 'Untitled',
+        desc: normalizedMeta.desc ?? '',
+        cover: normalizedMeta.cover,
+        content: processedContent,
+      } as typeof data
     }
 
     const tryData = await tryit<any, Error>(() => RestService.add(req.model, payload, ret))
@@ -251,6 +271,17 @@ class RestController
     // Article protect 字段传输解密
     if (isArticleModel(req) && typeof rest.protect === 'string' && rest.protect) {
       rest.protect = decryptTransport(rest.protect)
+    }
+    if (isArticleModel(req)) {
+      const normalizedMeta = await normalizeArticleMeta({
+        title: rest.title,
+        desc: rest.desc,
+        cover: rest.cover,
+        content: typeof rest.content === 'string' ? rest.content : '',
+      }, false)
+      if (normalizedMeta.title) rest.title = normalizedMeta.title
+      if (normalizedMeta.desc != null) rest.desc = normalizedMeta.desc
+      if (normalizedMeta.cover) rest.cover = normalizedMeta.cover
     }
     // 更新文章前先提取 tags 字段，避免传入 RestService.update 导致异常
     const isArticle = isArticleModel(req)
@@ -367,6 +398,217 @@ function humanizeDuplicateError(tryData: [Error | null, any], req: Request): voi
 
   // 替换错误消息为友好文案
   err.message = `${label}已存在，请更换后重试`
+}
+
+/** 从 Markdown 中提取首个一级至六级标题 */
+function extractFirstHeading(mdContent: string): string {
+  const match = mdContent.match(/^#{1,6}\s+(.+)$/m)
+  return match ? String(match[1]).trim() : ''
+}
+
+/** 提取摘要文本：去标记、压缩空白，保留前 N 字符 */
+function extractSummary(mdContent: string, maxLen = 200): string {
+  const text = mdContent
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/`[^`]+`/g, '')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/^#{1,6}\s+.*$/gm, '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/^>\s?/gm, '')
+    .replace(/[*_~]{1,3}/g, '')
+    .replace(/^[-*_]{3,}$/gm, '')
+    .replace(/\n{2,}/g, '\n')
+    .trim()
+
+  if (text.length <= maxLen) return text
+  return `${text.slice(0, maxLen)}...`
+}
+
+/** 提取 Markdown/HTML 中首张图片链接（跳过 data URI） */
+function extractFirstImage(mdContent: string): string {
+  const mdImageReg = /!\[[^\]]*\]\(([^)]+)\)/g
+  let match: RegExpExecArray | null
+  while ((match = mdImageReg.exec(mdContent)) !== null) {
+    const url = String(match[1]).trim()
+    if (!url.startsWith('data:')) return url
+  }
+
+  const htmlImageReg = /<img[^>]+src=["']([^"']+)["']/gi
+  while ((match = htmlImageReg.exec(mdContent)) !== null) {
+    const url = String(match[1]).trim()
+    if (!url.startsWith('data:')) return url
+  }
+  return ''
+}
+
+function pickRandomGradient(): [string, string] {
+  const palettes: Array<{ colors: [string, string]; weight: number }> = [
+    { colors: ['#5B8DEF', '#7AA2FF'], weight: 10 },
+    { colors: ['#7C5CFF', '#9E7BFF'], weight: 10 },
+    { colors: ['#00BFA6', '#5FD3BC'], weight: 9 },
+    { colors: ['#FF7A59', '#FF9F7A'], weight: 9 },
+    { colors: ['#E95AA8', '#F285C0'], weight: 8 },
+    { colors: ['#1F2A44', '#334A7D'], weight: 8 },
+    { colors: ['#FFB347', '#FFD166'], weight: 7 },
+    { colors: ['#2EC4B6', '#6EE7D8'], weight: 7 },
+    { colors: ['#8F94FB', '#B8B8FF'], weight: 7 },
+    { colors: ['#F66B6B', '#F8A5A5'], weight: 7 },
+    { colors: ['#43C6AC', '#6FE3CC'], weight: 6 },
+    { colors: ['#4E54C8', '#8F94FB'], weight: 6 },
+    { colors: ['#A770EF', '#FDB99B'], weight: 5 },
+    { colors: ['#30CFD0', '#91A7FF'], weight: 5 },
+  ]
+
+  const totalWeight = palettes.reduce((sum, item) => sum + item.weight, 0)
+  const seed = randomBytes(2).readUInt16BE(0) % totalWeight
+  let cursor = 0
+  for (const item of palettes) {
+    cursor += item.weight
+    if (seed < cursor) return item.colors
+  }
+  return palettes[0].colors
+}
+
+function sanitizeCoverTitle(text: string): string {
+  return text
+    .replace(/(^|[\s_-])\d{10,}(?=[\s_-]|$)/g, ' ')
+    .replace(/(^|[\s_-])\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}(?::\d{2})?)?(?=[\s_-]|$)/g, ' ')
+    .replace(/[\s_-]{2,}/g, ' ')
+    .trim()
+}
+
+function wrapCoverTitleLines(text: string, maxUnitsPerLine = 24, maxLines = 3): string[] {
+  const normalized = (text || '').trim()
+  if (!normalized) return ['无题小记']
+
+  const lines: string[] = []
+  let current = ''
+  let units = 0
+
+  const charUnits = (ch: string): number => /[\u0000-\u00ff]/.test(ch) ? 1 : 2
+
+  for (const ch of normalized) {
+    const nextUnits = units + charUnits(ch)
+    if (nextUnits > maxUnitsPerLine && current) {
+      lines.push(current)
+      if (lines.length >= maxLines) break
+      current = ch
+      units = charUnits(ch)
+    } else {
+      current += ch
+      units = nextUnits
+    }
+  }
+
+  if (lines.length < maxLines && current) {
+    lines.push(current)
+  }
+
+  if (lines.length > maxLines) {
+    lines.length = maxLines
+  }
+
+  const consumed = lines.join('').length
+  if (consumed < normalized.length && lines.length > 0) {
+    const last = lines[lines.length - 1]
+    lines[lines.length - 1] = `${last.slice(0, Math.max(0, last.length - 1))}…`
+  }
+
+  return lines.length > 0 ? lines : ['无题小记']
+}
+
+function escapeXml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
+}
+
+/** 默认封面：生成与上传封面风格一致的 PNG 文件，返回 /uploads URL */
+async function buildDefaultCoverFileUrl(title: string): Promise<string> {
+  const rawTitle = (title || '无题小记').trim()
+  const coverTitle = sanitizeCoverTitle(rawTitle) || '无题小记'
+  const titleLines = wrapCoverTitleLines(coverTitle, 24, 3)
+  const firstLineY = titleLines.length === 1 ? 332 : titleLines.length === 2 ? 296 : 264
+  const lineGap = 68
+  const titleTspans = titleLines
+    .map((line, idx) => `<tspan x="600" dy="${idx === 0 ? 0 : lineGap}">${escapeXml(line)}</tspan>`)
+    .join('')
+  const [startColor, endColor] = pickRandomGradient()
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${DEFAULT_COVER_WIDTH}" height="${DEFAULT_COVER_HEIGHT}" viewBox="0 0 ${DEFAULT_COVER_WIDTH} ${DEFAULT_COVER_HEIGHT}">
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="${startColor}"/>
+    <stop offset="100%" stop-color="${endColor}"/>
+  </linearGradient>
+  <radialGradient id="mist" cx="50%" cy="35%" r="65%">
+    <stop offset="0%" stop-color="rgba(255,255,255,0.18)"/>
+    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+  </radialGradient>
+  <filter id="blur40" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur stdDeviation="24"/>
+  </filter>
+  <clipPath id="titleClip">
+    <rect x="170" y="214" width="860" height="240" rx="8"/>
+  </clipPath>
+</defs>
+<rect width="100%" height="100%" fill="url(#bg)"/>
+<rect width="100%" height="100%" fill="url(#mist)"/>
+
+<circle cx="128" cy="102" r="56" fill="rgba(255,255,255,0.20)" filter="url(#blur40)"/>
+<circle cx="1046" cy="108" r="46" fill="rgba(255,255,255,0.19)" filter="url(#blur40)"/>
+<circle cx="1110" cy="178" r="28" fill="rgba(255,255,255,0.15)" filter="url(#blur40)"/>
+<circle cx="144" cy="452" r="72" fill="rgba(255,255,255,0.20)" filter="url(#blur40)"/>
+<circle cx="968" cy="470" r="64" fill="rgba(255,255,255,0.16)" filter="url(#blur40)"/>
+
+<text x="600" y="154" text-anchor="middle" font-size="30" letter-spacing="10" font-family="Avenir Next,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif" fill="rgba(255,255,255,0.86)">NOTES</text>
+<line x1="516" y1="182" x2="684" y2="182" stroke="rgba(255,255,255,0.78)" stroke-width="3" stroke-linecap="round"/>
+
+<text x="600" y="252" text-anchor="middle" font-size="38" font-family="Avenir Next,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif" fill="rgba(40,50,38,0.82)">✎</text>
+<text x="600" y="${firstLineY}" text-anchor="middle" clip-path="url(#titleClip)" font-size="56" font-family="Avenir Next,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif" fill="#ffffff" font-weight="700">${titleTspans}</text>
+
+<text x="600" y="520" text-anchor="middle" font-size="40" font-family="Avenir Next,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif" fill="rgba(255,255,255,0.55)">uluo.cloud</text>
+</svg>`
+
+  const uploadsDir = join(appCfg.staticPath, 'uploads')
+  if (!existsSync(uploadsDir)) {
+    mkdirSync(uploadsDir, { recursive: true })
+  }
+
+  const filename = `cover-article-${Date.now()}-${randomBytes(4).toString('hex')}.png`
+  const filePath = join(uploadsDir, filename)
+  await sharp(Buffer.from(svg)).png({ quality: 92, compressionLevel: 9 }).toFile(filePath)
+  return `/uploads/${filename}`
+}
+
+async function normalizeArticleMeta(input: {
+  title: unknown
+  desc: unknown
+  cover: unknown
+  content: string
+}, isCreate: boolean): Promise<{ title?: string; desc?: string; cover?: string }> {
+  const content = typeof input.content === 'string' ? input.content : ''
+  const heading = extractFirstHeading(content)
+  const summary = extractSummary(content)
+
+  const titleFromPayload = typeof input.title === 'string' ? input.title.trim() : ''
+  const descFromPayload = typeof input.desc === 'string' ? input.desc.trim() : ''
+  const coverFromPayload = typeof input.cover === 'string' ? input.cover.trim() : ''
+
+  const normalizedTitle = heading || titleFromPayload || (isCreate ? summary.slice(0, 60).replace(/\.\.\.$/, '').trim() || 'Untitled' : '')
+  const normalizedDesc = summary || descFromPayload || (isCreate ? '' : undefined)
+  const extractedCover = extractFirstImage(content)
+  const normalizedCover = extractedCover || coverFromPayload || await buildDefaultCoverFileUrl(normalizedTitle || 'Untitled')
+
+  return {
+    title: normalizedTitle || undefined,
+    desc: normalizedDesc,
+    cover: normalizedCover,
+  }
 }
 
 export default new RestController()

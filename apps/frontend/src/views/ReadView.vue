@@ -218,6 +218,7 @@ import { filterSensitiveWords } from '@/utils/sensitiveFilter'
 import { useSubscribe } from '@/composables/useSubscribe'
 import { setMobileToc, clearMobileToc } from '@/composables/useMobileToc'
 import { trackArticleView, trackArticleLike, trackComment } from '@/composables/useActivityTracker'
+import { useSeo, buildArticleJsonLd, buildBreadcrumbJsonLd } from '@/composables/useSeo'
 
 defineOptions({
   name: 'ReadView'
@@ -255,6 +256,32 @@ const canEdit = computed(() => {
   if (!isLoggedIn.value || !article.value) return false
   const articleUserId = article.value.userId ?? (article.value.user as any)?.id
   return user.value?.id === articleUserId
+})
+
+/* ---- SEO 元信息：动态注入 title / meta / JSON-LD ---- */
+useSeo(() => {
+  const a = article.value
+  if (!a) return { title: '阅读' }
+  const authorName = a.user?.namec || (a.user as any)?.username || ''
+  const keywords = [
+    a.category?.name,
+    ...(a.tags?.map((t: any) => t.name) || []),
+  ].filter(Boolean).join(',')
+  return {
+    title: a.title,
+    description: a.desc || `${a.title} - ${authorName}`,
+    keywords,
+    author: authorName,
+    image: a.cover || undefined,
+    type: 'article',
+    publishedTime: a.publishedAt ? new Date(a.publishedAt).toISOString() : undefined,
+    modifiedTime: a.updatedAt ? new Date(a.updatedAt).toISOString() : undefined,
+    jsonLd: buildArticleJsonLd({
+      ...a,
+      id: Number(a.id),
+      publishedAt: a.publishedAt,
+    }),
+  }
 })
 
 /* ---- 密码保护 ---- */

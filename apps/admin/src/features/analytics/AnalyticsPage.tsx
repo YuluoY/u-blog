@@ -13,7 +13,10 @@ import {
   Spin,
   Tabs,
   Button,
+  Popconfirm,
+  App,
 } from 'antd'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   EyeOutlined,
   UserOutlined,
@@ -47,7 +50,7 @@ import {
   useDeviceStats,
   useActivityLogs,
 } from './useAnalytics'
-import type { LogListParams } from './api'
+import { clearLogsByIp, type LogListParams } from './api'
 import { exportToJSON } from '../../shared/utils/exportData'
 import { WriteAction } from '../../shared/components/WriteAction'
 
@@ -94,8 +97,12 @@ function formatDuration(ms: number | null | undefined): string {
 }
 
 export default function AnalyticsPage() {
+  const queryClient = useQueryClient()
+  const { message } = App.useApp()
+
   const [days, setDays] = useState(30)
   const [logParams, setLogParams] = useState<LogListParams>({ page: 1, pageSize: 15 })
+  const [clearIp, setClearIp] = useState('')
 
   const { data: overview, isLoading: loadingOverview } = useOverview()
   const { data: trends, isLoading: loadingTrends } = useTrends(days)
@@ -103,6 +110,18 @@ export default function AnalyticsPage() {
   const { data: geo } = useGeoDistribution(20)
   const { data: deviceStats } = useDeviceStats(10)
   const { data: logsData, isLoading: loadingLogs } = useActivityLogs(logParams)
+
+  const clearByIp = useMutation({
+    mutationFn: (ip: string) => clearLogsByIp(ip),
+    onSuccess: (data, ip) => {
+      queryClient.invalidateQueries({ queryKey: ['analytics'] })
+      message.success(`已清理 IP ${ip} 的 ${data.deleted} 条日志`)
+      setClearIp('')
+    },
+    onError: (err: Error) => {
+      message.error(err.message || '清理失败')
+    },
+  })
 
   /** 日志表列 */
   const logColumns: ColumnsType<any> = useMemo(() => [
@@ -392,6 +411,27 @@ export default function AnalyticsPage() {
             style={{ width: 200 }}
             onSearch={(v) => setLogParams((p) => ({ ...p, path: v || undefined, page: 1 }))}
           />
+          <Input
+            placeholder="待清理 IP"
+            allowClear
+            style={{ width: 160 }}
+            value={clearIp}
+            onChange={(e) => setClearIp(e.target.value)}
+          />
+          <WriteAction>
+            <Popconfirm
+              title="确认清理该 IP 的行为访问日志？"
+              description={clearIp ? `IP: ${clearIp}` : '请先输入 IP'}
+              okText="确认"
+              cancelText="取消"
+              disabled={!clearIp.trim()}
+              onConfirm={() => clearByIp.mutate(clearIp.trim())}
+            >
+              <Button danger loading={clearByIp.isPending} disabled={!clearIp.trim()}>
+                按 IP 清理日志
+              </Button>
+            </Popconfirm>
+          </WriteAction>
           <RangePicker
             size="middle"
             onChange={(_, [s, e]) => setLogParams((p) => ({

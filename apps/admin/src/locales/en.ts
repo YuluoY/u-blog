@@ -41,6 +41,7 @@ export const en = {
     routes: 'Routes',
     xiaohui: 'Xiaohui Chat',
     system: 'System',
+    crawlerMonitor: 'SEO Monitor',
     likes: 'Likes',
     views: 'Views',
     subscribers: 'Subscribers',

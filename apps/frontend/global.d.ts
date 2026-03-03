@@ -8,6 +8,7 @@ import type { IStore } from '@/stores'
 
 declare global {
   const $u: IStore
+  const __BUILD_HASH__: string
   interface Window {
     $u: IStore
     $uFn: AppFn
