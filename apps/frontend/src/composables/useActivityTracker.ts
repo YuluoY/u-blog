@@ -21,6 +21,9 @@ const FLUSH_INTERVAL = 10_000
 /** 最大缓冲事件数，超过立即刷新 */
 const MAX_BUFFER_SIZE = 20
 
+/** 短窗口重复事件抑制时间（毫秒） */
+const EVENT_DEDUP_WINDOW_MS = 1500
+
 /** 获取或创建 sessionId */
 function getSessionId(): string {
   const KEY = 'u_session_id'
@@ -36,14 +39,60 @@ function getSessionId(): string {
 let buffer: TrackEvent[] = []
 let flushTimer: ReturnType<typeof setInterval> | null = null
 
+/** 最近事件指纹（用于抑制短时间重复上报） */
+const recentEventMap = new Map<string, number>()
+
 /** 页面进入时间 */
 let pageEnterTime = 0
 let currentPath = ''
 
+/** 页面浏览最小有效停留时长（毫秒），过滤重定向等瞬时页面 */
+const MIN_PAGE_VIEW_DURATION = 500
+
 const sessionId = getSessionId()
+
+function sortObjectKeys(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortObjectKeys)
+  if (value && typeof value === 'object') {
+    const obj = value as Record<string, unknown>
+    return Object.keys(obj).sort().reduce<Record<string, unknown>>((acc, key) => {
+      acc[key] = sortObjectKeys(obj[key])
+      return acc
+    }, {})
+  }
+  return value
+}
+
+function buildEventFingerprint(dto: Omit<TrackEvent, 'sessionId'>): string {
+  const payload = {
+    type: dto.type,
+    path: dto.path ?? '',
+    referer: dto.referer ?? '',
+    duration: dto.duration ?? null,
+    metadata: sortObjectKeys(dto.metadata ?? null),
+  }
+  return JSON.stringify(payload)
+}
+
+function shouldDropDuplicate(dto: Omit<TrackEvent, 'sessionId'>): boolean {
+  const now = Date.now()
+  for (const [fingerprint, ts] of recentEventMap) {
+    if (now - ts > EVENT_DEDUP_WINDOW_MS) recentEventMap.delete(fingerprint)
+  }
+
+  const fingerprint = buildEventFingerprint(dto)
+  const lastTs = recentEventMap.get(fingerprint)
+  if (lastTs && now - lastTs <= EVENT_DEDUP_WINDOW_MS) {
+    return true
+  }
+
+  recentEventMap.set(fingerprint, now)
+  return false
+}
 
 /** 入队一条事件 */
 function enqueue(dto: Omit<TrackEvent, 'sessionId'>) {
+  if (shouldDropDuplicate(dto)) return
   buffer.push({ ...dto, sessionId })
   if (buffer.length >= MAX_BUFFER_SIZE) flush()
 }
@@ -70,8 +119,8 @@ function flush() {
 function finishPageView() {
   if (!currentPath || !pageEnterTime) return
   const duration = Math.round(Date.now() - pageEnterTime)
-  if (duration > 500) {
-    // 补发带 duration 的 page_view
+  if (duration > MIN_PAGE_VIEW_DURATION) {
+    // 仅在离开页面时写入一条 page_view，避免同次访问重复记录
     enqueue({ type: 'page_view', path: currentPath, duration, referer: document.referrer })
   }
   currentPath = ''
@@ -80,11 +129,12 @@ function finishPageView() {
 
 /** 开始记录新页面 */
 function startPageView(path: string) {
+  // 同一路径重复触发（如初始导航 + 可见性恢复）直接忽略
+  if (currentPath === path && pageEnterTime) return
+
   finishPageView()
   currentPath = path
   pageEnterTime = Date.now()
-  // 立即记录一条不含 duration 的 page_view（PV 计数）
-  enqueue({ type: 'page_view', path, referer: document.referrer })
 }
 
 /**
@@ -110,10 +160,13 @@ export function useActivityTracker() {
   // 页面可见性变化：隐藏时结束当前页计时并刷新
   function onVisibility() {
     if (document.hidden) {
-      finishPageView()
+      // 仅刷新缓冲区，不在 hidden/visible 切换时切断一次页面访问
       flush()
     } else {
-      startPageView(window.location.pathname)
+      // 兜底：当当前无活跃页面计时时（例如异常恢复）再重启计时
+      if (!currentPath || !pageEnterTime) {
+        startPageView(window.location.pathname)
+      }
     }
   }
 

@@ -68,6 +68,7 @@ const TYPE_LABELS: Record<string, string> = {
   register: '注册',
   comment: '评论',
   click: '点击',
+  crawler_visit: '爬虫访问',
 }
 
 /** 事件类型标签颜色 */
@@ -82,6 +83,11 @@ const TYPE_COLORS: Record<string, string> = {
   register: 'purple',
   comment: 'gold',
   click: 'lime',
+  crawler_visit: 'volcano',
+}
+
+function getTypeLabel(type: string): string {
+  return TYPE_LABELS[type] || `未定义事件（${type}）`
 }
 
 /** 饼图颜色 */
@@ -102,6 +108,7 @@ export default function AnalyticsPage() {
 
   const [days, setDays] = useState(30)
   const [logParams, setLogParams] = useState<LogListParams>({ page: 1, pageSize: 15 })
+  const [logTab, setLogTab] = useState<'all' | 'crawler'>('all')
   const [clearIp, setClearIp] = useState('')
 
   const { data: overview, isLoading: loadingOverview } = useOverview()
@@ -129,7 +136,7 @@ export default function AnalyticsPage() {
       title: '事件',
       dataIndex: 'type',
       width: 100,
-      render: (t: string) => <Tag color={TYPE_COLORS[t] || 'default'}>{TYPE_LABELS[t] || t}</Tag>,
+      render: (t: string) => <Tag color={TYPE_COLORS[t] || 'default'}>{getTypeLabel(t)}</Tag>,
     },
     {
       title: '用户',
@@ -207,7 +214,17 @@ export default function AnalyticsPage() {
   ], [])
 
   /** 事件类型选项 */
-  const typeOptions = Object.entries(TYPE_LABELS).map(([k, v]) => ({ label: v, value: k }))
+  const typeOptions = Object.entries(TYPE_LABELS).map(([k, v]) => ({ label: `${v} (${k})`, value: k }))
+
+  function handleLogTabChange(key: string) {
+    const nextTab = key === 'crawler' ? 'crawler' : 'all'
+    setLogTab(nextTab)
+    setLogParams((p) => ({
+      ...p,
+      type: nextTab === 'crawler' ? 'crawler_visit' : undefined,
+      page: 1,
+    }))
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -390,6 +407,16 @@ export default function AnalyticsPage() {
 
       {/* ---- 行为日志明细 ---- */}
       <Card title="行为日志明细" extra={<WriteAction><Button size="small" icon={<DownloadOutlined />} onClick={() => exportToJSON(logsData?.list ?? [], 'activity-logs')}>导出</Button></WriteAction>}>
+        <Tabs
+          size="small"
+          activeKey={logTab}
+          onChange={handleLogTabChange}
+          style={{ marginBottom: 12 }}
+          items={[
+            { key: 'all', label: '全部行为' },
+            { key: 'crawler', label: 'SEO 抓取' },
+          ]}
+        />
         <Space wrap style={{ marginBottom: 16 }}>
           <Select
             placeholder="事件类型"
@@ -397,7 +424,11 @@ export default function AnalyticsPage() {
             style={{ width: 130 }}
             options={typeOptions}
             value={logParams.type || undefined}
-            onChange={(v) => setLogParams((p) => ({ ...p, type: v || undefined, page: 1 }))}
+            onChange={(v) => setLogParams((p) => ({
+              ...p,
+              type: v || undefined,
+              page: 1,
+            }))}
           />
           <Input.Search
             placeholder="IP 搜索"
