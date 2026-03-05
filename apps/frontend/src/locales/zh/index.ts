@@ -192,6 +192,12 @@ export default {
     continue: '续写',
     explain: '解释',
     processing: '正在生成...',
+    copyResult: '复制结果',
+    replaceText: '替换原文',
+    copiedToClipboard: '已复制到剪贴板',
+    copyFailed: '复制失败',
+    replaced: '已替换',
+    replaceFailed: '替换失败',
   },
   about: {
     title: '关于',

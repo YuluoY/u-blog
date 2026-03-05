@@ -38,6 +38,7 @@ import '@u-blog/ui/dist/es/components/stats-bar/style.css'
 import '@u-blog/ui/dist/es/components/tag/style.css'
 import '@u-blog/ui/dist/es/components/tabs/style.css'
 import '@u-blog/ui/dist/es/components/text/style.css'
+import '@u-blog/ui/dist/es/components/toolbar/style.css'
 import '@u-blog/ui/dist/es/components/tooltip/style.css'
 import '@u-blog/ui/dist/es/components/upload/style.css'
 

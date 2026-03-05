@@ -192,6 +192,12 @@ export default {
     continue: 'Continue',
     explain: 'Explain',
     processing: 'Generating...',
+    copyResult: 'Copy',
+    replaceText: 'Replace',
+    copiedToClipboard: 'Copied to clipboard',
+    copyFailed: 'Copy failed',
+    replaced: 'Replaced',
+    replaceFailed: 'Replace failed',
   },
   about: {
     title: 'About',

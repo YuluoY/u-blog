@@ -698,6 +698,8 @@ async function saveModelSettings()
     record[SETTING_KEYS.OPENAI_CONTEXT_LENGTH] = { value: form.openai_context_length }
     await updateSettings(record)
     await loadServerSettings()
+    // 通知全局 AI 工具栏重新检测模型配置状态
+    window.dispatchEvent(new CustomEvent('u-blog:settings-saved'))
     UMessageFn({ message: t('settings.modelSaved'), type: 'success' })
   }
   catch (err: any)

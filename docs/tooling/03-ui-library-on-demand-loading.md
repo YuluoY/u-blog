@@ -1,7 +1,7 @@
 # UI 组件库按需加载
 
-- **Version**: 1.0.0
-- **Last Updated**: 2026-03-05
+- **Version**: 1.0.1
+- **Last Updated**: 2026-03-06
 - **Code Paths**: `packages/ui/`, `apps/frontend/src/plugins/ui.ts`, `apps/frontend/src/main.ts`
 
 ## 功能目的
@@ -66,4 +66,5 @@ pnpm --filter @u-blog/ui build
 - `sideEffects: ["*.css"]` 确保 CSS 不被 tree-shaking 误删
 
 ## Changelog
+- `2026-03-06` **Fix**: 补充 `toolbar/style.css` 按需导入，修复 UFloatingToolbar 内嵌 UToolbar 样式缺失导致撰写页浮动工具栏无样式问题
 - `2026-03-05` **Feat**: UI 组件库按需加载（组件/样式/图标），dist 体积 -69%
