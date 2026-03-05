@@ -1,4 +1,5 @@
 import express from 'express'
+import compression from 'compression'
 import cookieParser from 'cookie-parser'
 import helmet from 'helmet'
 import cors from 'cors'
@@ -18,6 +19,10 @@ const app = express()
 
 // 信任反代（Nginx / Cloudflare），使 req.ip 正确返回客户端真实 IP
 app.set('trust proxy', true)
+
+// HTTP 响应 gzip 压缩：文章正文等大 JSON 传输体积可降低 60-80%
+// threshold 1KB — 过小的响应不值得压缩
+app.use(compression({ threshold: 1024 }))
 
 // 安全头（helmet）
 app.use(helmet({

@@ -6,8 +6,7 @@ import { createPinia } from 'pinia'
 
 import router from '@/router'
 import i18n from './locales'
-import UccUI from '@u-blog/ui'
-import '@u-blog/ui/dist/es/index.css'
+import UccUI from './plugins/ui'
 import SnowfallPlugin from '@u-blog/snowfall'
 import '@u-blog/snowfall/dist/style.css'
 

@@ -8,7 +8,7 @@
     >
       <div class="article-compact__index">{{ index + 1 }}</div>
       <div v-if="item.cover" class="article-compact__thumb">
-        <img :src="item.cover" :alt="item.title" loading="lazy" />
+        <img :src="coverUrl(item.cover)" :alt="item.title" :loading="index === 0 ? 'eager' : 'lazy'" :fetchpriority="index === 0 ? 'high' : undefined" />
       </div>
       <div class="article-compact__main">
         <div class="article-compact__title-row">
@@ -44,6 +44,9 @@ import { useI18n } from 'vue-i18n'
 import type { IArticle } from '@u-blog/model'
 import { formatDateTime } from '@/utils/date'
 import { ARTICLE_HOT_VIEW_THRESHOLD } from '@/constants/settings'
+import { getOptimizedImageUrl, COVER_PRESETS } from '@/utils/image'
+
+const coverUrl = (src: string) => getOptimizedImageUrl(src, COVER_PRESETS.thumb)
 
 defineOptions({ name: 'ArticleCompact' })
 

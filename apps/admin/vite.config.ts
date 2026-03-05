@@ -2,6 +2,7 @@ import net from 'node:net'
 import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { compression } from 'vite-plugin-compression2'
 
 const BACKEND_PORT = 3000
 const BACKEND_HOST = 'localhost'
@@ -62,7 +63,18 @@ function backendGuardPlugin(): Plugin {
 // https://vite.dev/config/
 export default defineConfig({
   base: process.env.ADMIN_BASE_PATH || '/',
-  plugins: [react(), tailwindcss(), backendGuardPlugin()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    backendGuardPlugin(),
+    // gzip 预压缩：构建时生成 .gz 文件，Nginx gzip_static 直接返回
+    // TODO: vite-plugin-compression2 类型基于 Vite 5，与 Vite 7 不兼容，待插件升级后移除 as any
+    compression({
+      algorithms: ['gzip'],
+      threshold: 1024,
+      deleteOriginalAssets: false,
+    }) as any,
+  ],
   resolve: {
     // 保证 react / react-dom 单例，避免 @tanstack/react-query 等库拿到另一份 React 导致 useContext 为 null
     dedupe: ['react', 'react-dom'],

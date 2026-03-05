@@ -7,7 +7,7 @@
       @click="emit('jump', String(item.id))"
     >
       <div class="article-base-list__cover">
-        <img v-if="item.cover" :src="item.cover" :alt="item.title" loading="lazy" />
+        <img v-if="item.cover" :src="coverUrl(item.cover)" :alt="item.title" :loading="index === 0 ? 'eager' : 'lazy'" :fetchpriority="index === 0 ? 'high' : undefined" />
         <div v-else class="article-base-list__cover-placeholder">
           <u-icon icon="fa-solid fa-image" />
         </div>
@@ -70,6 +70,9 @@ import { useI18n } from 'vue-i18n'
 import type { IArticle } from '@u-blog/model'
 import { formatDateTime } from '@/utils/date'
 import { ARTICLE_HOT_VIEW_THRESHOLD } from '@/constants/settings'
+import { getOptimizedImageUrl, COVER_PRESETS } from '@/utils/image'
+
+const coverUrl = (src: string) => getOptimizedImageUrl(src, COVER_PRESETS.list)
 
 const { t } = useI18n()
 

@@ -7,21 +7,25 @@ import { STORAGE_KEYS } from '@/constants/storage'
 
 function loadCollapsed(): boolean {
   try {
-    return localStorage.getItem(STORAGE_KEYS.SIDEBAR_COLLAPSED) === 'true'
+    const v = localStorage.getItem(STORAGE_KEYS.SIDEBAR_COLLAPSED)
+    // 首次访问（未存过）默认折叠，让用户感知到展开交互
+    if (v === null) return true
+    return v === 'true'
   } catch {
-    return false
+    return true
   }
 }
 
 function loadActivePanel(): PanelId | null {
   try {
     const v = localStorage.getItem(STORAGE_KEYS.SIDEBAR_ACTIVE_PANEL)
-    if (v == null) return PANEL_ID.PROFILE // 从未存过，默认站长信息
+    // 首次访问（未存过）默认不打开面板
+    if (v == null) return null
     if (v === '') return null // 曾关闭面板
     const valid = Object.values(PANEL_ID) as string[]
-    return valid.includes(v) ? (v as PanelId) : PANEL_ID.PROFILE
+    return valid.includes(v) ? (v as PanelId) : null
   } catch {
-    return PANEL_ID.PROFILE
+    return null
   }
 }
 

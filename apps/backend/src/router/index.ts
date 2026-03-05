@@ -7,6 +7,7 @@ import systemRouter from './system'
 import exportRouter from './export'
 import subscribeRouter from './subscribe'
 import seoRouter from './seo'
+import uploadsOptRouter from './uploads-opt'
 import type { Application } from 'express'
 
 export const Router = {
@@ -17,6 +18,7 @@ export const Router = {
 	install(app: Application) {
 		app.use('/', commonRouter)
 		app.use('/seo', seoRouter)
+		app.use('/uploads-opt', uploadsOptRouter)
 		app.use('/xiaohui', xiaohuiRouter)
 		app.use('/activity', analyticsRouter)
 		app.use('/system', systemRouter)

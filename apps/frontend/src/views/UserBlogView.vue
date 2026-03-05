@@ -112,7 +112,7 @@
           >
             <!-- 封面缩略图 -->
             <div v-if="article.cover" class="user-blog__article-cover">
-              <u-image :src="article.cover" fit="cover" :width="80" :height="80" :radius="8" />
+              <u-image :src="coverUrl(article.cover)" fit="cover" :width="80" :height="80" :radius="8" />
             </div>
             <div class="user-blog__article-body">
               <div class="user-blog__article-top">
@@ -175,6 +175,9 @@ import { CArticleStatus } from '@u-blog/model'
 import { getUserBlogProfile, type UserBlogProfile } from '@/api/userBlog'
 import { getFriendLinks } from '@/api/friendLink'
 import { restQuery } from '@/api/request'
+import { getOptimizedImageUrl, COVER_PRESETS } from '@/utils/image'
+
+const coverUrl = (src: string) => getOptimizedImageUrl(src, COVER_PRESETS.thumb)
 
 defineOptions({ name: 'UserBlogView' })
 

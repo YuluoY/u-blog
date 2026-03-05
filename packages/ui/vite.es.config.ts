@@ -3,10 +3,6 @@ import vue from '@vitejs/plugin-vue'
 import { resolve } from 'node:path'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 import dts from 'vite-plugin-dts'
-import glob from 'fast-glob'
-import { basename, extname } from 'node:path'
-
-const components = glob.globSync('./src/components/*/src/*.{vue,tsx}').map(file => basename(file, extname(file)))
 
 export default defineConfig({
   plugins: [
@@ -104,23 +100,6 @@ export default defineConfig({
         }
       ],
       output: {
-        // 分包
-        manualChunks(id)
-        {
-          // 其他 node_modules 依赖
-          if (id.includes('node_modules'))
-            return 'vendors'
-          
-          if (id.includes('/packages/locale'))
-            return 'locale'
-          if (id.includes('/packages/theme'))
-            return 'theme'
-
-          const name = basename(id, extname(id))
-
-          if (components.includes(name))
-            return name
-        },
         assetFileNames: assetInfo =>
         {
           if (assetInfo.name === 'style.css')

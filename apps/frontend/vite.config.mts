@@ -8,6 +8,7 @@ import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 import AutoImport from 'unplugin-auto-import/vite'
 import UnCompoent from 'unplugin-vue-components/vite'
+import { compression } from 'vite-plugin-compression2'
 
 // src路径
 const SRC_PATH = fileURLToPath(new URL('./src', import.meta.url))
@@ -132,7 +133,13 @@ export default defineConfig({
     //   cache: false
     // })
     ,
-    versionJsonPlugin()
+    versionJsonPlugin(),
+    // gzip 预压缩：构建时生成 .gz 文件，Nginx gzip_static 直接返回无需实时压缩
+    compression({
+      algorithms: ['gzip'],
+      threshold: 1024, // 大于 1KB 才压缩
+      deleteOriginalAssets: false, // 保留原始文件（不支持 gzip 的客户端降级）
+    }),
   ],
   server: {
     proxy: {

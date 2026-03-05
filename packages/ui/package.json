@@ -5,10 +5,11 @@
   "main": "./dist/es/index.js",
   "type": "module",
   "scripts": {
-    "build": "pnpm run build:es && pnpm run build:umd && pnpm run copy-package && pnpm run generate-components-dts",
+    "build": "node -e \"import('fs').then(f=>f.rmSync('dist',{recursive:true,force:true}))\" && pnpm run build:es && pnpm run build:umd && pnpm run build:css && pnpm run copy-package && pnpm run generate-components-dts",
     "build:es": "vite build --config vite.es.config.ts && pnpm run copy-package && pnpm run generate-components-dts",
     "build:es:watch": "vite build --config vite.es.config.ts --watch",
     "build:umd": "vite build --config vite.umd.config.ts && pnpm run copy-package && pnpm run generate-components-dts",
+    "build:css": "node scripts/build-css.mjs",
     "copy-package": "node --input-type=module -e \"import{copyFileSync}from'fs';copyFileSync('package.json','dist/package.json')\"",
     "generate-components-dts": "node scripts/generate-components-dts.js",
     "dev": "pnpm run build:es:watch",
@@ -24,11 +25,15 @@
       "import": "./dist/es/index.js",
       "require": "./dist/umd/index.umd.cjs"
     },
+    "./base.css": "./dist/es/base.css",
     "./dist/": {
       "import": "./dist/",
       "require": "./dist/"
     }
   },
+  "sideEffects": [
+    "*.css"
+  ],
   "keywords": [],
   "author": "",
   "license": "ISC",

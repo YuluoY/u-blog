@@ -27,6 +27,10 @@
     "@u-blog/utils": "workspace:*"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^6.7.2",
+    "@fortawesome/free-brands-svg-icons": "^6.7.2",
+    "@fortawesome/free-regular-svg-icons": "^6.7.2",
+    "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@u-blog/snowfall": "workspace:*",
     "@vant/area-data": "^2.1.0",
     "animate.css": "^4.1.1",
@@ -68,6 +72,7 @@
     "unplugin-auto-import": "^0.17.5",
     "unplugin-vue-components": "^0.26.0",
     "vite": "^5.2.6",
+    "vite-plugin-compression2": "^2.5.0",
     "vue-tsc": "^2.0.0"
   }
 }

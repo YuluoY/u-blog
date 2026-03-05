@@ -1,13 +1,13 @@
 <template>
   <div class="article-waterfall">
     <article
-      v-for="item in data"
+      v-for="(item, index) in data"
       :key="item.id"
       class="article-waterfall__item"
       @click="emit('jump', String(item.id))"
     >
       <div v-if="item.cover" class="article-waterfall__cover">
-        <img :src="item.cover" :alt="item.title" loading="lazy" />
+        <img :src="coverUrl(item.cover)" :alt="item.title" :loading="index === 0 ? 'eager' : 'lazy'" :fetchpriority="index === 0 ? 'high' : undefined" />
       </div>
       <div class="article-waterfall__body">
         <div class="article-waterfall__title-row">
@@ -51,6 +51,9 @@ import { useI18n } from 'vue-i18n'
 import type { IArticle } from '@u-blog/model'
 import { formatDateTime } from '@/utils/date'
 import { ARTICLE_HOT_VIEW_THRESHOLD } from '@/constants/settings'
+import { getOptimizedImageUrl, COVER_PRESETS } from '@/utils/image'
+
+const coverUrl = (src: string) => getOptimizedImageUrl(src, COVER_PRESETS.thumb)
 
 defineOptions({ name: 'ArticleWaterfall' })
 

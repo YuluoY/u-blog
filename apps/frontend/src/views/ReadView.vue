@@ -7,9 +7,11 @@
           <div v-if="article" class="read-view__title-block">
             <img
               v-if="article.cover"
-              :src="article.cover"
+              :src="coverUrl(article.cover)"
               :alt="article.title"
               class="read-view__cover"
+              loading="eager"
+              fetchpriority="high"
             />
             <h1 class="read-view__title">{{ article.title }}</h1>
           </div>
@@ -219,6 +221,9 @@ import { useSubscribe } from '@/composables/useSubscribe'
 import { setMobileToc, clearMobileToc } from '@/composables/useMobileToc'
 import { trackArticleView, trackArticleLike, trackComment } from '@/composables/useActivityTracker'
 import { useSeo, buildArticleJsonLd, buildBreadcrumbJsonLd } from '@/composables/useSeo'
+import { getOptimizedImageUrl, COVER_PRESETS } from '@/utils/image'
+
+const coverUrl = (src: string) => getOptimizedImageUrl(src, COVER_PRESETS.detail)
 
 defineOptions({
   name: 'ReadView'
