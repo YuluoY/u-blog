@@ -36,6 +36,7 @@ import '@u-blog/ui/dist/es/components/select/style.css'
 import '@u-blog/ui/dist/es/components/slider/style.css'
 import '@u-blog/ui/dist/es/components/stats-bar/style.css'
 import '@u-blog/ui/dist/es/components/tag/style.css'
+import '@u-blog/ui/dist/es/components/tabs/style.css'
 import '@u-blog/ui/dist/es/components/text/style.css'
 import '@u-blog/ui/dist/es/components/tooltip/style.css'
 import '@u-blog/ui/dist/es/components/upload/style.css'
@@ -97,7 +98,7 @@ import {
   faRotate, faRss, faSave, faShare, faShareNodes, faShieldHalved, faSitemap,
   faSliders, faSpinner, faSquare, faStop, faStrikethrough, faSun,
   faTableCellsLarge, faTags, faThumbtack, faTimes, faTrash, faTrashAlt,
-  faTrashCan, faTriangleExclamation, faUndo, faUpload, faUser, faUserPen,
+  faTrashCan, faTriangleExclamation, faThumbsUp, faUndo, faUpload, faUser, faUserPen,
   faUsers, faWandMagicSparkles, faWater, faXmark, faZ
 } from '@fortawesome/free-solid-svg-icons'
 
@@ -107,6 +108,7 @@ import {
   faEye as farEye,
   faFaceSmile as farFaceSmile,
   faHeart as farHeart,
+  faThumbsUp as farThumbsUp,
   faUser as farUser
 } from '@fortawesome/free-regular-svg-icons'
 
@@ -136,10 +138,10 @@ library.add(
   faRotate, faRss, faSave, faShare, faShareNodes, faShieldHalved, faSitemap,
   faSliders, faSpinner, faSquare, faStop, faStrikethrough, faSun,
   faTableCellsLarge, faTags, faThumbtack, faTimes, faTrash, faTrashAlt,
-  faTrashCan, faTriangleExclamation, faUndo, faUpload, faUser, faUserPen,
+  faTrashCan, faTriangleExclamation, faThumbsUp, faUndo, faUpload, faUser, faUserPen,
   faUsers, faWandMagicSparkles, faWater, faXmark, faZ,
   // regular
-  farComment, farCommentDots, farEye, farFaceSmile, farHeart, farUser,
+  farComment, farCommentDots, farEye, farFaceSmile, farHeart, farThumbsUp, farUser,
   // brands
   faBehance, faBilibili, faCodepen, faDev, faDiscord, faDribbble, faFacebook,
   faFigma, faGithub, faInstagram, faLinkedin, faMastodon, faMedium, faNpm,

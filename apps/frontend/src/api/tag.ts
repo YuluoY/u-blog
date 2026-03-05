@@ -8,11 +8,15 @@ export interface ITagApis {
 }
 
 const apis: ITagApis = {
-  async getTagList() {
-    try {
+  async getTagList()
+  {
+    try
+    {
       const list = await restQuery<ITag[]>('tag', { take: 100 })
       return Array.isArray(list) ? list : []
-    } catch {
+    }
+    catch
+    {
       return []
     }
   }

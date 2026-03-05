@@ -180,7 +180,8 @@ const { visible: guestAdminVisible, openAdmin: openGuestAdmin } = useGuestAdmin(
 
 const isLoggedIn = computed(() => userStore.isLoggedIn)
 /** 当前用户是否拥有管理后台权限（admin / super_admin） */
-const isAdmin = computed(() => {
+const isAdmin = computed(() =>
+{
   const role = userStore.user?.role
   return role === 'admin' || role === 'super_admin'
 })
@@ -191,7 +192,8 @@ const mobileMenuOpen = ref(false)
 
 // 点击用户菜单外部时关闭下拉
 const userMenuRef = ref<HTMLElement | null>(null)
-useClickOutside(userMenuRef, () => {
+useClickOutside(userMenuRef, () =>
+{
   showDropdown.value = false
 })
 
@@ -203,28 +205,31 @@ useClickOutside(userMenuRef, () => {
  * - write 始终需要登录（游客无法创作）
  */
 const visibleRoutes = computed(() =>
-  appStore.routes?.filter((v: RouteRecordRaw) => {
+  appStore.routes?.filter((v: RouteRecordRaw) =>
+  {
     if (!v.name || !v.meta?.isAffix) return false
     // 后台控制的路由可见性
     if (appStore.isRouteHidden(String(v.name))) return false
-    if (v.meta?.requiresAuth && !isLoggedIn.value) {
+    if (v.meta?.requiresAuth && !isLoggedIn.value)
+    {
       // 子域名完整模式：允许游客看到 chat 入口
       const routeName = String(v.name)
-      if (blogOwnerStore.isSubdomainMode && !blogOwnerStore.isReadOnly && routeName === 'chat') {
+      if (blogOwnerStore.isSubdomainMode && !blogOwnerStore.isReadOnly && routeName === 'chat')
+      
         return true
-      }
+      
       return false
     }
     return true
   })
 )
 
-function navTitle(route: { name?: string | symbol | null; meta?: { title?: string } }) {
+function navTitle(route: { name?: string | symbol | null; meta?: { title?: string } })
+{
   const name = route.name != null ? String(route.name) : ''
   const key = name && name !== 'NotFound' ? `nav.${name}` : ''
   return key && t(key) !== key ? t(key) : (route.meta?.title ?? '')
 }
-
 
 
 const logo = computed(() => headerStore.logo)
@@ -234,43 +239,53 @@ const name = computed(
 )
 const navHeight = computed(() => pxToRem(HEADER_HEIGHT_PX))
 
-async function handleLogout() {
+async function handleLogout()
+{
   showDropdown.value = false
   trackLogout()
   await userStore.logout()
   router.push('/home')
 }
 
-function handleEditProfile() {
+function handleEditProfile()
+{
   showDropdown.value = false
   profileModalVisible.value = true
 }
 
 /** 跳转到我的主页 */
-function handleGoMyPage() {
+function handleGoMyPage()
+{
   showDropdown.value = false
   const username = userStore.user?.username
-  if (username) {
+  if (username)
+  
     router.push(`/@${username}`)
-  }
+  
 }
 
 /**
  * 将文本写入剪贴板（兼容非安全上下文）
  * 优先使用 Clipboard API，失败时回退到 execCommand
  */
-async function copyToClipboard(text: string): Promise<boolean> {
+async function copyToClipboard(text: string): Promise<boolean>
+{
   // 优先尝试 Clipboard API（需要 HTTPS 或 localhost）
-  if (navigator.clipboard?.writeText) {
-    try {
+  if (navigator.clipboard?.writeText)
+  {
+    try
+    {
       await navigator.clipboard.writeText(text)
       return true
-    } catch {
+    }
+    catch
+    {
       // 降级到 execCommand
     }
   }
   // Fallback：创建临时 textarea 并执行 execCommand('copy')
-  try {
+  try
+  {
     const textarea = document.createElement('textarea')
     textarea.value = text
     textarea.style.cssText = 'position:fixed;left:-9999px;top:-9999px;opacity:0'
@@ -279,36 +294,44 @@ async function copyToClipboard(text: string): Promise<boolean> {
     const ok = document.execCommand('copy')
     document.body.removeChild(textarea)
     return ok
-  } catch {
+  }
+  catch
+  {
     return false
   }
 }
 
 /** 复制分享链接到剪贴板（子域名格式） */
-async function handleCopyShareLink() {
+async function handleCopyShareLink()
+{
   showDropdown.value = false
   const username = userStore.user?.username
   if (!username) return
   const shareUrl = blogOwnerStore.buildShareUrl(username)
   const ok = await copyToClipboard(shareUrl)
-  if (ok) {
+  if (ok)
+  
     UMessageFn({ type: 'success', message: t('profile.shareLinkCopied') })
-  } else {
+  
+  else
+  
     UMessageFn({ type: 'error', message: t('profile.shareLinkFailed') })
-  }
+  
 }
 
 /** 管理后台入口（prod: /admin/，dev: http://localhost:5174） */
 const ADMIN_URL = import.meta.env.VITE_ADMIN_URL
   || (import.meta.env.PROD ? '/admin/' : 'http://localhost:5174')
 
-function handleGoAdmin() {
+function handleGoAdmin()
+{
   showDropdown.value = false
   window.open(ADMIN_URL, '_blank')
 }
 
 /** 移动端汉堡菜单中的查看后台入口 */
-function handleMobileGuestAdmin() {
+function handleMobileGuestAdmin()
+{
   mobileMenuOpen.value = false
   openGuestAdmin()
 }

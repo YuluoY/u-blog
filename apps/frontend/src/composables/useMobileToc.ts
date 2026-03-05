@@ -37,7 +37,8 @@ export function setMobileToc(
   Catalog: ShallowRef<Component | null>,
   scrollElement: ShallowRef<HTMLElement | undefined>,
   hasHeadings: import('vue').Ref<boolean>,
-) {
+)
+{
   tocState.Catalog = Catalog
   tocState.scrollElement = scrollElement
   tocState.hasHeadings = hasHeadings
@@ -46,7 +47,8 @@ export function setMobileToc(
 /**
  * 由 ReadView 在 unmount 时调用，清理目录数据
  */
-export function clearMobileToc() {
+export function clearMobileToc()
+{
   tocState.Catalog = shallowRef(null)
   tocState.scrollElement = shallowRef(undefined)
   tocState.hasHeadings = ref(false)
@@ -56,6 +58,7 @@ export function clearMobileToc() {
 /**
  * 由 MobileBottomNav / MobileTocSheet 调用，消费目录数据
  */
-export function useMobileToc(): MobileTocContext {
+export function useMobileToc(): MobileTocContext
+{
   return tocState
 }

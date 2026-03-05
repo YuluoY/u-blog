@@ -1000,6 +1000,132 @@ class CommonService {
     return { liked: !!existing }
   }
 
+  /* ---------- 评论点赞 ---------- */
+
+  /**
+   * 切换评论点赞状态
+   * - 登录用户：DB 精确去重（userId + commentId）
+   * - 游客：IP + fingerprint 去重（24 小时窗口）
+   * @returns { liked, likeCount }
+   */
+  async toggleCommentLike(
+    req: Request,
+    commentId: number,
+    ip: string | undefined,
+    fingerprint: string | undefined,
+  ): Promise<{ liked: boolean; likeCount: number }> {
+    const ds = getDataSource(req)
+    const commentRepo = ds.getRepository(Comment)
+    const likeRepo = ds.getRepository(Likes)
+    const userId = req.user?.id ?? null
+
+    const comment = await commentRepo.findOne({ where: { id: commentId } })
+    if (!comment) throw new Error('评论不存在')
+
+    let existing: Likes | null = null
+
+    if (userId) {
+      existing = await likeRepo.findOne({ where: { userId, commentId } })
+    } else if (ip || fingerprint) {
+      const qb = likeRepo.createQueryBuilder('l')
+        .where('l.commentId = :commentId', { commentId })
+        .andWhere('l.userId IS NULL')
+      if (ip) qb.andWhere('l.ip = :ip', { ip })
+      if (fingerprint) qb.andWhere('l.fingerprint = :fingerprint', { fingerprint })
+      const since = new Date(Date.now() - CommonService.LIKE_DEDUP_MS)
+      qb.andWhere('l.createdAt > :since', { since })
+      existing = await qb.getOne()
+    }
+
+    if (existing) {
+      await likeRepo.remove(existing)
+      await commentRepo.decrement({ id: commentId }, 'likeCount', 1)
+      const updated = await commentRepo.findOne({ where: { id: commentId }, select: ['id', 'likeCount'] })
+      return { liked: false, likeCount: Math.max(0, updated?.likeCount ?? 0) }
+    } else {
+      const like = likeRepo.create({
+        userId: userId ?? undefined,
+        commentId,
+        ip: ip ?? null,
+        fingerprint: fingerprint ?? null,
+      })
+      await likeRepo.save(like)
+      await commentRepo.increment({ id: commentId }, 'likeCount', 1)
+      const updated = await commentRepo.findOne({ where: { id: commentId }, select: ['id', 'likeCount'] })
+      return { liked: true, likeCount: updated?.likeCount ?? ((comment.likeCount ?? 0) + 1) }
+    }
+  }
+
+  /**
+   * 查询当前用户/游客是否已对指定评论点赞
+   */
+  async getCommentLikeStatus(
+    req: Request,
+    commentId: number,
+    ip: string | undefined,
+    fingerprint: string | undefined,
+  ): Promise<{ liked: boolean }> {
+    const ds = getDataSource(req)
+    const likeRepo = ds.getRepository(Likes)
+    const userId = req.user?.id ?? null
+
+    let existing: Likes | null = null
+
+    if (userId) {
+      existing = await likeRepo.findOne({ where: { userId, commentId } })
+    } else if (ip || fingerprint) {
+      const qb = likeRepo.createQueryBuilder('l')
+        .where('l.commentId = :commentId', { commentId })
+        .andWhere('l.userId IS NULL')
+      if (ip) qb.andWhere('l.ip = :ip', { ip })
+      if (fingerprint) qb.andWhere('l.fingerprint = :fingerprint', { fingerprint })
+      const since = new Date(Date.now() - CommonService.LIKE_DEDUP_MS)
+      qb.andWhere('l.createdAt > :since', { since })
+      existing = await qb.getOne()
+    }
+
+    return { liked: !!existing }
+  }
+
+  /**
+   * 批量查询评论的点赞状态
+   */
+  async getCommentLikeStatuses(
+    req: Request,
+    commentIds: number[],
+    ip: string | undefined,
+    fingerprint: string | undefined,
+  ): Promise<Record<number, boolean>> {
+    if (!commentIds.length) return {}
+    const ds = getDataSource(req)
+    const likeRepo = ds.getRepository(Likes)
+    const userId = req.user?.id ?? null
+    const result: Record<number, boolean> = {}
+    commentIds.forEach((id) => { result[id] = false })
+
+    if (userId) {
+      const likes = await likeRepo
+        .createQueryBuilder('l')
+        .where('l.commentId IN (:...ids)', { ids: commentIds })
+        .andWhere('l.userId = :userId', { userId })
+        .getMany()
+      likes.forEach((l) => { if (l.commentId) result[l.commentId] = true })
+    } else if (ip || fingerprint) {
+      const qb = likeRepo
+        .createQueryBuilder('l')
+        .where('l.commentId IN (:...ids)', { ids: commentIds })
+        .andWhere('l.userId IS NULL')
+      if (ip) qb.andWhere('l.ip = :ip', { ip })
+      if (fingerprint) qb.andWhere('l.fingerprint = :fingerprint', { fingerprint })
+      const since = new Date(Date.now() - CommonService.LIKE_DEDUP_MS)
+      qb.andWhere('l.createdAt > :since', { since })
+      const likes = await qb.getMany()
+      likes.forEach((l) => { if (l.commentId) result[l.commentId] = true })
+    }
+
+    return result
+  }
+
   /* ---------- 系统设置 ---------- */
 
   /**

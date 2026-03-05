@@ -50,17 +50,22 @@ const { t } = useI18n()
 const currentPath = computed(() => route.fullPath)
 
 /** 返回首页 */
-function goHome() {
+function goHome()
+{
   router.push('/home')
 }
 
 /** 返回上一页 */
-function goBack() {
-  if (window.history.length > 1) {
+function goBack()
+{
+  if (window.history.length > 1)
+  
     router.back()
-  } else {
+  
+  else
+  
     router.push('/home')
-  }
+  
 }
 </script>
 

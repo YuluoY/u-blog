@@ -134,12 +134,14 @@ const THEME_COLOR_VARS = [
 ] as const
 
 /** 为年份列表分配颜色，保证相邻年份不同色；确定性分配避免重算时闪烁 */
-function assignYearColors(years: number[]): Map<number, string> {
+function assignYearColors(years: number[]): Map<number, string>
+{
   const map = new Map<number, string>()
   if (years.length === 0) return map
   const n = THEME_COLOR_VARS.length
   let prevIndex = -1
-  for (const year of years) {
+  for (const year of years)
+  {
     const offset = Math.abs(year) % (n - 1) || 1
     let idx = (prevIndex + offset) % n
     if (idx === prevIndex) idx = (prevIndex + 1) % n
@@ -151,13 +153,15 @@ function assignYearColors(years: number[]): Map<number, string> {
 
 const archiveList = computed(() => articleStore.archiveList)
 
-const queryCategoryIds = computed(() => {
+const queryCategoryIds = computed(() =>
+{
   const raw = route.query.categoryIds
   if (typeof raw !== 'string' || !raw.trim()) return []
   return raw.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !Number.isNaN(n))
 })
 
-const queryTagIds = computed(() => {
+const queryTagIds = computed(() =>
+{
   const raw = route.query.tagIds
   if (typeof raw !== 'string' || !raw.trim()) return []
   return raw.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !Number.isNaN(n))
@@ -179,7 +183,8 @@ interface FilterChipItem {
   color?: string
 }
 
-const filterChips = computed(() => {
+const filterChips = computed(() =>
+{
   const cats = queryCategoryIds.value
   const tags = queryTagIds.value
   const list: FilterChipItem[] = []
@@ -201,24 +206,28 @@ const filterChipsForUi = computed(() =>
   }))
 )
 
-function onFilterChipClose(chip: { key: string }) {
+function onFilterChipClose(chip: { key: string })
+{
   const original = filterChips.value.find(c => c.key === chip.key)
   if (original) removeFilter(original)
 }
 
-function matchArticle(article: IArticle, categoryIds: number[], tagIds: number[], mode: 'or' | 'and'): boolean {
+function matchArticle(article: IArticle, categoryIds: number[], tagIds: number[], mode: 'or' | 'and'): boolean
+{
   const hasCategory = categoryIds.length > 0
   const hasTag = tagIds.length > 0
   const matchCat = !hasCategory || (article.categoryId != null && categoryIds.includes(article.categoryId))
   const tagIdsInArticle = (article.tags ?? []).map(t => t.id)
   const matchTag = !hasTag || tagIds.some(id => tagIdsInArticle.includes(id))
-  if (mode === 'or') {
+  if (mode === 'or')
+  
     return (hasCategory && matchCat) || (hasTag && matchTag)
-  }
+  
   return matchCat && matchTag
 }
 
-const filteredList = computed(() => {
+const filteredList = computed(() =>
+{
   const list = archiveList.value
   const categoryIds = queryCategoryIds.value
   const tagIds = queryTagIds.value
@@ -233,10 +242,12 @@ interface YearGroup {
   articles: IArticle[]
 }
 
-const archiveByYear = computed(() => {
+const archiveByYear = computed(() =>
+{
   const list = filteredList.value
   const byYear = new Map<number, IArticle[]>()
-  for (const a of list) {
+  for (const a of list)
+  {
     const createdAt = a.createdAt != null ? new Date(a.createdAt) : null
     const year = createdAt && !Number.isNaN(createdAt.getTime()) ? createdAt.getFullYear() : 0
     if (!byYear.has(year)) byYear.set(year, [])
@@ -244,9 +255,11 @@ const archiveByYear = computed(() => {
   }
   const years = Array.from(byYear.keys()).sort((a, b) => b - a)
   const colorMap = assignYearColors(years)
-  return years.map(year => {
+  return years.map(year =>
+  {
     // 每个年份内的文章按创建日期降序排列（新文章在前）
-    const articles = (byYear.get(year) ?? []).slice().sort((a, b) => {
+    const articles = (byYear.get(year) ?? []).slice().sort((a, b) =>
+    {
       const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0
       const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0
       return tb - ta
@@ -261,13 +274,15 @@ const archiveByYear = computed(() => {
 
 const hoveredId = ref<number | null>(null)
 
-const archiveMaxStats = computed(() => {
+const archiveMaxStats = computed(() =>
+{
   const list = filteredList.value
   if (list.length === 0) return undefined
   let view = 0
   let like = 0
   let comment = 0
-  for (const a of list) {
+  for (const a of list)
+  {
     if (a.viewCount > view) view = a.viewCount
     if (a.likeCount > like) like = a.likeCount
     if (a.commentCount > comment) comment = a.commentCount
@@ -275,31 +290,39 @@ const archiveMaxStats = computed(() => {
   return { viewCount: view, likeCount: like, commentCount: comment }
 })
 
-function yearTitleStyle(color: string) {
+function yearTitleStyle(color: string)
+{
   return { '--year-color': color }
 }
 
-function lineStyle(color: string) {
+function lineStyle(color: string)
+{
   return { '--year-color': color }
 }
 
-function dotWrapStyle(color: string) {
+function dotWrapStyle(color: string)
+{
   return { '--year-color': color }
 }
 
-function cardStyle(color: string) {
+function cardStyle(color: string)
+{
   return { '--year-color': color }
 }
 
-function removeFilter(item: FilterChipItem) {
+function removeFilter(item: FilterChipItem)
+{
   const mode = filterMode.value
-  if (item.type === 'category') {
+  if (item.type === 'category')
+  {
     const next = queryCategoryIds.value.filter(id => id !== item.id)
     const query: Record<string, string> = { filterMode: mode }
     if (next.length) query.categoryIds = next.join(',')
     if (queryTagIds.value.length) query.tagIds = queryTagIds.value.join(',')
     router.replace({ path: '/archive', query })
-  } else {
+  }
+  else
+  {
     const next = queryTagIds.value.filter(id => id !== item.id)
     const query: Record<string, string> = { filterMode: mode }
     if (queryCategoryIds.value.length) query.categoryIds = queryCategoryIds.value.join(',')
@@ -308,11 +331,13 @@ function removeFilter(item: FilterChipItem) {
   }
 }
 
-function clearFilters() {
+function clearFilters()
+{
   router.replace({ path: '/archive', query: {} })
 }
 
-function handleDotClick(id: string) {
+function handleDotClick(id: string)
+{
   router.push(`/read/${id}`)
 }
 
@@ -321,26 +346,31 @@ const archiveSentinelRef = ref<HTMLElement | null>(null)
 let archiveObserver: IntersectionObserver | null = null
 
 /** 创建 IntersectionObserver 并开始观察哨兵元素 */
-function setupArchiveObserver() {
+function setupArchiveObserver()
+{
   if (archiveObserver || !archiveSentinelRef.value) return
   // root 指定为实际滚动容器，避免嵌套 overflow 导致哨兵不触发
   const scrollRoot = document.querySelector('.layout-base__main') as HTMLElement | null
   archiveObserver = new IntersectionObserver(
-    (entries) => {
-      if (entries[0]?.isIntersecting && articleStore.archiveHasMore && !articleStore.archiveLoading) {
+    entries =>
+    {
+      if (entries[0]?.isIntersecting && articleStore.archiveHasMore && !articleStore.archiveLoading)
+      
         articleStore.loadMoreArchive()
-      }
+      
     },
     { root: scrollRoot, rootMargin: '200px' }
   )
   archiveObserver.observe(archiveSentinelRef.value)
 }
 
-onMounted(() => {
+onMounted(() =>
+{
   // 增量加载：store 已有缓存数据时跳过首次请求，直接复用
-  if (articleStore.archiveList.length === 0) {
+  if (articleStore.archiveList.length === 0)
+  
     articleStore.qryArchiveList()
-  }
+  
   categoryStore.qryCategoryList()
   tagStore.qryTagList()
 
@@ -350,11 +380,13 @@ onMounted(() => {
 })
 
 // 当哨兵元素从 null → HTMLElement（数据加载后 v-else 分支渲染）时，立即绑定 observer
-watch(archiveSentinelRef, (el) => {
+watch(archiveSentinelRef, el =>
+{
   if (el) setupArchiveObserver()
 })
 
-onBeforeUnmount(() => {
+onBeforeUnmount(() =>
+{
   archiveObserver?.disconnect()
 })
 </script>

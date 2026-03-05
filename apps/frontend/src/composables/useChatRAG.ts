@@ -2,12 +2,12 @@ import type { ChatSession } from '@/stores/chat'
 
 /* ====================================================================
  * useChatRAG — 轻量级前端 RAG（检索增强生成）
- * 
+ *
  * 原理：
  * 1. 对用户输入进行分词
  * 2. 基于 BM25 算法在所有历史会话中检索相关片段
  * 3. 将匹配到的上下文拼接为文本，传给后端注入系统提示词
- * 
+ *
  * 优势：
  * - 纯前端运行，无需额外 API 调用
  * - 支持中英文混合分词
@@ -57,22 +57,27 @@ const STOP_WORDS = new Set([
  * - 英文：按空格/标点分割为单词
  * - 过滤停用词和单字符英文
  */
-function tokenize(text: string): string[] {
+function tokenize(text: string): string[]
+{
   const lower = text.toLowerCase()
   const tokens: string[] = []
 
   // 提取中文单字
   const cjkMatches = lower.match(CJK_RANGE)
-  if (cjkMatches) {
-    cjkMatches.forEach(ch => {
+  if (cjkMatches)
+  {
+    cjkMatches.forEach(ch =>
+    {
       if (!STOP_WORDS.has(ch)) tokens.push(ch)
     })
   }
 
   // 提取英文单词
   const wordMatches = lower.match(WORD_RANGE)
-  if (wordMatches) {
-    wordMatches.forEach(w => {
+  if (wordMatches)
+  {
+    wordMatches.forEach(w =>
+    {
       if (w.length > 1 && !STOP_WORDS.has(w)) tokens.push(w)
     })
   }
@@ -102,15 +107,18 @@ interface DocEntry {
 /**
  * 构建 BM25 文档索引
  */
-function buildIndex(sessions: ChatSession[], excludeSessionId?: string | null): DocEntry[] {
+function buildIndex(sessions: ChatSession[], excludeSessionId?: string | null): DocEntry[]
+{
   const docs: DocEntry[] = []
 
-  for (const session of sessions) {
+  for (const session of sessions)
+  {
     // 跳过当前会话（避免自己检索自己）
     if (excludeSessionId && session.id === excludeSessionId) continue
     if (!session.messages?.length) continue
 
-    for (const msg of session.messages) {
+    for (const msg of session.messages)
+    {
       const content = msg.content.slice(0, MAX_CONTENT_LEN)
       if (content.length < 10) continue // 跳过过短内容
 
@@ -119,9 +127,10 @@ function buildIndex(sessions: ChatSession[], excludeSessionId?: string | null): 
 
       // 计算词频 (TF)
       const tfMap = new Map<string, number>()
-      for (const t of tokens) {
+      for (const t of tokens)
+      
         tfMap.set(t, (tfMap.get(t) || 0) + 1)
-      }
+      
 
       docs.push({
         sessionTitle: session.title,
@@ -140,7 +149,8 @@ function buildIndex(sessions: ChatSession[], excludeSessionId?: string | null): 
 /**
  * BM25 检索
  */
-function bm25Search(query: string, docs: DocEntry[], topK: number): RAGResult[] {
+function bm25Search(query: string, docs: DocEntry[], topK: number): RAGResult[]
+{
   const queryTokens = tokenize(query)
   if (queryTokens.length === 0 || docs.length === 0) return []
 
@@ -149,19 +159,21 @@ function bm25Search(query: string, docs: DocEntry[], topK: number): RAGResult[] 
 
   // 计算 IDF (逆文档频率)
   const dfMap = new Map<string, number>()
-  for (const token of new Set(queryTokens)) {
+  for (const token of new Set(queryTokens))
+  {
     let count = 0
-    for (const doc of docs) {
+    for (const doc of docs)
       if (doc.tfMap.has(token)) count++
-    }
     dfMap.set(token, count)
   }
 
   // 对每个文档计算 BM25 分数
   const scored: RAGResult[] = []
-  for (const doc of docs) {
+  for (const doc of docs)
+  {
     let score = 0
-    for (const token of queryTokens) {
+    for (const token of queryTokens)
+    {
       const df = dfMap.get(token) || 0
       const tf = doc.tfMap.get(token) || 0
       if (tf === 0) continue
@@ -173,7 +185,8 @@ function bm25Search(query: string, docs: DocEntry[], topK: number): RAGResult[] 
       score += idf * tfNorm
     }
 
-    if (score > 0) {
+    if (score > 0)
+    {
       scored.push({
         sessionTitle: doc.sessionTitle,
         role: doc.role,
@@ -194,7 +207,8 @@ function bm25Search(query: string, docs: DocEntry[], topK: number): RAGResult[] 
  * Chat RAG Composable
  * 在历史会话中检索与当前查询相关的内容，生成上下文摘要
  */
-export function useChatRAG() {
+export function useChatRAG()
+{
   /**
    * 检索与 query 相关的历史会话片段
    * @param query 用户输入的查询文本
@@ -210,7 +224,8 @@ export function useChatRAG() {
       topK?: number
       minScore?: number
     },
-  ): RAGResult[] {
+  ): RAGResult[]
+  {
     const { excludeSessionId, topK = 5, minScore = 1.0 } = options || {}
     const docs = buildIndex(sessions, excludeSessionId)
     const results = bm25Search(query, docs, topK)
@@ -220,7 +235,8 @@ export function useChatRAG() {
   /**
    * 将检索结果格式化为上下文文本（传给后端 context 字段）
    */
-  function formatContext(results: RAGResult[]): string {
+  function formatContext(results: RAGResult[]): string
+  {
     if (results.length === 0) return ''
     return results
       .map((r, i) => `[${i + 1}] 「${r.sessionTitle}」${r.role === 'user' ? '用户' : '助手'}：${r.content}`)

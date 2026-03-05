@@ -47,18 +47,23 @@ const loaded = ref(false)
 const dismissedIds = ref<Set<number>>(new Set())
 
 /** 从 localStorage 恢复已关闭列表 */
-function loadDismissedIds(): Set<number> {
-  try {
+function loadDismissedIds(): Set<number>
+{
+  try
+  {
     const raw = localStorage.getItem(DISMISSED_KEY)
     if (!raw) return new Set()
     return new Set(JSON.parse(raw) as number[])
-  } catch {
+  }
+  catch
+  {
     return new Set()
   }
 }
 
 /** 关闭某条公告，同时持久化 */
-function addDismissedId(id: number) {
+function addDismissedId(id: number)
+{
   dismissedIds.value = new Set([...dismissedIds.value, id])
   // 只保留最近 50 条，防止 localStorage 无限膨胀
   const arr = [...dismissedIds.value].slice(-50)
@@ -66,20 +71,23 @@ function addDismissedId(id: number) {
 }
 
 /** 当前展示的公告（第一条未关闭的启用公告） */
-const currentAnnouncement = computed<AnnouncementItem | null>(() => {
+const currentAnnouncement = computed<AnnouncementItem | null>(() =>
+{
   if (!loaded.value) return null
   return announcements.value.find(a => !dismissedIds.value.has(a.id)) ?? null
 })
 
 /** 是否有详情内容 */
-const hasDetail = computed(() => {
+const hasDetail = computed(() =>
+{
   return !!currentAnnouncement.value?.content?.trim()
 })
 
 /**
  * 横幅样式变量：bgColor 控制渐变基色，文字色固定跟随主题
  */
-const bannerStyle = computed(() => {
+const bannerStyle = computed(() =>
+{
   const a = currentAnnouncement.value
   if (!a) return {}
   const base = a.bgColor || 'var(--u-primary)'
@@ -89,25 +97,33 @@ const bannerStyle = computed(() => {
 })
 
 /** 关闭横幅 */
-function dismiss() {
-  if (currentAnnouncement.value) {
+function dismiss()
+{
+  if (currentAnnouncement.value)
+  
     addDismissedId(currentAnnouncement.value.id)
-  }
+  
 }
 
 /** 点击横幅 */
-function handleClick() {
-  if (hasDetail.value && currentAnnouncement.value) {
+function handleClick()
+{
+  if (hasDetail.value && currentAnnouncement.value)
+  
     router.push(`/announcement/${currentAnnouncement.value.id}`)
-  }
+  
 }
 
-onMounted(async () => {
+onMounted(async() =>
+{
   // 从 localStorage 恢复已关闭列表
   dismissedIds.value = loadDismissedIds()
-  try {
+  try
+  {
     announcements.value = await fetchActiveAnnouncements()
-  } catch {
+  }
+  catch
+  {
     // 公告获取失败不影响主流程
   }
   loaded.value = true

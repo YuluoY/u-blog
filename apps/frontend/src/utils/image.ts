@@ -16,7 +16,8 @@ export function getOptimizedImageUrl(
     /** 输出格式，默认 webp */
     format?: 'webp' | 'avif' | 'jpeg' | 'png'
   } = {}
-): string {
+): string
+{
   if (!src) return ''
 
   // 仅处理本站 /uploads/ 路径的图片

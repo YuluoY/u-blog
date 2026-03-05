@@ -187,19 +187,22 @@ const props = withDefaults(
 
 const DESC_MAX_LEN = 80
 
-const dateText = computed(() => {
+const dateText = computed(() =>
+{
   const d = props.article.publishedAt ?? props.article.createdAt
   return d != null ? formatDateTime(d) : '--'
 })
 
-const descTrimmed = computed(() => {
+const descTrimmed = computed(() =>
+{
   const d = props.article.desc
   if (!d || typeof d !== 'string') return ''
   return d.length <= DESC_MAX_LEN ? d : d.slice(0, DESC_MAX_LEN) + '…'
 })
 
 /** 极简展开内描述用完整文案，单行超出省略由 CSS 控制 */
-const articleDesc = computed(() => {
+const articleDesc = computed(() =>
+{
   const d = props.article.desc
   return (d && typeof d === 'string') ? d : ''
 })
@@ -212,27 +215,36 @@ let expandTimer: ReturnType<typeof setTimeout> | null = null
 let expandRafId: number | null = null
 watch(
   () => props.isHovered,
-  (hovered) => {
-    if (expandTimer) {
+  hovered =>
+  {
+    if (expandTimer)
+    {
       clearTimeout(expandTimer)
       expandTimer = null
     }
-    if (expandRafId != null) {
+    if (expandRafId != null)
+    {
       cancelAnimationFrame(expandRafId)
       expandRafId = null
     }
-    if (hovered) {
-      expandTimer = setTimeout(() => {
+    if (hovered)
+    {
+      expandTimer = setTimeout(() =>
+      {
         expandTimer = null
         // 推迟到下一帧再展开，避免与 hover 样式、sweep 等在同一帧内触发布局，减轻卡顿
-        expandRafId = requestAnimationFrame(() => {
+        expandRafId = requestAnimationFrame(() =>
+        {
           expandRafId = null
           expandOpen.value = true
         })
       }, EXPAND_DELAY_MS)
-    } else {
+    }
+    else
+    {
       // 收起也推迟一帧，与父级 hoveredId 更新分离，减少单帧工作量
-      expandRafId = requestAnimationFrame(() => {
+      expandRafId = requestAnimationFrame(() =>
+      {
         expandRafId = null
         expandOpen.value = false
       })
@@ -240,7 +252,8 @@ watch(
   },
   { immediate: true }
 )
-onBeforeUnmount(() => {
+onBeforeUnmount(() =>
+{
   if (expandTimer) clearTimeout(expandTimer)
   if (expandRafId != null) cancelAnimationFrame(expandRafId)
 })
@@ -251,7 +264,8 @@ const statsBarSegments = computed(() => [
   { value: props.article.commentCount, color: 'var(--u-success)', label: t('archive.comments') }
 ])
 
-const statsBarMax = computed(() => {
+const statsBarMax = computed(() =>
+{
   const m = props.maxStats
   if (!m) return undefined
   const sum = m.viewCount + m.likeCount + m.commentCount

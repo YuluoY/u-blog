@@ -59,7 +59,8 @@ const tocCtx = useMobileToc()
 const visible = computed(() => tocCtx.sheetVisible.value)
 
 /** 关闭抽屉 */
-function close() {
+function close()
+{
   tocCtx.sheetVisible.value = false
 }
 
@@ -67,9 +68,11 @@ function close() {
  * 点击目录项后自动关闭抽屉
  * MdCatalog 使用 div.md-editor-catalog-link > span 结构
  */
-function handleCatalogClick(e: MouseEvent) {
+function handleCatalogClick(e: MouseEvent)
+{
   const target = e.target as HTMLElement
-  if (target.closest('.md-editor-catalog-link')) {
+  if (target.closest('.md-editor-catalog-link'))
+  {
     // 延迟关闭，让滚动动画先触发
     setTimeout(close, 200)
   }

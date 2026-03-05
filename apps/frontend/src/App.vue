@@ -59,7 +59,8 @@ const { subscribeModalVisible } = useSubscribe()
 const FULLSCREEN_ROUTES = new Set(['login'])
 const isFullscreenRoute = computed(() => FULLSCREEN_ROUTES.has(route.name as string))
 
-const showSnowfall = computed(() => {
+const showSnowfall = computed(() =>
+{
   if (appStore.snowfallMode === 'off') return false
   if (appStore.snowfallMode === 'on') return true
   return appStore.snowfallMode === 'auto' && appStore.todayHasSnow
@@ -67,10 +68,12 @@ const showSnowfall = computed(() => {
 
 watch(
   () => appStore.snowfallMode,
-  (mode) => {
-    if (mode === 'auto') {
-      fetchTodayHasSnowByIP().then((hasSnow) => appStore.setTodayHasSnow(hasSnow))
-    }
+  mode =>
+  {
+    if (mode === 'auto')
+    
+      fetchTodayHasSnowByIP().then(hasSnow => appStore.setTodayHasSnow(hasSnow))
+    
   },
   { immediate: true }
 )
@@ -78,7 +81,8 @@ watch(
 // 在组件上下文中监听 language 并同步到 i18n，确保 locale 变化触发整树重渲染
 watch(
   () => appStore.language,
-  (l) => {
+  l =>
+  {
     if (l) i18n.global.locale.value = l
   },
   { immediate: true }
@@ -88,7 +92,8 @@ watch(
 const userStore = useUserStore()
 watch(
   () => (userStore.user as Partial<IUser>)?.id,
-  (newId) => {
+  newId =>
+  {
     const uid = newId ?? null
     setWriteDraftUser(uid)
     setPublishSettingsUser(uid)
@@ -97,7 +102,8 @@ watch(
 )
 
 // 应用启动时：初始化博客拥有者（子域名检测）→ 拉取外观设置 + 站点元信息 + 各 model store 初始数据
-onMounted(async () => {
+onMounted(async() =>
+{
   // 优先初始化博客拥有者（后续数据查询依赖 blogOwnerId 过滤）
   const blogOwnerStore = useBlogOwnerStore()
   await blogOwnerStore.init()
@@ -119,7 +125,8 @@ onMounted(async () => {
     SETTING_KEYS.FOOTER_MOE_ICP_VISIBLE,
     SETTING_KEYS.FOOTER_AUTHOR,
   ])
-    .then((data: SettingsMap) => {
+    .then((data: SettingsMap) =>
+    {
       appStore.hydrateAppearance(data)
       appStore.updateDocumentTitle(route.meta.title as string | undefined)
 
@@ -130,7 +137,8 @@ onMounted(async () => {
       // hydrateAppearance 已更新 homeSort/onlyOwnArticles，无需条件判断二次刷新
       useArticleStore().qryArticleList()
     })
-    .catch(() => {
+    .catch(() =>
+    {
       // settings 请求失败也要保证文章列表加载
       useArticleStore().qryArticleList()
     })
@@ -140,11 +148,13 @@ onMounted(async () => {
   // fetchUser 已在 beforehand() 中 await 完成，此处无需再调
 
   // 记录站点访问（后端按 IP 每日去重）
-  recordSiteVisit().catch(() => {})
+  recordSiteVisit().catch(() =>
+  {})
 
   // 处理订阅验证/退订回调 query 参数
   const subscribeStatus = route.query.subscribe as string | undefined
-  if (subscribeStatus) {
+  if (subscribeStatus)
+  {
     const { t } = i18n.global
     const msgMap: Record<string, { type: 'success' | 'warning' | 'error'; key: string }> = {
       success: { type: 'success', key: 'subscribe.verifySuccess' },
@@ -152,9 +162,10 @@ onMounted(async () => {
       unsubscribed: { type: 'success', key: 'subscribe.unsubscribed' },
     }
     const cfg = msgMap[subscribeStatus]
-    if (cfg) {
+    if (cfg)
+    
       UMessageFn({ type: cfg.type, message: t(cfg.key) })
-    }
+    
     // 清理 URL query 参数
     const query = { ...route.query }
     delete query.subscribe

@@ -152,6 +152,49 @@ class CommonController {
     return formatResponse(tryData, 'ok', '查询失败')
   }
 
+  /** 评论点赞切换（登录用户 DB 去重 / 游客 IP+fingerprint 去重） */
+  async toggleCommentLike(req: Request, _res: Response): ControllerReturn
+  {
+    const commentId = Number(req.body?.commentId)
+    if (!commentId || Number.isNaN(commentId)) {
+      return formatResponse([new Error('commentId 必填') as any, null], 'ok', '参数错误')
+    }
+    const ip = getClientIp(req)
+    const fingerprint = (req.body?.fingerprint as string) ?? undefined
+    const tryData = await tryit<any, Error>(() => CommonService.toggleCommentLike(req, commentId, ip, fingerprint))
+    return formatResponse(tryData, 'ok', '操作失败')
+  }
+
+  /** 查询评论点赞状态 */
+  async getCommentLikeStatus(req: Request, _res: Response): ControllerReturn
+  {
+    const commentId = Number(req.query?.commentId ?? req.body?.commentId)
+    if (!commentId || Number.isNaN(commentId)) {
+      return formatResponse([new Error('commentId 必填') as any, null], 'ok', '参数错误')
+    }
+    const ip = getClientIp(req)
+    const fingerprint = (req.query?.fingerprint as string) ?? undefined
+    const tryData = await tryit<any, Error>(() => CommonService.getCommentLikeStatus(req, commentId, ip, fingerprint))
+    return formatResponse(tryData, 'ok', '查询失败')
+  }
+
+  /** 批量查询评论点赞状态 */
+  async getCommentLikeStatuses(req: Request, _res: Response): ControllerReturn
+  {
+    const ids = req.body?.commentIds
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return formatResponse([new Error('commentIds 必填') as any, null], 'ok', '参数错误')
+    }
+    const commentIds = ids.map(Number).filter((n) => !Number.isNaN(n))
+    if (!commentIds.length) {
+      return formatResponse([new Error('commentIds 无效') as any, null], 'ok', '参数错误')
+    }
+    const ip = getClientIp(req)
+    const fingerprint = (req.body?.fingerprint as string) ?? undefined
+    const tryData = await tryit<any, Error>(() => CommonService.getCommentLikeStatuses(req, commentIds, ip, fingerprint))
+    return formatResponse(tryData, 'ok', '查询失败')
+  }
+
   /** 更新当前用户个人资料（仅允许编辑安全字段） */
   async updateProfile(req: Request, _res: Response): ControllerReturn
   {

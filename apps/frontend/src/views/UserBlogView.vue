@@ -205,22 +205,28 @@ const siteName = computed(() => (profile.value?.settings.site_name as string) ||
 /**
  * 解析 location 字段：可能是 JSON 对象（{labels:[...]}）或纯字符串
  */
-const locationText = computed(() => {
+const locationText = computed(() =>
+{
   const loc = profile.value?.user.location
   if (!loc) return ''
   // 如果是对象，直接取 labels
-  if (typeof loc === 'object' && loc !== null) {
+  if (typeof loc === 'object' && loc !== null)
+  {
     const labels = (loc as any).labels
     if (Array.isArray(labels)) return labels.join(' ')
     return JSON.stringify(loc)
   }
   // 如果是字符串，尝试当作 JSON 解析
-  if (typeof loc === 'string') {
-    try {
+  if (typeof loc === 'string')
+  {
+    try
+    {
       const parsed = JSON.parse(loc)
       if (parsed && Array.isArray(parsed.labels)) return parsed.labels.join(' ')
       return loc
-    } catch {
+    }
+    catch
+    {
       return loc
     }
   }
@@ -228,7 +234,8 @@ const locationText = computed(() => {
 })
 
 /** 角色标签 */
-const roleLabel = computed(() => {
+const roleLabel = computed(() =>
+{
   const role = profile.value?.user.role
   const map: Record<string, string> = {
     super_admin: t('profile.roleSuperAdmin'),
@@ -239,7 +246,8 @@ const roleLabel = computed(() => {
 })
 
 /** 注册日期 */
-const joinedDate = computed(() => {
+const joinedDate = computed(() =>
+{
   const d = profile.value?.user.createdAt
   if (!d) return ''
   const date = new Date(d)
@@ -247,29 +255,34 @@ const joinedDate = computed(() => {
 })
 
 /** 数字格式化 */
-function formatNum(n: number): string {
+function formatNum(n: number): string
+{
   if (n >= 10000) return (n / 10000).toFixed(1) + 'w'
   if (n >= 1000) return (n / 1000).toFixed(1) + 'k'
   return String(n)
 }
 
 /** 日期格式化 */
-function formatDate(d: string | Date | undefined): string {
+function formatDate(d: string | Date | undefined): string
+{
   if (!d) return ''
   const date = new Date(d)
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
 /** 加载用户博客数据 */
-async function loadProfile() {
+async function loadProfile()
+{
   const username = route.params.username as string
-  if (!username) {
+  if (!username)
+  {
     error.value = '缺少用户名参数'
     loading.value = false
     return
   }
   loading.value = true
-  try {
+  try
+  {
     profile.value = await getUserBlogProfile(username)
     const userId = profile.value.user.id!
     await Promise.all([
@@ -278,18 +291,24 @@ async function loadProfile() {
     ])
     // 初始加载完成后启动滚动监听
     setupObserver()
-  } catch (err: any) {
+  }
+  catch (err: any)
+  {
     error.value = err?.message || '获取用户信息失败'
-  } finally {
+  }
+  finally
+  {
     loading.value = false
   }
 }
 
 /** 加载用户文章（分页追加） */
-async function loadArticles(userId: number, append = false) {
+async function loadArticles(userId: number, append = false)
+{
   if (articlesLoading.value) return
   articlesLoading.value = true
-  try {
+  try
+  {
     const skip = append ? articles.value.length : 0
     const list = await restQuery<IArticle[]>('article', {
       where: { userId, status: CArticleStatus.PUBLISHED },
@@ -299,59 +318,77 @@ async function loadArticles(userId: number, append = false) {
       relations: ['category', 'tags'],
     })
     const fetched = Array.isArray(list) ? list : []
-    if (append) {
+    if (append)
+    
       articles.value = [...articles.value, ...fetched]
-    } else {
+    
+    else
+    
       articles.value = fetched
-    }
+    
     articlesHasMore.value = fetched.length >= ARTICLES_PAGE_SIZE
     articlesPage.value++
-  } catch {
+  }
+  catch
+  {
     if (!append) articles.value = []
     articlesHasMore.value = false
-  } finally {
+  }
+  finally
+  {
     articlesLoading.value = false
   }
 }
 
 /** 加载更多文章 */
-function loadMoreArticles() {
+function loadMoreArticles()
+{
   const userId = profile.value?.user.id
-  if (userId && articlesHasMore.value && !articlesLoading.value) {
+  if (userId && articlesHasMore.value && !articlesLoading.value)
+  
     loadArticles(userId, true)
-  }
+  
 }
 
 /* IntersectionObserver 实现滚动自动加载 */
 let observer: IntersectionObserver | null = null
 
-function setupObserver() {
+function setupObserver()
+{
   if (observer) observer.disconnect()
   observer = new IntersectionObserver(
-    (entries) => {
+    entries =>
+    {
       if (entries[0]?.isIntersecting) loadMoreArticles()
     },
     { rootMargin: '200px' }
   )
-  nextTick(() => {
+  nextTick(() =>
+  {
     if (loadMoreRef.value) observer!.observe(loadMoreRef.value)
   })
 }
 
-watch(loadMoreRef, (el) => {
+watch(loadMoreRef, el =>
+{
   if (el && observer) observer.observe(el)
 })
 
-onUnmounted(() => {
+onUnmounted(() =>
+{
   observer?.disconnect()
   observer = null
 })
 
 /** 加载用户友链 */
-async function loadFriendLinksForUser(userId: number) {
-  try {
+async function loadFriendLinksForUser(userId: number)
+{
+  try
+  {
     friendLinks.value = await getFriendLinks(userId)
-  } catch {
+  }
+  catch
+  {
     friendLinks.value = []
   }
 }

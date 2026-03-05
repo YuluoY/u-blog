@@ -84,7 +84,8 @@ const { user } = storeToRefs(userStore)
 const editorTheme = computed(() => (appStore.theme === CTheme.DARK ? 'dark' : 'light'))
 
 /** 编辑模式：URL 携带 ?edit=<articleId> 时进入 */
-const editArticleId = computed(() => {
+const editArticleId = computed(() =>
+{
   const id = route.query.edit
   return id ? parseInt(id as string, 10) : null
 })
@@ -110,17 +111,20 @@ const fabStyle = computed(() => ({
   bottom: `${fabPosition.value.bottom}px`,
 }))
 /** 拖拽中不触发点击 */
-function onFabClick() {
+function onFabClick()
+{
   if (fabDragging.value) return
   panelVisible.value = true
 }
 
-function onEditorContent(v: string) {
+function onEditorContent(v: string)
+{
   draft.value = v
 }
 
 /** 内置保存（Ctrl+S / 工具栏保存按钮）：同步草稿到 draft */
-async function handleSave(value?: string) {
+async function handleSave(value?: string)
+{
   const content = value ?? writeEditorRef.value?.getContent() ?? draft.value
   draft.value = content
   await flushDraft()
@@ -129,15 +133,19 @@ async function handleSave(value?: string) {
 /**
  * 编辑模式：加载已有文章数据到编辑器和表单
  */
-async function loadArticleForEdit(articleId: number) {
-  try {
+async function loadArticleForEdit(articleId: number)
+{
+  try
+  {
     const article = await api(CTable.ARTICLE).getArticleById(String(articleId))
-    if (!article) {
+    if (!article)
+    {
       UNotificationFn({ message: t('write.saveFail'), type: 'error', deduplicate: true })
       return
     }
     // 验证是否是自己的文章
-    if (article.userId !== user.value?.id) {
+    if (article.userId !== user.value?.id)
+    {
       UNotificationFn({ message: t('write.loginRequired'), type: 'error', deduplicate: true })
       router.replace('/')
       return
@@ -159,7 +167,9 @@ async function loadArticleForEdit(articleId: number) {
       cover: article.cover,
       publishedAt: article.publishedAt,
     })
-  } catch (e) {
+  }
+  catch (e)
+  {
     UNotificationFn({
       message: (e instanceof Error ? e.message : t('write.saveFail')),
       type: 'error',
@@ -180,13 +190,16 @@ async function onSaveSubmit(payload: {
   isTop: boolean
   cover?: string | null
   protect?: string | null
-}) {
+})
+{
   const userId = userStore.user?.id
   if (userId == null) return
   const content = writeEditorRef.value?.getContent() ?? payload.content ?? draft.value
   saveLoading.value = true
-  try {
-    if (isEditMode.value && editArticleId.value) {
+  try
+  {
+    if (isEditMode.value && editArticleId.value)
+    {
       // 编辑模式：更新文章
       await api(CTable.ARTICLE).updateArticle(editArticleId.value, {
         ...payload,
@@ -201,7 +214,9 @@ async function onSaveSubmit(payload: {
       })
       // 跳转到文章阅读页
       router.push(`/read/${editArticleId.value}`)
-    } else {
+    }
+    else
+    {
       // 新建模式：创建文章
       const article = await api(CTable.ARTICLE).createArticle({
         ...payload,
@@ -224,22 +239,28 @@ async function onSaveSubmit(payload: {
         }
       })
     }
-  } catch (e) {
+  }
+  catch (e)
+  {
     UNotificationFn({
       message: (e instanceof Error ? e.message : t('write.saveFail')),
       type: 'error',
       deduplicate: true,
     })
-  } finally {
+  }
+  finally
+  {
     saveLoading.value = false
   }
 }
 
 /* ---------- 编辑模式：监听路由参数变化加载文章 ---------- */
-watch(editArticleId, (id) => {
-  if (id && !Number.isNaN(id)) {
+watch(editArticleId, id =>
+{
+  if (id && !Number.isNaN(id))
+  
     loadArticleForEdit(id)
-  }
+  
 }, { immediate: true })
 </script>
 

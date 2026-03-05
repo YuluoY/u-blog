@@ -17,11 +17,13 @@ export interface CloudWeightsData {
 /**
  * 获取类别/标签的权重与声噪，供词云等可视化使用
  */
-export async function getCloudWeights(): Promise<CloudWeightsData> {
+export async function getCloudWeights(): Promise<CloudWeightsData>
+{
   const res = await request.get<BackendResponse<CloudWeightsData>>('/cloud-weights')
   const payload = res.data
-  if (payload.code !== 0) {
+  if (payload.code !== 0)
+  
     throw new Error(payload.message || '获取词云权重失败')
-  }
+  
   return (payload.data ?? { categories: [], tags: [] }) as CloudWeightsData
 }

@@ -612,33 +612,57 @@ const snowfallSizeMaxLocal = ref(appStore.snowfallSizeMax)
 const snowfallSpeedLocal = ref(appStore.snowfallSpeed)
 const snowfallDistributionLocal = ref(appStore.snowfallDistribution)
 const snowfallZIndexLocal = ref(appStore.snowfallZIndex)
-watch(() => appStore.snowfallCount, (v) => { snowfallCountLocal.value = v })
-watch(() => appStore.snowfallSizeMin, (v) => { snowfallSizeMinLocal.value = v })
-watch(() => appStore.snowfallSizeMax, (v) => { snowfallSizeMaxLocal.value = v })
-watch(() => appStore.snowfallSpeed, (v) => { snowfallSpeedLocal.value = v })
-watch(() => appStore.snowfallDistribution, (v) => { snowfallDistributionLocal.value = v })
-watch(() => appStore.snowfallZIndex, (v) => { snowfallZIndexLocal.value = v })
-watch(snowfallCountLocal, (v) => {
+watch(() => appStore.snowfallCount, v =>
+{
+  snowfallCountLocal.value = v
+})
+watch(() => appStore.snowfallSizeMin, v =>
+{
+  snowfallSizeMinLocal.value = v
+})
+watch(() => appStore.snowfallSizeMax, v =>
+{
+  snowfallSizeMaxLocal.value = v
+})
+watch(() => appStore.snowfallSpeed, v =>
+{
+  snowfallSpeedLocal.value = v
+})
+watch(() => appStore.snowfallDistribution, v =>
+{
+  snowfallDistributionLocal.value = v
+})
+watch(() => appStore.snowfallZIndex, v =>
+{
+  snowfallZIndexLocal.value = v
+})
+watch(snowfallCountLocal, v =>
+{
   const n = Number(v)
   if (!Number.isNaN(n)) appStore.setSnowfallCount(n)
 })
-watch(snowfallSizeMinLocal, (v) => {
+watch(snowfallSizeMinLocal, v =>
+{
   const n = Number(v)
   if (!Number.isNaN(n)) appStore.setSnowfallSizeMin(n)
 })
-watch(snowfallSizeMaxLocal, (v) => {
+watch(snowfallSizeMaxLocal, v =>
+{
   const n = Number(v)
   if (!Number.isNaN(n)) appStore.setSnowfallSizeMax(n)
 })
-watch(snowfallSpeedLocal, (v) => {
+watch(snowfallSpeedLocal, v =>
+{
   const n = Number(v)
   if (!Number.isNaN(n)) appStore.setSnowfallSpeed(n)
 })
-watch(snowfallDistributionLocal, (v) => {
+watch(snowfallDistributionLocal, v =>
+{
   const n = Number(v)
   if (!Number.isNaN(n)) appStore.setSnowfallDistribution(n)
 })
-function commitSnowfallZIndex() {
+function commitSnowfallZIndex()
+{
   const n = Number(snowfallZIndexLocal.value)
   if (!Number.isNaN(n)) appStore.setSnowfallZIndex(n)
   else snowfallZIndexLocal.value = appStore.snowfallZIndex
@@ -648,18 +672,30 @@ function commitSnowfallZIndex() {
 const fontSizeScaleLocal = ref(appStore.fontSizeScale)
 const lineHeightScaleLocal = ref(appStore.lineHeightScale)
 const contentSpacingScaleLocal = ref(appStore.contentSpacingScale)
-watch(() => appStore.fontSizeScale, (v) => { fontSizeScaleLocal.value = v })
-watch(() => appStore.lineHeightScale, (v) => { lineHeightScaleLocal.value = v })
-watch(() => appStore.contentSpacingScale, (v) => { contentSpacingScaleLocal.value = v })
-watch(fontSizeScaleLocal, (v) => {
+watch(() => appStore.fontSizeScale, v =>
+{
+  fontSizeScaleLocal.value = v
+})
+watch(() => appStore.lineHeightScale, v =>
+{
+  lineHeightScaleLocal.value = v
+})
+watch(() => appStore.contentSpacingScale, v =>
+{
+  contentSpacingScaleLocal.value = v
+})
+watch(fontSizeScaleLocal, v =>
+{
   const n = Number(v)
   if (!Number.isNaN(n)) appStore.setFontSizeScale(n)
 })
-watch(lineHeightScaleLocal, (v) => {
+watch(lineHeightScaleLocal, v =>
+{
   const n = Number(v)
   if (!Number.isNaN(n)) appStore.setLineHeightScale(n)
 })
-watch(contentSpacingScaleLocal, (v) => {
+watch(contentSpacingScaleLocal, v =>
+{
   const n = Number(v)
   if (!Number.isNaN(n)) appStore.setContentSpacingScale(n)
 })
@@ -670,14 +706,16 @@ const tabOptions = computed(() => [
   { key: 'site', label: t('settings.tabSite'), icon: 'fa-solid fa-globe' },
 ])
 
-function onVisibleChange(v: boolean) {
+function onVisibleChange(v: boolean)
+{
   emit('update:modelValue', v)
   if (v) loadServerSettings()
 }
 
 watch(
   () => props.modelValue,
-  (v) => {
+  v =>
+  {
     if (v) loadServerSettings()
   }
 )

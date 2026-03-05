@@ -324,6 +324,24 @@ router.get('/article-like-status', async (req: Request, res: Response) => {
   toResponse(result, res)
 })
 
+/** 评论点赞切换（登录用户 DB 去重 / 游客 IP+fingerprint 去重） */
+router.post('/comment-like', async (req: Request, res: Response) => {
+  const result = await CommonController.toggleCommentLike(req, res)
+  toResponse(result, res)
+})
+
+/** 查询评论点赞状态 */
+router.get('/comment-like-status', async (req: Request, res: Response) => {
+  const result = await CommonController.getCommentLikeStatus(req, res)
+  toResponse(result, res)
+})
+
+/** 批量查询评论点赞状态 */
+router.post('/comment-like-statuses', async (req: Request, res: Response) => {
+  const result = await CommonController.getCommentLikeStatuses(req, res)
+  toResponse(result, res)
+})
+
 /**
  * QQ 信息代理：根据 QQ 号获取昵称
  * 代理腾讯 QZone 接口，处理 GBK 编码和 JSONP 解析

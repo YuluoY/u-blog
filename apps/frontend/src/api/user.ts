@@ -8,18 +8,24 @@ export interface IUserApis {
 }
 
 const apis: IUserApis = {
-  async getUser() {
-    try {
+  async getUser()
+  {
+    try
+    {
       const res = await request.post<{ code: number; data: IUser; message: string }>('/refresh', {}, { withCredentials: true })
-      if (res.data?.code === 0 && res.data?.data) {
+      if (res.data?.code === 0 && res.data?.data)
+      {
         // 恢复 access token 到内存
-        if (res.data.data.token) {
+        if (res.data.data.token)
+        
           setAccessToken(res.data.data.token)
-        }
+        
         return res.data.data
       }
       return null
-    } catch {
+    }
+    catch
+    {
       return null
     }
   }

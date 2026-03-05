@@ -76,7 +76,8 @@ const coverUrl = (src: string) => getOptimizedImageUrl(src, COVER_PRESETS.list)
 
 const { t } = useI18n()
 
-function isHot(article: IArticle): boolean {
+function isHot(article: IArticle): boolean
+{
   return (article.viewCount ?? 0) >= ARTICLE_HOT_VIEW_THRESHOLD
 }
 

@@ -94,7 +94,8 @@ const user = computed(() =>
 
 const displayName = computed(() => user.value?.namec || user.value?.username || t('profile.owner'))
 
-const roleLabel = computed(() => {
+const roleLabel = computed(() =>
+{
   const map: Record<string, string> = {
     super_admin: t('profile.roleSuperAdmin'),
     admin: t('profile.roleAdmin'),
@@ -103,7 +104,8 @@ const roleLabel = computed(() => {
   return map[user.value?.role as string] ?? user.value?.role ?? ''
 })
 
-const socialLinks = computed(() => {
+const socialLinks = computed(() =>
+{
   const raw = user.value?.socials
   if (!Array.isArray(raw)) return []
   return raw.filter((s: any) => s?.url && s?.name)
@@ -124,12 +126,14 @@ const SOCIAL_FA_ICONS: Record<string, string> = {
   rss: 'fa-solid fa-rss',
 }
 
-function socialIcon(s: { name: string }): string | undefined {
+function socialIcon(s: { name: string }): string | undefined
+{
   const key = (s.name ?? '').toLowerCase().replace(/\s+/g, '')
   return SOCIAL_FA_ICONS[key]
 }
 
-function formatDate(v: string | Date): string {
+function formatDate(v: string | Date): string
+{
   const d = typeof v === 'string' ? new Date(v) : v
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
@@ -139,32 +143,44 @@ function formatDate(v: string | Date): string {
  * JSON 格式：{ codes, labels, detail } → "省 市 区 详细地址"
  * 纯文本：原样返回
  */
-const locationText = computed(() => {
+const locationText = computed(() =>
+{
   const raw = user.value?.location
   if (!raw) return ''
-  try {
+  try
+  {
     const obj = JSON.parse(raw)
-    if (obj && Array.isArray(obj.labels)) {
+    if (obj && Array.isArray(obj.labels))
+    {
       // 去重相邻重复项（如 "天津市 天津市"）
       const parts: string[] = []
-      for (const label of obj.labels) {
+      for (const label of obj.labels)
+      
         if (label && label !== parts[parts.length - 1]) parts.push(label)
-      }
+      
       if (obj.detail) parts.push(obj.detail)
       return parts.join(' ')
     }
-  } catch { /* 非 JSON，回退为纯文本 */ }
+  }
+  catch
+  { /* 非 JSON，回退为纯文本 */ }
   return raw
 })
 
 /** 从社交链接 URL 获取网站自身 favicon（不依赖第三方服务） */
-function socialFavicon(s: { url: string }): string {
+function socialFavicon(s: { url: string }): string
+{
   if (!s.url) return ''
-  try {
+  try
+  {
     const { protocol, hostname } = new URL(s.url)
     if (!hostname) return ''
     return `${protocol}//${hostname}/favicon.ico`
-  } catch { return '' }
+  }
+  catch
+  {
+    return ''
+  }
 }
 </script>
 

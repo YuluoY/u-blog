@@ -38,7 +38,8 @@ const isVisible = computed(
   () => !sidebarStore.collapsed && sidebarStore.activePanel != null
 )
 
-const panelTitle = computed(() => {
+const panelTitle = computed(() =>
+{
   const keyMap: Record<string, string> = {
     [PANEL_ID.PROFILE]: 'sidebar.profile',
     [PANEL_ID.CALENDAR]: 'sidebar.calendar',

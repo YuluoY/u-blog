@@ -93,6 +93,7 @@
             @reply-cancel="handleReplyCancel"
             @update:reply-content="replyContent = $event"
             @scroll-to="scrollToComment"
+            @like="handleCommentLike"
           />
         </section>
   </div>
@@ -103,7 +104,7 @@ import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/model/user'
 import { useAppStore } from '@/stores/app'
 import api from '@/api'
-import { fetchQQNickname } from '@/api/request'
+import { fetchQQNickname, toggleCommentLike, getCommentLikeStatuses } from '@/api/request'
 import { CTable, CTheme } from '@u-blog/model'
 import { UMessageFn } from '@u-blog/ui'
 import { getQQAvatarUrl } from '@u-blog/ui'
@@ -139,16 +140,20 @@ const guestAvatarUrl = computed(() => getQQAvatarUrl(guestEmail.value))
 
 /** QQ 邮箱自动获取真实昵称（当昵称为空或为上次自动填充时覆盖） */
 let lastAutoNickname = ''
-watch(guestEmail, async (email) => {
+watch(guestEmail, async email =>
+{
   const match = email.match(/^(\d{5,11})@qq\.com$/i)
-  if (match) {
+  if (match)
+  {
     const qq = match[1]
-    if (!guestNickname.value.trim() || guestNickname.value === lastAutoNickname) {
+    if (!guestNickname.value.trim() || guestNickname.value === lastAutoNickname)
+    {
       // 先用 QQ 号占位，再异步获取真实昵称
       guestNickname.value = qq
       lastAutoNickname = qq
       const realName = await fetchQQNickname(qq)
-      if (realName && (guestNickname.value === qq || guestNickname.value === lastAutoNickname)) {
+      if (realName && (guestNickname.value === qq || guestNickname.value === lastAutoNickname))
+      {
         guestNickname.value = realName
         lastAutoNickname = realName
       }
@@ -157,50 +162,66 @@ watch(guestEmail, async (email) => {
 })
 
 /** 当前用户显示名 */
-const displayCurrentUser = computed(() => {
+const displayCurrentUser = computed(() =>
+{
   const u = user.value as { namec?: string; username?: string } | undefined
   return u?.namec ?? u?.username ?? t('profile.roleUser')
 })
 
 /** 获取留言列表，可选保持滚动位置（发表/回复后不跳回顶部） */
-async function fetchList(restoreScroll = false) {
+async function fetchList(restoreScroll = false)
+{
   const main = document.querySelector('.layout-base__main')
   const scrollTop = main ? main.scrollTop : 0
   loading.value = true
-  try {
+  try
+  {
     list.value = await api(CTable.COMMENT).getCommentList(MESSAGE_PATH, 1, 200)
-  } finally {
+    // 批量获取评论点赞状态
+    fetchCommentLikeStatuses(list.value)
+  }
+  finally
+  {
     loading.value = false
   }
-  if (restoreScroll && main) {
-    nextTick(() => {
+  if (restoreScroll && main)
+  {
+    nextTick(() =>
+    {
       main.scrollTop = scrollTop
     })
   }
 }
 
 /** 发表主留言（登录用户 / 游客） */
-async function handleSubmit() {
+async function handleSubmit()
+{
   const text = content.value?.trim()
   if (!text) return
   // 游客校验：昵称 + 邮箱必填
-  if (!isLoggedIn.value) {
-    if (!guestNickname.value?.trim() || !guestEmail.value?.trim()) {
+  if (!isLoggedIn.value)
+  {
+    if (!guestNickname.value?.trim() || !guestEmail.value?.trim())
+    {
       UMessageFn({ message: t('message.guestFieldsRequired'), type: 'warning' })
       return
     }
   }
   submitting.value = true
-  try {
+  try
+  {
     // 敏感词过滤
     const filteredText = filterSensitiveWords(text)
     const payload: Record<string, unknown> = {
       content: filteredText,
       path: MESSAGE_PATH,
     }
-    if (isLoggedIn.value) {
+    if (isLoggedIn.value)
+    
       payload.userId = user.value.id as number
-    } else {
+    
+    else
+    {
       payload.nickname = guestNickname.value.trim()
       payload.email = guestEmail.value.trim()
       localStorage.setItem('guest_nickname', payload.nickname as string)
@@ -209,31 +230,40 @@ async function handleSubmit() {
     await api(CTable.COMMENT).addComment(payload as any)
     content.value = ''
     await fetchList(true)
-  } catch (err: any) {
+  }
+  catch (err: any)
+  {
     UMessageFn({ message: err?.message || t('message.submitFailed'), type: 'error' })
-  } finally {
+  }
+  finally
+  {
     submitting.value = false
   }
 }
 
 /** 点击回复按钮 */
-function handleReply(comment: UCommentItemData) {
+function handleReply(comment: UCommentItemData)
+{
   replyingId.value = comment.id
   replyContent.value = ''
 }
 
 /** 提交回复（登录用户 / 游客） */
-async function handleReplySubmit(text: string, comment: UCommentItemData) {
+async function handleReplySubmit(text: string, comment: UCommentItemData)
+{
   if (!text.trim()) return
   // 游客校验：昵称 + 邮箱必填
-  if (!isLoggedIn.value) {
-    if (!guestNickname.value?.trim() || !guestEmail.value?.trim()) {
+  if (!isLoggedIn.value)
+  {
+    if (!guestNickname.value?.trim() || !guestEmail.value?.trim())
+    {
       UMessageFn({ message: t('message.guestFieldsRequired'), type: 'warning' })
       return
     }
   }
   replySubmitting.value = true
-  try {
+  try
+  {
     // 敏感词过滤
     const filteredText = filterSensitiveWords(text.trim())
     const payload: Record<string, unknown> = {
@@ -241,9 +271,12 @@ async function handleReplySubmit(text: string, comment: UCommentItemData) {
       path: MESSAGE_PATH,
       pid: comment.id,
     }
-    if (isLoggedIn.value) {
+    if (isLoggedIn.value)
+    
       payload.userId = user.value.id as number
-    } else {
+    
+    else
+    {
       payload.nickname = guestNickname.value.trim()
       payload.email = guestEmail.value.trim()
       localStorage.setItem('guest_nickname', payload.nickname as string)
@@ -253,28 +286,132 @@ async function handleReplySubmit(text: string, comment: UCommentItemData) {
     replyContent.value = ''
     replyingId.value = null
     await fetchList(true)
-  } catch (err: any) {
+  }
+  catch (err: any)
+  {
     UMessageFn({ message: err?.message || t('message.submitFailed'), type: 'error' })
-  } finally {
+  }
+  finally
+  {
     replySubmitting.value = false
   }
 }
 
 /** 取消回复 */
-function handleReplyCancel() {
+function handleReplyCancel()
+{
   replyingId.value = null
   replyContent.value = ''
 }
 
 /** 平滑滚动到指定评论（点击「回复 @某人」时调用） */
-function scrollToComment(commentId: number) {
-  nextTick(() => {
+function scrollToComment(commentId: number)
+{
+  nextTick(() =>
+  {
     const el = document.querySelector(`[data-comment-id="${commentId}"]`)
     el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   })
 }
 
-onMounted(() => {
+/** 简易浏览器指纹（用于游客点赞去重） */
+function getBrowserFingerprint(): string
+{
+  try
+  {
+    const parts = [
+      navigator.userAgent,
+      navigator.language,
+      screen.width + 'x' + screen.height,
+      new Date().getTimezoneOffset().toString(),
+    ]
+    const str = parts.join('|')
+    let hash = 0
+    for (let i = 0; i < str.length; i++)
+    
+      hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0
+    
+    return Math.abs(hash).toString(36)
+  }
+  catch
+  {
+    return ''
+  }
+}
+
+/** 评论点赞 */
+async function handleCommentLike(comment: UCommentItemData)
+{
+  try
+  {
+    const fp = isLoggedIn.value ? undefined : getBrowserFingerprint()
+    const result = await toggleCommentLike(comment.id, fp)
+    _updateCommentLikeInList(list.value, comment.id, result.liked, result.likeCount)
+  }
+  catch
+  { /* 静默 */ }
+}
+
+function _updateCommentLikeInList(items: any[], commentId: number, liked: boolean, likeCount: number)
+{
+  for (const item of items)
+  {
+    if (item.id === commentId)
+    {
+      item.liked = liked
+      item.likeCount = likeCount
+      return
+    }
+    if (item.children?.length)
+    
+      _updateCommentLikeInList(item.children, commentId, liked, likeCount)
+    
+  }
+}
+
+/** 批量获取评论点赞状态并合并到列表 */
+async function fetchCommentLikeStatuses(items: any[])
+{
+  const ids = _collectCommentIds(items)
+  if (!ids.length) return
+  try
+  {
+    const fp = isLoggedIn.value ? undefined : getBrowserFingerprint()
+    const statusMap = await getCommentLikeStatuses(ids, fp)
+    _mergeCommentLikeStatuses(items, statusMap)
+  }
+  catch
+  { /* 静默 */ }
+}
+
+function _collectCommentIds(items: any[]): number[]
+{
+  const ids: number[] = []
+  for (const item of items)
+  {
+    if (item.id) ids.push(item.id)
+    if (item.children?.length) ids.push(..._collectCommentIds(item.children))
+  }
+  return ids
+}
+
+function _mergeCommentLikeStatuses(items: any[], statusMap: Record<number, boolean>)
+{
+  for (const item of items)
+  {
+    if (item.id in statusMap)
+    
+      item.liked = statusMap[item.id]
+    
+    if (item.children?.length)
+    
+      _mergeCommentLikeStatuses(item.children, statusMap)
+    
+  }
+}
+
+onMounted(() =>
+{
   fetchList()
 })
 </script>

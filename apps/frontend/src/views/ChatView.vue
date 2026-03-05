@@ -429,7 +429,8 @@ const inputRef = ref<HTMLTextAreaElement | null>(null)
 const loading = ref(false)
 
 /** 游客随机头像（基于用户名或 "guest" 生成确定性头像） */
-const guestAvatarUrl = computed(() => {
+const guestAvatarUrl = computed(() =>
+{
   const seed = userStore.user?.namec || userStore.user?.username || 'guest'
   return getRandomAvatarUrl(seed)
 })
@@ -457,73 +458,95 @@ const editingFolderId = ref<string | null>(null)
 const editingFolderName = ref('')
 const moveMenuSessionId = ref<string | null>(null)
 
-function loadFolderOpenState(): Record<string, boolean> {
-  try {
+function loadFolderOpenState(): Record<string, boolean>
+{
+  try
+  {
     const raw = localStorage.getItem(STORAGE_KEYS.CHAT_FOLDERS_OPEN)
     return raw ? JSON.parse(raw) : {}
-  } catch { return {} }
+  }
+  catch
+  {
+    return {}
+  }
 }
 
-function saveFolderOpenState() {
-  try {
+function saveFolderOpenState()
+{
+  try
+  {
     localStorage.setItem(STORAGE_KEYS.CHAT_FOLDERS_OPEN, JSON.stringify(folderOpenMap.value))
-  } catch { /* ignore */ }
+  }
+  catch
+  { /* ignore */ }
 }
 
-function isFolderOpen(folderId: string): boolean {
+function isFolderOpen(folderId: string): boolean
+{
   return folderOpenMap.value[folderId] !== false // 默认展开
 }
 
-function toggleFolder(folderId: string) {
+function toggleFolder(folderId: string)
+{
   folderOpenMap.value[folderId] = !isFolderOpen(folderId)
   saveFolderOpenState()
 }
 
-function handleCreateFolder() {
+function handleCreateFolder()
+{
   const name = t('chat.newFolder')
   const id = chatStore.createFolder(name)
   // 自动进入重命名状态
   editingFolderId.value = id
   editingFolderName.value = name
-  nextTick(() => {
+  nextTick(() =>
+  {
     const input = document.querySelector('.folder-header__edit-input') as HTMLInputElement
     input?.focus()
     input?.select()
   })
 }
 
-function startFolderEditing(folder: { id: string; name: string }) {
+function startFolderEditing(folder: { id: string; name: string })
+{
   editingFolderId.value = folder.id
   editingFolderName.value = folder.name
-  nextTick(() => {
+  nextTick(() =>
+  {
     const input = document.querySelector('.folder-header__edit-input') as HTMLInputElement
     input?.focus()
     input?.select()
   })
 }
 
-function finishFolderEditing() {
-  if (editingFolderId.value && editingFolderName.value.trim()) {
+function finishFolderEditing()
+{
+  if (editingFolderId.value && editingFolderName.value.trim())
+  
     chatStore.renameFolderById(editingFolderId.value, editingFolderName.value.trim())
-  }
+  
   editingFolderId.value = null
   editingFolderName.value = ''
 }
 
-function cancelFolderEditing() {
+function cancelFolderEditing()
+{
   editingFolderId.value = null
   editingFolderName.value = ''
 }
 
-function handleDeleteFolder(folderId: string) {
+function handleDeleteFolder(folderId: string)
+{
   chatStore.deleteFolderById(folderId)
 }
 
-function toggleMoveMenu(sessionId: string) {
+function toggleMoveMenu(sessionId: string)
+{
   moveMenuSessionId.value = moveMenuSessionId.value === sessionId ? null : sessionId
 }
 
-function handleMoveToFolder(sessionId: string, folderId: string) {
+function handleMoveToFolder(sessionId: string, folderId: string)
+{
   chatStore.moveSessionToFolder(sessionId, folderId)
   moveMenuSessionId.value = null
 }
@@ -534,17 +557,20 @@ function handleMoveToFolder(sessionId: string, folderId: string) {
 const TOKEN_STEPS = [256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576]
 
 const maxTokensStep = computed({
-  get: () => {
+  get: () =>
+  {
     const idx = TOKEN_STEPS.findIndex(v => v >= chatModelParams.maxTokens)
     return idx === -1 ? TOKEN_STEPS.length - 1 : idx
   },
-  set: (v: number) => {
+  set: (v: number) =>
+  {
     chatModelParams.maxTokens = TOKEN_STEPS[Math.min(v, TOKEN_STEPS.length - 1)]
   },
 })
 
 /** 格式化 token 数量显示：1024→"1K", 131072→"128K", 1048576→"1M" */
-function formatTokenCount(n: number): string {
+function formatTokenCount(n: number): string
+{
   if (n >= 1_000_000) return `${(n / 1_000_000)}M`
   if (n >= 1000) return `${Math.round(n / 1000)}K`
   return String(n)
@@ -563,43 +589,68 @@ const chatModelParams = reactive({
 const chatFontSize = ref(loadChatFontSize())
 
 /** 从 localStorage 快速读取（页面打开时即刻生效，不等待 API） */
-function loadChatFontSize(): number {
-  try {
+function loadChatFontSize(): number
+{
+  try
+  {
     const v = localStorage.getItem(STORAGE_KEYS.CHAT_FONT_SIZE)
     const n = v ? Number(v) : NaN
     return (Number.isFinite(n) && n >= 12 && n <= 20) ? n : 15
-  } catch { return 15 }
+  }
+  catch
+  {
+    return 15
+  }
 }
 
 /** 从后端加载用户级字号设置，覆盖 localStorage 缓存 */
-async function loadChatFontSizeFromServer() {
-  try {
+async function loadChatFontSizeFromServer()
+{
+  try
+  {
     const data = await getSettings([SETTING_KEYS.CHAT_FONT_SIZE])
     const val = data[SETTING_KEYS.CHAT_FONT_SIZE]?.value
-    if (val != null) {
+    if (val != null)
+    {
       const n = Number(val)
-      if (Number.isFinite(n) && n >= 12 && n <= 20) {
+      if (Number.isFinite(n) && n >= 12 && n <= 20)
+      {
         chatFontSize.value = n
         localStorage.setItem(STORAGE_KEYS.CHAT_FONT_SIZE, String(n))
       }
     }
-  } catch { /* 静默，使用 localStorage 缓存 */ }
+  }
+  catch
+  { /* 静默，使用 localStorage 缓存 */ }
 }
 
-watch(chatFontSize, (v) => {
-  try { localStorage.setItem(STORAGE_KEYS.CHAT_FONT_SIZE, String(v)) } catch { /* ignore */ }
+watch(chatFontSize, v =>
+{
+  try
+  {
+    localStorage.setItem(STORAGE_KEYS.CHAT_FONT_SIZE, String(v))
+  }
+  catch
+  { /* ignore */ }
 })
 
 /** 从 localStorage 读取本地模型参数 */
-function loadLocalModelParams(): Partial<typeof chatModelParams> {
-  try {
+function loadLocalModelParams(): Partial<typeof chatModelParams>
+{
+  try
+  {
     const raw = localStorage.getItem(STORAGE_KEYS.CHAT_MODEL_PARAMS)
     return raw ? JSON.parse(raw) : {}
-  } catch { return {} }
+  }
+  catch
+  {
+    return {}
+  }
 }
 
 /** 将模型参数持久化到 localStorage */
-function saveLocalModelParams() {
+function saveLocalModelParams()
+{
   localStorage.setItem(
     STORAGE_KEYS.CHAT_MODEL_PARAMS,
     JSON.stringify({
@@ -611,9 +662,11 @@ function saveLocalModelParams() {
 }
 
 /** 加载模型参数：优先 localStorage（个人偏好），再用服务端默认值兜底 */
-async function loadModelParams() {
+async function loadModelParams()
+{
   // 1. 先从服务端拉取默认值
-  try {
+  try
+  {
     const keys = [
       SETTING_KEYS.OPENAI_TEMPERATURE,
       SETTING_KEYS.OPENAI_MAX_TOKENS,
@@ -626,7 +679,9 @@ async function loadModelParams() {
     if (max != null) chatModelParams.maxTokens = Number(max) || 2048
     const ctx = data[SETTING_KEYS.OPENAI_CONTEXT_LENGTH]?.value
     if (ctx != null) chatModelParams.contextLength = Number(ctx) || 20
-  } catch { /* 静默 */ }
+  }
+  catch
+  { /* 静默 */ }
 
   // 2. 本地偏好覆盖服务端默认值
   const local = loadLocalModelParams()
@@ -636,11 +691,13 @@ async function loadModelParams() {
 }
 
 /** 保存模型参数：保存到 localStorage 并同步到服务端（包含字号） */
-async function saveModelParams() {
+async function saveModelParams()
+{
   // 游客禁止写入服务端设置
   if (isGuestChat.value) return
   savingParams.value = true
-  try {
+  try
+  {
     // 保存到 localStorage（本地快速恢复）
     saveLocalModelParams()
     // 同步到服务端（用户级隔离）
@@ -651,47 +708,63 @@ async function saveModelParams() {
       [SETTING_KEYS.CHAT_FONT_SIZE]: { value: chatFontSize.value },
     })
     showModelPopover.value = false
-  } catch (err: any) {
+  }
+  catch (err: any)
+  {
     UMessageFn({ message: err?.message || t('chat.saveParamsFailed'), type: 'error' })
-  } finally {
+  }
+  finally
+  {
     savingParams.value = false
   }
 }
 
 /** 关闭浮层并打开设置抽屉（游客不可用） */
-function openFullSettings() {
+function openFullSettings()
+{
   if (isGuestChat.value) return
   showModelPopover.value = false
   appStore.setSettingsDrawerVisible(true)
 }
 
 /** 点击外部关闭浮层 */
-function onDocumentClick() {
+function onDocumentClick()
+{
   if (showModelPopover.value) showModelPopover.value = false
 }
 
-onMounted(() => {
+onMounted(() =>
+{
   document.addEventListener('click', onDocumentClick)
   loadModelParams()
   loadChatFontSizeFromServer()
 })
-onUnmounted(() => {
+onUnmounted(() =>
+{
   document.removeEventListener('click', onDocumentClick)
 })
-function loadSidebarVisible(): boolean {
-  try {
+function loadSidebarVisible(): boolean
+{
+  try
+  {
     const v = localStorage.getItem(STORAGE_KEYS.CHAT_SIDEBAR_VISIBLE)
     if (v === 'true' || v === 'false') return v === 'true'
-  } catch { /* ignore */ }
+  }
+  catch
+  { /* ignore */ }
   return true
 }
 
 const sidebarVisible = ref(loadSidebarVisible())
 
-watch(sidebarVisible, (val) => {
-  try {
+watch(sidebarVisible, val =>
+{
+  try
+  {
     localStorage.setItem(STORAGE_KEYS.CHAT_SIDEBAR_VISIBLE, String(val))
-  } catch { /* ignore */ }
+  }
+  catch
+  { /* ignore */ }
 }, { immediate: true })
 
 const suggestions = computed(() => [
@@ -701,45 +774,55 @@ const suggestions = computed(() => [
   { icon: 'fa-solid fa-brain', text: t('chat.promptBrainstorm') },
 ])
 
-onMounted(async () => {
+onMounted(async() =>
+{
   // 等待 IndexedDB 初始化完成，避免与 initFromDB 产生竞态条件
   await chatStore.initReady
-  if (!chatStore.currentSessionId && chatStore.sortedSessions.length === 0) {
+  if (!chatStore.currentSessionId && chatStore.sortedSessions.length === 0)
+  
     chatStore.createSession()
-  }
+  
 })
 
-function handleSessionClick(sessionId: string) {
-  if (sessionId !== chatStore.currentSessionId) {
+function handleSessionClick(sessionId: string)
+{
+  if (sessionId !== chatStore.currentSessionId)
+  {
     chatStore.switchSession(sessionId)
     nextTick(scrollToBottom)
   }
 }
 
-function startEditing(session: any) {
+function startEditing(session: any)
+{
   editingSessionId.value = session.id
   editingTitle.value = session.title
-  nextTick(() => {
+  nextTick(() =>
+  {
     const input = document.querySelector('.session-item__edit-input') as HTMLInputElement
     input?.focus()
     input?.select()
   })
 }
 
-function finishEditing() {
-  if (editingSessionId.value && editingTitle.value.trim()) {
+function finishEditing()
+{
+  if (editingSessionId.value && editingTitle.value.trim())
+  
     chatStore.updateSessionTitle(editingSessionId.value, editingTitle.value.trim())
-  }
+  
   editingSessionId.value = null
   editingTitle.value = ''
 }
 
-function cancelEditing() {
+function cancelEditing()
+{
   editingSessionId.value = null
   editingTitle.value = ''
 }
 
-function getLastMessage(session: any): string {
+function getLastMessage(session: any): string
+{
   if (!session.messages?.length) return ''
   const lastMsg = session.messages[session.messages.length - 1]
   if (!lastMsg) return ''
@@ -747,13 +830,16 @@ function getLastMessage(session: any): string {
   return `${content}${lastMsg.content.length > 30 ? '...' : ''}`
 }
 
-function requestDelete(sessionId: string) {
+function requestDelete(sessionId: string)
+{
   sessionToDelete.value = sessionId
   showDeleteDialog.value = true
 }
 
-function handleInputKeydown(e: KeyboardEvent) {
-  if (e.key === 'Enter' && !e.shiftKey) {
+function handleInputKeydown(e: KeyboardEvent)
+{
+  if (e.key === 'Enter' && !e.shiftKey)
+  {
     e.preventDefault()
     handleSend()
   }
@@ -766,7 +852,8 @@ function handleInputKeydown(e: KeyboardEvent) {
 const TEXTAREA_MIN_H = 36  // 24px lineHeight + 12px padding
 const TEXTAREA_MAX_H = 132 // 120px maxContent + 12px padding
 
-function autoResizeTextarea() {
+function autoResizeTextarea()
+{
   const el = inputRef.value
   if (!el) return
   // 先重置为最小高度，确保 scrollHeight 反映真实内容高度（而非之前的撑开高度）
@@ -786,7 +873,8 @@ let _apiKeyChecked = false
  * 2. 检查是否已配置模型 API Key
  * 3. 子域名游客模式下跳过以上校验（后端通过 blogOwnerId 鉴权并加载博主配置）
  */
-async function preSendValidation(): Promise<boolean> {
+async function preSendValidation(): Promise<boolean>
+{
   // 子域名完整模式下的游客：跳过登录和 API Key 校验（后端自行验证博主配置）
   const isGuestSubdomainChat =
     blogOwnerStore.isSubdomainMode &&
@@ -795,22 +883,28 @@ async function preSendValidation(): Promise<boolean> {
   if (isGuestSubdomainChat) return true
 
   // 登录校验（理论上路由已拦截，这里作为兜底）
-  if (!userStore.isLoggedIn) {
+  if (!userStore.isLoggedIn)
+  {
     UMessageFn({ message: t('chat.notLoggedIn'), type: 'warning' })
     return false
   }
   // API Key 校验（带缓存，只在首次 / 失败时请求）
-  if (!_apiKeyChecked) {
-    try {
+  if (!_apiKeyChecked)
+  {
+    try
+    {
       const settings = await getSettings([SETTING_KEYS.OPENAI_API_KEY])
       const keyVal = settings[SETTING_KEYS.OPENAI_API_KEY]?.value
-      if (!keyVal) {
+      if (!keyVal)
+      {
         UMessageFn({ message: t('chat.noApiKey'), type: 'warning' })
         appStore.setSettingsDrawerVisible(true)
         return false
       }
       _apiKeyChecked = true
-    } catch {
+    }
+    catch
+    {
       UMessageFn({ message: t('chat.noApiKey'), type: 'warning' })
       return false
     }
@@ -818,7 +912,8 @@ async function preSendValidation(): Promise<boolean> {
   return true
 }
 
-async function handleSend() {
+async function handleSend()
+{
   const text = inputText.value?.trim()
   if (!text || loading.value) return
 
@@ -830,9 +925,11 @@ async function handleSend() {
   loading.value = true
   // 关闭移动菜单
   moveMenuSessionId.value = null
-  nextTick(() => {
+  nextTick(() =>
+  {
     scrollToBottom()
-    if (inputRef.value) {
+    if (inputRef.value)
+    {
       inputRef.value.style.height = ''
       inputRef.value.style.overflowY = 'hidden'
     }
@@ -840,15 +937,17 @@ async function handleSend() {
 
   // RAG：从历史会话中检索相关上下文
   let ragContext: string | undefined
-  if (ragEnabled.value && chatStore.sessions.length > 1) {
+  if (ragEnabled.value && chatStore.sessions.length > 1)
+  {
     const results = ragSearch(text, chatStore.sessions, {
       excludeSessionId: chatStore.currentSessionId,
       topK: 5,
       minScore: 1.5,
     })
-    if (results.length > 0) {
+    if (results.length > 0)
+    
       ragContext = formatContext(results)
-    }
+    
   }
 
   // 构建完整对话历史（传给后端做多轮上下文）
@@ -863,10 +962,12 @@ async function handleSend() {
 
   abortController = new AbortController()
 
-  try {
+  try
+  {
     await sendChatMessageStream(
       payloadMessages,
-      (token) => {
+      token =>
+      {
         chatStore.appendToLastMessage(token)
         nextTick(scrollToBottom)
       },
@@ -881,19 +982,29 @@ async function handleSend() {
         ? blogOwnerStore.blogOwnerId
         : undefined,
     )
-  } catch (e) {
-    if ((e as Error).name === 'AbortError') {
+  }
+  catch (e)
+  {
+    if ((e as Error).name === 'AbortError')
+    {
       // 用户手动取消
-    } else {
+    }
+    else
+    {
       const errMsg = `${t('chat.requestFailed')}: ${e instanceof Error ? e.message : t('chat.unknownError')}`
       const last = chatStore.currentMessages[chatStore.currentMessages.length - 1]
-      if (last && !last.content) {
+      if (last && !last.content)
+      
         chatStore.appendToLastMessage(errMsg)
-      } else {
+      
+      else
+      
         chatStore.addMessage('assistant', errMsg)
-      }
+      
     }
-  } finally {
+  }
+  finally
+  {
     streaming.value = false
     loading.value = false
     abortController = null
@@ -903,25 +1014,30 @@ async function handleSend() {
 }
 
 /** 停止流式生成 */
-function handleStop() {
-  if (abortController) {
+function handleStop()
+{
+  if (abortController)
+  {
     abortController.abort()
     abortController = null
   }
 }
 
-function handleSuggestionClick(suggestion: { icon: string; text: string }) {
+function handleSuggestionClick(suggestion: { icon: string; text: string })
+{
   inputText.value = suggestion.text
   handleSend()
 }
 
-function handleNewSession() {
+function handleNewSession()
+{
   chatStore.createSession()
   nextTick(scrollToBottom)
 }
 
 /** 在指定文件夹中新建会话 */
-function handleNewSessionInFolder(folderId: string) {
+function handleNewSessionInFolder(folderId: string)
+{
   chatStore.createSession(folderId)
   // 确保文件夹处于展开状态
   folderOpenMap.value[folderId] = true
@@ -929,24 +1045,30 @@ function handleNewSessionInFolder(folderId: string) {
   nextTick(scrollToBottom)
 }
 
-function confirmDelete() {
-  if (sessionToDelete.value) {
+function confirmDelete()
+{
+  if (sessionToDelete.value)
+  {
     chatStore.deleteSession(sessionToDelete.value)
-    if (!chatStore.currentSessionId && chatStore.sortedSessions.length > 0) {
+    if (!chatStore.currentSessionId && chatStore.sortedSessions.length > 0)
+    
       chatStore.switchSession(chatStore.sortedSessions[0].id)
-    }
+    
     sessionToDelete.value = null
   }
   showDeleteDialog.value = false
 }
 
-function scrollToBottom() {
-  if (messageListRef.value) {
+function scrollToBottom()
+{
+  if (messageListRef.value)
+  
     messageListRef.value.scrollTo({ top: messageListRef.value.scrollHeight, behavior: 'smooth' })
-  }
+  
 }
 
-function formatTime(timestamp: number | undefined | null): string {
+function formatTime(timestamp: number | undefined | null): string
+{
   const ts = timestamp != null ? Number(timestamp) : NaN
   if (!Number.isFinite(ts)) return t('common.justNow')
   const now = Date.now()
@@ -960,14 +1082,16 @@ function formatTime(timestamp: number | undefined | null): string {
   const date = new Date(ts)
   if (Number.isNaN(date.getTime())) return t('common.justNow')
   const nowDate = new Date(now)
-  if (date.getDate() === nowDate.getDate()) {
+  if (date.getDate() === nowDate.getDate())
+  
     return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
-  }
+  
   return `${date.getMonth() + 1}/${date.getDate()}`
 }
 
 /** 判断是否为当前会话最后一条消息（用于显示流式光标） */
-function isLastMessage(msg: { id: string }): boolean {
+function isLastMessage(msg: { id: string }): boolean
+{
   const msgs = chatStore.currentMessages
   return msgs.length > 0 && msgs[msgs.length - 1].id === msg.id
 }

@@ -169,6 +169,7 @@
                 @reply-cancel="handleReplyCancel"
                 @update:reply-content="replyContent = $event"
                 @scroll-to="scrollToComment"
+                @like="handleCommentLike"
               />
               <div
                 v-if="commentHasMore && !commentLoading && commentListByPath.length > 0"
@@ -211,7 +212,7 @@ import { useBlogOwnerStore } from '@/stores/blogOwner'
 import { storeToRefs } from 'pinia'
 import { watch, computed, nextTick, onBeforeUnmount } from 'vue'
 import api from '@/api'
-import { recordArticleView, toggleArticleLike, getArticleLikeStatus, fetchQQNickname } from '@/api/request'
+import { recordArticleView, toggleArticleLike, getArticleLikeStatus, toggleCommentLike, getCommentLikeStatuses, fetchQQNickname } from '@/api/request'
 import { CTable, CTheme } from '@u-blog/model'
 import { UMessageFn } from '@u-blog/ui'
 import { getQQAvatarUrl } from '@u-blog/ui'
@@ -243,7 +244,8 @@ const { Preview, Catalog, articleContent, scrollElement } = usePreviewMd()
 
 const { openSubscribeModal } = useSubscribe()
 
-const article = computed(() => {
+const article = computed(() =>
+{
   const id = route.params.id as string
   const found = articleStore.findArticleById(id)
   if (found) return found
@@ -257,14 +259,16 @@ const article = computed(() => {
  * 分享模式无需检查——游客没有 token 看不到此按钮；
  * 如果博主自己通过分享链接访问且已登录，仍可编辑自己的文章。
  */
-const canEdit = computed(() => {
+const canEdit = computed(() =>
+{
   if (!isLoggedIn.value || !article.value) return false
   const articleUserId = article.value.userId ?? (article.value.user as any)?.id
   return user.value?.id === articleUserId
 })
 
 /* ---- SEO 元信息：动态注入 title / meta / JSON-LD ---- */
-useSeo(() => {
+useSeo(() =>
+{
   const a = article.value
   if (!a) return { title: '阅读' }
   const authorName = a.user?.namec || (a.user as any)?.username || ''
@@ -297,7 +301,8 @@ const protectError = ref('')
 const protectUnlockedContent = ref<string | null>(null)
 
 /** 文章是否处于密码保护锁定状态：isProtected=true 且尚未解锁 */
-const isProtectedLocked = computed(() => {
+const isProtectedLocked = computed(() =>
+{
   if (!article.value) return false
   // 已解锁：protectUnlockedContent 有值
   if (protectUnlockedContent.value !== null) return false
@@ -306,28 +311,38 @@ const isProtectedLocked = computed(() => {
 })
 
 /** 提交密码验证 */
-async function handleProtectSubmit() {
+async function handleProtectSubmit()
+{
   if (!article.value || !protectPassword.value.trim()) return
   protectLoading.value = true
   protectError.value = ''
-  try {
+  try
+  {
     const result = await api(CTable.ARTICLE).verifyArticleProtect(article.value.id, protectPassword.value.trim())
-    if (result && result.content) {
+    if (result && result.content)
+    {
       // 更新 store 中的文章正文
       protectUnlockedContent.value = result.content
       articleStore.setCurrentArticle({ ...article.value, content: result.content })
-    } else {
-      protectError.value = t('read.protectWrong')
     }
-  } catch {
+    else
+    
+      protectError.value = t('read.protectWrong')
+    
+  }
+  catch
+  {
     protectError.value = t('read.protectWrong')
-  } finally {
+  }
+  finally
+  {
     protectLoading.value = false
   }
 }
 
 /** 文章是否包含标题（用于决定是否显示右侧目录） */
-const hasHeadings = computed(() => {
+const hasHeadings = computed(() =>
+{
   const content = articleContent.value || article.value?.content || ''
   // 匹配 Markdown 标题（# ~ ######）
   return /^#{1,6}\s+.+/m.test(content)
@@ -355,8 +370,10 @@ const displayLikeCount = computed(() => liveLikeCount.value ?? article.value?.li
  * 简易浏览器指纹（用于游客点赞去重）
  * 基于 canvas + navigator 特征生成一个简短 hash
  */
-function getBrowserFingerprint(): string {
-  try {
+function getBrowserFingerprint(): string
+{
+  try
+  {
     const parts = [
       navigator.userAgent,
       navigator.language,
@@ -365,22 +382,27 @@ function getBrowserFingerprint(): string {
     ]
     const str = parts.join('|')
     let hash = 0
-    for (let i = 0; i < str.length; i++) {
+    for (let i = 0; i < str.length; i++)
+    
       hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0
-    }
+    
     return Math.abs(hash).toString(36)
-  } catch {
+  }
+  catch
+  {
     return ''
   }
 }
 
 /** 切换点赞 */
-async function handleLikeToggle() {
+async function handleLikeToggle()
+{
   const id = route.params.id as string
   const articleId = parseInt(id, 10)
   if (!articleId || Number.isNaN(articleId)) return
   likePending.value = true
-  try {
+  try
+  {
     const fp = isLoggedIn.value ? undefined : getBrowserFingerprint()
     const result = await toggleArticleLike(articleId, fp)
     articleLiked.value = result.liked
@@ -389,37 +411,50 @@ async function handleLikeToggle() {
     articleStore.updateArticleLikeCount(articleId, result.likeCount)
     // 行为追踪：点赞
     if (result.liked) trackArticleLike(articleId)
-  } catch { /* 点赞失败静默 */ }
-  finally { likePending.value = false }
+  }
+  catch
+  { /* 点赞失败静默 */ }
+  finally
+  {
+    likePending.value = false
+  }
 }
 
 /** 查询点赞状态 */
-async function fetchLikeStatus(articleId: number) {
-  try {
+async function fetchLikeStatus(articleId: number)
+{
+  try
+  {
     const fp = isLoggedIn.value ? undefined : getBrowserFingerprint()
     const { liked } = await getArticleLikeStatus(articleId, fp)
     articleLiked.value = liked
-  } catch { /* 查询失败静默 */ }
+  }
+  catch
+  { /* 查询失败静默 */ }
 }
 
-const wordCount = computed(() => {
+const wordCount = computed(() =>
+{
   const text = articleContent.value ?? ''
-  return text.replace(/[#*_~`\[\]()!\\]/g, '').replace(/\s+/g, '').length
+  return text.replace(/[#*_~`()[\]!\\]/g, '').replace(/\s+/g, '').length
 })
 
-const readingMinutes = computed(() => {
+const readingMinutes = computed(() =>
+{
   const n = wordCount.value
   return Math.max(1, Math.round(n / 300))
 })
 
-const prevArticle = computed(() => {
+const prevArticle = computed(() =>
+{
   const list = articleList.value
   const id = route.params.id as string
   const idx = list.findIndex(a => String(a.id) === id || a.id === parseInt(id))
   return idx >= 0 && idx < list.length - 1 ? list[idx + 1] : null
 })
 
-const nextArticle = computed(() => {
+const nextArticle = computed(() =>
+{
   const list = articleList.value
   const id = route.params.id as string
   const idx = list.findIndex(a => String(a.id) === id || a.id === parseInt(id))
@@ -453,17 +488,21 @@ const guestAvatarUrl = computed(() => getQQAvatarUrl(guestEmail.value))
 
 /** QQ 邮箱自动获取真实昵称（当昵称为空或为上次自动填充时覆盖） */
 let lastAutoNickname = ''
-watch(guestEmail, async (email) => {
+watch(guestEmail, async email =>
+{
   const match = email.match(/^(\d{5,11})@qq\.com$/i)
-  if (match) {
+  if (match)
+  {
     const qq = match[1]
     // 仅在昵称为空或上次自动填充时覆盖
-    if (!guestNickname.value.trim() || guestNickname.value === lastAutoNickname) {
+    if (!guestNickname.value.trim() || guestNickname.value === lastAutoNickname)
+    {
       // 先用 QQ 号占位，再异步获取真实昵称
       guestNickname.value = qq
       lastAutoNickname = qq
       const realName = await fetchQQNickname(qq)
-      if (realName && (guestNickname.value === qq || guestNickname.value === lastAutoNickname)) {
+      if (realName && (guestNickname.value === qq || guestNickname.value === lastAutoNickname))
+      {
         guestNickname.value = realName
         lastAutoNickname = realName
       }
@@ -474,27 +513,42 @@ watch(guestEmail, async (email) => {
 /** 进入文章页或切换文章时拉取该 path 的评论第一页 */
 watch(
   commentPath,
-  (path) => {
+  path =>
+  {
     if (path) commentStore.qryCommentListByPath(path, false)
   },
   { immediate: true }
 )
 
+/** 评论列表变化后批量获取点赞状态 */
+watch(
+  commentListByPath,
+  list =>
+  {
+    if (list.length) fetchCommentLikeStatuses(list)
+  },
+  { immediate: true }
+)
+
 /** 发表主评论（登录用户 / 游客） */
-async function handleCommentSubmit() {
+async function handleCommentSubmit()
+{
   const text = commentContent.value?.trim()
   if (!text || !commentPath.value) return
 
   // 游客校验：昵称 + 邮箱必填
-  if (!isLoggedIn.value) {
-    if (!guestNickname.value?.trim() || !guestEmail.value?.trim()) {
+  if (!isLoggedIn.value)
+  {
+    if (!guestNickname.value?.trim() || !guestEmail.value?.trim())
+    {
       UMessageFn({ message: t('read.guestFieldsRequired'), type: 'warning' })
       return
     }
   }
 
   commentSubmitting.value = true
-  try {
+  try
+  {
     const id = route.params.id as string
     const articleId = id ? parseInt(id, 10) : undefined
     // 敏感词过滤
@@ -504,9 +558,12 @@ async function handleCommentSubmit() {
       path: commentPath.value,
       articleId: Number.isNaN(articleId) ? undefined : articleId,
     }
-    if (isLoggedIn.value) {
+    if (isLoggedIn.value)
+    
       payload.userId = user.value.id as number
-    } else {
+    
+    else
+    {
       payload.nickname = guestNickname.value.trim()
       payload.email = guestEmail.value.trim()
       // 持久化游客信息
@@ -520,35 +577,45 @@ async function handleCommentSubmit() {
     // 重新拉取第一页以包含新评论（服务端排序一致）
     await commentStore.qryCommentListByPath(commentPath.value, false)
     // 同步当前文章评论数展示
-    if (article.value) {
+    if (article.value)
+    {
       articleStore.setCurrentArticle({
         ...article.value,
         commentCount: (article.value.commentCount ?? 0) + 1
       })
     }
-  } catch (err: any) {
+  }
+  catch (err: any)
+  {
     UMessageFn({ message: err?.message || t('read.commentSubmitFailed'), type: 'error' })
-  } finally {
+  }
+  finally
+  {
     commentSubmitting.value = false
   }
 }
 
-function handleReply(comment: UCommentItemData) {
+function handleReply(comment: UCommentItemData)
+{
   replyingId.value = comment.id
   replyContent.value = ''
 }
 
-async function handleReplySubmit(text: string, comment: UCommentItemData) {
+async function handleReplySubmit(text: string, comment: UCommentItemData)
+{
   if (!text.trim() || !commentPath.value) return
   // 游客校验：昵称 + 邮箱必填
-  if (!isLoggedIn.value) {
-    if (!guestNickname.value?.trim() || !guestEmail.value?.trim()) {
+  if (!isLoggedIn.value)
+  {
+    if (!guestNickname.value?.trim() || !guestEmail.value?.trim())
+    {
       UMessageFn({ message: t('read.guestFieldsRequired'), type: 'warning' })
       return
     }
   }
   replySubmitting.value = true
-  try {
+  try
+  {
     // 敏感词过滤
     const filteredText = filterSensitiveWords(text.trim())
     const payload: Record<string, unknown> = {
@@ -556,9 +623,12 @@ async function handleReplySubmit(text: string, comment: UCommentItemData) {
       path: commentPath.value,
       pid: comment.id,
     }
-    if (isLoggedIn.value) {
+    if (isLoggedIn.value)
+    
       payload.userId = user.value.id as number
-    } else {
+    
+    else
+    {
       payload.nickname = guestNickname.value.trim()
       payload.email = guestEmail.value.trim()
       localStorage.setItem('guest_nickname', payload.nickname as string)
@@ -568,48 +638,134 @@ async function handleReplySubmit(text: string, comment: UCommentItemData) {
     replyContent.value = ''
     replyingId.value = null
     await commentStore.qryCommentListByPath(commentPath.value, false)
-    if (article.value) {
+    if (article.value)
+    {
       articleStore.setCurrentArticle({
         ...article.value,
         commentCount: (article.value.commentCount ?? 0) + 1
       })
     }
-  } catch (err: any) {
+  }
+  catch (err: any)
+  {
     UMessageFn({ message: err?.message || t('read.commentSubmitFailed'), type: 'error' })
-  } finally {
+  }
+  finally
+  {
     replySubmitting.value = false
   }
 }
 
-function handleReplyCancel() {
+function handleReplyCancel()
+{
   replyingId.value = null
   replyContent.value = ''
 }
 
-function scrollToComment(commentId: number) {
-  nextTick(() => {
+function scrollToComment(commentId: number)
+{
+  nextTick(() =>
+  {
     const el = document.querySelector(`[data-comment-id="${commentId}"]`)
     el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   })
 }
 
-function loadMoreComments() {
-  if (commentPath.value && commentHasMore.value && !commentLoading.value) {
-    commentStore.qryCommentListByPath(commentPath.value, true)
+/** 评论点赞 */
+async function handleCommentLike(comment: UCommentItemData)
+{
+  try
+  {
+    const fp = isLoggedIn.value ? undefined : getBrowserFingerprint()
+    const result = await toggleCommentLike(comment.id, fp)
+    // 更新评论列表中对应项的点赞状态
+    _updateCommentLikeInList(commentListByPath.value, comment.id, result.liked, result.likeCount)
+  }
+  catch
+  { /* 静默 */ }
+}
+
+/** 递归更新评论列表中指定评论的点赞状态 */
+function _updateCommentLikeInList(list: any[], commentId: number, liked: boolean, likeCount: number)
+{
+  for (const item of list)
+  {
+    if (item.id === commentId)
+    {
+      item.liked = liked
+      item.likeCount = likeCount
+      return
+    }
+    if (item.children?.length)
+    
+      _updateCommentLikeInList(item.children, commentId, liked, likeCount)
+    
   }
 }
 
-function formatDate (d: Date | string) {
+/** 批量获取评论点赞状态并合并到列表 */
+async function fetchCommentLikeStatuses(list: any[])
+{
+  const ids = _collectCommentIds(list)
+  if (!ids.length) return
+  try
+  {
+    const fp = isLoggedIn.value ? undefined : getBrowserFingerprint()
+    const statusMap = await getCommentLikeStatuses(ids, fp)
+    _mergeCommentLikeStatuses(list, statusMap)
+  }
+  catch
+  { /* 静默 */ }
+}
+
+function _collectCommentIds(list: any[]): number[]
+{
+  const ids: number[] = []
+  for (const item of list)
+  {
+    if (item.id) ids.push(item.id)
+    if (item.children?.length) ids.push(..._collectCommentIds(item.children))
+  }
+  return ids
+}
+
+function _mergeCommentLikeStatuses(list: any[], statusMap: Record<number, boolean>)
+{
+  for (const item of list)
+  {
+    if (item.id in statusMap)
+    
+      item.liked = statusMap[item.id]
+    
+    if (item.children?.length)
+    
+      _mergeCommentLikeStatuses(item.children, statusMap)
+    
+  }
+}
+
+function loadMoreComments()
+{
+  if (commentPath.value && commentHasMore.value && !commentLoading.value)
+  
+    commentStore.qryCommentListByPath(commentPath.value, true)
+  
+}
+
+function formatDate(d: Date | string)
+{
   const date = typeof d === 'string' ? new Date(d) : d
   return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })
 }
 
-function toIso (d: Date | string) {
+function toIso(d: Date | string)
+{
   const date = typeof d === 'string' ? new Date(d) : d
   return date.toISOString().slice(0, 10)
 }
 
-watch(() => route.params.id, async (newId) => {
+watch(() => route.params.id, async newId =>
+{
   // 切换文章时重置浏览量 / 点赞状态 / 密码保护并重新记录
   liveViewCount.value = null
   liveLikeCount.value = null
@@ -617,22 +773,28 @@ watch(() => route.params.id, async (newId) => {
   protectUnlockedContent.value = null
   protectPassword.value = ''
   protectError.value = ''
-  if (newId) {
+  if (newId)
+  {
     const articleId = parseInt(newId as string, 10)
-    if (articleId && !Number.isNaN(articleId)) {
-      try {
+    if (articleId && !Number.isNaN(articleId))
+    {
+      try
+      {
         const { viewCount } = await recordArticleView(articleId)
         liveViewCount.value = viewCount
         // 同步浏览量到列表，返回首页/归档时即可看到最新值
         articleStore.updateArticleViewCount(articleId, viewCount)
         // 行为追踪：文章阅读
         trackArticleView(articleId, article.value?.title)
-      } catch { /* 统计失败不阻断 */ }
+      }
+      catch
+      { /* 统计失败不阻断 */ }
       // 异步查询点赞状态
       fetchLikeStatus(articleId)
     }
   }
-  nextTick(() => {
+  nextTick(() =>
+  {
     const main = document.querySelector('.layout-base__main')
     if (main) main.scrollTop = 0
   })

@@ -54,9 +54,10 @@ defineOptions({
 const footerStore = useFooterStore()
 
 // App.vue 已统一加载 footer 设置，若未加载（容错）则自行拉取
-if (!footerStore.loaded) {
+if (!footerStore.loaded)
+
   footerStore.fetchFooterSettings()
-}
+
 </script>
 
 <style lang="scss" scoped>

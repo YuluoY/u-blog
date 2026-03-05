@@ -25,10 +25,12 @@ const MAX_BUFFER_SIZE = 20
 const EVENT_DEDUP_WINDOW_MS = 1500
 
 /** 获取或创建 sessionId */
-function getSessionId(): string {
+function getSessionId(): string
+{
   const KEY = 'u_session_id'
   let sid = sessionStorage.getItem(KEY)
-  if (!sid) {
+  if (!sid)
+  {
     sid = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
     sessionStorage.setItem(KEY, sid)
   }
@@ -51,11 +53,14 @@ const MIN_PAGE_VIEW_DURATION = 500
 
 const sessionId = getSessionId()
 
-function sortObjectKeys(value: unknown): unknown {
+function sortObjectKeys(value: unknown): unknown
+{
   if (Array.isArray(value)) return value.map(sortObjectKeys)
-  if (value && typeof value === 'object') {
+  if (value && typeof value === 'object')
+  {
     const obj = value as Record<string, unknown>
-    return Object.keys(obj).sort().reduce<Record<string, unknown>>((acc, key) => {
+    return Object.keys(obj).sort().reduce<Record<string, unknown>>((acc, key) =>
+    {
       acc[key] = sortObjectKeys(obj[key])
       return acc
     }, {})
@@ -63,7 +68,8 @@ function sortObjectKeys(value: unknown): unknown {
   return value
 }
 
-function buildEventFingerprint(dto: Omit<TrackEvent, 'sessionId'>): string {
+function buildEventFingerprint(dto: Omit<TrackEvent, 'sessionId'>): string
+{
   const payload = {
     type: dto.type,
     path: dto.path ?? '',
@@ -74,31 +80,36 @@ function buildEventFingerprint(dto: Omit<TrackEvent, 'sessionId'>): string {
   return JSON.stringify(payload)
 }
 
-function shouldDropDuplicate(dto: Omit<TrackEvent, 'sessionId'>): boolean {
+function shouldDropDuplicate(dto: Omit<TrackEvent, 'sessionId'>): boolean
+{
   const now = Date.now()
-  for (const [fingerprint, ts] of recentEventMap) {
+  for (const [fingerprint, ts] of recentEventMap)
+  
     if (now - ts > EVENT_DEDUP_WINDOW_MS) recentEventMap.delete(fingerprint)
-  }
+  
 
   const fingerprint = buildEventFingerprint(dto)
   const lastTs = recentEventMap.get(fingerprint)
-  if (lastTs && now - lastTs <= EVENT_DEDUP_WINDOW_MS) {
+  if (lastTs && now - lastTs <= EVENT_DEDUP_WINDOW_MS)
+  
     return true
-  }
+  
 
   recentEventMap.set(fingerprint, now)
   return false
 }
 
 /** 入队一条事件 */
-function enqueue(dto: Omit<TrackEvent, 'sessionId'>) {
+function enqueue(dto: Omit<TrackEvent, 'sessionId'>)
+{
   if (shouldDropDuplicate(dto)) return
   buffer.push({ ...dto, sessionId })
   if (buffer.length >= MAX_BUFFER_SIZE) flush()
 }
 
 /** 把缓冲区发送到后端（使用 fetch + keepalive 替代 sendBeacon 以携带 JWT 认证头） */
-function flush() {
+function flush()
+{
   if (!buffer.length) return
   const events = [...buffer]
   buffer = []
@@ -112,14 +123,17 @@ function flush() {
     headers,
     body: JSON.stringify({ events }),
     keepalive: true, // 确保页面卸载时请求仍能完成
-  }).catch(() => {})
+  }).catch(() =>
+  {})
 }
 
 /** 结束当前页面的停留统计 */
-function finishPageView() {
+function finishPageView()
+{
   if (!currentPath || !pageEnterTime) return
   const duration = Math.round(Date.now() - pageEnterTime)
-  if (duration > MIN_PAGE_VIEW_DURATION) {
+  if (duration > MIN_PAGE_VIEW_DURATION)
+  {
     // 仅在离开页面时写入一条 page_view，避免同次访问重复记录
     enqueue({ type: 'page_view', path: currentPath, duration, referer: document.referrer })
   }
@@ -128,7 +142,8 @@ function finishPageView() {
 }
 
 /** 开始记录新页面 */
-function startPageView(path: string) {
+function startPageView(path: string)
+{
   // 同一路径重复触发（如初始导航 + 可见性恢复）直接忽略
   if (currentPath === path && pageEnterTime) return
 
@@ -141,10 +156,12 @@ function startPageView(path: string) {
  * 在 App.vue 的 setup 中调用一次即可
  * 自动追踪路由切换 + 页面关闭 + 可见性变化
  */
-export function useActivityTracker() {
+export function useActivityTracker()
+{
   const router = useRouter()
 
-  onMounted(() => {
+  onMounted(() =>
+  {
     // 初始页面
     startPageView(window.location.pathname)
 
@@ -153,35 +170,44 @@ export function useActivityTracker() {
   })
 
   // 路由切换
-  const removeGuard = router.afterEach((to) => {
+  const removeGuard = router.afterEach(to =>
+  {
     startPageView(to.fullPath)
   })
 
   // 页面可见性变化：隐藏时结束当前页计时并刷新
-  function onVisibility() {
-    if (document.hidden) {
+  function onVisibility()
+  {
+    if (document.hidden)
+    {
       // 仅刷新缓冲区，不在 hidden/visible 切换时切断一次页面访问
       flush()
-    } else {
+    }
+    else
+    {
       // 兜底：当当前无活跃页面计时时（例如异常恢复）再重启计时
-      if (!currentPath || !pageEnterTime) {
+      if (!currentPath || !pageEnterTime)
+      
         startPageView(window.location.pathname)
-      }
+      
     }
   }
 
   // 页面关闭 / 卸载
-  function onBeforeUnload() {
+  function onBeforeUnload()
+  {
     finishPageView()
     flush()
   }
 
-  onMounted(() => {
+  onMounted(() =>
+  {
     document.addEventListener('visibilitychange', onVisibility)
     window.addEventListener('beforeunload', onBeforeUnload)
   })
 
-  onUnmounted(() => {
+  onUnmounted(() =>
+  {
     removeGuard()
     document.removeEventListener('visibilitychange', onVisibility)
     window.removeEventListener('beforeunload', onBeforeUnload)
@@ -194,7 +220,8 @@ export function useActivityTracker() {
 /* ---------- 手动追踪方法，供组件按需调用 ---------- */
 
 /** 追踪文章阅读 */
-export function trackArticleView(articleId: number, title?: string) {
+export function trackArticleView(articleId: number, title?: string)
+{
   enqueue({
     type: 'article_view',
     path: window.location.pathname,
@@ -203,7 +230,8 @@ export function trackArticleView(articleId: number, title?: string) {
 }
 
 /** 追踪搜索 */
-export function trackSearch(keyword: string) {
+export function trackSearch(keyword: string)
+{
   enqueue({
     type: 'search',
     path: window.location.pathname,
@@ -212,7 +240,8 @@ export function trackSearch(keyword: string) {
 }
 
 /** 追踪文章点赞 */
-export function trackArticleLike(articleId: number) {
+export function trackArticleLike(articleId: number)
+{
   enqueue({
     type: 'article_like',
     path: window.location.pathname,
@@ -221,7 +250,8 @@ export function trackArticleLike(articleId: number) {
 }
 
 /** 追踪分享 */
-export function trackShare(articleId: number, platform?: string) {
+export function trackShare(articleId: number, platform?: string)
+{
   enqueue({
     type: 'article_share',
     path: window.location.pathname,
@@ -230,23 +260,27 @@ export function trackShare(articleId: number, platform?: string) {
 }
 
 /** 追踪登录 */
-export function trackLogin() {
+export function trackLogin()
+{
   enqueue({ type: 'login', path: window.location.pathname })
 }
 
 /** 追踪注册 */
-export function trackRegister() {
+export function trackRegister()
+{
   enqueue({ type: 'register', path: window.location.pathname })
 }
 
 /** 追踪登出 */
-export function trackLogout() {
+export function trackLogout()
+{
   enqueue({ type: 'logout', path: window.location.pathname })
   flush() // 登出立即发送
 }
 
 /** 通用点击追踪 */
-export function trackClick(target: string, extra?: Record<string, unknown>) {
+export function trackClick(target: string, extra?: Record<string, unknown>)
+{
   enqueue({
     type: 'click',
     path: window.location.pathname,
@@ -255,7 +289,8 @@ export function trackClick(target: string, extra?: Record<string, unknown>) {
 }
 
 /** 通用评论追踪 */
-export function trackComment(articleId: number) {
+export function trackComment(articleId: number)
+{
   enqueue({
     type: 'comment',
     path: window.location.pathname,

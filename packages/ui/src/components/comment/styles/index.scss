@@ -176,28 +176,30 @@
     &.u-comment-item__html {
       white-space: normal;
 
-      :deep(p) {
+      p {
         margin: 0 0 0.5em;
 
         &:last-child {
           margin-bottom: 0;
         }
       }
-      :deep(a) {
+      a {
         color: var(--u-primary);
         text-decoration: none;
+        word-break: break-all;
 
         &:hover {
           text-decoration: underline;
+          opacity: 0.85;
         }
       }
-      :deep(code) {
+      code {
         padding: 0.15em 0.4em;
         font-size: 0.9em;
         background: var(--u-background-3);
         border-radius: 4px;
       }
-      :deep(pre) {
+      pre {
         margin: 0.5em 0;
         padding: 8px 12px;
         overflow-x: auto;
@@ -209,20 +211,20 @@
           background: none;
         }
       }
-      :deep(ul),
-      :deep(ol) {
+      ul,
+      ol {
         margin: 0.5em 0;
         padding-left: 1.5em;
       }
-      :deep(blockquote) {
+      blockquote {
         margin: 0.5em 0;
         padding-left: 1em;
         border-left: 3px solid var(--u-border-1);
         color: var(--u-text-3);
       }
-      :deep(h1),
-      :deep(h2),
-      :deep(h3) {
+      h1,
+      h2,
+      h3 {
         margin: 0.6em 0 0.3em;
         font-size: 1.1em;
         font-weight: 600;
@@ -266,6 +268,19 @@
 
     .u-icon {
       font-size: 1.2rem;
+    }
+  }
+
+  /* 纯文本模式下的链接高亮 */
+  &__link {
+    color: var(--u-primary, #4d96ff);
+    text-decoration: none;
+    word-break: break-all;
+    transition: color 0.2s, opacity 0.2s;
+
+    &:hover {
+      text-decoration: underline;
+      opacity: 0.85;
     }
   }
 

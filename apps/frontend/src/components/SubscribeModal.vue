@@ -89,8 +89,10 @@ const errorMsg = ref('')
 const submitted = ref(false)
 
 // 弹窗打开时重置表单
-watch(() => props.visible, (v) => {
-  if (v) {
+watch(() => props.visible, v =>
+{
+  if (v)
+  {
     email.value = ''
     name.value = ''
     errorMsg.value = ''
@@ -99,16 +101,22 @@ watch(() => props.visible, (v) => {
   }
 })
 
-async function handleSubmit() {
+async function handleSubmit()
+{
   if (!email.value.trim()) return
   loading.value = true
   errorMsg.value = ''
-  try {
+  try
+  {
     await subscribeEmail(email.value.trim(), name.value.trim() || undefined)
     submitted.value = true
-  } catch (err: any) {
+  }
+  catch (err: any)
+  {
     errorMsg.value = err?.message || t('subscribe.failed')
-  } finally {
+  }
+  finally
+  {
     loading.value = false
   }
 }

@@ -30,6 +30,8 @@ export interface IComment extends IBaseSchema, Pick<IBaseFields, 'id'> {
   device?: string | null
   /** IP 解析的地名 */
   ipLocation?: string | null
+  /** 点赞数 */
+  likeCount?: number
 }
 
 /**

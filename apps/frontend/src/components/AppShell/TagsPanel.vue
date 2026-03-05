@@ -142,7 +142,8 @@ interface CloudWordItem {
   color?: string | null
 }
 
-const cloudWords = computed(() => {
+const cloudWords = computed(() =>
+{
   const d = cloudData.value
   if (!d) return []
   const catWords: CloudWordItem[] = d.categories.map(c => ({
@@ -161,16 +162,22 @@ const cloudWords = computed(() => {
   return [...catWords, ...tagWords]
 })
 
-const cloudNameToColor = computed(() => {
+const cloudNameToColor = computed(() =>
+{
   const d = cloudData.value
   if (!d) return new Map<string, string>()
   const m = new Map<string, string>()
-  d.tags.forEach(t => { if (t.color) m.set(t.name, t.color) })
+  d.tags.forEach(t =>
+  {
+    if (t.color) m.set(t.name, t.color)
+  })
   return m
 })
 
-function cloudColor(word: [string, number] | CloudWordItem | unknown) {
-  if (word && typeof word === 'object' && 'text' in word) {
+function cloudColor(word: [string, number] | CloudWordItem | unknown)
+{
+  if (word && typeof word === 'object' && 'text' in word)
+  {
     const w = word as CloudWordItem
     return w.color ?? cloudNameToColor.value.get(w.text) ?? 'var(--u-primary-0)'
   }
@@ -178,16 +185,19 @@ function cloudColor(word: [string, number] | CloudWordItem | unknown) {
   return cloudNameToColor.value.get(text) ?? 'var(--u-primary-0)'
 }
 
-function cloudWordTitle(text: string, weight: number) {
+function cloudWordTitle(text: string, weight: number)
+{
   return `${text} · ${weight} ${t('tags.articlesCount')}`
 }
 
-function cloudWordStyle(word: CloudWordItem) {
+function cloudWordStyle(word: CloudWordItem)
+{
   const color = word.color ?? cloudNameToColor.value.get(word.text) ?? 'var(--u-primary-0)'
   return { color, cursor: 'pointer' }
 }
 
-function onCloudWordClick(word: CloudWordItem) {
+function onCloudWordClick(word: CloudWordItem)
+{
   if (word.type === 'category') toggleCategory(word.id)
   else toggleTag(word.id)
 }
@@ -196,19 +206,22 @@ const hasSelection = computed(
   () => selectedCategoryIds.value.length > 0 || selectedTagIds.value.length > 0
 )
 
-function toggleCategory(id: number) {
+function toggleCategory(id: number)
+{
   const idx = selectedCategoryIds.value.indexOf(id)
   if (idx === -1) selectedCategoryIds.value = [...selectedCategoryIds.value, id]
   else selectedCategoryIds.value = selectedCategoryIds.value.filter(x => x !== id)
 }
 
-function toggleTag(id: number) {
+function toggleTag(id: number)
+{
   const idx = selectedTagIds.value.indexOf(id)
   if (idx === -1) selectedTagIds.value = [...selectedTagIds.value, id]
   else selectedTagIds.value = selectedTagIds.value.filter(x => x !== id)
 }
 
-function goToArchive() {
+function goToArchive()
+{
   if (!hasSelection.value) return
   const query: Record<string, string> = {}
   if (selectedCategoryIds.value.length) query.categoryIds = selectedCategoryIds.value.join(',')
@@ -221,33 +234,39 @@ function goToArchive() {
  * 将任意 CSS 颜色字符串解析为 [r, g, b] 数组
  * 支持 hex (#abc / #aabbcc)、rgb(r,g,b)、rgba(r,g,b,a) 以及渐变取首色
  */
-function parseColorRGB(color: string): [number, number, number] | null {
+function parseColorRGB(color: string): [number, number, number] | null
+{
   // 如果是渐变，提取第一个颜色
   const gradientMatch = color.match(/#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)/)
   const c = gradientMatch ? gradientMatch[0] : color.trim()
 
   // hex 格式
   const hexMatch = c.match(/^#([0-9a-fA-F]{3,8})$/)
-  if (hexMatch) {
+  if (hexMatch)
+  {
     const hex = hexMatch[1]
-    if (hex.length === 3) {
+    if (hex.length === 3)
+    
       return [parseInt(hex[0] + hex[0], 16), parseInt(hex[1] + hex[1], 16), parseInt(hex[2] + hex[2], 16)]
-    }
-    if (hex.length >= 6) {
+    
+    if (hex.length >= 6)
+    
       return [parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)]
-    }
+    
   }
 
   // rgb / rgba 格式
   const rgbMatch = c.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/)
-  if (rgbMatch) {
+  if (rgbMatch)
+  
     return [Number(rgbMatch[1]), Number(rgbMatch[2]), Number(rgbMatch[3])]
-  }
+  
 
   return null
 }
 
-function tagStyle(tag: { color?: string }) {
+function tagStyle(tag: { color?: string })
+{
   const c = tag.color
   if (!c) return {}
 
@@ -264,18 +283,22 @@ function tagStyle(tag: { color?: string }) {
   }
 }
 
-onMounted(() => {
+onMounted(() =>
+{
   categoryStore.qryCategoryList()
   tagStore.qryTagList()
   getCloudWeights()
-    .then((data) => {
+    .then(data =>
+    {
       cloudData.value = data
-      nextTick(() => {
+      nextTick(() =>
+      {
         wordcloudMounted.value = true
         cloudWordsKey.value += 1
       })
     })
-    .catch(() => {})
+    .catch(() =>
+    {})
 })
 </script>
 

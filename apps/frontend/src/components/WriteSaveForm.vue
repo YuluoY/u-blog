@@ -184,7 +184,8 @@ export interface WriteSaveFormPayload {
 }
 
 /** 日期格式化为 datetime-local 输入值 */
-function toDatetimeLocal(d: Date): string {
+function toDatetimeLocal(d: Date): string
+{
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
@@ -257,30 +258,36 @@ const coverUploading = ref(false)
 const canSubmit = computed(() => !!props.userId && form.title.trim().length > 0)
 
 /** 提交按钮文案 */
-const submitLabel = computed(() => {
+const submitLabel = computed(() =>
+{
   if (props.editMode) return t('write.updateArticle')
   return form.status === CArticleStatus.PUBLISHED ? t('write.publish') : t('write.saveAsDraft')
 })
 
 /* ---------- 封面超限提示 ---------- */
-function onCoverExceed() {
+function onCoverExceed()
+{
   UNotificationFn({ message: t('write.coverUploadHint'), type: 'warning', deduplicate: true })
 }
 
 /**
  * 封面文件选取回调 —— 上传到服务端 Media 表，用 URL 替换 base64
  */
-async function onCoverFileChange(file: UploadFile) {
+async function onCoverFileChange(file: UploadFile)
+{
   if (!file.raw) return
 
   // 立即用 base64 显示预览（即时反馈）
   form.cover = file.url
   coverUploading.value = true
-  try {
+  try
+  {
     // 如果已有旧封面 Media，先异步清理（不阻塞新上传）
     const oldMediaId = coverMediaId.value
-    if (oldMediaId) {
-      deleteMedia(oldMediaId).catch(() => {})
+    if (oldMediaId)
+    {
+      deleteMedia(oldMediaId).catch(() =>
+      {})
       coverMediaId.value = null
     }
 
@@ -289,7 +296,9 @@ async function onCoverFileChange(file: UploadFile) {
     form.cover = result.url
     coverMediaId.value = result.mediaId
     savePublishSettingsDebounced()
-  } catch (err) {
+  }
+  catch (err)
+  {
     UNotificationFn({
       message: err instanceof Error ? err.message : t('write.coverUploadFail'),
       type: 'error',
@@ -297,7 +306,9 @@ async function onCoverFileChange(file: UploadFile) {
     })
     // 上传失败 → 清除预览
     form.cover = ''
-  } finally {
+  }
+  finally
+  {
     coverUploading.value = false
   }
 }
@@ -305,16 +316,21 @@ async function onCoverFileChange(file: UploadFile) {
 /**
  * 封面删除回调 —— 删除服务端 Media 记录 + 物理文件
  */
-async function onCoverRemove() {
+async function onCoverRemove()
+{
   const oldMediaId = coverMediaId.value
   form.cover = ''
   coverMediaId.value = null
   savePublishSettingsDebounced()
 
-  if (oldMediaId) {
-    try {
+  if (oldMediaId)
+  {
+    try
+    {
       await deleteMedia(oldMediaId)
-    } catch {
+    }
+    catch
+    {
       // 清理失败不影响用户操作
     }
   }
@@ -329,16 +345,17 @@ const statusOptions = computed(() => [
 const categoryList = ref<ICategory[]>([])
 const categoryOptions = computed(() => [
   { value: '', label: t('write.categoryPlaceholder') },
-  ...categoryList.value.map((c) => ({ value: c.id, label: c.name }))
+  ...categoryList.value.map(c => ({ value: c.id, label: c.name }))
 ])
 
 const tagList = ref<ITag[]>([])
 const allTagOptions = computed(() =>
-  tagList.value.map((tag) => ({ value: tag.id, label: tag.name }))
+  tagList.value.map(tag => ({ value: tag.id, label: tag.name }))
 )
 
 /* ---------- 从 Markdown 提取首个标题作为默认标题 ---------- */
-function extractFirstHeading(mdContent: string): string {
+function extractFirstHeading(mdContent: string): string
+{
   const m = mdContent.match(/^#+\s+(.+)$/m)
   return m ? m[1].trim() : ''
 }
@@ -346,7 +363,8 @@ function extractFirstHeading(mdContent: string): string {
 /**
  * 每次发布时自动提取标题：优先首个 Markdown 标题，其次正文摘要前 60 字
  */
-function extractAutoTitle(mdContent: string): string {
+function extractAutoTitle(mdContent: string): string
+{
   const heading = extractFirstHeading(mdContent)
   if (heading) return heading
   const fallback = extractSummary(mdContent, 60)
@@ -357,7 +375,8 @@ function extractAutoTitle(mdContent: string): string {
  * 从 Markdown 内容提取简介：
  * 去除标题、图片、链接、代码块、HTML 标签等标记，取前 200 个有效字符
  */
-function extractSummary(mdContent: string, maxLen = 200): string {
+function extractSummary(mdContent: string, maxLen = 200): string
+{
   let text = mdContent
     // 移除代码块（```...```）
     .replace(/```[\s\S]*?```/g, '')
@@ -381,9 +400,10 @@ function extractSummary(mdContent: string, maxLen = 200): string {
     .replace(/\n{2,}/g, '\n')
     .trim()
   // 取前 maxLen 个字符
-  if (text.length > maxLen) {
+  if (text.length > maxLen)
+  
     text = text.slice(0, maxLen) + '...'
-  }
+  
   return text
 }
 
@@ -392,18 +412,21 @@ function extractSummary(mdContent: string, maxLen = 200): string {
  * 支持 ![alt](url) 和 <img src="url"> 两种格式
  * 排除 base64 data URI（体积过大，不适合做封面）
  */
-function extractFirstImage(mdContent: string): string {
+function extractFirstImage(mdContent: string): string
+{
   // 匹配所有 Markdown 图片语法
   const mdImgRe = /!\[[^\]]*\]\(([^)]+)\)/g
   let match: RegExpExecArray | null
-  while ((match = mdImgRe.exec(mdContent)) !== null) {
+  while ((match = mdImgRe.exec(mdContent)) !== null)
+  {
     const url = match[1].trim()
     // 跳过 base64 data URI
     if (!url.startsWith('data:')) return url
   }
   // 匹配所有 HTML img 标签
   const htmlImgRe = /<img[^>]+src=["']([^"']+)["']/gi
-  while ((match = htmlImgRe.exec(mdContent)) !== null) {
+  while ((match = htmlImgRe.exec(mdContent)) !== null)
+  {
     const url = match[1].trim()
     if (!url.startsWith('data:')) return url
   }
@@ -413,9 +436,11 @@ function extractFirstImage(mdContent: string): string {
 /* ---------- 初始化表单 ---------- */
 let initDone = false
 
-async function initForm() {
+async function initForm()
+{
   // 编辑模式下跳过缓存恢复，等待父组件调用 loadEditData
-  if (props.editMode) {
+  if (props.editMode)
+  {
     initDone = true
     loadCategories()
     loadTags()
@@ -424,7 +449,8 @@ async function initForm() {
 
   // 先尝试从本地缓存恢复发布配置
   const cached = await restorePublishSettings()
-  if (cached) {
+  if (cached)
+  {
     form.title = cached.title || extractFirstHeading(props.content)
     // 自动提取简介：仅当缓存中无简介且有内容时自动填充
     form.desc = cached.desc || extractSummary(props.content)
@@ -441,7 +467,9 @@ async function initForm() {
     coverMediaId.value = cached.coverMediaId ?? null
     form.isProtected = cached.isProtected ?? false
     form.protectPassword = cached.protectPassword ?? ''
-  } else {
+  }
+  else
+  {
     form.title = extractFirstHeading(props.content)
     // 新建模式：自动提取简介和封面图
     form.desc = extractSummary(props.content)
@@ -464,20 +492,26 @@ async function initForm() {
 }
 
 /** 从 IndexedDB 恢复发布配置 */
-async function restorePublishSettings(): Promise<PublishSettingsRecord | null> {
-  try {
+async function restorePublishSettings(): Promise<PublishSettingsRecord | null>
+{
+  try
+  {
     return await getPublishSettings()
-  } catch {
+  }
+  catch
+  {
     return null
   }
 }
 
 /** 防抖保存发布配置到 IndexedDB */
 let saveTimer: ReturnType<typeof setTimeout> | null = null
-function savePublishSettingsDebounced() {
+function savePublishSettingsDebounced()
+{
   if (!initDone) return
   if (saveTimer) clearTimeout(saveTimer)
-  saveTimer = setTimeout(() => {
+  saveTimer = setTimeout(() =>
+  {
     putPublishSettings({
       title: form.title,
       desc: form.desc,
@@ -493,7 +527,8 @@ function savePublishSettingsDebounced() {
       coverUrlMode: coverUrlMode.value,
       isProtected: form.isProtected,
       protectPassword: form.protectPassword,
-    }).catch(() => {})
+    }).catch(() =>
+    {})
     saveTimer = null
   }, 500)
 }
@@ -505,33 +540,41 @@ onMounted(initForm)
 let descManuallyEdited = false
 let coverManuallyEdited = false
 
-watch(() => form.desc, () => {
+watch(() => form.desc, () =>
+{
   if (initDone) descManuallyEdited = true
 })
-watch(() => form.cover, () => {
+watch(() => form.cover, () =>
+{
   if (initDone) coverManuallyEdited = true
 })
 
-watch(() => props.content, (newContent) => {
+watch(() => props.content, newContent =>
+{
   if (!initDone) return
   // 标题为空时从内容提取
-  if (form.title === '') {
+  if (form.title === '')
+  
     form.title = extractFirstHeading(newContent)
-  }
+  
   // 简介为空且用户未手动编辑过时，自动提取
-  if (!descManuallyEdited && form.desc === '') {
+  if (!descManuallyEdited && form.desc === '')
+  
     form.desc = extractSummary(newContent)
-  }
+  
   // 封面为空且用户未手动编辑过时，自动提取首张图片
-  if (!coverManuallyEdited && form.cover === '') {
+  if (!coverManuallyEdited && form.cover === '')
+  
     form.cover = extractFirstImage(newContent)
-  }
+  
 })
 
-watch(publishNow, (now) => {
-  if (!now && !form.publishedAt) {
+watch(publishNow, now =>
+{
+  if (!now && !form.publishedAt)
+  
     form.publishedAt = toDatetimeLocal(new Date())
-  }
+  
   savePublishSettingsDebounced()
 })
 
@@ -539,31 +582,43 @@ watch(publishNow, (now) => {
 watch(
   () => [form.title, form.desc, form.categoryId, form.tags, form.status,
     form.isPrivate, form.isTop, form.isProtected, form.protectPassword, form.cover, form.publishedAt, coverUrlMode.value],
-  () => { savePublishSettingsDebounced() },
+  () =>
+  {
+    savePublishSettingsDebounced()
+  },
   { deep: true },
 )
 
 /* ---------- 数据加载 ---------- */
-async function loadCategories() {
-  try {
+async function loadCategories()
+{
+  try
+  {
     const list = await api(CTable.CATEGORY).getCategoryList()
     categoryList.value = Array.isArray(list) ? list : []
-  } catch {
+  }
+  catch
+  {
     categoryList.value = []
   }
 }
 
-async function loadTags() {
-  try {
+async function loadTags()
+{
+  try
+  {
     const list = await api(CTable.TAG).getTagList()
     tagList.value = Array.isArray(list) ? list : []
-  } catch {
+  }
+  catch
+  {
     tagList.value = []
   }
 }
 
 /* ---------- 提交处理 ---------- */
-async function handleSubmit() {
+async function handleSubmit()
+{
   if (!props.userId) return
   const autoTitle = extractAutoTitle(props.content)
   if (!autoTitle) return
@@ -586,9 +641,10 @@ async function handleSubmit() {
 
   // 密码保护：勾选且填写了密码则加密传输，否则传 null 表示取消
   let encryptedProtect: string | null = null
-  if (form.isProtected && form.protectPassword.trim()) {
+  if (form.isProtected && form.protectPassword.trim())
+  
     encryptedProtect = await encryptForTransport(form.protectPassword.trim())
-  }
+  
 
   const payload: WriteSaveFormPayload = {
     title: autoTitle,
@@ -624,7 +680,8 @@ function loadEditData(article: {
   protect?: string | null
   /** 是否受密码保护（前端标记） */
   isProtected?: boolean
-}) {
+})
+{
   form.title = article.title || ''
   form.desc = article.desc || ''
   form.categoryId = article.categoryId ?? ''
@@ -637,17 +694,22 @@ function loadEditData(article: {
   // 密码保护：超管编辑时后端返回明文 protect，否则通过 isProtected 标记还原状态
   form.isProtected = !!(article.protect || article.isProtected)
   form.protectPassword = article.protect || ''
-  if (article.publishedAt) {
+  if (article.publishedAt)
+  {
     form.publishedAt = toDatetimeLocal(new Date(article.publishedAt))
     publishNow.value = false
-  } else {
-    publishNow.value = true
   }
+  else
+  
+    publishNow.value = true
+  
 }
 
 /** 发布成功后清理本地缓存（由父组件调用） */
-function clearCache() {
-  clearPublishSettings().catch(() => {})
+function clearCache()
+{
+  clearPublishSettings().catch(() =>
+  {})
 }
 
 defineExpose({

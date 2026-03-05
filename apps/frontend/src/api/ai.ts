@@ -32,7 +32,8 @@ export interface AiGenerateResult {
  * 调用 AI 文本生成接口
  * 模型配置统一从服务端读取，无需前端传递 API Key
  */
-export async function generateAiText(params: AiGenerateParams): Promise<string> {
+export async function generateAiText(params: AiGenerateParams): Promise<string>
+{
   const config = params.config
 
   const res = await request.post<BackendResponse<AiGenerateResult>>(
@@ -46,9 +47,10 @@ export async function generateAiText(params: AiGenerateParams): Promise<string> 
   )
 
   const payload = res.data
-  if (payload.code !== 0) {
+  if (payload.code !== 0)
+  
     throw new Error(payload.message || 'AI 生成失败')
-  }
+  
 
   return payload.data?.text ?? ''
 }

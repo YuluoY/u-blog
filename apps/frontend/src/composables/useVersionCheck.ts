@@ -23,33 +23,42 @@ const latestBuildTime = ref('')
 /** 当前构建 hash：由 Vite define 注入 */
 let currentHash: string | null = null
 
-try {
+try
+{
   currentHash = __BUILD_HASH__
-} catch {
+}
+catch
+{
   // dev 环境或未定义时静默忽略
   currentHash = null
 }
 
 /** 获取远端 version.json */
-async function fetchRemoteVersion(): Promise<{ hash: string; buildTime: string } | null> {
-  try {
+async function fetchRemoteVersion(): Promise<{ hash: string; buildTime: string } | null>
+{
+  try
+  {
     const res = await fetch(`/version.json?_t=${Date.now()}`, {
       cache: 'no-store',
       headers: { 'Cache-Control': 'no-cache' },
     })
     if (!res.ok) return null
     return await res.json()
-  } catch {
+  }
+  catch
+  {
     return null
   }
 }
 
 /** 执行一次版本检查 */
-async function checkVersion() {
+async function checkVersion()
+{
   if (!currentHash) return
   const remote = await fetchRemoteVersion()
   if (!remote) return
-  if (remote.hash !== currentHash) {
+  if (remote.hash !== currentHash)
+  {
     hasNewVersion.value = true
     latestBuildTime.value = remote.buildTime
   }
@@ -59,24 +68,29 @@ async function checkVersion() {
  * 启动版本检测
  * @param intervalMs 轮询间隔（毫秒），默认 5 分钟
  */
-export function useVersionCheck(intervalMs = DEFAULT_INTERVAL_MS) {
+export function useVersionCheck(intervalMs = DEFAULT_INTERVAL_MS)
+{
   let timer: ReturnType<typeof setInterval> | null = null
 
   // 仅生产环境启用
-  if (import.meta.env.PROD && currentHash) {
+  if (import.meta.env.PROD && currentHash)
+  {
     // 延迟 30 秒后首次检测（避免阻塞页面加载）
-    const delay = setTimeout(() => {
+    const delay = setTimeout(() =>
+    {
       checkVersion()
       timer = setInterval(checkVersion, intervalMs)
     }, 30_000)
 
     // 页面可见性切换时主动检测
-    const onVisibilityChange = () => {
+    const onVisibilityChange = () =>
+    {
       if (document.visibilityState === 'visible') checkVersion()
     }
     document.addEventListener('visibilitychange', onVisibilityChange)
 
-    onUnmounted(() => {
+    onUnmounted(() =>
+    {
       clearTimeout(delay)
       if (timer) clearInterval(timer)
       document.removeEventListener('visibilitychange', onVisibilityChange)
@@ -84,12 +98,14 @@ export function useVersionCheck(intervalMs = DEFAULT_INTERVAL_MS) {
   }
 
   /** 用户点击刷新后重载页面 */
-  function refreshToUpdate() {
+  function refreshToUpdate()
+  {
     window.location.reload()
   }
 
   /** 暂时忽略本次更新提示 */
-  function dismiss() {
+  function dismiss()
+  {
     hasNewVersion.value = false
   }
 

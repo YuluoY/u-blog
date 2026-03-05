@@ -14,7 +14,8 @@ import { useHeaderStore } from './header'
  * - `isSubdomainMode` — 是否处于子域名博客模式
  * - `profile` — 完整的用户公开资料（头像、设置、统计）
  */
-export const useBlogOwnerStore = defineStore('blogOwner', () => {
+export const useBlogOwnerStore = defineStore('blogOwner', () =>
+{
   /** 子域名中提取的用户名 */
   const ownerUsername = ref<string | null>(null)
   /** 博客拥有者公开资料 */
@@ -39,7 +40,8 @@ export const useBlogOwnerStore = defineStore('blogOwner', () => {
    * 默认：readonly（只读），仅当博主在服务端设置 blog_share_mode = 'full' 时开放全功能
    * 安全：该值来自服务端 user_setting 表，无法被访客篡改
    */
-  const isReadOnly = computed(() => {
+  const isReadOnly = computed(() =>
+  {
     if (!isSubdomainMode.value) return false
     return profile.value?.settings?.blog_share_mode !== 'full'
   })
@@ -48,7 +50,8 @@ export const useBlogOwnerStore = defineStore('blogOwner', () => {
   const ownerAvatar = computed(() => profile.value?.user?.avatar || '')
 
   /** 博客拥有者站点名称（从个人设置中获取） */
-  const ownerSiteName = computed(() => {
+  const ownerSiteName = computed(() =>
+  {
     const settings = profile.value?.settings
     if (settings && typeof settings.site_name === 'string') return settings.site_name
     // 回退：用户昵称 + "的博客"
@@ -60,7 +63,8 @@ export const useBlogOwnerStore = defineStore('blogOwner', () => {
    * 从当前 URL 检测子域名或 ?blogger 参数
    * @returns 提取到的用户名，或 null
    */
-  function detectSubdomain(): string | null {
+  function detectSubdomain(): string | null
+  {
     const hostname = window.location.hostname
 
     // 1. 开发环境 ?blogger=xxx 参数优先（方便本地调试）
@@ -70,9 +74,10 @@ export const useBlogOwnerStore = defineStore('blogOwner', () => {
 
     // 2. 子域名检测
     // localhost / IP 地址不含子域名
-    if (hostname === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+    if (hostname === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname))
+    
       return null
-    }
+    
 
     // 解析主域名层级：a.b.example.com → parts = ['a', 'b', 'example', 'com']
     const parts = hostname.split('.')
@@ -91,11 +96,13 @@ export const useBlogOwnerStore = defineStore('blogOwner', () => {
    * 初始化：检测子域名并加载博客拥有者资料
    * 应在 app 启动（router beforeEach 或 App.vue onMounted）中调用
    */
-  async function init() {
+  async function init()
+  {
     if (ready.value) return
 
     const username = detectSubdomain()
-    if (!username) {
+    if (!username)
+    {
       ready.value = true
       return
     }
@@ -104,22 +111,28 @@ export const useBlogOwnerStore = defineStore('blogOwner', () => {
     loading.value = true
     error.value = null
 
-    try {
+    try
+    {
       const data = await getUserBlogProfile(username)
       profile.value = data
 
       // 覆盖 header store 的站点名，logo 统一使用 /logo.svg
       const headerStore = useHeaderStore()
       headerStore.setLogo('/logo.svg')
-      if (ownerSiteName.value) {
+      if (ownerSiteName.value)
+      
         headerStore.setSiteName(ownerSiteName.value)
-      }
-    } catch (e: any) {
+      
+    }
+    catch (e: any)
+    {
       error.value = e?.message || '加载博客信息失败'
       // 子域名用户不存在时清除，回退到默认模式
       ownerUsername.value = null
       profile.value = null
-    } finally {
+    }
+    finally
+    {
       loading.value = false
       ready.value = true
     }
@@ -130,11 +143,13 @@ export const useBlogOwnerStore = defineStore('blogOwner', () => {
    * @param username 用户名
    * @returns 分享链接 URL
    */
-  function buildShareUrl(username: string): string {
+  function buildShareUrl(username: string): string
+  {
     const { protocol, hostname, port } = window.location
 
     // 开发环境：使用 ?blogger 参数
-    if (hostname === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+    if (hostname === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname))
+    {
       const portStr = port ? `:${port}` : ''
       return `${protocol}//${hostname}${portStr}?blogger=${username}`
     }
@@ -144,13 +159,18 @@ export const useBlogOwnerStore = defineStore('blogOwner', () => {
     const parts = hostname.split('.')
     // 如果当前就在子域名下，替换第一段；否则添加
     let baseDomain: string
-    if (parts.length >= 3 && parts[0] !== 'www') {
+    if (parts.length >= 3 && parts[0] !== 'www')
+    
       baseDomain = parts.slice(1).join('.')
-    } else if (parts[0] === 'www') {
+    
+    else if (parts[0] === 'www')
+    
       baseDomain = parts.slice(1).join('.')
-    } else {
+    
+    else
+    
       baseDomain = hostname
-    }
+    
 
     const portStr = port && port !== '80' && port !== '443' ? `:${port}` : ''
     return `${protocol}//${username}.${baseDomain}${portStr}`

@@ -29,26 +29,32 @@ const ADMIN_URL = import.meta.env.VITE_ADMIN_URL
   || (import.meta.env.PROD ? '/admin/' : 'http://localhost:5174')
 
 /** 组件挂载时获取设置，判断是否显示入口 */
-onMounted(async () => {
-  try {
+onMounted(async() =>
+{
+  try
+  {
     const map = await getSettings([SETTING_KEYS.GUEST_ADMIN_VIEW_ENABLED])
     const raw = map[SETTING_KEYS.GUEST_ADMIN_VIEW_ENABLED]
     const val = raw?.value
     // 兼容 boolean / string / nested object
     let enabled = false
     if (val === true || val === 'true') enabled = true
-    else if (val && typeof val === 'object' && 'value' in val) {
+    else if (val && typeof val === 'object' && 'value' in val)
+    {
       const inner = (val as any).value
       enabled = inner === true || inner === 'true'
     }
     visible.value = enabled
-  } catch {
+  }
+  catch
+  {
     // 请求失败则不显示
   }
 })
 
 /** 点击打开游客模式后台 */
-function handleOpen() {
+function handleOpen()
+{
   const url = ADMIN_URL.endsWith('/')
     ? `${ADMIN_URL}?guest=1`
     : `${ADMIN_URL}/?guest=1`

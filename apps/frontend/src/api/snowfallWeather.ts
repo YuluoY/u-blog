@@ -15,8 +15,10 @@ export interface LocationResult {
   lon: number
 }
 
-export async function getLocationByIP(): Promise<LocationResult | null> {
-  try {
+export async function getLocationByIP(): Promise<LocationResult | null>
+{
+  try
+  {
     const res = await fetch(IP_API, { signal: AbortSignal.timeout(5000) })
     const json = await res.json()
     const data = json?.data
@@ -25,7 +27,9 @@ export async function getLocationByIP(): Promise<LocationResult | null> {
     const lng = typeof data.lng === 'string' ? parseFloat(data.lng) : data.lng
     if (typeof lat !== 'number' || typeof lng !== 'number' || Number.isNaN(lat) || Number.isNaN(lng)) return null
     return { lat, lon: lng }
-  } catch {
+  }
+  catch
+  {
     return null
   }
 }
@@ -33,8 +37,10 @@ export async function getLocationByIP(): Promise<LocationResult | null> {
 /**
  * 查询某地当日是否有雪（按当地日期）
  */
-export async function getTodayHasSnow(lat: number, lon: number): Promise<boolean> {
-  try {
+export async function getTodayHasSnow(lat: number, lon: number): Promise<boolean>
+{
+  try
+  {
     const url = `${OPEN_METEO}?latitude=${lat}&longitude=${lon}&daily=weathercode&timezone=auto`
     const res = await fetch(url, { signal: AbortSignal.timeout(8000) })
     const data = await res.json()
@@ -45,7 +51,9 @@ export async function getTodayHasSnow(lat: number, lon: number): Promise<boolean
     const idx = times.indexOf(today)
     if (idx === -1) return false
     return SNOW_CODES.has(Number(codes[idx]))
-  } catch {
+  }
+  catch
+  {
     return false
   }
 }
@@ -56,21 +64,29 @@ const CACHE_DATE_KEY = 'snowfall-cache-date'
 /**
  * 根据 IP 定位判断当日是否下雪，结果按日期缓存到 sessionStorage，同一天不重复请求
  */
-export async function fetchTodayHasSnowByIP(): Promise<boolean> {
+export async function fetchTodayHasSnowByIP(): Promise<boolean>
+{
   const today = new Date().toISOString().slice(0, 10)
-  try {
+  try
+  {
     const cached = sessionStorage.getItem(CACHE_DATE_KEY)
-    if (cached === today) {
+    if (cached === today)
+    
       return sessionStorage.getItem(CACHE_KEY) === '1'
-    }
-  } catch { /* ignore */ }
+    
+  }
+  catch
+  { /* ignore */ }
 
   const loc = await getLocationByIP()
   if (!loc) return false
   const hasSnow = await getTodayHasSnow(loc.lat, loc.lon)
-  try {
+  try
+  {
     sessionStorage.setItem(CACHE_DATE_KEY, today)
     sessionStorage.setItem(CACHE_KEY, hasSnow ? '1' : '0')
-  } catch { /* ignore */ }
+  }
+  catch
+  { /* ignore */ }
   return hasSnow
 }

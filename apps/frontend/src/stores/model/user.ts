@@ -22,16 +22,21 @@ export const useUserStore = defineStore('user', () =>
    * 若未登录，回退查询第一个 super_admin 作为站长展示信息。
    * 内置去重：多处同时调用只会发出一次请求。
    */
-  const qryUser = () => {
+  const qryUser = () =>
+  {
     if (_fetchPromise) return _fetchPromise
-    _fetchPromise = _doFetchUser().finally(() => { _fetchPromise = null })
+    _fetchPromise = _doFetchUser().finally(() =>
+    {
+      _fetchPromise = null
+    })
     return _fetchPromise
   }
 
   const _doFetchUser = async() =>
   {
     const loggedIn = await api(CTable.USER).getUser()
-    if (loggedIn) {
+    if (loggedIn)
+    {
       setUser(loggedIn)
       setIsLoggedIn(true)
       setAuthReady(true)
@@ -39,19 +44,26 @@ export const useUserStore = defineStore('user', () =>
     }
     // 未登录：子域名模式使用博客拥有者信息，否则查站长信息用于侧栏展示
     setIsLoggedIn(false)
-    try {
+    try
+    {
       const blogOwnerStore = useBlogOwnerStore()
-      if (blogOwnerStore.isSubdomainMode && blogOwnerStore.profile?.user) {
+      if (blogOwnerStore.isSubdomainMode && blogOwnerStore.profile?.user)
+      {
         // 子域名模式：直接使用博客拥有者的资料
         setUser(blogOwnerStore.profile.user)
-      } else {
+      }
+      else
+      {
         // 非子域名：查站长信息用于侧栏展示（公开接口，无需登录）
         const profile = await getSiteOwnerProfile()
-        if (profile?.user) {
+        if (profile?.user)
+        
           setUser(profile.user)
-        }
+        
       }
-    } catch { /* ignore */ }
+    }
+    catch
+    { /* ignore */ }
     setAuthReady(true)
   }
 
@@ -86,19 +98,28 @@ export const useUserStore = defineStore('user', () =>
     setIsLoggedIn(false)
     setAccessToken(null)
     // 重新加载展示信息：子域名模式用博客拥有者，否则用站长
-    try {
+    try
+    {
       const blogOwnerStore = useBlogOwnerStore()
-      if (blogOwnerStore.isSubdomainMode && blogOwnerStore.profile?.user) {
+      if (blogOwnerStore.isSubdomainMode && blogOwnerStore.profile?.user)
+      
         setUser(blogOwnerStore.profile.user)
-      } else {
+      
+      else
+      {
         const profile = await getSiteOwnerProfile()
-        if (profile?.user) {
+        if (profile?.user)
+        
           setUser(profile.user)
-        } else {
+        
+        else
+        
           setUser({})
-        }
+        
       }
-    } catch {
+    }
+    catch
+    {
       setUser({})
     }
   }
@@ -108,9 +129,10 @@ export const useUserStore = defineStore('user', () =>
   {
     const updated = await updateProfileApi<Partial<IUser>>(data)
     // 合并更新后的字段到本地 user 状态
-    if (updated) {
+    if (updated)
+    
       setUser({ ...user.value, ...updated })
-    }
+    
     return updated
   }
 

@@ -17,17 +17,21 @@ const getSettingsCache = new Map<string, Promise<SettingsMap>>()
 /**
  * 获取站点设置（不传 keys 则拉取全部）。相同 keys 的并发调用会共用一个请求。
  */
-export async function getSettings(keys?: string[]): Promise<SettingsMap> {
+export async function getSettings(keys?: string[]): Promise<SettingsMap>
+{
   const cacheKey = keys?.length ? keys.slice().sort().join(',') : '__all__'
   let p = getSettingsCache.get(cacheKey)
-  if (!p) {
-    p = (async () => {
+  if (!p)
+  {
+    p = (async() =>
+    {
       const params = keys?.length ? { keys: keys.join(',') } : {}
       const res = await request.get<BackendResponse<SettingsMap>>('/settings', { params })
       const payload = res.data
-      if (payload.code !== 0) {
+      if (payload.code !== 0)
+      
         throw new Error(payload.message || '获取设置失败')
-      }
+      
       return (payload.data ?? {}) as SettingsMap
     })()
     getSettingsCache.set(cacheKey, p)
@@ -41,10 +45,12 @@ export async function getSettings(keys?: string[]): Promise<SettingsMap> {
  */
 export async function updateSettings(
   record: Record<string, { value: unknown; desc?: string }>
-): Promise<void> {
+): Promise<void>
+{
   const res = await request.put<BackendResponse<unknown>>('/settings', record)
   const payload = res.data
-  if (payload.code !== 0) {
+  if (payload.code !== 0)
+  
     throw new Error(payload.message || '保存设置失败')
-  }
+  
 }

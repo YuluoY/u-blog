@@ -12,18 +12,21 @@
  * 生产/开发环境使用不同密钥，确保隔离安全
  */
 const TRANSPORT_SEED = import.meta.env.VITE_TRANSPORT_KEY
-if (!TRANSPORT_SEED) {
+if (!TRANSPORT_SEED)
+
   console.error('[transportCrypto] VITE_TRANSPORT_KEY 未设置，传输加密将不可用')
-}
+
 
 /** 将 ArrayBuffer / TypedArray 转为 base64 字符串 */
-function bufToBase64(buf: ArrayBuffer | Uint8Array): string {
+function bufToBase64(buf: ArrayBuffer | Uint8Array): string
+{
   const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf)
   return btoa(String.fromCharCode(...bytes))
 }
 
 /** 从共享种子派生 AES-256 CryptoKey */
-async function deriveKey(): Promise<CryptoKey> {
+async function deriveKey(): Promise<CryptoKey>
+{
   const enc = new TextEncoder()
   const rawKey = await crypto.subtle.digest('SHA-256', enc.encode(TRANSPORT_SEED))
   return crypto.subtle.importKey('raw', rawKey, { name: 'AES-GCM' }, false, ['encrypt'])
@@ -34,7 +37,8 @@ async function deriveKey(): Promise<CryptoKey> {
  * @param plaintext 明文
  * @returns `__enc__:<iv>:<ciphertext>` 格式的密文字符串
  */
-export async function encryptForTransport(plaintext: string): Promise<string> {
+export async function encryptForTransport(plaintext: string): Promise<string>
+{
   const enc = new TextEncoder()
   const key = await deriveKey()
   const iv = crypto.getRandomValues(new Uint8Array(12)) // 96-bit IV for AES-GCM

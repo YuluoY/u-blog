@@ -32,14 +32,17 @@ export const useArticleStore = defineStore('article', () =>
    * 1. 子域名博客模式 → 优先使用博客拥有者 ID
    * 2. 登录用户开启"仅展示我的文章" → 使用当前用户 ID
    */
-  function getFilterUserId(): number | undefined {
+  function getFilterUserId(): number | undefined
+  {
     // 子域名模式：始终过滤为博客拥有者的文章
-    if (blogOwnerStore.isSubdomainMode && blogOwnerStore.blogOwnerId) {
+    if (blogOwnerStore.isSubdomainMode && blogOwnerStore.blogOwnerId)
+    
       return blogOwnerStore.blogOwnerId
-    }
-    if (appStore.onlyOwnArticles && userStore.isLoggedIn && userStore.user?.id) {
+    
+    if (appStore.onlyOwnArticles && userStore.isLoggedIn && userStore.user?.id)
+    
       return userStore.user.id as number
-    }
+    
     return undefined
   }
 
@@ -49,12 +52,15 @@ export const useArticleStore = defineStore('article', () =>
     setLoading(true)
     setPage(1)
     setHasMore(true)
-    try {
+    try
+    {
       const sort = appStore.homeSort ?? 'date'
       const list = await api(CTable.ARTICLE).getArticleList(1, PAGE_SIZE, sort, getFilterUserId())
       setArticleList(list)
       if (list.length < PAGE_SIZE) setHasMore(false)
-    } finally {
+    }
+    finally
+    {
       setLoading(false)
     }
   }
@@ -66,15 +72,19 @@ export const useArticleStore = defineStore('article', () =>
     if (loading.value || !hasMore.value || articleList.value.length === 0) return
     setLoading(true)
     const nextPage = page.value + 1
-    try {
+    try
+    {
       const sort = appStore.homeSort ?? 'date'
       const list = await api(CTable.ARTICLE).getArticleList(nextPage, PAGE_SIZE, sort, getFilterUserId())
-      if (list.length > 0) {
+      if (list.length > 0)
+      {
         setArticleList([...articleList.value, ...list])
         setPage(nextPage)
       }
       if (list.length < PAGE_SIZE) setHasMore(false)
-    } finally {
+    }
+    finally
+    {
       setLoading(false)
     }
   }
@@ -85,11 +95,14 @@ export const useArticleStore = defineStore('article', () =>
     setArchiveLoading(true)
     setArchivePage(1)
     setArchiveHasMore(true)
-    try {
+    try
+    {
       const list = await api(CTable.ARTICLE).getArticleListForArchive(ARCHIVE_PAGE_SIZE, 0, getFilterUserId())
       setArchiveList(list)
       if (list.length < ARCHIVE_PAGE_SIZE) setArchiveHasMore(false)
-    } finally {
+    }
+    finally
+    {
       setArchiveLoading(false)
     }
   }
@@ -100,15 +113,19 @@ export const useArticleStore = defineStore('article', () =>
     if (archiveLoading.value || !archiveHasMore.value) return
     setArchiveLoading(true)
     const nextPage = archivePage.value + 1
-    try {
+    try
+    {
       const skip = (nextPage - 1) * ARCHIVE_PAGE_SIZE
       const list = await api(CTable.ARTICLE).getArticleListForArchive(ARCHIVE_PAGE_SIZE, skip, getFilterUserId())
-      if (list.length > 0) {
+      if (list.length > 0)
+      {
         setArchiveList([...archiveList.value, ...list])
         setArchivePage(nextPage)
       }
       if (list.length < ARCHIVE_PAGE_SIZE) setArchiveHasMore(false)
-    } finally {
+    }
+    finally
+    {
       setArchiveLoading(false)
     }
   }
@@ -137,9 +154,10 @@ export const useArticleStore = defineStore('article', () =>
       list.map(a => a.id === articleId ? { ...a, viewCount } : a)
     setArticleList(updateList(articleList.value))
     setArchiveList(updateList(archiveList.value))
-    if (currentArticle.value?.id === articleId) {
+    if (currentArticle.value?.id === articleId)
+    
       setCurrentArticle({ ...currentArticle.value, viewCount })
-    }
+    
   }
 
   /**
@@ -153,9 +171,10 @@ export const useArticleStore = defineStore('article', () =>
     setArticleList(updateList(articleList.value))
     setArchiveList(updateList(archiveList.value))
     // 同步 currentArticle
-    if (currentArticle.value?.id === articleId) {
+    if (currentArticle.value?.id === articleId)
+    
       setCurrentArticle({ ...currentArticle.value, likeCount })
-    }
+    
   }
 
   return {

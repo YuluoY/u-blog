@@ -5,38 +5,50 @@ import type { PanelId } from '@/constants/layout'
 import { PANEL_ID } from '@/constants/layout'
 import { STORAGE_KEYS } from '@/constants/storage'
 
-function loadCollapsed(): boolean {
-  try {
+function loadCollapsed(): boolean
+{
+  try
+  {
     const v = localStorage.getItem(STORAGE_KEYS.SIDEBAR_COLLAPSED)
     // 首次访问（未存过）默认折叠，让用户感知到展开交互
     if (v === null) return true
     return v === 'true'
-  } catch {
+  }
+  catch
+  {
     return true
   }
 }
 
-function loadActivePanel(): PanelId | null {
-  try {
+function loadActivePanel(): PanelId | null
+{
+  try
+  {
     const v = localStorage.getItem(STORAGE_KEYS.SIDEBAR_ACTIVE_PANEL)
     // 首次访问（未存过）默认不打开面板
     if (v == null) return null
     if (v === '') return null // 曾关闭面板
     const valid = Object.values(PANEL_ID) as string[]
     return valid.includes(v) ? (v as PanelId) : null
-  } catch {
+  }
+  catch
+  {
     return null
   }
 }
 
 /** 无激活时“默认打开”的面板：用上次打开过的（lastActivePanel），没有才用第一个 */
-function getPreferredPanel(): PanelId {
-  try {
+function getPreferredPanel(): PanelId
+{
+  try
+  {
     const v = localStorage.getItem(STORAGE_KEYS.SIDEBAR_LAST_ACTIVE_PANEL)
     if (v == null || v === '') return PANEL_ID.PROFILE
     const valid = Object.values(PANEL_ID) as string[]
     return valid.includes(v) ? (v as PanelId) : PANEL_ID.PROFILE
-  } catch {
+  }
+  catch
+  {
     return PANEL_ID.PROFILE
   }
 }
@@ -60,18 +72,26 @@ export const useSidebarStore = defineStore('sidebar', () =>
   /** 当前打开的面板 id，默认用户信息；null 表示无面板 */
   const [activePanel, setActivePanel] = useState<PanelId | null>(loadActivePanel())
 
-  watch(collapsed, (v) => {
-    try {
+  watch(collapsed, v =>
+  {
+    try
+    {
       localStorage.setItem(STORAGE_KEYS.SIDEBAR_COLLAPSED, String(v))
-    } catch { /* ignore */ }
+    }
+    catch
+    { /* ignore */ }
   }, { immediate: true })
 
-  watch(activePanel, (v) => {
-    try {
+  watch(activePanel, v =>
+  {
+    try
+    {
       localStorage.setItem(STORAGE_KEYS.SIDEBAR_ACTIVE_PANEL, v ?? '')
       if (v != null)
         localStorage.setItem(STORAGE_KEYS.SIDEBAR_LAST_ACTIVE_PANEL, v)
-    } catch { /* ignore */ }
+    }
+    catch
+    { /* ignore */ }
   }, { immediate: true })
 
   /**
@@ -88,11 +108,14 @@ export const useSidebarStore = defineStore('sidebar', () =>
   const toggleCollapsed = () =>
   {
     const panelVisible = !collapsed.value && activePanel.value != null
-    if (panelVisible) {
+    if (panelVisible)
+    {
       // 面板 dock 可见 → 折叠并关闭
       setCollapsed(true)
       setActivePanel(null)
-    } else {
+    }
+    else
+    {
       // 面板 dock 不可见（折叠或无面板）→ 展开并确保有面板
       setCollapsed(false)
       if (activePanel.value == null)

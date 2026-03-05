@@ -49,7 +49,8 @@ const router = useRouter()
 const articleStore = useArticleStore()
 
 // 发布成功后立即刷新文章列表，确保返回首页时能看到新文章
-onMounted(() => {
+onMounted(() =>
+{
   articleStore.qryArticleList()
 })
 
@@ -60,19 +61,23 @@ const articleTitle = computed(() =>
 )
 
 /** 阅读文章 */
-function goRead() {
-  if (articleId.value) {
+function goRead()
+{
+  if (articleId.value)
+  
     router.push({ name: 'read', params: { id: articleId.value } })
-  }
+  
 }
 
 /** 继续撰写 */
-function goWrite() {
+function goWrite()
+{
   router.push({ name: 'write' })
 }
 
 /** 返回首页 */
-function goHome() {
+function goHome()
+{
   router.push({ name: 'home' })
 }
 </script>

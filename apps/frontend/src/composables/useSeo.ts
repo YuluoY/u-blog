@@ -49,10 +49,12 @@ const createdElements: HTMLElement[] = []
  * 设置或更新 <meta> 标签
  * 策略：先查找已有同 name/property 的标签并复用，避免重复创建
  */
-function setMeta(attr: 'name' | 'property', key: string, content: string): HTMLElement | null {
+function setMeta(attr: 'name' | 'property', key: string, content: string): HTMLElement | null
+{
   if (!content) return null
   let el = document.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`)
-  if (el) {
+  if (el)
+  {
     el.setAttribute('content', content)
     return null // 复用已有标签，不需要追踪清理
   }
@@ -66,10 +68,12 @@ function setMeta(attr: 'name' | 'property', key: string, content: string): HTMLE
 /**
  * 设置 canonical link 标签
  */
-function setCanonical(url: string): HTMLElement | null {
+function setCanonical(url: string): HTMLElement | null
+{
   if (!url) return null
   let el = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
-  if (el) {
+  if (el)
+  {
     el.href = url
     return null
   }
@@ -83,11 +87,13 @@ function setCanonical(url: string): HTMLElement | null {
 /**
  * 注入 JSON-LD 结构化数据
  */
-function setJsonLd(data: Record<string, any>): HTMLElement | null {
+function setJsonLd(data: Record<string, any>): HTMLElement | null
+{
   if (!data) return null
   const id = 'seo-json-ld'
   let el = document.getElementById(id) as HTMLScriptElement | null
-  if (el) {
+  if (el)
+  {
     el.textContent = JSON.stringify(data)
     return null
   }
@@ -100,9 +106,16 @@ function setJsonLd(data: Record<string, any>): HTMLElement | null {
 }
 
 /** 清理所有本次 composable 创建的标签 */
-function cleanup() {
-  createdElements.forEach(el => {
-    try { el.parentNode?.removeChild(el) } catch { /* 已被移除 */ }
+function cleanup()
+{
+  createdElements.forEach(el =>
+  {
+    try
+    {
+      el.parentNode?.removeChild(el)
+    }
+    catch
+    { /* 已被移除 */ }
   })
   createdElements.length = 0
 }
@@ -129,11 +142,13 @@ const SITE_URL = 'https://uluo.cloud'
  * }))
  * ```
  */
-export function useSeo(optionsOrGetter: SeoOptions | (() => SeoOptions)) {
+export function useSeo(optionsOrGetter: SeoOptions | (() => SeoOptions))
+{
   const route = useRoute()
   const appStore = useAppStore()
 
-  function apply(opts: SeoOptions) {
+  function apply(opts: SeoOptions)
+  {
     // 先清理上次创建的标签
     cleanup()
 
@@ -141,9 +156,10 @@ export function useSeo(optionsOrGetter: SeoOptions | (() => SeoOptions)) {
     const currentUrl = `${SITE_URL}${route.fullPath}`
 
     // 1. document.title
-    if (opts.title) {
+    if (opts.title)
+    
       document.title = `${opts.title} - ${siteName}`
-    }
+    
 
     // 2. 基础 meta 标签
     const newElements: (HTMLElement | null)[] = []
@@ -153,9 +169,12 @@ export function useSeo(optionsOrGetter: SeoOptions | (() => SeoOptions)) {
     newElements.push(setMeta('name', 'author', opts.author || ''))
 
     // noindex 控制
-    if (opts.noindex) {
+    if (opts.noindex)
+    
       newElements.push(setMeta('name', 'robots', 'noindex, nofollow'))
-    } else {
+    
+    else
+    {
       // 确保可索引页面有正确的 robots 标签
       newElements.push(setMeta('name', 'robots', 'index, follow'))
     }
@@ -167,29 +186,35 @@ export function useSeo(optionsOrGetter: SeoOptions | (() => SeoOptions)) {
     newElements.push(setMeta('property', 'og:url', currentUrl))
     newElements.push(setMeta('property', 'og:site_name', siteName))
 
-    if (opts.image) {
+    if (opts.image)
+    {
       const imgUrl = opts.image.startsWith('http') ? opts.image : `${SITE_URL}${opts.image}`
       newElements.push(setMeta('property', 'og:image', imgUrl))
     }
 
     // 文章类型的专属 OG 标签
-    if (opts.type === 'article') {
-      if (opts.publishedTime) {
+    if (opts.type === 'article')
+    {
+      if (opts.publishedTime)
+      
         newElements.push(setMeta('property', 'article:published_time', opts.publishedTime))
-      }
-      if (opts.modifiedTime) {
+      
+      if (opts.modifiedTime)
+      
         newElements.push(setMeta('property', 'article:modified_time', opts.modifiedTime))
-      }
-      if (opts.author) {
+      
+      if (opts.author)
+      
         newElements.push(setMeta('property', 'article:author', opts.author))
-      }
+      
     }
 
     // 4. Twitter Card（兼容 X/Twitter 分享卡片）
     newElements.push(setMeta('name', 'twitter:card', opts.image ? 'summary_large_image' : 'summary'))
     newElements.push(setMeta('name', 'twitter:title', opts.title || siteName))
     newElements.push(setMeta('name', 'twitter:description', opts.description || ''))
-    if (opts.image) {
+    if (opts.image)
+    {
       const imgUrl = opts.image.startsWith('http') ? opts.image : `${SITE_URL}${opts.image}`
       newElements.push(setMeta('name', 'twitter:image', imgUrl))
     }
@@ -198,20 +223,28 @@ export function useSeo(optionsOrGetter: SeoOptions | (() => SeoOptions)) {
     newElements.push(setCanonical(currentUrl))
 
     // 6. JSON-LD 结构化数据
-    if (opts.jsonLd) {
+    if (opts.jsonLd)
+    
       newElements.push(setJsonLd(opts.jsonLd))
-    }
+    
 
     // 收集新创建的标签
-    newElements.forEach(el => { if (el) createdElements.push(el) })
+    newElements.forEach(el =>
+    {
+      if (el) createdElements.push(el)
+    })
   }
 
-  if (typeof optionsOrGetter === 'function') {
+  if (typeof optionsOrGetter === 'function')
+  {
     // 响应式模式：watch getter 变化自动更新
-    watch(optionsOrGetter, (newOpts) => {
+    watch(optionsOrGetter, newOpts =>
+    {
       if (newOpts.title) apply(newOpts)
     }, { immediate: true, deep: true })
-  } else {
+  }
+  else
+  {
     // 静态模式：直接应用
     apply(optionsOrGetter)
   }
@@ -237,7 +270,8 @@ export function buildArticleJsonLd(article: {
   category?: { name?: string } | null
   tags?: { name?: string }[] | null
   id: number
-}): Record<string, any> {
+}): Record<string, any>
+{
   const authorName = article.user?.namec || article.user?.username || 'Anonymous'
   const coverUrl = article.cover
     ? (article.cover.startsWith('http') ? article.cover : `${SITE_URL}${article.cover}`)
@@ -295,7 +329,8 @@ export function buildArticleJsonLd(article: {
 /**
  * 生成面包屑导航的 JSON-LD（帮助搜索引擎理解页面层级）
  */
-export function buildBreadcrumbJsonLd(items: { name: string; url: string }[]): Record<string, any> {
+export function buildBreadcrumbJsonLd(items: { name: string; url: string }[]): Record<string, any>
+{
   return {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',

@@ -24,7 +24,8 @@ export type AiAction =
  * @param action AI 动作类型
  * @param locale 当前 i18n 语言标识
  */
-function getPromptForAction(action: AiAction, locale: string): string {
+function getPromptForAction(action: AiAction, locale: string): string
+{
   const isZh = locale.startsWith('zh')
 
   const prompts: Record<AiAction, string> = {
@@ -58,7 +59,8 @@ function getPromptForAction(action: AiAction, locale: string): string {
  * AI 文本生成 Composable
  * @returns generating（加载态）、error（错误信息）、generate（执行生成）
  */
-export function useAiGenerate() {
+export function useAiGenerate()
+{
   const { t, locale } = useI18n()
 
   /** 是否正在生成 */
@@ -72,18 +74,24 @@ export function useAiGenerate() {
    * @param content 待处理的文本内容
    * @returns 生成的文本；失败时返回空字符串
    */
-  async function generate(action: AiAction, content: string): Promise<string> {
+  async function generate(action: AiAction, content: string): Promise<string>
+  {
     error.value = null
     generating.value = true
-    try {
+    try
+    {
       const prompt = getPromptForAction(action, locale.value)
       return await generateAiText({ prompt, content })
-    } catch (err: any) {
+    }
+    catch (err: any)
+    {
       const msg = err?.message || t('ai.generateFailed')
       error.value = msg
       UNotificationFn({ message: msg, type: 'error', deduplicate: true })
       return ''
-    } finally {
+    }
+    finally
+    {
       generating.value = false
     }
   }

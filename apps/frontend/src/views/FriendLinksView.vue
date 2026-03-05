@@ -335,7 +335,8 @@ const { user, isLoggedIn } = storeToRefs(useUserStore())
 const blogOwnerStore = useBlogOwnerStore()
 
 /** 状态 → UTag type 映射 */
-function statusTagType(status: string): 'warning' | 'success' | 'danger' {
+function statusTagType(status: string): 'warning' | 'success' | 'danger'
+{
   if (status === 'approved') return 'success'
   if (status === 'rejected') return 'danger'
   return 'warning'
@@ -346,17 +347,23 @@ const links = ref<IFriendLink[]>([])
 const loading = ref(false)
 
 /** 加载当前站点的已审核友链（子域名模式优先使用博客拥有者 ID） */
-async function loadLinks() {
+async function loadLinks()
+{
   loading.value = true
-  try {
+  try
+  {
     // 子域名模式 → 博客拥有者的友链，否则当前登录用户 / 站长（userId=1）
     const userId = blogOwnerStore.isSubdomainMode && blogOwnerStore.blogOwnerId
       ? blogOwnerStore.blogOwnerId
       : (user.value?.id ?? 1)
     links.value = await getFriendLinks(userId)
-  } catch {
+  }
+  catch
+  {
     links.value = []
-  } finally {
+  }
+  finally
+  {
     loading.value = false
   }
 }
@@ -381,39 +388,50 @@ const formRules = computed<FormRules>(() => ({
 }))
 
 /** URL 失焦自动抓取 */
-function handleUrlBlur() {
-  if (form.url && !form.title) {
+function handleUrlBlur()
+{
+  if (form.url && !form.title)
+  
     handleAutoFetch()
-  }
+  
 }
 
 /** 自动获取站点 meta 信息 */
-async function handleAutoFetch() {
+async function handleAutoFetch()
+{
   if (!form.url || fetching.value) return
   // 补全协议
   let url = form.url.trim()
   if (!/^https?:\/\//i.test(url)) url = 'https://' + url
   form.url = url
   fetching.value = true
-  try {
+  try
+  {
     const meta = await fetchSiteMeta(url)
     if (meta.title && !form.title) form.title = meta.title
     if (meta.icon && !form.icon) form.icon = meta.icon
     if (meta.description && !form.description) form.description = meta.description
-  } catch {
+  }
+  catch
+  {
     UMessageFn({ type: 'warning', message: t('friendLinks.autoFetchFailed') })
-  } finally {
+  }
+  finally
+  {
     fetching.value = false
   }
 }
 
 /** 提交友链申请 */
-async function handleSubmit() {
+async function handleSubmit()
+{
   // 使用 UForm 校验
-  formRef.value?.validate(async (valid) => {
+  formRef.value?.validate(async valid =>
+  {
     if (!valid) return
     submitting.value = true
-    try {
+    try
+    {
       const userId = blogOwnerStore.isSubdomainMode && blogOwnerStore.blogOwnerId
         ? blogOwnerStore.blogOwnerId
         : (user.value?.id ?? 1)
@@ -431,9 +449,13 @@ async function handleSubmit() {
       formRef.value?.resetFields()
       // 如果是博主提交给自己，直接刷新列表
       if (isLoggedIn.value) loadLinks()
-    } catch (err: any) {
+    }
+    catch (err: any)
+    {
       UMessageFn({ type: 'error', message: err?.message || t('friendLinks.submitFailed') })
-    } finally {
+    }
+    finally
+    {
       submitting.value = false
     }
   })
@@ -445,41 +467,56 @@ const manageLoading = ref(false)
 const manageList = ref<IFriendLink[]>([])
 
 /** 加载博主自己的全部友链 */
-async function loadManageList() {
+async function loadManageList()
+{
   manageLoading.value = true
-  try {
+  try
+  {
     manageList.value = await getMyFriendLinks()
-  } catch {
+  }
+  catch
+  {
     manageList.value = []
-  } finally {
+  }
+  finally
+  {
     manageLoading.value = false
   }
 }
 
 /** 审核友链 */
-async function handleReview(id: number, action: 'approve' | 'reject') {
-  try {
+async function handleReview(id: number, action: 'approve' | 'reject')
+{
+  try
+  {
     await reviewFriendLink(id, action)
     await loadManageList()
     await loadLinks()
-  } catch (err: any) {
+  }
+  catch (err: any)
+  {
     UMessageFn({ type: 'error', message: err?.message || '操作失败' })
   }
 }
 
 /** 删除友链 */
-async function handleDelete(id: number) {
-  try {
+async function handleDelete(id: number)
+{
+  try
+  {
     await deleteFriendLink(id)
     await loadManageList()
     await loadLinks()
-  } catch (err: any) {
+  }
+  catch (err: any)
+  {
     UMessageFn({ type: 'error', message: err?.message || '删除失败' })
   }
 }
 
 /* ---------- 监听管理面板展开 ---------- */
-watch(showManage, (val) => {
+watch(showManage, val =>
+{
   if (val) loadManageList()
 })
 
@@ -512,10 +549,12 @@ const MOCK_LINKS: IFriendLink[] = import.meta.env.DEV ? [
 ] : []
 
 /** 展示用的友链列表（真实数据 + 开发预览数据） */
-const displayLinks = computed(() => {
-  if (import.meta.env.DEV && links.value.length < 3) {
+const displayLinks = computed(() =>
+{
+  if (import.meta.env.DEV && links.value.length < 3)
+  
     return [...links.value, ...MOCK_LINKS]
-  }
+  
   return links.value
 })
 
@@ -528,14 +567,19 @@ const hexGap = computed(() => containerWidth.value <= 480 ? 4 : 6)
 const HEX_HUES = [215, 260, 330, 165, 25, 290, 140, 50, 195, 310, 180, 350]
 
 /** 蜂窝网格布局坐标计算 */
-const cellLayout = computed(() => {
+const cellLayout = computed(() =>
+{
   const W = hexW.value, H = hexH.value, G = hexGap.value
   const maxCols = Math.max(2, Math.floor((containerWidth.value + G) / (W + G)))
   const rowH = H * 0.75 + G
   let row = 0, col = 0
   const colsInRow = (r: number) => r % 2 === 0 ? maxCols : Math.max(1, maxCols - 1)
-  return displayLinks.value.map((link, i) => {
-    if (col >= colsInRow(row)) { row++; col = 0 }
+  return displayLinks.value.map((link, i) =>
+  {
+    if (col >= colsInRow(row))
+    {
+      row++; col = 0
+    }
     const odd = row % 2 === 1
     const x = col * (W + G) + (odd ? (W + G) / 2 : 0)
     const y = row * rowH
@@ -545,61 +589,83 @@ const cellLayout = computed(() => {
 })
 
 /** 当前被激活（移动端点击选中）的格子数据 */
-const activeCell = computed(() => {
+const activeCell = computed(() =>
+{
   if (activeId.value === null) return null
   return cellLayout.value.find(c => c.id === activeId.value) ?? null
 })
 
-const gridTotalWidth = computed(() => {
+const gridTotalWidth = computed(() =>
+{
   if (cellLayout.value.length === 0) return 0
   return Math.max(...cellLayout.value.map(c => c.x)) + hexW.value
 })
 
-const gridHeight = computed(() => {
+const gridHeight = computed(() =>
+{
   if (cellLayout.value.length === 0) return 0
   return Math.max(...cellLayout.value.map(c => c.y)) + hexH.value
 })
 
 /** 桌面端 hover 进入——立即显示 tip，取消延迟隐藏 */
-function handleCellEnter(id: number) {
+function handleCellEnter(id: number)
+{
   if (isTouch.value) return
-  if (hoverHideTimer) { clearTimeout(hoverHideTimer); hoverHideTimer = null }
+  if (hoverHideTimer)
+  {
+    clearTimeout(hoverHideTimer); hoverHideTimer = null
+  }
   hoveredId.value = id
 }
 /** 桌面端 hover 离开——延迟 150ms 隐藏 tip，方便用户移动到 tip 上 */
-function handleCellLeave() {
+function handleCellLeave()
+{
   if (isTouch.value) return
-  hoverHideTimer = setTimeout(() => {
+  hoverHideTimer = setTimeout(() =>
+  {
     hoveredId.value = null
     hoverHideTimer = null
   }, 150)
 }
 /** tip 鼠标进入——取消隐藏定时器 */
-function handleTipEnter() {
-  if (hoverHideTimer) { clearTimeout(hoverHideTimer); hoverHideTimer = null }
+function handleTipEnter()
+{
+  if (hoverHideTimer)
+  {
+    clearTimeout(hoverHideTimer); hoverHideTimer = null
+  }
 }
 /** tip 鼠标离开——立即隐藏 */
-function handleTipLeave() {
+function handleTipLeave()
+{
   hoveredId.value = null
 }
 
 /** 统一 click 处理：桌面端直接跳转，移动端先展开详情 */
-function handleCellClick(e: MouseEvent | TouchEvent, cell: { id: number; url: string }) {
-  if (isTouch.value) {
+function handleCellClick(e: MouseEvent | TouchEvent, cell: { id: number; url: string })
+{
+  if (isTouch.value)
+  {
     // 移动端：首次点击展示详情，已激活状态再点击跳转
-    if (activeId.value === cell.id) {
+    if (activeId.value === cell.id)
+    
       window.open(cell.url, '_blank', 'noopener,noreferrer')
-    } else {
+    
+    else
+    
       activeId.value = cell.id as number
-    }
-  } else {
+    
+  }
+  else
+  {
     // 桌面端：直接跳转
     window.open(cell.url, '_blank', 'noopener,noreferrer')
   }
 }
 
 /** 点击空白区域关闭移动端详情 */
-function handleClickOutside(e: Event) {
+function handleClickOutside(e: Event)
+{
   if (activeId.value === null) return
   const detail = document.querySelector('.honeycomb__detail')
   const target = e.target as HTMLElement
@@ -608,15 +674,19 @@ function handleClickOutside(e: Event) {
   activeId.value = null
 }
 
-onMounted(() => {
+onMounted(() =>
+{
   loadLinks()
   // 检测触控设备
   isTouch.value = 'ontouchstart' in window || navigator.maxTouchPoints > 0
   document.addEventListener('click', handleClickOutside)
-  nextTick(() => {
-    if (honeycombRef.value) {
+  nextTick(() =>
+  {
+    if (honeycombRef.value)
+    {
       containerWidth.value = honeycombRef.value.clientWidth
-      resizeObserver = new ResizeObserver((entries) => {
+      resizeObserver = new ResizeObserver(entries =>
+      {
         containerWidth.value = entries[0].contentRect.width
       })
       resizeObserver.observe(honeycombRef.value)
@@ -624,10 +694,14 @@ onMounted(() => {
   })
 })
 
-onUnmounted(() => {
+onUnmounted(() =>
+{
   resizeObserver?.disconnect()
   document.removeEventListener('click', handleClickOutside)
-  if (hoverHideTimer) { clearTimeout(hoverHideTimer); hoverHideTimer = null }
+  if (hoverHideTimer)
+  {
+    clearTimeout(hoverHideTimer); hoverHideTimer = null
+  }
 })
 </script>
 

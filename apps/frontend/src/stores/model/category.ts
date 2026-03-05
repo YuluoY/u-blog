@@ -15,12 +15,16 @@ export const useCategoryStore = defineStore('category', () =>
   {
     if (loaded.value && !force) return
     if (_fetchPromise) return _fetchPromise
-    _fetchPromise = (async () => {
-      try {
+    _fetchPromise = (async() =>
+    {
+      try
+      {
         const list = await api(CTable.CATEGORY).getCategoryList()
         setCategoryList(list)
         setLoaded(true)
-      } finally {
+      }
+      finally
+      {
         _fetchPromise = null
       }
     })()

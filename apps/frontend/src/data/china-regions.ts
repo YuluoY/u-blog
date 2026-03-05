@@ -22,14 +22,17 @@ function transform(areaList: {
   province_list: Record<string, string>
   city_list: Record<string, string>
   county_list: Record<string, string>
-}): RegionOption[] {
+}): RegionOption[]
+{
   const { province_list, city_list, county_list } = areaList
 
-  return Object.entries(province_list).map(([pCode, pName]) => {
+  return Object.entries(province_list).map(([pCode, pName]) =>
+  {
     const prefix2 = pCode.slice(0, 2)
     const cities = Object.entries(city_list)
       .filter(([cCode]) => cCode.startsWith(prefix2))
-      .map(([cCode, cName]) => {
+      .map(([cCode, cName]) =>
+      {
         const prefix4 = cCode.slice(0, 4)
         const counties = Object.entries(county_list)
           .filter(([aCode]) => aCode.startsWith(prefix4))
@@ -52,7 +55,8 @@ function transform(areaList: {
  * 懒加载并返回中国地区树数据
  * 首次调用时 dynamic import @vant/area-data 并转换、缓存
  */
-export async function loadChinaRegions(): Promise<RegionOption[]> {
+export async function loadChinaRegions(): Promise<RegionOption[]>
+{
   if (_cache) return _cache
   const { areaList } = await import('@vant/area-data')
   _cache = transform(areaList)
@@ -66,11 +70,13 @@ export async function loadChinaRegions(): Promise<RegionOption[]> {
 export function getLabelsFromCodes(
   codes: (string | number)[],
   tree: RegionOption[],
-): string[] {
+): string[]
+{
   const labels: string[] = []
   let current = tree
-  for (const code of codes) {
-    const node = current.find((n) => String(n.value) === String(code))
+  for (const code of codes)
+  {
+    const node = current.find(n => String(n.value) === String(code))
     if (!node) break
     labels.push(node.label)
     current = node.children || []

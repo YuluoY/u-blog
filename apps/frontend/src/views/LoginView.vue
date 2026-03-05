@@ -318,7 +318,8 @@ const registerRules = computed<FormRules>(() => ({
   confirmPassword: [
     { required: true, message: t('auth.confirmPasswordRequired'), trigger: 'blur' },
     {
-      validator: (_rule, value) => {
+      validator: (_rule, value) =>
+      {
         if (value !== registerForm.password) return Promise.reject(new Error(t('auth.passwordMismatch')))
         return Promise.resolve()
       },
@@ -328,14 +329,17 @@ const registerRules = computed<FormRules>(() => ({
 }))
 
 /* ---------- 方法 ---------- */
-function clearMessages() {
+function clearMessages()
+{
   errorMsg.value = ''
   successMsg.value = ''
 }
 
-function toggleMode() {
+function toggleMode()
+{
   // 切换到注册模式时检查注册状态
-  if (isLogin.value && !registrationStatus.value.enabled) {
+  if (isLogin.value && !registrationStatus.value.enabled)
+  {
     flashError(registrationStatus.value.reason || t('auth.registrationDisabled'))
     return
   }
@@ -343,13 +347,16 @@ function toggleMode() {
   clearMessages()
 }
 
-function redirectAfterAuth() {
+function redirectAfterAuth()
+{
   // 管理后台重定向回跳：从 returnUrl 解析跨域目标
   const returnUrl = route.query.returnUrl as string | undefined
-  if (returnUrl) {
+  if (returnUrl)
+  {
     const decoded = decodeURIComponent(returnUrl)
     // 仅允许跳转到同域或 localhost 开发地址，防止开放重定向
-    if (decoded.startsWith('/') || decoded.startsWith(window.location.origin) || decoded.includes('localhost')) {
+    if (decoded.startsWith('/') || decoded.startsWith(window.location.origin) || decoded.includes('localhost'))
+    {
       window.location.href = decoded
       return
     }
@@ -362,67 +369,106 @@ function redirectAfterAuth() {
 }
 
 /** 自动清除消息 */
-function flashError(msg: string) {
+function flashError(msg: string)
+{
   errorMsg.value = msg
-  setTimeout(() => { if (errorMsg.value === msg) errorMsg.value = '' }, 4000)
+  setTimeout(() =>
+  {
+    if (errorMsg.value === msg) errorMsg.value = ''
+  }, 4000)
 }
 
-function flashSuccess(msg: string) {
+function flashSuccess(msg: string)
+{
   successMsg.value = msg
-  setTimeout(() => { if (successMsg.value === msg) successMsg.value = '' }, 3000)
+  setTimeout(() =>
+  {
+    if (successMsg.value === msg) successMsg.value = ''
+  }, 3000)
 }
 
 /** 发送邮箱验证码 */
-async function handleSendCode() {
+async function handleSendCode()
+{
   if (codeCooldown.value > 0 || sendingCode.value) return
-  if (!registerForm.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registerForm.email)) {
+  if (!registerForm.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registerForm.email))
+  {
     flashError(t('auth.emailInvalid'))
     return
   }
   sendingCode.value = true
   clearMessages()
-  try {
+  try
+  {
     await userStore.sendEmailCode(registerForm.email)
     flashSuccess(t('auth.codeSentSuccess'))
     codeCooldown.value = 60
-    cooldownTimer = setInterval(() => {
+    cooldownTimer = setInterval(() =>
+    {
       codeCooldown.value--
-      if (codeCooldown.value <= 0) {
+      if (codeCooldown.value <= 0)
+      {
         clearInterval(cooldownTimer!)
         cooldownTimer = null
       }
     }, 1000)
-  } catch (e: any) {
+  }
+  catch (e: any)
+  {
     flashError(e.message || '发送失败')
-  } finally {
+  }
+  finally
+  {
     sendingCode.value = false
   }
 }
 
 /** 登录 */
-async function handleLogin() {
+async function handleLogin()
+{
   if (loading.value) return
   clearMessages()
-  try { await loginFormRef.value?.validate() } catch { return }
+  try
+  {
+    await loginFormRef.value?.validate()
+  }
+  catch
+  {
+    return
+  }
   loading.value = true
-  try {
+  try
+  {
     await userStore.login({ username: loginForm.username, password: loginForm.password })
     trackLogin()
     redirectAfterAuth()
-  } catch (e: any) {
+  }
+  catch (e: any)
+  {
     flashError(e.message || t('common.error'))
-  } finally {
+  }
+  finally
+  {
     loading.value = false
   }
 }
 
 /** 注册 */
-async function handleRegister() {
+async function handleRegister()
+{
   if (loading.value) return
   clearMessages()
-  try { await registerFormRef.value?.validate() } catch { return }
+  try
+  {
+    await registerFormRef.value?.validate()
+  }
+  catch
+  {
+    return
+  }
   loading.value = true
-  try {
+  try
+  {
     await userStore.register({
       username: registerForm.username,
       email: registerForm.email,
@@ -433,29 +479,43 @@ async function handleRegister() {
     })
     trackRegister()
     redirectAfterAuth()
-  } catch (e: any) {
+  }
+  catch (e: any)
+  {
     flashError(e.message || t('common.error'))
-  } finally {
+  }
+  finally
+  {
     loading.value = false
   }
 }
 
 /** 获取注册开放状态 */
-async function checkRegistrationStatus() {
-  try {
+async function checkRegistrationStatus()
+{
+  try
+  {
     registrationStatus.value = await getRegistrationStatus()
-  } catch {
+  }
+  catch
+  {
     registrationStatus.value = { enabled: false, reason: '无法检查注册状态，请稍后再试' }
-  } finally {
+  }
+  finally
+  {
     registrationChecked.value = true
   }
 }
 
-onMounted(() => {
+onMounted(() =>
+{
   checkRegistrationStatus()
 })
 
-onBeforeUnmount(() => { if (cooldownTimer) clearInterval(cooldownTimer) })
+onBeforeUnmount(() =>
+{
+  if (cooldownTimer) clearInterval(cooldownTimer)
+})
 </script>
 
 <style lang="scss" scoped>

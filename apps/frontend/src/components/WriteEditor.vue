@@ -32,7 +32,8 @@ import { useAiGenerate, type AiAction } from '@/composables/useAiGenerate'
 import type { UFloatingToolbarAction } from '@u-blog/ui'
 
 /** 有自定义工具栏时，在「保存」右侧插入索引 0，使 defToolbars 第一个按钮显示 */
-const toolbars = computed((): ToolbarNames[] | undefined => {
+const toolbars = computed((): ToolbarNames[] | undefined =>
+{
   if (!props.defToolbars) return undefined
   const arr = allToolbar as unknown as ToolbarNames[]
   const eqIdx = (arr as (string | number)[]).indexOf('=')
@@ -74,9 +75,11 @@ const DEBOUNCE_MS = 250
 // 仅当 initialContent 首次有值且 content 仍为空时同步（IndexedDB 异步加载完成后）
 watch(
   () => props.initialContent,
-  (val) => {
+  val =>
+  {
     if (syncFromInitialDone) return
-    if (content.value === '' && val !== '') {
+    if (content.value === '' && val !== '')
+    {
       content.value = val
       syncFromInitialDone = true
     }
@@ -86,9 +89,11 @@ watch(
 
 watch(
   content,
-  (val) => {
+  val =>
+  {
     if (debounceTimer) clearTimeout(debounceTimer)
-    debounceTimer = setTimeout(() => {
+    debounceTimer = setTimeout(() =>
+    {
       emit('update:content', val)
       debounceTimer = null
     }, DEBOUNCE_MS)
@@ -96,29 +101,35 @@ watch(
   { deep: false }
 )
 
-function onSave(_value?: string, _htmlPromise?: Promise<string>) {
+function onSave(_value?: string, _htmlPromise?: Promise<string>)
+{
   const value = content.value
   emit('update:content', value)
   emit('save', value)
 }
 
 /** 图片上传/粘贴：转为 base64 插入，保存文章时后端会替换为永久 URL */
-function onUploadImg(files: File[], callback: (urls: string[]) => void) {
+function onUploadImg(files: File[], callback: (urls: string[]) => void)
+{
   const urls: string[] = []
   let done = 0
   const total = files.length
-  if (total === 0) {
+  if (total === 0)
+  {
     callback([])
     return
   }
-  files.forEach((file) => {
+  files.forEach(file =>
+  {
     const reader = new FileReader()
-    reader.onload = () => {
+    reader.onload = () =>
+    {
       urls.push(reader.result as string)
       done += 1
       if (done === total) callback(urls)
     }
-    reader.onerror = () => {
+    reader.onerror = () =>
+    {
       done += 1
       if (done === total) callback(urls)
     }
@@ -127,19 +138,23 @@ function onUploadImg(files: File[], callback: (urls: string[]) => void) {
 }
 
 /** 供父组件获取当前全文（如打开保存弹窗、快捷键保存前同步） */
-function getContent(): string {
+function getContent(): string
+{
   return content.value
 }
 
 /** 供父组件设置编辑器内容（编辑模式加载已有文章） */
-function setContent(val: string): void {
+function setContent(val: string): void
+{
   content.value = val
   syncFromInitialDone = true
 }
 
 /** 立即将当前内容同步到父级（先 emit 再让父级 flush） */
-function flushSync(): void {
-  if (debounceTimer) {
+function flushSync(): void
+{
+  if (debounceTimer)
+  {
     clearTimeout(debounceTimer)
     debounceTimer = null
   }
@@ -152,24 +167,26 @@ const { generating: aiGenerating, generate: aiGenerate } = useAiGenerate()
 
 /** 操作栏按钮列表——响应 i18n 语言切换 */
 const aiActions = computed<UFloatingToolbarAction[]>(() => [
-  { key: 'polish',    icon: 'fa-solid fa-wand-magic-sparkles', label: t('ai.polish') },
-  { key: 'expand',    icon: 'fa-solid fa-expand',              label: t('ai.expand') },
-  { key: 'condense',  icon: 'fa-solid fa-compress',            label: t('ai.condense') },
-  { key: 'translate', icon: 'fa-solid fa-language',             label: t('ai.translate') },
-  { key: 'continue',  icon: 'fa-solid fa-forward',             label: t('ai.continue') },
+  { key: 'polish', icon: 'fa-solid fa-wand-magic-sparkles', label: t('ai.polish') },
+  { key: 'expand', icon: 'fa-solid fa-expand', label: t('ai.expand') },
+  { key: 'condense', icon: 'fa-solid fa-compress', label: t('ai.condense') },
+  { key: 'translate', icon: 'fa-solid fa-language', label: t('ai.translate') },
+  { key: 'continue', icon: 'fa-solid fa-forward', label: t('ai.continue') },
 ])
 
 /**
  * 处理 AI 操作：接收选中文本 → 调用 AI 生成 → 替换原文
  * 替换策略：直接在 content 字符串中查找并替换选中文本
  */
-async function handleAiAction(key: string, selectedText: string) {
+async function handleAiAction(key: string, selectedText: string)
+{
   const result = await aiGenerate(key as AiAction, selectedText)
   if (!result) return
 
   // 在内容中查找并替换首次匹配的选中文本
   const idx = content.value.indexOf(selectedText)
-  if (idx !== -1) {
+  if (idx !== -1)
+  {
     content.value =
       content.value.slice(0, idx) + result + content.value.slice(idx + selectedText.length)
   }

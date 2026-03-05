@@ -12,7 +12,7 @@ export interface ChatModelConfig {
 
 /** SSE 事件数据类型 */
 interface SSETokenEvent { token: string }
-interface SSEDoneEvent  { done: true }
+interface SSEDoneEvent { done: true }
 interface SSEErrorEvent { error: string }
 type SSEEvent = SSETokenEvent | SSEDoneEvent | SSEErrorEvent
 
@@ -33,7 +33,8 @@ export async function sendChatMessageStream(
   config?: ChatModelConfig,
   ragContext?: string,
   blogOwnerId?: number,
-): Promise<string> {
+): Promise<string>
+{
   // 从 request 模块获取内存中的 access token，确保鉴权与 axios 实例一致
   const { getAccessToken } = await import('./request')
   const token = getAccessToken()
@@ -55,23 +56,31 @@ export async function sendChatMessageStream(
   })
 
   // 非 SSE 响应（如 JSON 错误）
-  if (!res.ok || !res.body) {
+  if (!res.ok || !res.body)
+  {
     let msg = `HTTP ${res.status}`
-    try {
+    try
+    {
       const json = await res.json()
       msg = json.message || msg
-    } catch { /* ignore */ }
+    }
+    catch
+    { /* ignore */ }
     throw new Error(msg)
   }
 
   // 后端在输入校验失败时可能返回 200 + application/json 而非 SSE
   const contentType = res.headers.get('content-type') || ''
-  if (contentType.includes('application/json')) {
+  if (contentType.includes('application/json'))
+  {
     let msg = 'Unknown error'
-    try {
+    try
+    {
       const json = await res.json()
       msg = json.message || msg
-    } catch { /* ignore */ }
+    }
+    catch
+    { /* ignore */ }
     throw new Error(msg)
   }
 
@@ -81,7 +90,8 @@ export async function sendChatMessageStream(
   let fullText = ''
 
   // 逐块读取 SSE 流
-  while (true) {
+  for (;;)
+  {
     const { done, value } = await reader.read()
     if (done) break
 
@@ -92,21 +102,26 @@ export async function sendChatMessageStream(
     // 最后一段可能不完整，留在 buffer
     buffer = parts.pop() || ''
 
-    for (const part of parts) {
+    for (const part of parts)
+    {
       // 提取 "data: {...}" 行
       const line = part.trim()
       if (!line.startsWith('data: ')) continue
       const jsonStr = line.slice(6)
 
-      try {
+      try
+      {
         const evt: SSEEvent = JSON.parse(jsonStr)
         if ('error' in evt) throw new Error(evt.error)
         if ('done' in evt) continue
-        if ('token' in evt) {
+        if ('token' in evt)
+        {
           fullText += evt.token
           onToken(evt.token)
         }
-      } catch (e) {
+      }
+      catch (e)
+      {
         if (e instanceof Error && e.message !== jsonStr) throw e
       }
     }

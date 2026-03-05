@@ -384,64 +384,104 @@ interface XiaohuiFolder {
 /* ===================== 会话持久化 ===================== */
 
 /** 从 localStorage 加载会话列表 */
-function loadSessions(): XiaohuiSession[] {
-  try {
+function loadSessions(): XiaohuiSession[]
+{
+  try
+  {
     const raw = localStorage.getItem(STORAGE_KEYS.XIAOHUI_SESSIONS)
     return raw ? JSON.parse(raw) : []
-  } catch { return [] }
+  }
+  catch
+  {
+    return []
+  }
 }
 
 /** 保存会话列表到 localStorage */
-function saveSessions() {
-  try {
+function saveSessions()
+{
+  try
+  {
     localStorage.setItem(STORAGE_KEYS.XIAOHUI_SESSIONS, JSON.stringify(sessions.value))
-  } catch { /* ignore */ }
+  }
+  catch
+  { /* ignore */ }
 }
 
 /** 加载当前会话 ID */
-function loadCurrentSessionId(): string {
-  try {
+function loadCurrentSessionId(): string
+{
+  try
+  {
     return localStorage.getItem(STORAGE_KEYS.XIAOHUI_CURRENT_SESSION) || ''
-  } catch { return '' }
+  }
+  catch
+  {
+    return ''
+  }
 }
 
 /** 保存当前会话 ID */
-function saveCurrentSessionId(id: string) {
-  try {
+function saveCurrentSessionId(id: string)
+{
+  try
+  {
     localStorage.setItem(STORAGE_KEYS.XIAOHUI_CURRENT_SESSION, id)
-  } catch { /* ignore */ }
+  }
+  catch
+  { /* ignore */ }
 }
 
 /* ===================== 文件夹持久化 ===================== */
 
 /** 从 localStorage 加载文件夹列表 */
-function loadFolders(): XiaohuiFolder[] {
-  try {
+function loadFolders(): XiaohuiFolder[]
+{
+  try
+  {
     const raw = localStorage.getItem(STORAGE_KEYS.XIAOHUI_FOLDERS)
     return raw ? JSON.parse(raw) : []
-  } catch { return [] }
+  }
+  catch
+  {
+    return []
+  }
 }
 
 /** 保存文件夹列表到 localStorage */
-function saveFolders() {
-  try {
+function saveFolders()
+{
+  try
+  {
     localStorage.setItem(STORAGE_KEYS.XIAOHUI_FOLDERS, JSON.stringify(folders.value))
-  } catch { /* ignore */ }
+  }
+  catch
+  { /* ignore */ }
 }
 
 /** 加载文件夹展开状态 */
-function loadFolderOpenState(): Record<string, boolean> {
-  try {
+function loadFolderOpenState(): Record<string, boolean>
+{
+  try
+  {
     const raw = localStorage.getItem(STORAGE_KEYS.XIAOHUI_FOLDERS_OPEN)
     return raw ? JSON.parse(raw) : {}
-  } catch { return {} }
+  }
+  catch
+  {
+    return {}
+  }
 }
 
 /** 保存文件夹展开状态 */
-function saveFolderOpenState() {
-  try {
+function saveFolderOpenState()
+{
+  try
+  {
     localStorage.setItem(STORAGE_KEYS.XIAOHUI_FOLDERS_OPEN, JSON.stringify(folderOpenMap.value))
-  } catch { /* ignore */ }
+  }
+  catch
+  { /* ignore */ }
 }
 
 /* ===================== 状态 ===================== */
@@ -468,7 +508,8 @@ const sortedFolders = computed(() =>
 )
 
 /** 获取某个文件夹下的会话（按更新时间倒序） */
-function getSessionsByFolder(folderId: string): XiaohuiSession[] {
+function getSessionsByFolder(folderId: string): XiaohuiSession[]
+{
   return sessions.value
     .filter(s => s.folderId === folderId)
     .sort((a, b) => b.updatedAt - a.updatedAt)
@@ -482,21 +523,29 @@ const uncategorizedSessions = computed(() =>
 )
 
 /* ===================== 侧栏 ===================== */
-function loadSidebarVisible(): boolean {
-  try {
+function loadSidebarVisible(): boolean
+{
+  try
+  {
     const v = localStorage.getItem(STORAGE_KEYS.XIAOHUI_SIDEBAR_VISIBLE)
     if (v === 'true' || v === 'false') return v === 'true'
-  } catch { /* ignore */ }
+  }
+  catch
+  { /* ignore */ }
   return true
 }
 
 const sidebarVisible = ref(loadSidebarVisible())
 
-function toggleSidebar() {
+function toggleSidebar()
+{
   sidebarVisible.value = !sidebarVisible.value
-  try {
+  try
+  {
     localStorage.setItem(STORAGE_KEYS.XIAOHUI_SIDEBAR_VISIBLE, String(sidebarVisible.value))
-  } catch { /* ignore */ }
+  }
+  catch
+  { /* ignore */ }
 }
 
 /* ===================== 会话编辑 ===================== */
@@ -507,17 +556,20 @@ const sessionToDelete = ref<string | null>(null)
 
 /* ===================== 文件夹操作 ===================== */
 
-function isFolderOpen(folderId: string): boolean {
+function isFolderOpen(folderId: string): boolean
+{
   return folderOpenMap.value[folderId] !== false // 默认展开
 }
 
-function toggleFolder(folderId: string) {
+function toggleFolder(folderId: string)
+{
   folderOpenMap.value[folderId] = !isFolderOpen(folderId)
   saveFolderOpenState()
 }
 
 /** 新建文件夹 */
-function handleCreateFolder() {
+function handleCreateFolder()
+{
   const name = t('xiaohui.newFolder')
   const maxOrder = folders.value.reduce((max, f) => Math.max(max, f.order), 0)
   const folder: XiaohuiFolder = {
@@ -531,7 +583,8 @@ function handleCreateFolder() {
   // 自动进入重命名状态
   editingFolderId.value = folder.id
   editingFolderName.value = name
-  nextTick(() => {
+  nextTick(() =>
+  {
     const input = document.querySelector('.folder-header__edit-input') as HTMLInputElement
     input?.focus()
     input?.select()
@@ -539,10 +592,12 @@ function handleCreateFolder() {
 }
 
 /** 开始编辑文件夹名 */
-function startFolderEditing(folder: XiaohuiFolder) {
+function startFolderEditing(folder: XiaohuiFolder)
+{
   editingFolderId.value = folder.id
   editingFolderName.value = folder.name
-  nextTick(() => {
+  nextTick(() =>
+  {
     const input = document.querySelector('.folder-header__edit-input') as HTMLInputElement
     input?.focus()
     input?.select()
@@ -550,10 +605,13 @@ function startFolderEditing(folder: XiaohuiFolder) {
 }
 
 /** 完成文件夹重命名 */
-function finishFolderEditing() {
-  if (editingFolderId.value && editingFolderName.value.trim()) {
+function finishFolderEditing()
+{
+  if (editingFolderId.value && editingFolderName.value.trim())
+  {
     const folder = folders.value.find(f => f.id === editingFolderId.value)
-    if (folder) {
+    if (folder)
+    {
       folder.name = editingFolderName.value.trim()
       saveFolders()
     }
@@ -562,18 +620,21 @@ function finishFolderEditing() {
   editingFolderName.value = ''
 }
 
-function cancelFolderEditing() {
+function cancelFolderEditing()
+{
   editingFolderId.value = null
   editingFolderName.value = ''
 }
 
 /** 删除文件夹（内部会话移至未分类） */
-function handleDeleteFolder(folderId: string) {
+function handleDeleteFolder(folderId: string)
+{
   const idx = folders.value.findIndex(f => f.id === folderId)
   if (idx === -1) return
   folders.value.splice(idx, 1)
   // 文件夹内会话移至未分类
-  sessions.value.forEach(s => {
+  sessions.value.forEach(s =>
+  {
     if (s.folderId === folderId) s.folderId = undefined
   })
   saveFolders()
@@ -581,14 +642,17 @@ function handleDeleteFolder(folderId: string) {
 }
 
 /** 切换移动菜单显隐 */
-function toggleMoveMenu(sessionId: string) {
+function toggleMoveMenu(sessionId: string)
+{
   moveMenuSessionId.value = moveMenuSessionId.value === sessionId ? null : sessionId
 }
 
 /** 移动会话到指定文件夹 */
-function handleMoveToFolder(sessionId: string, folderId: string) {
+function handleMoveToFolder(sessionId: string, folderId: string)
+{
   const session = sessions.value.find(s => s.id === sessionId)
-  if (session) {
+  if (session)
+  {
     session.folderId = folderId
     saveSessions()
   }
@@ -596,16 +660,19 @@ function handleMoveToFolder(sessionId: string, folderId: string) {
 }
 
 /** 将会话移出文件夹（未分类） */
-function handleRemoveFromFolder(sessionId: string) {
+function handleRemoveFromFolder(sessionId: string)
+{
   const session = sessions.value.find(s => s.id === sessionId)
-  if (session) {
+  if (session)
+  {
     session.folderId = undefined
     saveSessions()
   }
 }
 
 /** 在指定文件夹中新建会话 */
-function handleNewSessionInFolder(folderId: string) {
+function handleNewSessionInFolder(folderId: string)
+{
   const id = generateId()
   const session: XiaohuiSession = {
     id,
@@ -627,26 +694,31 @@ function handleNewSessionInFolder(folderId: string) {
 /* ===================== 计算属性 ===================== */
 
 /** 当前显示的用户名 */
-const displayName = computed(() => {
-  if (userStore.isLoggedIn) {
+const displayName = computed(() =>
+{
+  if (userStore.isLoggedIn)
+  
     return userStore.user?.namec || userStore.user?.username || t('xiaohui.guest')
-  }
+  
   return t('xiaohui.guest')
 })
 
 /** 游客随机头像（基于用户名或 "guest" 生成确定性头像） */
-const guestAvatarUrl = computed(() => {
+const guestAvatarUrl = computed(() =>
+{
   const seed = displayName.value || 'guest'
   return getRandomAvatarUrl(seed)
 })
 
 /** 当前会话 */
-const currentSession = computed(() => {
+const currentSession = computed(() =>
+{
   return sessions.value.find(s => s.id === currentSessionId.value) || null
 })
 
 /** 当前会话的消息列表 */
-const currentMessages = computed(() => {
+const currentMessages = computed(() =>
+{
   return currentSession.value?.messages || []
 })
 
@@ -663,33 +735,41 @@ const suggestions = computed(() => [
 
 /* ===================== 生命周期 ===================== */
 
-onMounted(() => {
+onMounted(() =>
+{
   // 若无会话或当前会话已失效，创建新会话
-  if (!currentSession.value) {
-    if (sessions.value.length > 0) {
+  if (!currentSession.value)
+  {
+    if (sessions.value.length > 0)
+    {
       // 切换到最近的会话
       currentSessionId.value = sessions.value[0].id
       saveCurrentSessionId(currentSessionId.value)
-    } else {
-      createSession()
     }
+    else
+    
+      createSession()
+    
   }
 })
 
 /* ===================== 工具函数 ===================== */
 
-function generateId(): string {
+function generateId(): string
+{
   return `xh_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
 }
 
-function formatTime(ts: number): string {
+function formatTime(ts: number): string
+{
   const d = new Date(ts)
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 /** 相对时间格式化（侧栏） */
-function formatRelativeTime(timestamp: number | undefined | null): string {
+function formatRelativeTime(timestamp: number | undefined | null): string
+{
   const ts = timestamp != null ? Number(timestamp) : NaN
   if (!Number.isFinite(ts)) return ''
   const now = Date.now()
@@ -704,20 +784,24 @@ function formatRelativeTime(timestamp: number | undefined | null): string {
   return `${date.getMonth() + 1}/${date.getDate()}`
 }
 
-function isLastAssistant(msg: LocalMessage): boolean {
+function isLastAssistant(msg: LocalMessage): boolean
+{
   const assistantMsgs = currentMessages.value.filter(m => m.role === 'assistant')
   return assistantMsgs.length > 0 && assistantMsgs[assistantMsgs.length - 1].id === msg.id
 }
 
-function scrollToBottom() {
-  nextTick(() => {
+function scrollToBottom()
+{
+  nextTick(() =>
+  {
     const el = messageListRef.value
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
   })
 }
 
 /** 获取会话最后一条消息预览 */
-function getLastMessage(session: XiaohuiSession): string {
+function getLastMessage(session: XiaohuiSession): string
+{
   if (!session.messages?.length) return ''
   const lastMsg = session.messages[session.messages.length - 1]
   if (!lastMsg) return ''
@@ -728,7 +812,8 @@ function getLastMessage(session: XiaohuiSession): string {
 /* ===================== 会话管理 ===================== */
 
 /** 创建新会话 */
-function createSession(): string {
+function createSession(): string
+{
   const id = generateId()
   const session: XiaohuiSession = {
     id,
@@ -745,8 +830,10 @@ function createSession(): string {
 }
 
 /** 切换会话 */
-function handleSessionClick(sessionId: string) {
-  if (sessionId !== currentSessionId.value) {
+function handleSessionClick(sessionId: string)
+{
+  if (sessionId !== currentSessionId.value)
+  {
     currentSessionId.value = sessionId
     saveCurrentSessionId(sessionId)
     nextTick(scrollToBottom)
@@ -754,7 +841,8 @@ function handleSessionClick(sessionId: string) {
 }
 
 /** 新建会话 */
-function handleNewSession() {
+function handleNewSession()
+{
   createSession()
   inputText.value = ''
   loading.value = false
@@ -762,10 +850,12 @@ function handleNewSession() {
 }
 
 /** 开始编辑会话标题 */
-function startEditing(session: XiaohuiSession) {
+function startEditing(session: XiaohuiSession)
+{
   editingSessionId.value = session.id
   editingTitle.value = session.title
-  nextTick(() => {
+  nextTick(() =>
+  {
     const input = document.querySelector('.session-item__edit-input') as HTMLInputElement
     input?.focus()
     input?.select()
@@ -773,10 +863,13 @@ function startEditing(session: XiaohuiSession) {
 }
 
 /** 完成编辑 */
-function finishEditing() {
-  if (editingSessionId.value && editingTitle.value.trim()) {
+function finishEditing()
+{
+  if (editingSessionId.value && editingTitle.value.trim())
+  {
     const session = sessions.value.find(s => s.id === editingSessionId.value)
-    if (session) {
+    if (session)
+    {
       session.title = editingTitle.value.trim()
       saveSessions()
     }
@@ -786,32 +879,41 @@ function finishEditing() {
 }
 
 /** 取消编辑 */
-function cancelEditing() {
+function cancelEditing()
+{
   editingSessionId.value = null
   editingTitle.value = ''
 }
 
 /** 请求删除（弹框确认） */
-function requestDelete(sessionId: string) {
+function requestDelete(sessionId: string)
+{
   sessionToDelete.value = sessionId
   showDeleteDialog.value = true
 }
 
 /** 确认删除 */
-function confirmDelete() {
-  if (sessionToDelete.value) {
+function confirmDelete()
+{
+  if (sessionToDelete.value)
+  {
     const idx = sessions.value.findIndex(s => s.id === sessionToDelete.value)
-    if (idx !== -1) {
+    if (idx !== -1)
+    
       sessions.value.splice(idx, 1)
-    }
+    
     // 若删除的是当前会话，切换到最近的或新建
-    if (sessionToDelete.value === currentSessionId.value) {
-      if (sessions.value.length > 0) {
+    if (sessionToDelete.value === currentSessionId.value)
+    {
+      if (sessions.value.length > 0)
+      {
         currentSessionId.value = sessions.value[0].id
         saveCurrentSessionId(currentSessionId.value)
-      } else {
-        createSession()
       }
+      else
+      
+        createSession()
+      
     }
     saveSessions()
     sessionToDelete.value = null
@@ -821,8 +923,10 @@ function confirmDelete() {
 
 /* ===================== 输入交互 ===================== */
 
-function handleInputKeydown(e: KeyboardEvent) {
-  if (e.key === 'Enter' && !e.shiftKey) {
+function handleInputKeydown(e: KeyboardEvent)
+{
+  if (e.key === 'Enter' && !e.shiftKey)
+  {
     e.preventDefault()
     handleSend()
   }
@@ -832,7 +936,8 @@ function handleInputKeydown(e: KeyboardEvent) {
 const TEXTAREA_MIN_H = 36
 const TEXTAREA_MAX_H = 132
 
-function autoResizeTextarea() {
+function autoResizeTextarea()
+{
   const el = inputRef.value
   if (!el) return
   el.style.height = `${TEXTAREA_MIN_H}px`
@@ -853,53 +958,65 @@ const XCMD_PATTERN = /<!--XCMD:(\w+):(.+?)-->/g
  * @param content AI 回复全文
  * @returns 去除 XCMD 命令后的纯内容
  */
-function parseAndExecuteCommands(content: string): string {
+function parseAndExecuteCommands(content: string): string
+{
   const commands: Array<{ action: string; value: string }> = []
   let match: RegExpExecArray | null
   const regex = new RegExp(XCMD_PATTERN.source, 'g')
 
   // 收集所有命令
-  while ((match = regex.exec(content)) !== null) {
+  while ((match = regex.exec(content)) !== null)
+  
     commands.push({ action: match[1], value: match[2] })
-  }
+  
 
   // 执行命令
-  for (const cmd of commands) {
-    try {
-      switch (cmd.action) {
-        case 'SET_THEME': {
-          if (cmd.value === 'toggle') {
-            // 深浅互换
-            appStore.toggleTheme()
-          } else {
-            appStore.setTheme(cmd.value as any)
-          }
-          break
+  for (const cmd of commands)
+  {
+    try
+    {
+      switch (cmd.action)
+      {
+      case 'SET_THEME': {
+        if (cmd.value === 'toggle')
+        {
+          // 深浅互换
+          appStore.toggleTheme()
         }
-        case 'SET_LANG': {
-          appStore.setLanguage(cmd.value as any)
-          break
-        }
-        case 'SET_LIST_STYLE': {
-          appStore.setArticleListType(cmd.value as any)
-          break
-        }
-        case 'SET_VISUAL_STYLE': {
-          appStore.setVisualStyle(cmd.value as any)
-          break
-        }
-        case 'NAVIGATE': {
-          // 延迟导航，等消息渲染完成
-          const path = cmd.value
-          setTimeout(() => {
-            router.push(path).catch(() => {})
-          }, 500)
-          break
-        }
-        default:
-          console.warn('[XCMD] 未知命令:', cmd.action)
+        else
+        
+          appStore.setTheme(cmd.value as any)
+        
+        break
       }
-    } catch (err) {
+      case 'SET_LANG': {
+        appStore.setLanguage(cmd.value as any)
+        break
+      }
+      case 'SET_LIST_STYLE': {
+        appStore.setArticleListType(cmd.value as any)
+        break
+      }
+      case 'SET_VISUAL_STYLE': {
+        appStore.setVisualStyle(cmd.value as any)
+        break
+      }
+      case 'NAVIGATE': {
+        // 延迟导航，等消息渲染完成
+        const path = cmd.value
+        setTimeout(() =>
+        {
+          router.push(path).catch(() =>
+          {})
+        }, 500)
+        break
+      }
+      default:
+        console.warn('[XCMD] 未知命令:', cmd.action)
+      }
+    }
+    catch (err)
+    {
       console.error('[XCMD] 执行失败:', cmd, err)
     }
   }
@@ -910,14 +1027,16 @@ function parseAndExecuteCommands(content: string): string {
 
 /* ===================== 发送消息 ===================== */
 
-async function handleSend() {
+async function handleSend()
+{
   const text = inputText.value?.trim()
   if (!text || loading.value) return
 
   // 确保有当前会话
-  if (!currentSession.value) {
+  if (!currentSession.value)
+  
     createSession()
-  }
+  
 
   const session = currentSession.value!
 
@@ -932,13 +1051,15 @@ async function handleSend() {
   session.updatedAt = Date.now()
 
   // 自动设置标题（首条消息截取前20字符）
-  if (session.messages.filter(m => m.role === 'user').length === 1) {
+  if (session.messages.filter(m => m.role === 'user').length === 1)
+  
     session.title = text.length > 20 ? text.slice(0, 20) + '...' : text
-  }
+  
 
   // 将当前会话置顶
   const idx = sessions.value.findIndex(s => s.id === session.id)
-  if (idx > 0) {
+  if (idx > 0)
+  {
     sessions.value.splice(idx, 1)
     sessions.value.unshift(session)
   }
@@ -947,9 +1068,11 @@ async function handleSend() {
   loading.value = true
   saveSessions()
 
-  nextTick(() => {
+  nextTick(() =>
+  {
     scrollToBottom()
-    if (inputRef.value) {
+    if (inputRef.value)
+    {
       inputRef.value.style.height = ''
       inputRef.value.style.overflowY = 'hidden'
     }
@@ -974,50 +1097,64 @@ async function handleSend() {
 
   abortController = new AbortController()
 
-  try {
+  try
+  {
     await sendXiaohuiStream(
       payloadMessages,
       session.id,
-      (token) => {
+      token =>
+      {
         // 追加 token 到最后一条 assistant 消息
         const last = session.messages[session.messages.length - 1]
-        if (last && last.role === 'assistant') {
+        if (last && last.role === 'assistant')
+        
           last.content += token
-        }
+        
         nextTick(scrollToBottom)
       },
       abortController.signal,
     )
-  } catch (e) {
-    if ((e as Error).name === 'AbortError') {
+  }
+  catch (e)
+  {
+    if ((e as Error).name === 'AbortError')
+    {
       // 用户手动取消
-    } else {
+    }
+    else
+    {
       const errMsg = (e as Error).message || t('xiaohui.error')
       UMessageFn({ message: errMsg, type: 'error' })
       // 移除空的 AI 消息
       const last = session.messages[session.messages.length - 1]
-      if (last && last.role === 'assistant' && !last.content) {
+      if (last && last.role === 'assistant' && !last.content)
+      
         session.messages.pop()
-      }
+      
     }
-  } finally {
+  }
+  finally
+  {
     loading.value = false
     streaming.value = false
     abortController = null
 
     // 解析并执行 AI 回复中的 XCMD 命令
     const lastMsg = session.messages[session.messages.length - 1]
-    if (lastMsg && lastMsg.role === 'assistant' && lastMsg.content) {
+    if (lastMsg && lastMsg.role === 'assistant' && lastMsg.content)
+    
       lastMsg.content = parseAndExecuteCommands(lastMsg.content)
-    }
+    
 
     session.updatedAt = Date.now()
     saveSessions()
   }
 }
 
-function handleStop() {
-  if (abortController) {
+function handleStop()
+{
+  if (abortController)
+  {
     abortController.abort()
     abortController = null
   }
@@ -1025,7 +1162,8 @@ function handleStop() {
   streaming.value = false
 }
 
-function handleSuggestionClick(text: string) {
+function handleSuggestionClick(text: string)
+{
   inputText.value = text
   nextTick(() => handleSend())
 }

@@ -19,15 +19,18 @@ const createInitialState = (): CommentPathState => ({
   loading: false
 })
 
-export const useCommentStore = defineStore('comment', () => {
+export const useCommentStore = defineStore('comment', () =>
+{
   /** 按 path 缓存的评论状态 */
   const stateByPath = ref<Record<string, CommentPathState>>({})
 
   /** 获取指定 path 的状态，不存在则初始化 */
-  function getState(path: string): CommentPathState {
-    if (!stateByPath.value[path]) {
+  function getState(path: string): CommentPathState
+  {
+    if (!stateByPath.value[path])
+    
       stateByPath.value[path] = createInitialState()
-    }
+    
     return stateByPath.value[path]
   }
 
@@ -36,21 +39,28 @@ export const useCommentStore = defineStore('comment', () => {
    * @param path 评论路由路径，如 /read/1、/message
    * @param append true 时追加下一页，false 时从第一页重新拉取
    */
-  const qryCommentListByPath = async (path: string, append = false) => {
+  const qryCommentListByPath = async(path: string, append = false) =>
+  {
     const state = getState(path)
     if (state.loading) return
     state.loading = true
     const nextPage = append ? state.page + 1 : 1
-    try {
+    try
+    {
       const list = await api(CTable.COMMENT).getCommentList(path, nextPage, COMMENT_PAGE_SIZE)
-      if (append) {
+      if (append)
+      
         state.list = [...state.list, ...list]
-      } else {
+      
+      else
+      
         state.list = list
-      }
+      
       state.page = nextPage
       state.hasMore = list.length >= COMMENT_PAGE_SIZE
-    } finally {
+    }
+    finally
+    {
       state.loading = false
     }
   }
@@ -61,13 +71,15 @@ export const useCommentStore = defineStore('comment', () => {
   const getHasMoreByPath = (path: string) => computed(() => getState(path).hasMore)
 
   /** 向指定 path 的列表头部插入一条（发表新评论后本地追加） */
-  function prependComment(path: string, comment: IComment) {
+  function prependComment(path: string, comment: IComment)
+  {
     const state = getState(path)
     state.list = [comment, ...state.list]
   }
 
   /** 清空某 path 缓存（可选，如登出后） */
-  function clearPath(path: string) {
+  function clearPath(path: string)
+  {
     delete stateByPath.value[path]
   }
 

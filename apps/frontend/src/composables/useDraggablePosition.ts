@@ -36,7 +36,8 @@ const CLICK_THRESHOLD = 4
 export function useDraggablePosition(
   elRef: Ref<HTMLElement | null>,
   options: UseDraggablePositionOptions
-) {
+)
+{
   const {
     storageKey,
     defaultPosition = DEFAULT_POS,
@@ -49,27 +50,38 @@ export function useDraggablePosition(
   const isDragging = ref(false)
 
   /* ─── 缓存读写 ─── */
-  function loadPosition(): DraggablePosition {
-    try {
+  function loadPosition(): DraggablePosition
+  {
+    try
+    {
       const raw = localStorage.getItem(storageKey)
-      if (raw) {
+      if (raw)
+      {
         const parsed = JSON.parse(raw)
-        if (typeof parsed.right === 'number' && typeof parsed.bottom === 'number') {
+        if (typeof parsed.right === 'number' && typeof parsed.bottom === 'number')
+        
           return parsed
-        }
+        
       }
-    } catch { /* 忽略解析错误 */ }
+    }
+    catch
+    { /* 忽略解析错误 */ }
     return { ...defaultPosition }
   }
 
-  function savePosition(pos: DraggablePosition) {
-    try {
+  function savePosition(pos: DraggablePosition)
+  {
+    try
+    {
       localStorage.setItem(storageKey, JSON.stringify(pos))
-    } catch { /* quota exceeded etc. */ }
+    }
+    catch
+    { /* quota exceeded etc. */ }
   }
 
   /* ─── 边界修正 ─── */
-  function clampPosition(pos: DraggablePosition): DraggablePosition {
+  function clampPosition(pos: DraggablePosition): DraggablePosition
+  {
     const el = elRef.value
     if (!el) return pos
 
@@ -97,7 +109,8 @@ export function useDraggablePosition(
   let startBottom = 0
   let moved = false
 
-  function onPointerDown(e: PointerEvent) {
+  function onPointerDown(e: PointerEvent)
+  {
     const el = elRef.value
     if (!el) return
 
@@ -117,14 +130,16 @@ export function useDraggablePosition(
     document.addEventListener('pointerup', onPointerUp)
   }
 
-  function onPointerMove(e: PointerEvent) {
+  function onPointerMove(e: PointerEvent)
+  {
     const dx = e.clientX - startX
     const dy = e.clientY - startY
 
     // 检测是否真正移动（区分点击和拖拽）
-    if (!moved && Math.abs(dx) < CLICK_THRESHOLD && Math.abs(dy) < CLICK_THRESHOLD) {
+    if (!moved && Math.abs(dx) < CLICK_THRESHOLD && Math.abs(dy) < CLICK_THRESHOLD)
+    
       return
-    }
+    
     moved = true
     isDragging.value = true
 
@@ -136,35 +151,43 @@ export function useDraggablePosition(
     position.value = newPos
   }
 
-  function onPointerUp(e: PointerEvent) {
+  function onPointerUp(e: PointerEvent)
+  {
     document.removeEventListener('pointermove', onPointerMove)
     document.removeEventListener('pointerup', onPointerUp)
 
     const el = elRef.value
     if (el) el.releasePointerCapture(e.pointerId)
 
-    if (moved) {
+    if (moved)
+    {
       // 拖拽结束：保存位置
       savePosition(position.value)
       // 延迟重置 isDragging，让 click 事件判定可用
-      requestAnimationFrame(() => {
+      requestAnimationFrame(() =>
+      {
         isDragging.value = false
       })
-    } else {
-      isDragging.value = false
     }
+    else
+    
+      isDragging.value = false
+    
   }
 
   /* ─── 窗口 resize 修正 ─── */
-  function onResize() {
+  function onResize()
+  {
     position.value = clampPosition(position.value)
     savePosition(position.value)
   }
 
   /* ─── 生命周期绑定 ─── */
-  onMounted(() => {
+  onMounted(() =>
+  {
     const el = elRef.value
-    if (el) {
+    if (el)
+    {
       el.addEventListener('pointerdown', onPointerDown)
       // 挂载后立即修正一次位置
       position.value = clampPosition(position.value)
@@ -172,11 +195,13 @@ export function useDraggablePosition(
     window.addEventListener('resize', onResize)
   })
 
-  onBeforeUnmount(() => {
+  onBeforeUnmount(() =>
+  {
     const el = elRef.value
-    if (el) {
+    if (el)
+    
       el.removeEventListener('pointerdown', onPointerDown)
-    }
+    
     document.removeEventListener('pointermove', onPointerMove)
     document.removeEventListener('pointerup', onPointerUp)
     window.removeEventListener('resize', onResize)

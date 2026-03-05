@@ -15,127 +15,182 @@ import type { SettingsMap } from '@/api/settings'
 import type { HomeSortType } from '@/api/article'
 import { HOME_SORT_DEFAULT } from '@/api/article'
 import { fetchRouteVisibility } from '@/api/route'
+import { useUserStore } from '@/stores/model/user'
 
-function loadTheme(): Theme {
-  try {
+function loadTheme(): Theme
+{
+  try
+  {
     const v = localStorage.getItem(STORAGE_KEYS.THEME)
     if (v === CTheme.DARK || v === CTheme.LIGHT || v === CTheme.DEFAULT) return v
     return CTheme.DEFAULT
-  } catch {
+  }
+  catch
+  {
     return CTheme.DEFAULT
   }
 }
 
-function loadLanguage(): Language {
-  try {
+function loadLanguage(): Language
+{
+  try
+  {
     const v = localStorage.getItem(STORAGE_KEYS.LANGUAGE)
     if (v === CLanguage.ZH || v === CLanguage.EN) return v
     return CLanguage.ZH
-  } catch {
+  }
+  catch
+  {
     return CLanguage.ZH
   }
 }
 
-function loadVisualStyle(): VisualStyle {
-  try {
+function loadVisualStyle(): VisualStyle
+{
+  try
+  {
     const v = localStorage.getItem(STORAGE_KEYS.VISUAL_STYLE)
     if (v === CVisualStyle.DEFAULT || v === CVisualStyle.GLASS) return v
     return CVisualStyle.DEFAULT
-  } catch {
+  }
+  catch
+  {
     return CVisualStyle.DEFAULT
   }
 }
 
-function loadArchiveCardStyle(): ArchiveCardStyle {
-  try {
+function loadArchiveCardStyle(): ArchiveCardStyle
+{
+  try
+  {
     const v = localStorage.getItem(STORAGE_KEYS.ARCHIVE_CARD_STYLE)
     if (v && Object.values(CArchiveCardStyle).includes(v as ArchiveCardStyle)) return v as ArchiveCardStyle
-  } catch {}
+  }
+  catch
+  {}
   return ARCHIVE_CARD_STYLE_DEFAULT
 }
 
 export type SnowfallMode = 'off' | 'auto' | 'on'
 export const C_SNOWFALL_MODE = { OFF: 'off', AUTO: 'auto', ON: 'on' } as const
 
-function loadSnowfallMode(): SnowfallMode {
-  try {
+function loadSnowfallMode(): SnowfallMode
+{
+  try
+  {
     const v = localStorage.getItem(STORAGE_KEYS.SNOWFALL_MODE)
     if (v === 'off' || v === 'auto' || v === 'on') return v
-  } catch {}
+  }
+  catch
+  {}
   return 'auto'
 }
 
-function loadSnowfallCount(): number {
-  try {
+function loadSnowfallCount(): number
+{
+  try
+  {
     const v = localStorage.getItem(STORAGE_KEYS.SNOWFALL_COUNT)
-    if (v != null) {
+    if (v != null)
+    {
       const n = parseInt(v, 10)
       if (!Number.isNaN(n) && n >= 8 && n <= 120) return n
     }
-  } catch {}
+  }
+  catch
+  {}
   return 48
 }
 
-function loadSnowfallZIndex(): number {
-  try {
+function loadSnowfallZIndex(): number
+{
+  try
+  {
     const v = localStorage.getItem(STORAGE_KEYS.SNOWFALL_Z_INDEX)
-    if (v != null) {
+    if (v != null)
+    {
       const n = parseInt(v, 10)
       if (!Number.isNaN(n) && n >= 1 && n <= 99999) return n
     }
-  } catch {}
+  }
+  catch
+  {}
   return 9998
 }
 
-function loadSnowfallThemePreset(): 'default' | 'ice' {
-  try {
+function loadSnowfallThemePreset(): 'default' | 'ice'
+{
+  try
+  {
     const v = localStorage.getItem(STORAGE_KEYS.SNOWFALL_THEME_PRESET)
     if (v === 'default' || v === 'ice') return v
-  } catch {}
+  }
+  catch
+  {}
   return 'default'
 }
 
-function loadSnowfallSizeMin(): number {
-  try {
+function loadSnowfallSizeMin(): number
+{
+  try
+  {
     const v = localStorage.getItem(STORAGE_KEYS.SNOWFALL_SIZE_MIN)
-    if (v != null) {
+    if (v != null)
+    {
       const n = parseInt(v, 10)
       if (!Number.isNaN(n) && n >= 2 && n <= 24) return n
     }
-  } catch {}
+  }
+  catch
+  {}
   return 4
 }
 
-function loadSnowfallSizeMax(): number {
-  try {
+function loadSnowfallSizeMax(): number
+{
+  try
+  {
     const v = localStorage.getItem(STORAGE_KEYS.SNOWFALL_SIZE_MAX)
-    if (v != null) {
+    if (v != null)
+    {
       const n = parseInt(v, 10)
       if (!Number.isNaN(n) && n >= 2 && n <= 24) return n
     }
-  } catch {}
+  }
+  catch
+  {}
   return 10
 }
 
-function loadSnowfallSpeed(): number {
-  try {
+function loadSnowfallSpeed(): number
+{
+  try
+  {
     const v = localStorage.getItem(STORAGE_KEYS.SNOWFALL_SPEED)
-    if (v != null) {
+    if (v != null)
+    {
       const n = parseInt(v, 10)
       if (!Number.isNaN(n) && n >= 1 && n <= 10) return n
     }
-  } catch {}
+  }
+  catch
+  {}
   return 5
 }
 
-function loadSnowfallDistribution(): number {
-  try {
+function loadSnowfallDistribution(): number
+{
+  try
+  {
     const v = localStorage.getItem(STORAGE_KEYS.SNOWFALL_DISTRIBUTION)
-    if (v != null) {
+    if (v != null)
+    {
       const n = parseInt(v, 10)
       if (!Number.isNaN(n) && n >= 0 && n <= 100) return n
     }
-  } catch {}
+  }
+  catch
+  {}
   return 100
 }
 
@@ -150,44 +205,63 @@ const FONT_FAMILY_MAP: Record<FontFamilyPreset, string> = {
   mono: '"Fira Code", "JetBrains Mono", "SF Mono", Menlo, Consolas, "Courier New", monospace',
 }
 
-function loadFontSizeScale(): number {
-  try {
+function loadFontSizeScale(): number
+{
+  try
+  {
     const v = localStorage.getItem(STORAGE_KEYS.FONT_SIZE_SCALE)
-    if (v != null) {
+    if (v != null)
+    {
       const n = parseInt(v, 10)
       if (!Number.isNaN(n) && n >= 80 && n <= 130) return n
     }
-  } catch {}
+  }
+  catch
+  {}
   return 100
 }
 
-function loadLineHeightScale(): number {
-  try {
+function loadLineHeightScale(): number
+{
+  try
+  {
     const v = localStorage.getItem(STORAGE_KEYS.LINE_HEIGHT_SCALE)
-    if (v != null) {
+    if (v != null)
+    {
       const n = parseInt(v, 10)
       if (!Number.isNaN(n) && n >= 100 && n <= 200) return n
     }
-  } catch {}
+  }
+  catch
+  {}
   return 150
 }
 
-function loadContentSpacingScale(): number {
-  try {
+function loadContentSpacingScale(): number
+{
+  try
+  {
     const v = localStorage.getItem(STORAGE_KEYS.CONTENT_SPACING_SCALE)
-    if (v != null) {
+    if (v != null)
+    {
       const n = parseInt(v, 10)
       if (!Number.isNaN(n) && n >= 50 && n <= 150) return n
     }
-  } catch {}
+  }
+  catch
+  {}
   return 100
 }
 
-function loadFontFamilyPreset(): FontFamilyPreset {
-  try {
+function loadFontFamilyPreset(): FontFamilyPreset
+{
+  try
+  {
     const v = localStorage.getItem(STORAGE_KEYS.FONT_FAMILY_PRESET)
     if (v === 'system' || v === 'serif' || v === 'mono') return v
-  } catch {}
+  }
+  catch
+  {}
   return 'system'
 }
 
@@ -214,137 +288,204 @@ export const useAppStore = defineStore('app', () =>
    * 从后端加载路由可见性配置
    * 将不可见的路由名加入 hiddenRouteNames 集合
    */
-  async function loadRouteVisibility() {
-    try {
+  async function loadRouteVisibility()
+  {
+    try
+    {
       const list = await fetchRouteVisibility()
       const hidden = new Set<string>()
-      for (const item of list) {
+      for (const item of list)
+      {
         // 严格判断：只有明确设为 false 才隐藏，null/undefined 视为可见
-        if (item.isVisible === false) {
+        if (item.isVisible === false)
+        
           hidden.add(item.name)
-        }
+        
       }
       hiddenRouteNames.value = hidden
-    } catch (e) {
+    }
+    catch (e)
+    {
       console.warn('加载路由可见性失败，所有路由默认可见', e)
       hiddenRouteNames.value = new Set()
-    } finally {
+    }
+    finally
+    {
       routeVisibilityReady.value = true
     }
   }
 
   /** 判断路由是否被后台隐藏 */
-  function isRouteHidden(routeName: string): boolean {
+  function isRouteHidden(routeName: string): boolean
+  {
     return hiddenRouteNames.value.has(routeName)
   }
 
   /** 应用主题到 DOM：同时设 attribute 和 class（兼容 UI 库 :root.dark） */
-  function applyTheme(t: Theme | null) {
+  function applyTheme(t: Theme | null)
+  {
     if (!t) return
     const el = document.documentElement
     el.setAttribute('theme', t)
     // UI 库 dark 主题匹配 :root.dark
-    if (t === CTheme.DARK) {
+    if (t === CTheme.DARK)
+    
       el.classList.add('dark')
-    } else {
+    
+    else
+    
       el.classList.remove('dark')
+    
+  }
+
+  /**
+   * 仅登录用户时才将设置同步到服务器。
+   * 游客修改只写 localStorage，不发请求。
+   */
+  function _syncToServer(settings: Record<string, { value: unknown }>)
+  {
+    try
+    {
+      const userStore = useUserStore()
+      if (!userStore.isLoggedIn) return
     }
+    catch
+    { /* 如果 userStore 未就绪，静默跳过 */ }
+    updateSettings(settings).catch(() =>
+    {})
   }
 
   const [theme, setThemeState] = useState<Theme | null>(loadTheme())
 
-  watch(theme, (t) => {
+  watch(theme, t =>
+  {
     if (t) applyTheme(t)
   }, { immediate: true })
 
   const [language, setLanguageState] = useState<Language | null>(loadLanguage(), (l: Language | null) => l && document.documentElement.setAttribute('lang', l))
 
-  function applyVisualStyle(v: VisualStyle | null) {
+  function applyVisualStyle(v: VisualStyle | null)
+  {
     if (!v) return
     const el = document.documentElement
-    if (v === CVisualStyle.GLASS) {
+    if (v === CVisualStyle.GLASS)
+    
       el.setAttribute('theme-style', 'glass')
-    } else {
+    
+    else
+    
       el.removeAttribute('theme-style')
-    }
+    
   }
 
   const [visualStyle, setVisualStyleState] = useState<VisualStyle | null>(loadVisualStyle())
 
-  watch(visualStyle, (v) => {
+  watch(visualStyle, v =>
+  {
     if (v) applyVisualStyle(v)
   }, { immediate: true })
 
-  function setVisualStyle(v: VisualStyle | null) {
+  function setVisualStyle(v: VisualStyle | null)
+  {
     setVisualStyleState(v)
-    try {
+    try
+    {
       localStorage.setItem(STORAGE_KEYS.VISUAL_STYLE, v ?? CVisualStyle.DEFAULT)
-    } catch { /* ignore */ }
-    updateSettings({ [SETTING_KEYS.VISUAL_STYLE]: { value: v ?? CVisualStyle.DEFAULT } }).catch(() => {})
+    }
+    catch
+    { /* ignore */ }
+    _syncToServer({ [SETTING_KEYS.VISUAL_STYLE]: { value: v ?? CVisualStyle.DEFAULT } })
   }
 
-  function setLanguage(l: Language | null) {
+  function setLanguage(l: Language | null)
+  {
     setLanguageState(l)
-    if (l) {
-      try {
+    if (l)
+    {
+      try
+      {
         localStorage.setItem(STORAGE_KEYS.LANGUAGE, l)
-      } catch { /* ignore */ }
-      updateSettings({ [SETTING_KEYS.LANGUAGE]: { value: l } }).catch(() => {})
+      }
+      catch
+      { /* ignore */ }
+      _syncToServer({ [SETTING_KEYS.LANGUAGE]: { value: l } })
       // locale 同步在 App.vue 的 watch 中做，保证在 Vue 响应式上下文中触发重渲染
     }
   }
   /** 根据屏幕宽度获取默认列表类型：移动端(<=375px)默认卡片视图，桌面端默认基础视图 */
-  function getDefaultListType(): ArticleList {
-    if (typeof window !== 'undefined' && window.innerWidth <= 375) {
+  function getDefaultListType(): ArticleList
+  {
+    if (typeof window !== 'undefined' && window.innerWidth <= 375)
+    
       return CArticleList.CARD
-    }
+    
     return CArticleList.BASE
   }
-  function loadArticleListType(): ArticleList {
-    try {
+  function loadArticleListType(): ArticleList
+  {
+    try
+    {
       const v = localStorage.getItem(STORAGE_KEYS.ARTICLE_LIST_TYPE)
       if (v === CArticleList.BASE || v === CArticleList.CARD || v === CArticleList.WATERFALL || v === CArticleList.COMPACT) return v
       return getDefaultListType()
-    } catch {
+    }
+    catch
+    {
       return getDefaultListType()
     }
   }
   const [articleListTypeState, setArticleListTypeState] = useState<ArticleList>(loadArticleListType())
   /** 用 computed 暴露并兜底，避免 ShallowRef 在 Pinia 下未被正确追踪导致首页不更新 */
   const articleListType = computed<ArticleList>(() => articleListTypeState.value || getDefaultListType())
-  function setArticleListType(v: ArticleList) {
+  function setArticleListType(v: ArticleList)
+  {
     setArticleListTypeState(v)
-    try {
+    try
+    {
       localStorage.setItem(STORAGE_KEYS.ARTICLE_LIST_TYPE, v)
-    } catch { /* ignore */ }
-    updateSettings({ [SETTING_KEYS.ARTICLE_LIST_TYPE]: { value: v } }).catch(() => {})
+    }
+    catch
+    { /* ignore */ }
+    _syncToServer({ [SETTING_KEYS.ARTICLE_LIST_TYPE]: { value: v } })
   }
 
   const HOME_SORT_VALID: HomeSortType[] = ['date', 'hot', 'likes', 'trending']
-  function loadHomeSort(): HomeSortType {
-    try {
+  function loadHomeSort(): HomeSortType
+  {
+    try
+    {
       const v = localStorage.getItem(STORAGE_KEYS.HOME_SORT)
       if (v && HOME_SORT_VALID.includes(v as HomeSortType)) return v as HomeSortType
-    } catch {}
+    }
+    catch
+    {}
     return HOME_SORT_DEFAULT
   }
   const [homeSortState, setHomeSortState] = useState<HomeSortType>(loadHomeSort())
   const homeSort = computed<HomeSortType>(() => homeSortState.value ?? HOME_SORT_DEFAULT)
-  function setHomeSort(v: HomeSortType) {
+  function setHomeSort(v: HomeSortType)
+  {
     setHomeSortState(v)
-    try {
+    try
+    {
       localStorage.setItem(STORAGE_KEYS.HOME_SORT, v)
-    } catch { /* ignore */ }
-    updateSettings({ [SETTING_KEYS.HOME_SORT]: { value: v } }).catch(() => {})
+    }
+    catch
+    { /* ignore */ }
+    _syncToServer({ [SETTING_KEYS.HOME_SORT]: { value: v } })
   }
 
   const [archiveCardStyleState, setArchiveCardStyleState] = useState<ArchiveCardStyle>(loadArchiveCardStyle())
   const archiveCardStyle = computed<ArchiveCardStyle>(() => archiveCardStyleState.value ?? ARCHIVE_CARD_STYLE_DEFAULT)
-  function setArchiveCardStyle(v: ArchiveCardStyle) {
+  function setArchiveCardStyle(v: ArchiveCardStyle)
+  {
     setArchiveCardStyleState(v)
-    try {
+    try
+    {
       localStorage.setItem(STORAGE_KEYS.ARCHIVE_CARD_STYLE, v)
-    } catch { /* ignore */ }
+    }
+    catch
+    { /* ignore */ }
   }
 
   /* ---------- 站点元信息（title / favicon） ---------- */
@@ -356,7 +497,10 @@ export const useAppStore = defineStore('app', () =>
   const siteFavicon = ref<string>('')
   /** 是否仅展示当前用户自己的文章 */
   const onlyOwnArticles = ref(false)
-  function setOnlyOwnArticles(v: boolean) { onlyOwnArticles.value = v }
+  function setOnlyOwnArticles(v: boolean)
+  {
+    onlyOwnArticles.value = v
+  }
 
   /* ---------- 排版配置 ---------- */
 
@@ -366,7 +510,8 @@ export const useAppStore = defineStore('app', () =>
     lineHeightScale: number,
     spacingScale: number,
     fontPreset: FontFamilyPreset
-  ) {
+  )
+  {
     const el = document.documentElement
     // 根 font-size 基准为 10px(62.5%)，按比例缩放
     el.style.setProperty('--u-global-font-scale', String(fontScale / 100))
@@ -393,43 +538,71 @@ export const useAppStore = defineStore('app', () =>
   applyTypography(fontSizeScale.value, lineHeightScale.value, contentSpacingScale.value, fontFamilyPreset.value)
 
   // 监听排版变化并应用
-  watch([fontSizeScale, lineHeightScale, contentSpacingScale, fontFamilyPreset], ([fs, lh, sp, ff]) => {
+  watch([fontSizeScale, lineHeightScale, contentSpacingScale, fontFamilyPreset], ([fs, lh, sp, ff]) =>
+  {
     applyTypography(fs, lh, sp, ff)
   })
 
-  function setFontSizeScale(v: number) {
+  function setFontSizeScale(v: number)
+  {
     const n = Math.max(80, Math.min(130, v))
     setFontSizeScaleState(n)
-    try { localStorage.setItem(STORAGE_KEYS.FONT_SIZE_SCALE, String(n)) } catch { /* ignore */ }
-    updateSettings({ [SETTING_KEYS.FONT_SIZE_SCALE]: { value: String(n) } }).catch(() => {})
+    try
+    {
+      localStorage.setItem(STORAGE_KEYS.FONT_SIZE_SCALE, String(n))
+    }
+    catch
+    { /* ignore */ }
+    _syncToServer({ [SETTING_KEYS.FONT_SIZE_SCALE]: { value: String(n) } })
   }
-  function setLineHeightScale(v: number) {
+  function setLineHeightScale(v: number)
+  {
     const n = Math.max(100, Math.min(200, v))
     setLineHeightScaleState(n)
-    try { localStorage.setItem(STORAGE_KEYS.LINE_HEIGHT_SCALE, String(n)) } catch { /* ignore */ }
-    updateSettings({ [SETTING_KEYS.LINE_HEIGHT_SCALE]: { value: String(n) } }).catch(() => {})
+    try
+    {
+      localStorage.setItem(STORAGE_KEYS.LINE_HEIGHT_SCALE, String(n))
+    }
+    catch
+    { /* ignore */ }
+    _syncToServer({ [SETTING_KEYS.LINE_HEIGHT_SCALE]: { value: String(n) } })
   }
-  function setContentSpacingScale(v: number) {
+  function setContentSpacingScale(v: number)
+  {
     const n = Math.max(50, Math.min(150, v))
     setContentSpacingScaleState(n)
-    try { localStorage.setItem(STORAGE_KEYS.CONTENT_SPACING_SCALE, String(n)) } catch { /* ignore */ }
-    updateSettings({ [SETTING_KEYS.CONTENT_SPACING_SCALE]: { value: String(n) } }).catch(() => {})
+    try
+    {
+      localStorage.setItem(STORAGE_KEYS.CONTENT_SPACING_SCALE, String(n))
+    }
+    catch
+    { /* ignore */ }
+    _syncToServer({ [SETTING_KEYS.CONTENT_SPACING_SCALE]: { value: String(n) } })
   }
-  function setFontFamilyPreset(v: FontFamilyPreset) {
+  function setFontFamilyPreset(v: FontFamilyPreset)
+  {
     setFontFamilyPresetState(v)
-    try { localStorage.setItem(STORAGE_KEYS.FONT_FAMILY_PRESET, v) } catch { /* ignore */ }
-    updateSettings({ [SETTING_KEYS.FONT_FAMILY_PRESET]: { value: v } }).catch(() => {})
+    try
+    {
+      localStorage.setItem(STORAGE_KEYS.FONT_FAMILY_PRESET, v)
+    }
+    catch
+    { /* ignore */ }
+    _syncToServer({ [SETTING_KEYS.FONT_FAMILY_PRESET]: { value: v } })
   }
 
-  function setSiteName(name: string) {
+  function setSiteName(name: string)
+  {
     siteName.value = name || DEFAULT_SITE_NAME
   }
 
   /** 动态更新 <link rel="icon"> 的 href */
-  function applySiteFavicon(url: string) {
+  function applySiteFavicon(url: string)
+  {
     if (!url) return
     let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
-    if (!link) {
+    if (!link)
+    {
       link = document.createElement('link')
       link.rel = 'icon'
       document.head.appendChild(link)
@@ -442,13 +615,15 @@ export const useAppStore = defineStore('app', () =>
     else link.removeAttribute('type')
   }
 
-  function setSiteFavicon(url: string) {
+  function setSiteFavicon(url: string)
+  {
     siteFavicon.value = url
     if (url) applySiteFavicon(url)
   }
 
   /** 更新当前页面 document.title，格式：{pageTitle} - {siteName} */
-  function updateDocumentTitle(pageTitle?: string) {
+  function updateDocumentTitle(pageTitle?: string)
+  {
     const name = siteName.value || DEFAULT_SITE_NAME
     document.title = pageTitle ? `${pageTitle} - ${name}` : name
   }
@@ -471,66 +646,101 @@ export const useAppStore = defineStore('app', () =>
   const snowfallDistribution = computed(() => snowfallDistributionState.value ?? 100)
   const todayHasSnow = ref<boolean>(false)
 
-  function setSnowfallMode(v: SnowfallMode) {
+  function setSnowfallMode(v: SnowfallMode)
+  {
     setSnowfallModeState(v)
-    try {
+    try
+    {
       localStorage.setItem(STORAGE_KEYS.SNOWFALL_MODE, v)
-    } catch { /* ignore */ }
+    }
+    catch
+    { /* ignore */ }
   }
-  function setSnowfallCount(v: number) {
+  function setSnowfallCount(v: number)
+  {
     const n = Math.max(8, Math.min(120, v))
     setSnowfallCountState(n)
-    try {
+    try
+    {
       localStorage.setItem(STORAGE_KEYS.SNOWFALL_COUNT, String(n))
-    } catch { /* ignore */ }
+    }
+    catch
+    { /* ignore */ }
   }
-  function setSnowfallZIndex(v: number) {
+  function setSnowfallZIndex(v: number)
+  {
     const n = Math.max(1, Math.min(99999, v))
     setSnowfallZIndexState(n)
-    try {
+    try
+    {
       localStorage.setItem(STORAGE_KEYS.SNOWFALL_Z_INDEX, String(n))
-    } catch { /* ignore */ }
+    }
+    catch
+    { /* ignore */ }
   }
-  function setSnowfallThemePreset(v: 'default' | 'ice') {
+  function setSnowfallThemePreset(v: 'default' | 'ice')
+  {
     setSnowfallThemePresetState(v)
-    try {
+    try
+    {
       localStorage.setItem(STORAGE_KEYS.SNOWFALL_THEME_PRESET, v)
-    } catch { /* ignore */ }
+    }
+    catch
+    { /* ignore */ }
   }
-  function setSnowfallSizeMin(v: number) {
+  function setSnowfallSizeMin(v: number)
+  {
     const n = Math.max(2, Math.min(24, v))
     setSnowfallSizeMinState(n)
-    try {
+    try
+    {
       localStorage.setItem(STORAGE_KEYS.SNOWFALL_SIZE_MIN, String(n))
-    } catch { /* ignore */ }
+    }
+    catch
+    { /* ignore */ }
   }
-  function setSnowfallSizeMax(v: number) {
+  function setSnowfallSizeMax(v: number)
+  {
     const n = Math.max(2, Math.min(24, v))
     setSnowfallSizeMaxState(n)
-    try {
+    try
+    {
       localStorage.setItem(STORAGE_KEYS.SNOWFALL_SIZE_MAX, String(n))
-    } catch { /* ignore */ }
+    }
+    catch
+    { /* ignore */ }
   }
-  function setSnowfallSpeed(v: number) {
+  function setSnowfallSpeed(v: number)
+  {
     const n = Math.max(1, Math.min(10, v))
     setSnowfallSpeedState(n)
-    try {
+    try
+    {
       localStorage.setItem(STORAGE_KEYS.SNOWFALL_SPEED, String(n))
-    } catch { /* ignore */ }
+    }
+    catch
+    { /* ignore */ }
   }
-  function setSnowfallDistribution(v: number) {
+  function setSnowfallDistribution(v: number)
+  {
     const n = Math.max(0, Math.min(100, v))
     setSnowfallDistributionState(n)
-    try {
+    try
+    {
       localStorage.setItem(STORAGE_KEYS.SNOWFALL_DISTRIBUTION, String(n))
-    } catch { /* ignore */ }
+    }
+    catch
+    { /* ignore */ }
   }
-  function setTodayHasSnow(v: boolean) {
+  function setTodayHasSnow(v: boolean)
+  {
     todayHasSnow.value = v
   }
 
-  const snowfallThemeColors = computed(() => {
-    if (snowfallThemePreset.value === 'ice') {
+  const snowfallThemeColors = computed(() =>
+  {
+    if (snowfallThemePreset.value === 'ice')
+    {
       return [
         'rgba(255,255,255,0.95)',
         'rgba(200,220,255,0.9)',
@@ -548,7 +758,8 @@ export const useAppStore = defineStore('app', () =>
     ]
   })
 
-  const snowfallOptions = computed(() => {
+  const snowfallOptions = computed(() =>
+  {
     const speed = snowfallSpeed.value
     const durationMin = Math.round(6 + (10 - speed) * 2.5)
     const durationMax = durationMin + 8
@@ -565,7 +776,8 @@ export const useAppStore = defineStore('app', () =>
   })
 
   /** 从接口项中取出标量（兼容 value 为对象 { value: x } 或直接为 x） */
-  function toScalar(item: { value: unknown } | null | undefined): unknown {
+  function toScalar(item: { value: unknown } | null | undefined): unknown
+  {
     if (item?.value == null) return undefined
     const raw = item.value
     if (typeof raw === 'object' && raw !== null && 'value' in raw) return (raw as { value: unknown }).value
@@ -573,106 +785,163 @@ export const useAppStore = defineStore('app', () =>
   }
 
   /** 用服务端设置回填外观（主题、语言、列表样式、视觉样式），并写回 localStorage */
-  function hydrateAppearance(settingsMap: SettingsMap) {
+  function hydrateAppearance(settingsMap: SettingsMap)
+  {
     const themeVal = toScalar(settingsMap[SETTING_KEYS.THEME])
-    if (themeVal != null) {
+    if (themeVal != null)
+    {
       const v = String(themeVal).trim()
-      if (v === CTheme.DARK || v === CTheme.LIGHT || v === CTheme.DEFAULT) {
+      if (v === CTheme.DARK || v === CTheme.LIGHT || v === CTheme.DEFAULT)
+      {
         setThemeState(v)
-        try {
+        try
+        {
           localStorage.setItem(STORAGE_KEYS.THEME, v)
-        } catch { /* ignore */ }
+        }
+        catch
+        { /* ignore */ }
       }
     }
     const langVal = toScalar(settingsMap[SETTING_KEYS.LANGUAGE])
-    if (langVal != null) {
+    if (langVal != null)
+    {
       const v = String(langVal).trim()
-      if (v === CLanguage.ZH || v === CLanguage.EN) {
+      if (v === CLanguage.ZH || v === CLanguage.EN)
+      {
         setLanguageState(v)
-        try {
+        try
+        {
           localStorage.setItem(STORAGE_KEYS.LANGUAGE, v)
-        } catch { /* ignore */ }
+        }
+        catch
+        { /* ignore */ }
       }
     }
     const listVal = toScalar(settingsMap[SETTING_KEYS.ARTICLE_LIST_TYPE])
-    if (listVal != null) {
+    if (listVal != null)
+    {
       const v = String(listVal).trim()
-      if (v === CArticleList.BASE || v === CArticleList.CARD || v === CArticleList.WATERFALL || v === CArticleList.COMPACT) {
+      if (v === CArticleList.BASE || v === CArticleList.CARD || v === CArticleList.WATERFALL || v === CArticleList.COMPACT)
+      {
         setArticleListTypeState(v as ArticleList)
-        try {
+        try
+        {
           localStorage.setItem(STORAGE_KEYS.ARTICLE_LIST_TYPE, v)
-        } catch { /* ignore */ }
+        }
+        catch
+        { /* ignore */ }
       }
     }
     const homeSortVal = toScalar(settingsMap[SETTING_KEYS.HOME_SORT])
-    if (homeSortVal != null) {
+    if (homeSortVal != null)
+    {
       const v = String(homeSortVal).trim()
-      if (HOME_SORT_VALID.includes(v as HomeSortType)) {
+      if (HOME_SORT_VALID.includes(v as HomeSortType))
+      {
         setHomeSortState(v as HomeSortType)
-        try {
+        try
+        {
           localStorage.setItem(STORAGE_KEYS.HOME_SORT, v)
-        } catch { /* ignore */ }
+        }
+        catch
+        { /* ignore */ }
       }
     }
     const visualVal = toScalar(settingsMap[SETTING_KEYS.VISUAL_STYLE])
-    if (visualVal != null) {
+    if (visualVal != null)
+    {
       const v = String(visualVal).trim()
-      if (v === CVisualStyle.DEFAULT || v === CVisualStyle.GLASS) {
+      if (v === CVisualStyle.DEFAULT || v === CVisualStyle.GLASS)
+      {
         setVisualStyleState(v)
-        try {
+        try
+        {
           localStorage.setItem(STORAGE_KEYS.VISUAL_STYLE, v)
-        } catch { /* ignore */ }
+        }
+        catch
+        { /* ignore */ }
       }
     }
     // 站点名称
     const siteNameVal = toScalar(settingsMap[SETTING_KEYS.SITE_NAME])
-    if (siteNameVal != null) {
+    if (siteNameVal != null)
+    
       setSiteName(String(siteNameVal).trim())
-    }
+    
     // 站点图标
     const siteFaviconVal = toScalar(settingsMap[SETTING_KEYS.SITE_FAVICON])
-    if (siteFaviconVal != null) {
+    if (siteFaviconVal != null)
+    
       setSiteFavicon(String(siteFaviconVal).trim())
-    }
+    
     // 仅展示自己文章
     const onlyOwnVal = toScalar(settingsMap[SETTING_KEYS.ONLY_OWN_ARTICLES])
-    if (onlyOwnVal != null) {
+    if (onlyOwnVal != null)
+    
       setOnlyOwnArticles(String(onlyOwnVal) === 'true')
-    }
+    
     // 排版：字号缩放
     const fontScaleVal = toScalar(settingsMap[SETTING_KEYS.FONT_SIZE_SCALE])
-    if (fontScaleVal != null) {
+    if (fontScaleVal != null)
+    {
       const n = parseInt(String(fontScaleVal), 10)
-      if (!Number.isNaN(n) && n >= 80 && n <= 130) {
+      if (!Number.isNaN(n) && n >= 80 && n <= 130)
+      {
         setFontSizeScaleState(n)
-        try { localStorage.setItem(STORAGE_KEYS.FONT_SIZE_SCALE, String(n)) } catch { /* ignore */ }
+        try
+        {
+          localStorage.setItem(STORAGE_KEYS.FONT_SIZE_SCALE, String(n))
+        }
+        catch
+        { /* ignore */ }
       }
     }
     // 排版：行高缩放
     const lineHeightVal = toScalar(settingsMap[SETTING_KEYS.LINE_HEIGHT_SCALE])
-    if (lineHeightVal != null) {
+    if (lineHeightVal != null)
+    {
       const n = parseInt(String(lineHeightVal), 10)
-      if (!Number.isNaN(n) && n >= 100 && n <= 200) {
+      if (!Number.isNaN(n) && n >= 100 && n <= 200)
+      {
         setLineHeightScaleState(n)
-        try { localStorage.setItem(STORAGE_KEYS.LINE_HEIGHT_SCALE, String(n)) } catch { /* ignore */ }
+        try
+        {
+          localStorage.setItem(STORAGE_KEYS.LINE_HEIGHT_SCALE, String(n))
+        }
+        catch
+        { /* ignore */ }
       }
     }
     // 排版：间距缩放
     const spacingVal = toScalar(settingsMap[SETTING_KEYS.CONTENT_SPACING_SCALE])
-    if (spacingVal != null) {
+    if (spacingVal != null)
+    {
       const n = parseInt(String(spacingVal), 10)
-      if (!Number.isNaN(n) && n >= 50 && n <= 150) {
+      if (!Number.isNaN(n) && n >= 50 && n <= 150)
+      {
         setContentSpacingScaleState(n)
-        try { localStorage.setItem(STORAGE_KEYS.CONTENT_SPACING_SCALE, String(n)) } catch { /* ignore */ }
+        try
+        {
+          localStorage.setItem(STORAGE_KEYS.CONTENT_SPACING_SCALE, String(n))
+        }
+        catch
+        { /* ignore */ }
       }
     }
     // 排版：字体族
     const fontFamilyVal = toScalar(settingsMap[SETTING_KEYS.FONT_FAMILY_PRESET])
-    if (fontFamilyVal != null) {
+    if (fontFamilyVal != null)
+    {
       const v = String(fontFamilyVal).trim()
-      if (v === 'system' || v === 'serif' || v === 'mono') {
+      if (v === 'system' || v === 'serif' || v === 'mono')
+      {
         setFontFamilyPresetState(v)
-        try { localStorage.setItem(STORAGE_KEYS.FONT_FAMILY_PRESET, v) } catch { /* ignore */ }
+        try
+        {
+          localStorage.setItem(STORAGE_KEYS.FONT_FAMILY_PRESET, v)
+        }
+        catch
+        { /* ignore */ }
       }
     }
 
@@ -681,17 +950,22 @@ export const useAppStore = defineStore('app', () =>
   }
 
   /** 设置主题（不带动画），watch 会同步到 DOM 和本地缓存，并入库 */
-  function setTheme(t: Theme | null) {
+  function setTheme(t: Theme | null)
+  {
     setThemeState(t)
-    try {
+    try
+    {
       localStorage.setItem(STORAGE_KEYS.THEME, t ?? CTheme.DEFAULT)
-    } catch { /* ignore */ }
-    updateSettings({ [SETTING_KEYS.THEME]: { value: t ?? CTheme.DEFAULT } }).catch(() => {})
+    }
+    catch
+    { /* ignore */ }
+    _syncToServer({ [SETTING_KEYS.THEME]: { value: t ?? CTheme.DEFAULT } })
   }
 
   /** 设置抽屉是否可见（从左侧栏设置图标打开） */
   const settingsDrawerVisible = ref(false)
-  function setSettingsDrawerVisible(v: boolean) {
+  function setSettingsDrawerVisible(v: boolean)
+  {
     settingsDrawerVisible.value = v
   }
 
@@ -700,7 +974,8 @@ export const useAppStore = defineStore('app', () =>
    * 使用 View Transitions API，从点击位置向外/向内扩散圆形遮罩
    * @param event 鼠标事件（用于获取点击坐标）
    */
-  async function toggleTheme(event?: MouseEvent) {
+  async function toggleTheme(event?: MouseEvent)
+  {
     const nextTheme = theme.value === CTheme.DARK ? CTheme.DEFAULT : CTheme.DARK
     const x = event?.clientX ?? window.innerWidth / 2
     const y = event?.clientY ?? window.innerHeight / 2
@@ -712,12 +987,15 @@ export const useAppStore = defineStore('app', () =>
     )
 
     // 支持 View Transitions API 的浏览器
-    if (document.startViewTransition) {
-      const transition = document.startViewTransition(() => {
+    if (document.startViewTransition)
+    {
+      const transition = document.startViewTransition(() =>
+      {
         setTheme(nextTheme)
       })
 
-      transition.ready.then(() => {
+      transition.ready.then(() =>
+      {
         // 从点击位置向外圆形扩散
         document.documentElement.animate(
           {
@@ -733,9 +1011,11 @@ export const useAppStore = defineStore('app', () =>
           }
         )
       })
-    } else {
-      setTheme(nextTheme)
     }
+    else
+    
+      setTheme(nextTheme)
+    
   }
 
   return {

@@ -30,18 +30,20 @@ const ARTICLE_LIST_FIELDS = [
 type OrderSpec = Record<string, 'ASC' | 'DESC'>
 
 /** 根据首页排序方式得到 order 对象（置顶优先 + 第二排序键 + createdAt 兜底） */
-export function getArticleListOrder(sort: HomeSortType): OrderSpec {
+export function getArticleListOrder(sort: HomeSortType): OrderSpec
+{
   const base: OrderSpec = { isTop: 'DESC' }
-  switch (sort) {
-    case 'hot':
-      return { ...base, viewCount: 'DESC', createdAt: 'DESC' }
-    case 'likes':
-      return { ...base, likeCount: 'DESC', createdAt: 'DESC' }
-    case 'trending':
-      return { ...base, viewCount: 'DESC', likeCount: 'DESC', createdAt: 'DESC' }
-    default:
-      // 按创建日期排序，新文章始终在最上面
-      return { ...base, createdAt: 'DESC' }
+  switch (sort)
+  {
+  case 'hot':
+    return { ...base, viewCount: 'DESC', createdAt: 'DESC' }
+  case 'likes':
+    return { ...base, likeCount: 'DESC', createdAt: 'DESC' }
+  case 'trending':
+    return { ...base, viewCount: 'DESC', likeCount: 'DESC', createdAt: 'DESC' }
+  default:
+    // 按创建日期排序，新文章始终在最上面
+    return { ...base, createdAt: 'DESC' }
   }
 }
 
@@ -79,8 +81,10 @@ export interface IArticleApis {
 }
 
 const apis: IArticleApis = {
-  async getArticleList(page = 1, pageSize = PAGE_SIZE, sort: HomeSortType = HOME_SORT_DEFAULT, userId?: number) {
-    try {
+  async getArticleList(page = 1, pageSize = PAGE_SIZE, sort: HomeSortType = HOME_SORT_DEFAULT, userId?: number)
+  {
+    try
+    {
       const order = getArticleListOrder(sort)
       const where: Record<string, unknown> = { status: CArticleStatus.PUBLISHED, isPrivate: false }
       if (userId) where.userId = userId
@@ -94,13 +98,17 @@ const apis: IArticleApis = {
         select: ARTICLE_LIST_FIELDS,
       })
       return Array.isArray(list) ? list : []
-    } catch {
+    }
+    catch
+    {
       return []
     }
   },
 
-  async getArticleListForArchive(take = 30, skip = 0, userId?: number) {
-    try {
+  async getArticleListForArchive(take = 30, skip = 0, userId?: number)
+  {
+    try
+    {
       const where: Record<string, unknown> = { status: CArticleStatus.PUBLISHED, isPrivate: false }
       if (userId) where.userId = userId
       const list = await restQuery<IArticle[]>('article', {
@@ -113,13 +121,17 @@ const apis: IArticleApis = {
         select: ARTICLE_LIST_FIELDS,
       })
       return Array.isArray(list) ? list : []
-    } catch {
+    }
+    catch
+    {
       return []
     }
   },
 
-  async getArticleById(id: string) {
-    try {
+  async getArticleById(id: string)
+  {
+    try
+    {
       const list = await restQuery<IArticle[]>('article', {
         where: { id: parseInt(id, 10) },
         take: 1,
@@ -127,12 +139,15 @@ const apis: IArticleApis = {
       })
       const arr = Array.isArray(list) ? list : []
       return arr[0] ?? null
-    } catch {
+    }
+    catch
+    {
       return null
     }
   },
 
-  async createArticle(payload: ICreateArticlePayload) {
+  async createArticle(payload: ICreateArticlePayload)
+  {
     const body = {
       ...payload,
       publishedAt: payload.publishedAt,
@@ -143,23 +158,29 @@ const apis: IArticleApis = {
   },
 
   /** 更新已有文章 */
-  async updateArticle(id: number, payload: Partial<ICreateArticlePayload>) {
+  async updateArticle(id: number, payload: Partial<ICreateArticlePayload>)
+  {
     const body: Record<string, unknown> = { ...payload }
     return restUpdate<IArticle>('article', id, body)
   },
 
   /** 验证文章密码保护 */
-  async verifyArticleProtect(id: number, password: string) {
-    try {
+  async verifyArticleProtect(id: number, password: string)
+  {
+    try
+    {
       const res = await request.post<{ code: number; data: { content: string } | null; message: string }>(
         '/rest/article/verify-protect',
         { id, password },
       )
-      if (res.data.code === 0 && res.data.data) {
+      if (res.data.code === 0 && res.data.data)
+      
         return res.data.data
-      }
+      
       return null
-    } catch {
+    }
+    catch
+    {
       return null
     }
   },

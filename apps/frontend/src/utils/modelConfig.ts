@@ -19,28 +19,36 @@ export interface LocalModelConfig {
 }
 
 /** @deprecated 已迁移至服务端存储 */
-export function saveLocalModelConfig(_config: Partial<LocalModelConfig>): void {
+export function saveLocalModelConfig(_config: Partial<LocalModelConfig>): void
+{
   // no-op: 模型配置已统一保存到服务端
 }
 
 /** @deprecated 已迁移至服务端存储 */
-export function loadLocalModelConfig(): Partial<LocalModelConfig> | null {
+export function loadLocalModelConfig(): Partial<LocalModelConfig> | null
+{
   return null
 }
 
 /** @deprecated 始终返回 false */
-export function hasLocalModelConfig(): boolean {
+export function hasLocalModelConfig(): boolean
+{
   return false
 }
 
 /** 清空旧的本地模型配置（迁移后调用一次） */
-export function clearLocalModelConfig(): void {
-  try {
+export function clearLocalModelConfig(): void
+{
+  try
+  {
     localStorage.removeItem(STORAGE_KEYS.USER_MODEL_CONFIG)
-  } catch { /* 静默 */ }
+  }
+  catch
+  { /* 静默 */ }
 }
 
 /** @deprecated 返回 undefined，模型配置统一由服务端管理 */
-export function getModelConfigOverride(): undefined {
+export function getModelConfigOverride(): undefined
+{
   return undefined
 }

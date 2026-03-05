@@ -10,7 +10,7 @@ export interface XiaohuiMessage {
 
 /** SSE 事件数据类型 */
 interface SSETokenEvent { token: string }
-interface SSEDoneEvent  { done: true }
+interface SSEDoneEvent { done: true }
 interface SSEErrorEvent { error: string }
 type SSEEvent = SSETokenEvent | SSEDoneEvent | SSEErrorEvent
 
@@ -27,7 +27,8 @@ export async function sendXiaohuiStream(
   sessionId: string,
   onToken: (token: string) => void,
   signal?: AbortSignal,
-): Promise<string> {
+): Promise<string>
+{
   // 携带 JWT token（已登录用户）
   const token = getAccessToken()
 
@@ -43,23 +44,31 @@ export async function sendXiaohuiStream(
   })
 
   // 非 SSE 响应（如 JSON 错误）
-  if (!res.ok || !res.body) {
+  if (!res.ok || !res.body)
+  {
     let msg = `HTTP ${res.status}`
-    try {
+    try
+    {
       const json = await res.json()
       msg = json.message || msg
-    } catch { /* ignore */ }
+    }
+    catch
+    { /* ignore */ }
     throw new Error(msg)
   }
 
   // 后端校验失败可能返回 200 + application/json
   const contentType = res.headers.get('content-type') || ''
-  if (contentType.includes('application/json')) {
+  if (contentType.includes('application/json'))
+  {
     let msg = 'Unknown error'
-    try {
+    try
+    {
       const json = await res.json()
       msg = json.message || msg
-    } catch { /* ignore */ }
+    }
+    catch
+    { /* ignore */ }
     throw new Error(msg)
   }
 
@@ -68,7 +77,8 @@ export async function sendXiaohuiStream(
   let buffer = ''
   let fullText = ''
 
-  while (true) {
+  for (;;)
+  {
     const { done, value } = await reader.read()
     if (done) break
 
@@ -77,20 +87,25 @@ export async function sendXiaohuiStream(
     const parts = buffer.split('\n\n')
     buffer = parts.pop() || ''
 
-    for (const part of parts) {
+    for (const part of parts)
+    {
       const line = part.trim()
       if (!line.startsWith('data: ')) continue
       const jsonStr = line.slice(6)
 
-      try {
+      try
+      {
         const evt: SSEEvent = JSON.parse(jsonStr)
         if ('error' in evt) throw new Error(evt.error)
         if ('done' in evt) continue
-        if ('token' in evt) {
+        if ('token' in evt)
+        {
           fullText += evt.token
           onToken(evt.token)
         }
-      } catch (e) {
+      }
+      catch (e)
+      {
         if (e instanceof Error && e.message !== jsonStr) throw e
       }
     }
@@ -102,12 +117,16 @@ export async function sendXiaohuiStream(
 /**
  * 检查小惠服务状态
  */
-export async function getXiaohuiStatus(): Promise<{ available: boolean; message: string }> {
-  try {
+export async function getXiaohuiStatus(): Promise<{ available: boolean; message: string }>
+{
+  try
+  {
     const res = await fetch('/api/xiaohui/status')
     const json = await res.json()
     return json.data || { available: false, message: '服务不可用' }
-  } catch {
+  }
+  catch
+  {
     return { available: false, message: '网络连接失败' }
   }
 }

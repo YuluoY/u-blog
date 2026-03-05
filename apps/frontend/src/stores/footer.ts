@@ -4,14 +4,16 @@ import { getSettings, type SettingsMap } from '@/api/settings'
 import { SETTING_KEYS } from '@/constants/settings'
 
 /** 从设置值中提取标量字符串 */
-function toStr(v: unknown, fallback: string): string {
+function toStr(v: unknown, fallback: string): string
+{
   if (v == null) return fallback
   if (typeof v === 'object' && 'value' in (v as any)) return String((v as any).value ?? fallback)
   return String(v ?? fallback)
 }
 
 /** 从设置值中提取布尔值 */
-function toBool(v: unknown, fallback: boolean): boolean {
+function toBool(v: unknown, fallback: boolean): boolean
+{
   if (v == null) return fallback
   const raw = typeof v === 'object' && 'value' in (v as any) ? (v as any).value : v
   if (typeof raw === 'boolean') return raw
@@ -38,7 +40,8 @@ export const useFooterStore = defineStore('footer', () =>
   }, 1000)
 
   /** 将 settings map 写入 footer 状态 */
-  function _applySettings(map: SettingsMap) {
+  function _applySettings(map: SettingsMap)
+  {
     if (map[SETTING_KEYS.FOOTER_ICP_NUMBER]) setIcp(toStr(map[SETTING_KEYS.FOOTER_ICP_NUMBER], icp.value))
     if (map[SETTING_KEYS.FOOTER_ICP_LINK]) setIcpLink(toStr(map[SETTING_KEYS.FOOTER_ICP_LINK], icpLink.value))
     if (map[SETTING_KEYS.FOOTER_ICP_VISIBLE]) setIcpVisible(toBool(map[SETTING_KEYS.FOOTER_ICP_VISIBLE], true))
@@ -50,13 +53,16 @@ export const useFooterStore = defineStore('footer', () =>
   }
 
   /** 从 App.vue 统一请求的 settings 数据中提取 footer 配置（避免二次请求） */
-  function hydrateFromSettings(map: SettingsMap) {
+  function hydrateFromSettings(map: SettingsMap)
+  {
     _applySettings(map)
   }
 
   /** 从后端设置表加载 footer 配置 */
-  async function fetchFooterSettings() {
-    try {
+  async function fetchFooterSettings()
+  {
+    try
+    {
       const map = await getSettings([
         SETTING_KEYS.FOOTER_ICP_NUMBER,
         SETTING_KEYS.FOOTER_ICP_LINK,
@@ -67,9 +73,13 @@ export const useFooterStore = defineStore('footer', () =>
         SETTING_KEYS.FOOTER_AUTHOR,
       ])
       _applySettings(map)
-    } catch {
+    }
+    catch
+    {
       // 后端不可用时使用默认值
-    } finally {
+    }
+    finally
+    {
       setLoaded(true)
     }
   }

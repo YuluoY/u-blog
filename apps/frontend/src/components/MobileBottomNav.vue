@@ -111,21 +111,27 @@ const showBack = computed(() => /^\/(read|write)\//.test(route.path) || route.pa
 /* ---- 移动端目录 ---- */
 const tocCtx = useMobileToc()
 /** 是否显示目录按钮：阅读页 + 文章有标题 */
-const showTocBtn = computed(() => {
+const showTocBtn = computed(() =>
+{
   return /^\/read\//.test(route.path) && tocCtx.hasHeadings.value === true
 })
 /** 打开目录抽屉 */
-function handleOpenToc() {
+function handleOpenToc()
+{
   tocCtx.sheetVisible.value = true
 }
 
 /** 返回上一页，无历史时回首页 */
-function handleBack() {
-  if (window.history.length > 1) {
+function handleBack()
+{
+  if (window.history.length > 1)
+  
     router.back()
-  } else {
+  
+  else
+  
     router.push('/home')
-  }
+  
 }
 
 /* 游客查看后台 */
@@ -134,39 +140,47 @@ const { visible: guestAdminVisible, openAdmin } = useGuestAdmin()
 /* 更多菜单开关 */
 const moreMenuOpen = ref(false)
 
-function toggleMoreMenu() {
+function toggleMoreMenu()
+{
   moreMenuOpen.value = !moreMenuOpen.value
 }
 
-function handleOpenAdmin() {
+function handleOpenAdmin()
+{
   moreMenuOpen.value = false
   openAdmin()
 }
 
-function handleOpenSettings() {
+function handleOpenSettings()
+{
   moreMenuOpen.value = false
   appStore.setSettingsDrawerVisible(true)
 }
 
 /** 打开搜索面板（确保走 Popover 模式） */
-function handleSearch() {
+function handleSearch()
+{
   // 移动端 SidePanel 被隐藏，需要确保 collapsed=true 以走 PopoverPanel 路径
-  if (!sidebarStore.collapsed) {
+  if (!sidebarStore.collapsed)
+  
     sidebarStore.setCollapsed(true)
-  }
+  
   sidebarStore.setActivePanel(PANEL_ID.SEARCH)
 }
 
 /** 打开分类标签面板 */
-function handleTags() {
-  if (!sidebarStore.collapsed) {
+function handleTags()
+{
+  if (!sidebarStore.collapsed)
+  
     sidebarStore.setCollapsed(true)
-  }
+  
   sidebarStore.setActivePanel(PANEL_ID.TAGS)
 }
 
 /** 路由变化时自动关闭弹出面板（分类/搜索 Popover），仅移动端生效 */
-watch(() => route.path, () => {
+watch(() => route.path, () =>
+{
   // 桌面端侧栏面板不应被路由变化关闭
   if (window.innerWidth > 767) return
   sidebarStore.closePanel()

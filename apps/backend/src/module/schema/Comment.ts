@@ -96,4 +96,9 @@ export class Comment {
 	@IsString()
 	@MaxLength(255)
 	ipLocation?: string | null
+
+	@Column({ name: 'likeCount', type: 'int', default: 0, comment: '点赞数' })
+	@IsOptional()
+	@IsInt({ message: '点赞数必须为整数' })
+	likeCount?: number
 }

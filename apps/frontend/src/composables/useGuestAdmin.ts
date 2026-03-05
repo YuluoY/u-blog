@@ -16,12 +16,14 @@ const ADMIN_URL =
 /** 模块级缓存，避免多组件重复请求同一设置 */
 let cachedEnabled: boolean | null = null
 
-export function useGuestAdmin() {
+export function useGuestAdmin()
+{
   const userStore = useUserStore()
   const settingEnabled = ref(false)
 
   /** 当前用户是否为已登录的 admin / super_admin（未登录时 user 存储的是博主信息，不算 admin） */
-  const isAdmin = computed(() => {
+  const isAdmin = computed(() =>
+  {
     if (!userStore.isLoggedIn) return false
     const role = userStore.user?.role
     return role === 'admin' || role === 'super_admin'
@@ -31,32 +33,41 @@ export function useGuestAdmin() {
   const visible = computed(() => settingEnabled.value && !isAdmin.value)
 
   /** 挂载时获取后台设置 */
-  onMounted(async () => {
+  onMounted(async() =>
+  {
     // 优先使用缓存
-    if (cachedEnabled !== null) {
+    if (cachedEnabled !== null)
+    {
       settingEnabled.value = cachedEnabled
       return
     }
-    try {
+    try
+    {
       const map = await getSettings([SETTING_KEYS.GUEST_ADMIN_VIEW_ENABLED])
       const raw = map[SETTING_KEYS.GUEST_ADMIN_VIEW_ENABLED]
       const val = raw?.value
       let enabled = false
-      if (val === true || val === 'true') {
+      if (val === true || val === 'true')
+      
         enabled = true
-      } else if (val && typeof val === 'object' && 'value' in val) {
+      
+      else if (val && typeof val === 'object' && 'value' in val)
+      {
         const inner = (val as any).value
         enabled = inner === true || inner === 'true'
       }
       cachedEnabled = enabled
       settingEnabled.value = enabled
-    } catch {
+    }
+    catch
+    {
       // 请求失败不显示
     }
   })
 
   /** 以游客身份打开后台（只读模式） */
-  function openAdmin() {
+  function openAdmin()
+  {
     const url = ADMIN_URL.endsWith('/')
       ? `${ADMIN_URL}?guest=1`
       : `${ADMIN_URL}/?guest=1`

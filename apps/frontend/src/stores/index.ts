@@ -4,7 +4,8 @@ import { useFooterStore } from './footer'
 
 import type { App } from 'vue'
 
-const getStore = () => {
+const getStore = () =>
+{
   return {
     app: useAppStore(),
     header: useHeaderStore(),

@@ -83,14 +83,20 @@ const categoryCount = computed(() => overview.value?.categoryCount ?? 0)
 const tagCount = computed(() => overview.value?.tagCount ?? 0)
 const lastUpdate = computed(() => overview.value?.lastUpdate ?? '--')
 
-onMounted(async () => {
+onMounted(async() =>
+{
   loading.value = true
   error.value = null
-  try {
+  try
+  {
     overview.value = await getSiteOverview()
-  } catch (e) {
+  }
+  catch (e)
+  {
     error.value = e instanceof Error ? e.message : '获取失败'
-  } finally {
+  }
+  finally
+  {
     loading.value = false
   }
 })

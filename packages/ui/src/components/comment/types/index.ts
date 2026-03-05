@@ -28,6 +28,10 @@ export interface UCommentItemData {
   nickname?: string | null
   /** 游客邮箱 */
   email?: string | null
+  /** 点赞数 */
+  likeCount?: number
+  /** 当前用户是否已点赞 */
+  liked?: boolean
 }
 
 /**
@@ -175,6 +179,8 @@ export interface UCommentItemEmits {
   (e: 'update:replyContent', value: string): void
   /** 点击「回复 @某人」时触发，用于平滑滚动到目标评论 */
   (e: 'scroll-to', commentId: number): void
+  /** 点赞操作 */
+  (e: 'like', comment: UCommentItemData): void
 }
 
 export interface UCommentListProps {
@@ -198,6 +204,7 @@ export interface UCommentListEmits {
   (e: 'reply-cancel'): void
   (e: 'update:replyContent', value: string): void
   (e: 'scroll-to', commentId: number): void
+  (e: 'like', comment: UCommentItemData): void
 }
 
 export interface UCommentInputProps {

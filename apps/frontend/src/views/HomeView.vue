@@ -67,11 +67,12 @@ onMounted(() =>
   // root 指定为实际滚动容器，避免嵌套 overflow 导致哨兵不触发
   const scrollRoot = document.querySelector('.layout-base__main') as HTMLElement | null
   observer = new IntersectionObserver(
-    (entries) =>
+    entries =>
     {
-      if (entries[0]?.isIntersecting && articleStore.hasMore && !articleStore.loading) {
+      if (entries[0]?.isIntersecting && articleStore.hasMore && !articleStore.loading)
+      
         articleStore.loadMore()
-      }
+      
     },
     { root: scrollRoot, rootMargin: '0px' }
   )

@@ -15,12 +15,16 @@ export const useTagStore = defineStore('tag', () =>
   {
     if (loaded.value && !force) return
     if (_fetchPromise) return _fetchPromise
-    _fetchPromise = (async () => {
-      try {
+    _fetchPromise = (async() =>
+    {
+      try
+      {
         const list = await api(CTable.TAG).getTagList()
         setTagList(list)
         setLoaded(true)
-      } finally {
+      }
+      finally
+      {
         _fetchPromise = null
       }
     })()

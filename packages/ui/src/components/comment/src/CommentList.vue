@@ -43,6 +43,7 @@
           @reply-cancel="$emit('reply-cancel')"
           @update:reply-content="(v) => $emit('update:replyContent', v)"
           @scroll-to="(id) => $emit('scroll-to', id)"
+          @like="(c) => $emit('like', c)"
         >
           <template v-if="$slots.avatar" #avatar>
             <slot name="avatar" />
@@ -75,6 +76,7 @@
             @reply-cancel="$emit('reply-cancel')"
             @update:reply-content="(v) => $emit('update:replyContent', v)"
             @scroll-to="(id) => $emit('scroll-to', id)"
+            @like="(c) => $emit('like', c)"
           >
             <template v-if="$slots.avatar" #avatar>
               <slot name="avatar" />

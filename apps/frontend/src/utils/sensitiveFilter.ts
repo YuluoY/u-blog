@@ -14,21 +14,26 @@ interface TrieNode {
   isEnd: boolean
 }
 
-function createNode(): TrieNode {
+function createNode(): TrieNode
+{
   return { children: new Map(), isEnd: false }
 }
 
 /* ========== 构建 Trie ========== */
-function buildTrie(words: string[]): TrieNode {
+function buildTrie(words: string[]): TrieNode
+{
   const root = createNode()
-  for (const word of words) {
+  for (const word of words)
+  {
     if (!word) continue
     let cur = root
-    for (const ch of word) {
+    for (const ch of word)
+    {
       const key = ch.toLowerCase()
-      if (!cur.children.has(key)) {
+      if (!cur.children.has(key))
+      
         cur.children.set(key, createNode())
-      }
+      
       cur = cur.children.get(key)!
     }
     cur.isEnd = true
@@ -67,34 +72,40 @@ const trieRoot = buildTrie(SENSITIVE_WORDS)
  * @param mask - 替换字符，默认 '*'
  * @returns 过滤后的文本
  */
-export function filterSensitiveWords(text: string, mask = '*'): string {
+export function filterSensitiveWords(text: string, mask = '*'): string
+{
   if (!text) return text
   const chars = [...text]
   const len = chars.length
   const result = [...chars]
 
-  for (let i = 0; i < len; i++) {
+  for (let i = 0; i < len; i++)
+  {
     let cur = trieRoot
     let j = i
     let lastMatchEnd = -1
 
     // 从位置 i 开始，在 Trie 上做最长匹配
-    while (j < len) {
+    while (j < len)
+    {
       const key = chars[j].toLowerCase()
       const next = cur.children.get(key)
       if (!next) break
       cur = next
-      if (cur.isEnd) {
+      if (cur.isEnd)
+      
         lastMatchEnd = j
-      }
+      
       j++
     }
 
     // 如果找到匹配，替换对应位置的字符
-    if (lastMatchEnd >= i) {
-      for (let k = i; k <= lastMatchEnd; k++) {
+    if (lastMatchEnd >= i)
+    {
+      for (let k = i; k <= lastMatchEnd; k++)
+      
         result[k] = mask
-      }
+      
       i = lastMatchEnd // 外层 for 的 i++ 会让指针前移到 lastMatchEnd + 1
     }
   }
@@ -107,16 +118,19 @@ export function filterSensitiveWords(text: string, mask = '*'): string {
  * @param text - 待检测文本
  * @returns 是否包含敏感词
  */
-export function hasSensitiveWords(text: string): boolean {
+export function hasSensitiveWords(text: string): boolean
+{
   if (!text) return false
   const chars = [...text]
   const len = chars.length
 
-  for (let i = 0; i < len; i++) {
+  for (let i = 0; i < len; i++)
+  {
     let cur = trieRoot
     let j = i
 
-    while (j < len) {
+    while (j < len)
+    {
       const key = chars[j].toLowerCase()
       const next = cur.children.get(key)
       if (!next) break
@@ -132,15 +146,19 @@ export function hasSensitiveWords(text: string): boolean {
  * 运行时动态追加敏感词（热更新场景）
  * @param words - 待追加的敏感词数组
  */
-export function addSensitiveWords(words: string[]): void {
-  for (const word of words) {
+export function addSensitiveWords(words: string[]): void
+{
+  for (const word of words)
+  {
     if (!word) continue
     let cur = trieRoot
-    for (const ch of word) {
+    for (const ch of word)
+    {
       const key = ch.toLowerCase()
-      if (!cur.children.has(key)) {
+      if (!cur.children.has(key))
+      
         cur.children.set(key, createNode())
-      }
+      
       cur = cur.children.get(key)!
     }
     cur.isEnd = true

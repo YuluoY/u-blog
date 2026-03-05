@@ -464,7 +464,8 @@ const listTypeOptions = computed(() => [
 ])
 
 /** 切换文章列表样式并保存到数据库 */
-async function handleListTypeChange(value: ArticleList) {
+async function handleListTypeChange(value: ArticleList)
+{
   currentListType.value = value
   appStore.setArticleListType(value)
 }
@@ -480,7 +481,8 @@ const homeSortOptions = computed(() => [
 ])
 
 /** 切换首页文章排序并刷新列表 */
-function handleHomeSortChange(value: HomeSortType) {
+function handleHomeSortChange(value: HomeSortType)
+{
   currentHomeSort.value = value
   appStore.setHomeSort(value)
   articleStore.qryArticleList()
@@ -510,40 +512,52 @@ const faviconInputRef = ref<HTMLInputElement | null>(null)
 const faviconLoadError = ref(false)
 
 /** favicon 展示 URL（相对路径直接使用，/uploads 有独立的 Vite 代理规则） */
-const faviconDisplayUrl = computed(() => {
+const faviconDisplayUrl = computed(() =>
+{
   const val = form.site_favicon
   if (!val) return ''
   return val
 })
 
 // favicon URL 变化时重置加载错误标记
-watch(() => form.site_favicon, () => { faviconLoadError.value = false })
+watch(() => form.site_favicon, () =>
+{
+  faviconLoadError.value = false
+})
 
 /** 触发隐藏的文件选择框 */
-function triggerFaviconUpload() {
+function triggerFaviconUpload()
+{
   faviconInputRef.value?.click()
 }
 
 /** 处理 favicon 文件选择 → 上传 → 填入 URL */
-async function handleFaviconUpload(e: Event) {
+async function handleFaviconUpload(e: Event)
+{
   const input = e.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
   // 重置 input 以允许重复选择同一文件
   input.value = ''
   // 校验大小（1MB 限制，favicon 通常很小）
-  if (file.size > 1024 * 1024) {
+  if (file.size > 1024 * 1024)
+  {
     UMessageFn({ message: t('settings.faviconTooLarge'), type: 'warning' })
     return
   }
   uploadingFavicon.value = true
-  try {
+  try
+  {
     const result = await uploadFile(file)
     form.site_favicon = result.url
     UMessageFn({ message: t('settings.faviconUploaded'), type: 'success' })
-  } catch (err: any) {
+  }
+  catch (err: any)
+  {
     UMessageFn({ message: err?.message || t('settings.faviconUploadFailed'), type: 'error' })
-  } finally {
+  }
+  finally
+  {
     uploadingFavicon.value = false
   }
 }
@@ -552,7 +566,8 @@ async function handleFaviconUpload(e: Event) {
 const maskedHints = reactive<Record<string, string>>({})
 
 /** 从服务端拉取设置并填充表单（含外观：主题、语言、列表样式，会回填到 appStore） */
-async function loadServerSettings() {
+async function loadServerSettings()
+{
   const keys = [
     SETTING_KEYS.THEME,
     SETTING_KEYS.LANGUAGE,
@@ -580,16 +595,20 @@ async function loadServerSettings() {
 
   // 回显列表样式
   const listTypeVal = data[SETTING_KEYS.ARTICLE_LIST_TYPE]?.value
-  if (listTypeVal && typeof listTypeVal === 'string') {
+  if (listTypeVal && typeof listTypeVal === 'string')
+  
     currentListType.value = listTypeVal as ArticleList
-  }
+  
   // 回显首页排序（服务端无则用 appStore 当前值）
   const homeSortVal = data[SETTING_KEYS.HOME_SORT]?.value
-  if (homeSortVal && typeof homeSortVal === 'string' && ['date', 'hot', 'likes', 'trending'].includes(homeSortVal)) {
+  if (homeSortVal && typeof homeSortVal === 'string' && ['date', 'hot', 'likes', 'trending'].includes(homeSortVal))
+  
     currentHomeSort.value = homeSortVal as HomeSortType
-  } else {
+  
+  else
+  
     currentHomeSort.value = appStore.homeSort ?? HOME_SORT_DEFAULT
-  }
+  
 
   // 回显字符串型设置
   const stringFormKeys: Array<'openai_api_key' | 'openai_base_url' | 'openai_model' | 'site_name' | 'site_description' | 'site_keywords' | 'site_favicon'> = [
@@ -601,20 +620,27 @@ async function loadServerSettings() {
     'site_keywords',
     'site_favicon',
   ]
-  for (const key of stringFormKeys) {
+  for (const key of stringFormKeys)
+  {
     const item = data[key]
     if (!item) continue
     const val = item.value
-    if (MASKED_SETTING_KEYS.has(key)) {
-      if (item.masked) {
+    if (MASKED_SETTING_KEYS.has(key))
+    {
+      if (item.masked)
+      {
         form[key] = ''
         maskedHints[key] = typeof val === 'string' ? val : '***'
-      } else if (typeof val === 'string') {
-        form[key] = val
       }
-    } else {
-      form[key] = typeof val === 'string' ? val : String(val ?? '')
+      else if (typeof val === 'string')
+      
+        form[key] = val
+      
     }
+    else
+    
+      form[key] = typeof val === 'string' ? val : String(val ?? '')
+    
   }
 
   // 回显数值型模型参数
@@ -633,28 +659,38 @@ async function loadServerSettings() {
   const flnVal = data[SETTING_KEYS.FRIEND_LINK_NOTIFY]?.value
   blogForm.friend_link_notify = flnVal !== 'false' && flnVal !== false // 默认开启
   const vrVal = data[SETTING_KEYS.VISIBLE_ROUTES]?.value
-  if (typeof vrVal === 'string') {
-    try { blogForm.visible_routes = JSON.parse(vrVal) } catch { /* 保持默认 */ }
+  if (typeof vrVal === 'string')
+  {
+    try
+    {
+      blogForm.visible_routes = JSON.parse(vrVal)
+    }
+    catch
+    { /* 保持默认 */ }
   }
   // 分享模式：从服务端读取（安全，不可被访客篡改）
   const smVal = data[SETTING_KEYS.BLOG_SHARE_MODE]?.value
-  if (smVal === 'full' || smVal === 'readonly') {
+  if (smVal === 'full' || smVal === 'readonly')
+  
     blogForm.share_mode = smVal
-  }
+  
 }
 
 /** 提交时敏感项：若前端为空且后端已脱敏，则不传该 key，避免覆盖为空白 */
-async function saveModelSettings() {
+async function saveModelSettings()
+{
   savingModel.value = true
-  try {
+  try
+  {
     const record: Record<string, { value: unknown }> = {}
     // base_url / model：有值则发送，空值跳过以保留服务端原值
     if (form.openai_base_url?.trim()) record[SETTING_KEYS.OPENAI_BASE_URL] = { value: form.openai_base_url.trim() }
     if (form.openai_model?.trim()) record[SETTING_KEYS.OPENAI_MODEL] = { value: form.openai_model.trim() }
     // API Key：非空时加密传输，空值跳过以保留服务端加密存储的原值
-    if (form.openai_api_key?.trim()) {
+    if (form.openai_api_key?.trim())
+    
       record[SETTING_KEYS.OPENAI_API_KEY] = { value: await encryptForTransport(form.openai_api_key.trim()) }
-    }
+    
     // 数值型参数：始终发送
     record[SETTING_KEYS.OPENAI_TEMPERATURE] = { value: form.openai_temperature }
     record[SETTING_KEYS.OPENAI_MAX_TOKENS] = { value: form.openai_max_tokens }
@@ -663,16 +699,22 @@ async function saveModelSettings() {
     await updateSettings(record)
     await loadServerSettings()
     UMessageFn({ message: t('settings.modelSaved'), type: 'success' })
-  } catch (err: any) {
+  }
+  catch (err: any)
+  {
     UMessageFn({ message: err?.message || t('settings.saveFailed'), type: 'error' })
-  } finally {
+  }
+  finally
+  {
     savingModel.value = false
   }
 }
 
-async function saveSiteSettings() {
+async function saveSiteSettings()
+{
   savingSite.value = true
-  try {
+  try
+  {
     await updateSettings({
       [SETTING_KEYS.SITE_NAME]: { value: form.site_name },
       [SETTING_KEYS.SITE_DESCRIPTION]: { value: form.site_description },
@@ -683,9 +725,13 @@ async function saveSiteSettings() {
     // 保存后立即刷新页面标题
     appStore.updateDocumentTitle(t('settings.siteInfo'))
     UMessageFn({ message: t('settings.siteSaved'), type: 'success' })
-  } catch (err: any) {
+  }
+  catch (err: any)
+  {
     UMessageFn({ message: err?.message || t('settings.saveFailed'), type: 'error' })
-  } finally {
+  }
+  finally
+  {
     savingSite.value = false
   }
 }
@@ -713,20 +759,26 @@ const routeOptions = computed(() => [
 ])
 
 /** 切换路由可见性 */
-function toggleVisibleRoute(route: string) {
+function toggleVisibleRoute(route: string)
+{
   const idx = blogForm.visible_routes.indexOf(route)
-  if (idx >= 0) {
+  if (idx >= 0)
+  {
     // 至少保留一个路由
     if (blogForm.visible_routes.length > 1) blogForm.visible_routes.splice(idx, 1)
-  } else {
-    blogForm.visible_routes.push(route)
   }
+  else
+  
+    blogForm.visible_routes.push(route)
+  
 }
 
 /** 保存博客偏好 */
-async function saveBlogSettings() {
+async function saveBlogSettings()
+{
   savingBlog.value = true
-  try {
+  try
+  {
     await updateSettings({
       [SETTING_KEYS.ONLY_OWN_ARTICLES]: { value: String(blogForm.only_own_articles) },
       [SETTING_KEYS.FRIEND_LINK_NOTIFY]: { value: String(blogForm.friend_link_notify) },
@@ -734,14 +786,19 @@ async function saveBlogSettings() {
       [SETTING_KEYS.BLOG_SHARE_MODE]: { value: blogForm.share_mode },
     })
     UMessageFn({ message: t('settings.blogSaved'), type: 'success' })
-  } catch (err: any) {
+  }
+  catch (err: any)
+  {
     UMessageFn({ message: err?.message || t('settings.saveFailed'), type: 'error' })
-  } finally {
+  }
+  finally
+  {
     savingBlog.value = false
   }
 }
 
-onMounted(() => {
+onMounted(() =>
+{
   loadServerSettings()
 })
 </script>

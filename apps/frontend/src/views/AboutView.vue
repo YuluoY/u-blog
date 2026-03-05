@@ -142,23 +142,31 @@ const blocks = ref<IPageBlockVo[]>([])
 const loading = ref(false)
 
 /** 根据区块标题返回对应图标 */
-function getCustomIcon(title: string): string {
+function getCustomIcon(title: string): string
+{
   return CUSTOM_ICON_MAP[title] || CUSTOM_ICON_DEFAULT
 }
 
-async function fetchBlocks() {
+async function fetchBlocks()
+{
   loading.value = true
-  try {
+  try
+  {
     blocks.value = await getAboutBlocks()
-  } catch (error) {
+  }
+  catch (error)
+  {
     console.error('获取关于页区块失败:', error)
     blocks.value = []
-  } finally {
+  }
+  finally
+  {
     loading.value = false
   }
 }
 
-onMounted(() => {
+onMounted(() =>
+{
   fetchBlocks()
 })
 </script>

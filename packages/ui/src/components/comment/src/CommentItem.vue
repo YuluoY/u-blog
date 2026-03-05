@@ -51,11 +51,11 @@
           <span class="u-comment-item__meta-text">{{ locationOrDeviceText }}</span>
         </div>
 
-        <!-- 评论内容：plainContent 为纯文本，否则按 Markdown 渲染并消毒后输出 -->
+        <!-- 评论内容：plainContent 为纯文本（内含链接高亮），否则按 Markdown 渲染并消毒后输出 -->
         <div class="u-comment-item__content">
           <slot name="content">
             <template v-if="plainContent">
-              <span class="u-comment-item__text">{{ plainTextWithEmoji }}</span>
+              <span class="u-comment-item__text" v-html="linkifiedPlainText" />
             </template>
             <div
               v-else
@@ -68,6 +68,14 @@
         <!-- 操作按钮 -->
         <div class="u-comment-item__actions">
           <slot name="actions">
+            <button
+              class="u-comment-item__action-btn"
+              :class="{ 'u-comment-item__action-btn--active': comment.liked }"
+              @click="onLike"
+            >
+              <u-icon :icon="comment.liked ? 'fa-solid fa-thumbs-up' : 'fa-regular fa-thumbs-up'" />
+              <span>{{ displayLikeCount }}</span>
+            </button>
             <button
               v-if="loggedIn"
               class="u-comment-item__action-btn"
@@ -121,6 +129,7 @@
             @reply-cancel="emit('reply-cancel')"
             @update:reply-content="(v) => emit('update:replyContent', v)"
             @scroll-to="(id) => emit('scroll-to', id)"
+            @like="(c) => emit('like', c)"
           />
         </div>
       </div>
@@ -206,6 +215,31 @@ const plainTextWithEmoji = computed(() => {
   return emojify(String(props.comment.content))
 })
 
+/** URL 正则：匹配 http(s):// 开头的链接 */
+const URL_REGEX = /(https?:\/\/[^\s<>"'()\[\]]+)/gi
+
+/** 对纯文本内容进行链接检测并高亮，同时转义 HTML 实体防 XSS */
+const linkifiedPlainText = computed(() => {
+  const text = plainTextWithEmoji.value
+  if (!text) return ''
+  // 先转义 HTML 实体以防 XSS
+  const escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+  // 将 URL 替换为可点击链接（新窗口打开）
+  return escaped.replace(URL_REGEX, (url) =>
+    `<a href="${url}" target="_blank" rel="noopener noreferrer" class="u-comment-item__link">${url}</a>`
+  )
+})
+
+/** 点赞显示数 */
+const displayLikeCount = computed(() => {
+  const count = props.comment.likeCount ?? 0
+  return count > 0 ? count : '赞'
+})
+
 /** 评论内容：先解析 :shortcode: → emoji，再按 Markdown 解析并消毒后输出，防止 XSS */
 const renderedContent = computed(() => {
   if (props.plainContent || !props.comment.content) return ''
@@ -214,7 +248,12 @@ const renderedContent = computed(() => {
   try {
     const withEmoji = emojify(raw)
     const html = marked.parse(withEmoji) as string
-    return DOMPurify.sanitize(html, { ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 's', 'a', 'code', 'pre', 'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 'h3'] })
+    const sanitized = DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 's', 'a', 'code', 'pre', 'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 'h3'],
+      ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
+    })
+    // 为所有 <a> 标签统一添加新窗口打开 + 链接高亮样式
+    return sanitized.replace(/<a\s/g, '<a target="_blank" rel="noopener noreferrer" class="u-comment-item__link" ')
   } catch {
     return ''
   }
@@ -284,6 +323,11 @@ function onReplySubmit(content: string) {
 
 function onReplyCancel() {
   emit('reply-cancel')
+}
+
+/** 点赞 */
+function onLike() {
+  emit('like', props.comment)
 }
 
 /** 点击「回复 @某人」时平滑滚动到该评论 */

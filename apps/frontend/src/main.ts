@@ -36,13 +36,19 @@ beforehand(app).then(() =>
   const elapsed = Date.now() - splashStart
   const remaining = Math.max(0, SPLASH_MIN_DURATION - elapsed)
 
-  setTimeout(() => {
-    requestAnimationFrame(() => {
+  setTimeout(() =>
+  {
+    requestAnimationFrame(() =>
+    {
       const splash = document.getElementById('splash')
-      if (splash) {
+      if (splash)
+      {
         splash.classList.add('open')
         // 帘幕动画结束后彻底移除
-        const onEnd = () => { splash.classList.add('done') }
+        const onEnd = () =>
+        {
+          splash.classList.add('done')
+        }
         splash.addEventListener('transitionend', onEnd, { once: true })
         // 兜底：若 transitionend 未触发，1.5s 后强制隐藏
         setTimeout(onEnd, 1500)
@@ -50,9 +56,11 @@ beforehand(app).then(() =>
     })
   }, remaining)
 
-  if (import.meta.env.DEV) {
-    import('@/api/comment').then((m) => {
-      window.__debugAddComment = (data) => m.default.addComment(data)
+  if (import.meta.env.DEV)
+  {
+    import('@/api/comment').then(m =>
+    {
+      window.__debugAddComment = data => m.default.addComment(data)
     })
   }
 })

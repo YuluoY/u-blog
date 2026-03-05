@@ -153,10 +153,12 @@ const viewMode = ref<'month' | 'heatmap'>('month')
 const now = new Date()
 
 /** 从文章列表取最新发布日所在的年月，无文章则用当前年月 */
-function getLatestArticleYearMonth(list: { publishedAt?: string | Date; createdAt?: string | Date }[]) {
+function getLatestArticleYearMonth(list: { publishedAt?: string | Date; createdAt?: string | Date }[])
+{
   if (!list.length) return { year: now.getFullYear(), month: now.getMonth() + 1 }
   let maxTime = 0
-  list.forEach((a: { publishedAt?: string | Date; createdAt?: string | Date }) => {
+  list.forEach((a: { publishedAt?: string | Date; createdAt?: string | Date }) =>
+  {
     const t = new Date(a.publishedAt ?? a.createdAt ?? 0).getTime()
     if (t > maxTime) maxTime = t
   })
@@ -172,33 +174,41 @@ const heatmapYear = ref(now.getFullYear())
 const heatmapContainerRef = ref<HTMLElement | null>(null)
 
 /** 热力图横向滚动到最右侧，以展示最新日期 */
-function scrollHeatmapToEnd() {
-  nextTick(() => {
-    const run = () => {
+function scrollHeatmapToEnd()
+{
+  nextTick(() =>
+  {
+    const run = () =>
+    {
       const el = heatmapContainerRef.value
-      if (el) {
+      if (el)
+      
         el.scrollLeft = el.scrollWidth - el.clientWidth
-      }
+      
     }
-    requestAnimationFrame(() => {
+    requestAnimationFrame(() =>
+    {
       run()
       setTimeout(run, 80)
     })
   })
 }
 
-watch(viewMode, (mode) => {
+watch(viewMode, mode =>
+{
   if (mode === 'heatmap') scrollHeatmapToEnd()
 })
 
-watch(heatmapYear, () => {
+watch(heatmapYear, () =>
+{
   if (viewMode.value === 'heatmap') scrollHeatmapToEnd()
 })
 
 /** 有文章数据时，将月历默认切到最新发布月份（仅同步一次） */
 watch(
   () => articleList.value,
-  (list) => {
+  list =>
+  {
     if (list.length === 0) return
     const { year: y, month: m } = getLatestArticleYearMonth(list)
     year.value = y
@@ -209,9 +219,11 @@ watch(
 )
 
 /** 可选的年份范围：从最早文章年到当前年 */
-const yearOptions = computed(() => {
+const yearOptions = computed(() =>
+{
   const years = new Set<number>()
-  articleList.value.forEach((a: IArticle) => {
+  articleList.value.forEach((a: IArticle) =>
+  {
     const d = new Date(a.publishedAt ?? a.createdAt ?? 0)
     if (!Number.isNaN(d.getTime())) years.add(d.getFullYear())
   })
@@ -222,29 +234,39 @@ const yearOptions = computed(() => {
   return arr.length ? arr : [now.getFullYear()]
 })
 
-function prevMonth() {
-  if (month.value <= 1) {
+function prevMonth()
+{
+  if (month.value <= 1)
+  {
     year.value -= 1
     month.value = 12
-  } else {
-    month.value -= 1
   }
+  else
+  
+    month.value -= 1
+  
 }
-function nextMonth() {
-  if (month.value >= 12) {
+function nextMonth()
+{
+  if (month.value >= 12)
+  {
     year.value += 1
     month.value = 1
-  } else {
-    month.value += 1
   }
-  if (year.value > now.getFullYear() || (year.value === now.getFullYear() && month.value > now.getMonth() + 1)) {
+  else
+  
+    month.value += 1
+  
+  if (year.value > now.getFullYear() || (year.value === now.getFullYear() && month.value > now.getMonth() + 1))
+  {
     year.value = now.getFullYear()
     month.value = now.getMonth() + 1
   }
 }
 
 /** 月份下拉选项：当前年只到当前月，往年 1–12 */
-const monthOptionsForSelect = computed(() => {
+const monthOptionsForSelect = computed(() =>
+{
   const maxMonth =
     year.value === now.getFullYear() ? now.getMonth() + 1 : 12
   return Array.from({ length: maxMonth }, (_, i) => ({
@@ -256,10 +278,12 @@ const monthOptionsForSelect = computed(() => {
 /** 当选中年变为当前年且当前 month 超出当前月时，修正为当前月 */
 watch(
   () => year.value,
-  (y) => {
-    if (y === now.getFullYear() && month.value > now.getMonth() + 1) {
+  y =>
+  {
+    if (y === now.getFullYear() && month.value > now.getMonth() + 1)
+    
       month.value = now.getMonth() + 1
-    }
+    
   }
 )
 
@@ -270,41 +294,48 @@ const isCurrentMonth = computed(
     (year.value === now.getFullYear() && month.value >= now.getMonth() + 1)
 )
 
-const dayLabels = computed(() => [0, 1, 2, 3, 4, 5, 6].map((i) => t(`calendar.day${i}`)))
+const dayLabels = computed(() => [0, 1, 2, 3, 4, 5, 6].map(i => t(`calendar.day${i}`)))
 
-function formatDate(v: string | Date): string {
+function formatDate(v: string | Date): string
+{
   const d = typeof v === 'string' ? new Date(v) : v
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 /** 按日期统计文章数 */
-const dayCountMap = computed(() => {
+const dayCountMap = computed(() =>
+{
   const map: Record<string, number> = {}
-  articleList.value.forEach((a: IArticle) => {
+  articleList.value.forEach((a: IArticle) =>
+  {
     const d = formatDate(a.publishedAt ?? a.createdAt)
     map[d] = (map[d] ?? 0) + 1
   })
   return map
 })
 
-const calendarCells = computed(() => {
+const calendarCells = computed(() =>
+{
   const first = new Date(year.value, month.value - 1, 1)
   const last = new Date(year.value, month.value, 0)
   const cells: ({ day: number; dateStr: string } | null)[] = []
   for (let i = 0; i < first.getDay(); i++) cells.push(null)
-  for (let d = 1; d <= last.getDate(); d++) {
+  for (let d = 1; d <= last.getDate(); d++)
+  {
     const dateStr = `${year.value}-${String(month.value).padStart(2, '0')}-${String(d).padStart(2, '0')}`
     cells.push({ day: d, dateStr })
   }
   return cells
 })
 
-const dayArticles = computed(() => {
+const dayArticles = computed(() =>
+{
   if (!selectedDate.value) return []
   return articleList.value.filter((a: IArticle) => formatDate(a.publishedAt ?? a.createdAt) === selectedDate.value)
 })
 
-const heatmapYearRange = computed(() => {
+const heatmapYearRange = computed(() =>
+{
   const options = yearOptions.value
   return {
     min: options.length ? Math.min(...options) : now.getFullYear(),
@@ -314,19 +345,21 @@ const heatmapYearRange = computed(() => {
 const canPrevHeatmapYear = computed(() => heatmapYear.value > heatmapYearRange.value.min)
 const canNextHeatmapYear = computed(() => heatmapYear.value < heatmapYearRange.value.max)
 const heatmapYearOptions = computed(() =>
-  yearOptions.value.map((y) => ({
+  yearOptions.value.map(y => ({
     value: y,
     label: String(y),
   }))
 )
 
-function prevHeatmapYear() {
+function prevHeatmapYear()
+{
   if (!canPrevHeatmapYear.value) return
   heatmapYear.value -= 1
   heatmapSelectedDate.value = null
 }
 
-function nextHeatmapYear() {
+function nextHeatmapYear()
+{
   if (!canNextHeatmapYear.value) return
   heatmapYear.value += 1
   heatmapSelectedDate.value = null
@@ -334,46 +367,54 @@ function nextHeatmapYear() {
 
 watch(
   () => heatmapYearRange.value,
-  ({ min, max }) => {
+  ({ min, max }) =>
+  {
     if (heatmapYear.value < min) heatmapYear.value = min
     if (heatmapYear.value > max) heatmapYear.value = max
   },
   { immediate: true }
 )
 
-const heatmapEndDate = computed(() => {
+const heatmapEndDate = computed(() =>
+{
   const y = heatmapYear.value
   return y === now.getFullYear() ? now : new Date(y, 11, 31)
 })
-const heatmapValues = computed(() => {
+const heatmapValues = computed(() =>
+{
   const prefix = `${heatmapYear.value}-`
   const map: Record<string, number> = {}
-  articleList.value.forEach((a: IArticle) => {
+  articleList.value.forEach((a: IArticle) =>
+  {
     const d = formatDate(a.publishedAt ?? a.createdAt)
     if (d.startsWith(prefix)) map[d] = (map[d] ?? 0) + 1
   })
   return Object.entries(map).map(([date, count]) => ({ date, count }))
 })
 const heatmapLocale = computed(() => ({
-  months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => t(`calendar.month${m}`)),
+  months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(m => t(`calendar.month${m}`)),
   days: dayLabels.value,
   on: '', less: t('calendar.heatmapLess'), more: t('calendar.heatmapMore'),
 }))
-const heatmapDayArticles = computed(() => {
+const heatmapDayArticles = computed(() =>
+{
   if (!heatmapSelectedDate.value) return []
   return articleList.value.filter((a: IArticle) => formatDate(a.publishedAt ?? a.createdAt) === heatmapSelectedDate.value)
 })
 
-function onHeatmapDayClick(day: { date: Date }) {
+function onHeatmapDayClick(day: { date: Date })
+{
   const dateStr = formatDate(day.date)
   heatmapSelectedDate.value = heatmapSelectedDate.value === dateStr ? null : dateStr
 }
 
-function selectDay(dateStr: string) {
+function selectDay(dateStr: string)
+{
   selectedDate.value = selectedDate.value === dateStr ? null : dateStr
 }
 
-function handleClose() {
+function handleClose()
+{
   props.onClose?.()
 }
 </script>

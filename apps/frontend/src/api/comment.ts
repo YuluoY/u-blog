@@ -24,8 +24,10 @@ export interface ICommentApis {
 }
 
 const apis: ICommentApis = {
-  async getCommentList(path: string, page = 1, pageSize = COMMENT_PAGE_SIZE) {
-    try {
+  async getCommentList(path: string, page = 1, pageSize = COMMENT_PAGE_SIZE)
+  {
+    try
+    {
       const body: Parameters<typeof restQuery>[1] = {
         where: { path },
         take: pageSize,
@@ -35,11 +37,14 @@ const apis: ICommentApis = {
       }
       const list = await restQuery<IComment[]>('comment', body)
       return Array.isArray(list) ? list : []
-    } catch {
+    }
+    catch
+    {
       return []
     }
   },
-  async addComment(data) {
+  async addComment(data)
+  {
     const ret = await restAdd<{ id: number }>('comment', data)
     return ret as { id: number }
   }

@@ -93,40 +93,50 @@ const DEBOUNCE_MS = 280
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
 /** 执行搜索请求 */
-function fetchSearch() {
+function fetchSearch()
+{
   const k = keyword.value.trim()
-  if (!k) {
+  if (!k)
+  {
     resultList.value = []
     return
   }
   loading.value = true
   trackSearch(k)
   getArticleSearch(k, scope.value, 20)
-    .then((list) => {
+    .then(list =>
+    {
       resultList.value = list
     })
-    .catch(() => {
+    .catch(() =>
+    {
       resultList.value = []
     })
-    .finally(() => {
+    .finally(() =>
+    {
       loading.value = false
     })
 }
 
 /** 失焦 / 点击搜索 / Enter 时触发，防抖后发起查询 */
-function triggerSearch() {
+function triggerSearch()
+{
   if (debounceTimer) clearTimeout(debounceTimer)
-  debounceTimer = setTimeout(() => {
+  debounceTimer = setTimeout(() =>
+  {
     debounceTimer = null
     fetchSearch()
   }, DEBOUNCE_MS)
 }
 
 /** 关键词清空时只清结果，不发起请求 */
-watch(keyword, (val) => {
-  if (!val.trim()) {
+watch(keyword, val =>
+{
+  if (!val.trim())
+  {
     resultList.value = []
-    if (debounceTimer) {
+    if (debounceTimer)
+    {
       clearTimeout(debounceTimer)
       debounceTimer = null
     }
@@ -135,37 +145,42 @@ watch(keyword, (val) => {
 })
 
 /** 转义正则特殊字符 */
-function escapeRegExp(s: string): string {
+function escapeRegExp(s: string): string
+{
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 /** 转义 HTML，防止 XSS */
-function escapeHtml(s: string): string {
+function escapeHtml(s: string): string
+{
   const map: Record<string, string> = {
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;',
     '"': '&quot;',
-    "'": '&#39;',
+    '\'': '&#39;',
   }
   return s.replace(/[&<>"']/g, ch => map[ch] ?? ch)
 }
 
 /** 在文本中高亮关键词，返回安全 HTML 片段 */
-function highlightKeyword(text: string, k: string): string {
+function highlightKeyword(text: string, k: string): string
+{
   if (!k) return escapeHtml(text)
   const escaped = escapeHtml(text)
   const re = new RegExp(escapeRegExp(k), 'gi')
   return escaped.replace(re, match => `<mark class="search-panel__highlight">${match}</mark>`)
 }
 
-function handleClose() {
+function handleClose()
+{
   props.onClose?.()
 }
 
 /** 供父组件在打开面板时聚焦输入框 */
 defineExpose({
-  focusInput() {
+  focusInput()
+  {
     const root = inputRef.value?.$el
     const input = root?.querySelector?.('input') ?? root
     if (input && typeof (input as HTMLInputElement).focus === 'function') (input as HTMLInputElement).focus()

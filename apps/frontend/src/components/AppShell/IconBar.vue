@@ -180,11 +180,13 @@ const { visible: guestAdminVisible, openAdmin } = useGuestAdmin()
 /* 邮箱订阅 */
 const { openSubscribeModal } = useSubscribe()
 
-function toggle(id: PanelId) {
+function toggle(id: PanelId)
+{
   sidebarStore.setActivePanel(id)
 }
 
-function toggleLanguage() {
+function toggleLanguage()
+{
   const next = language.value === CLanguage.EN ? CLanguage.ZH : CLanguage.EN
   appStore.setLanguage(next)
 }

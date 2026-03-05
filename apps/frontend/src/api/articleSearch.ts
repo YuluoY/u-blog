@@ -24,15 +24,17 @@ export async function getArticleSearch(
   keyword: string,
   scope: SearchScope = 'all',
   limit = 20
-): Promise<ArticleSearchItem[]> {
+): Promise<ArticleSearchItem[]>
+{
   const k = (keyword ?? '').trim()
   if (!k) return []
   const res = await request.get<BackendResponse<ArticleSearchItem[]>>('/article-search', {
     params: { keyword: k, scope, limit },
   })
   const payload = res.data
-  if (payload.code !== 0) {
+  if (payload.code !== 0)
+  
     throw new Error(payload.message || '搜索失败')
-  }
+  
   return Array.isArray(payload.data) ? payload.data : []
 }

@@ -99,7 +99,8 @@ useScrollRestore('.layout-base__main')
 
 /* ---- 全局加载进度条：注册实例到 composable，供 axios 拦截器调用 ---- */
 const progressBarRefEl = ref<UProgressBarExposes | null>(null)
-watch(progressBarRefEl, (instance) => {
+watch(progressBarRefEl, instance =>
+{
   registerProgressBar(instance)
 }, { immediate: true })
 
@@ -118,7 +119,8 @@ const iconBarWrapStyle = computed(() => ({
 }))
 
 /** Side Panel：展开时固定宽度，折叠/无面板时宽度为 0 */
-const sidePanelWrapStyle = computed(() => {
+const sidePanelWrapStyle = computed(() =>
+{
   const visible = isSidePanelVisible.value
   return {
     width: visible ? pxToRem(SIDE_PANEL_WIDTH_PX) : '0',

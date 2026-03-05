@@ -16,17 +16,21 @@ let _currentUserId: string | number | null = null
 let _dbPromise: Promise<IDBDatabase> | null = null
 
 /** 切换当前用户（登录/退出时调用） */
-export function setCurrentUser(userId: string | number | null): void {
+export function setCurrentUser(userId: string | number | null): void
+{
   if (_currentUserId === userId) return
   _currentUserId = userId
-  if (_dbPromise) {
-    _dbPromise.then(db => db.close()).catch(() => {})
+  if (_dbPromise)
+  {
+    _dbPromise.then(db => db.close()).catch(() =>
+    {})
     _dbPromise = null
   }
 }
 
 /** 获取当前数据库名称（含用户 ID 隔离后缀） */
-function getDBName(): string {
+function getDBName(): string
+{
   return _currentUserId ? `${DB_PREFIX}-${_currentUserId}` : DB_PREFIX
 }
 
@@ -51,25 +55,31 @@ export interface PublishSettingsRecord {
   updatedAt: number
 }
 
-function openDB(): Promise<IDBDatabase> {
+function openDB(): Promise<IDBDatabase>
+{
   if (_dbPromise) return _dbPromise
-  _dbPromise = new Promise((resolve, reject) => {
+  _dbPromise = new Promise((resolve, reject) =>
+  {
     const req = indexedDB.open(getDBName(), DB_VERSION)
-    req.onerror = () => {
+    req.onerror = () =>
+    {
       _dbPromise = null
       reject(req.error)
     }
     req.onsuccess = () => resolve(req.result)
-    req.onupgradeneeded = (e) => {
+    req.onupgradeneeded = e =>
+    {
       const db = (e.target as IDBOpenDBRequest).result
       // v1 创建的 drafts store 保留
-      if (!db.objectStoreNames.contains('drafts')) {
+      if (!db.objectStoreNames.contains('drafts'))
+      
         db.createObjectStore('drafts', { keyPath: 'id' })
-      }
+      
       // v2 新增 publish-settings store
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
+      if (!db.objectStoreNames.contains(STORE_NAME))
+      
         db.createObjectStore(STORE_NAME, { keyPath: 'id' })
-      }
+      
     }
   })
   return _dbPromise
@@ -78,9 +88,11 @@ function openDB(): Promise<IDBDatabase> {
 /**
  * 读取当前发布配置
  */
-export async function getPublishSettings(): Promise<PublishSettingsRecord | null> {
+export async function getPublishSettings(): Promise<PublishSettingsRecord | null>
+{
   const db = await openDB()
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) =>
+  {
     const tx = db.transaction(STORE_NAME, 'readonly')
     const store = tx.objectStore(STORE_NAME)
     const req = store.get(CURRENT_KEY)
@@ -94,14 +106,16 @@ export async function getPublishSettings(): Promise<PublishSettingsRecord | null
  */
 export async function putPublishSettings(
   data: Omit<PublishSettingsRecord, 'id' | 'updatedAt'>
-): Promise<void> {
+): Promise<void>
+{
   const db = await openDB()
   const record: PublishSettingsRecord = {
     ...data,
     id: CURRENT_KEY,
     updatedAt: Date.now(),
   }
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) =>
+  {
     const tx = db.transaction(STORE_NAME, 'readwrite')
     const store = tx.objectStore(STORE_NAME)
     const req = store.put(record)
@@ -113,9 +127,11 @@ export async function putPublishSettings(
 /**
  * 清除发布配置（发布成功后调用）
  */
-export async function clearPublishSettings(): Promise<void> {
+export async function clearPublishSettings(): Promise<void>
+{
   const db = await openDB()
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) =>
+  {
     const tx = db.transaction(STORE_NAME, 'readwrite')
     const store = tx.objectStore(STORE_NAME)
     const req = store.delete(CURRENT_KEY)

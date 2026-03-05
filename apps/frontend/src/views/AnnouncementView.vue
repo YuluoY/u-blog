@@ -56,7 +56,8 @@ const loading = ref(true)
 const isDark = computed(() => appStore.theme === CTheme.DARK)
 
 /** 格式化日期 */
-function formatDate(dateStr?: string) {
+function formatDate(dateStr?: string)
+{
   if (!dateStr) return ''
   return new Date(dateStr).toLocaleDateString('zh-CN', {
     year: 'numeric',
@@ -65,15 +66,20 @@ function formatDate(dateStr?: string) {
   })
 }
 
-onMounted(async () => {
+onMounted(async() =>
+{
   const id = Number(route.params.id)
-  if (!id || isNaN(id)) {
+  if (!id || isNaN(id))
+  {
     loading.value = false
     return
   }
-  try {
+  try
+  {
     announcement.value = await fetchAnnouncementById(id)
-  } catch {
+  }
+  catch
+  {
     // 获取失败
   }
   loading.value = false
