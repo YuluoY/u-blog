@@ -138,6 +138,18 @@
 
         <div class="setting-group">
           <div class="setting-form">
+            <!-- 厂商选择 -->
+            <div class="setting-form__item">
+              <label class="setting-form__label">{{ t('settings.selectProvider') }}</label>
+              <u-select
+                :model-value="selectedProvider"
+                :options="providerOptions"
+                :placeholder="t('settings.selectProvider')"
+                class="setting-form__input"
+                @change="handleProviderChange($event as string)"
+              />
+            </div>
+
             <div class="setting-form__item">
               <label class="setting-form__label">{{ t('settings.openaiKey') }}</label>
               <u-input
@@ -161,7 +173,17 @@
 
             <div class="setting-form__item">
               <label class="setting-form__label">{{ t('settings.modelName') }}</label>
+              <!-- 有预设模型时显示下拉，否则显示文本输入 -->
+              <u-select
+                v-if="modelOptions.length"
+                :model-value="form.openai_model"
+                :options="modelOptions"
+                :placeholder="t('settings.selectModel')"
+                class="setting-form__input"
+                @change="handleModelSelect($event as string)"
+              />
               <u-input
+                v-else
                 v-model="form.openai_model"
                 type="text"
                 :placeholder="t('settings.modelPlaceholder')"
@@ -442,6 +464,7 @@ import { getSettings, updateSettings } from '@/api/settings'
 import { uploadFile } from '@/api/request'
 import { SETTING_KEYS, MASKED_SETTING_KEYS } from '@/constants/settings'
 import { encryptForTransport } from '@/utils/transportCrypto'
+import { AI_PROVIDERS, findProvider, matchProviderByUrl } from '@/constants/aiProviders'
 import type { HomeSortType } from '@/api/article'
 import { HOME_SORT_DEFAULT } from '@/api/article'
 
@@ -508,6 +531,39 @@ const savingSite = ref(false)
 const savingBlog = ref(false)
 const uploadingFavicon = ref(false)
 const faviconInputRef = ref<HTMLInputElement | null>(null)
+
+/** 厂商选择 */
+const selectedProvider = ref<string>('custom')
+const providerModels = computed(() =>
+{
+  const p = findProvider(selectedProvider.value)
+  return p?.models ?? []
+})
+/** 厂商下拉选项 */
+const providerOptions = computed(() =>
+  [...AI_PROVIDERS.map(p => ({ value: p.key, label: p.label })), { value: 'custom', label: '自定义' }]
+)
+/** 模型下拉选项 */
+const modelOptions = computed(() =>
+  providerModels.value.map(m => ({ value: m.id, label: m.desc ? `${m.label}（${m.desc}）` : m.label }))
+)
+
+/** 切换厂商：自动填入 baseUrl 与默认模型 */
+function handleProviderChange(key: string)
+{
+  selectedProvider.value = key
+  if (key === 'custom') return
+  const p = findProvider(key)
+  if (!p) return
+  form.openai_base_url = p.baseUrl
+  form.openai_model = p.defaultModel
+}
+
+/** 从预设模型列表中选择 */
+function handleModelSelect(modelId: string)
+{
+  form.openai_model = modelId
+}
 /** favicon 图片加载失败标记（URL 无效时 fallback 为空状态图标） */
 const faviconLoadError = ref(false)
 
@@ -652,6 +708,10 @@ async function loadServerSettings()
   if (ctxVal != null) form.openai_context_length = Number(ctxVal) || 20
   const promptVal = data[SETTING_KEYS.OPENAI_SYSTEM_PROMPT]?.value
   if (typeof promptVal === 'string') form.openai_system_prompt = promptVal
+
+  // 根据 baseUrl 自动匹配厂商
+  const matched = matchProviderByUrl(form.openai_base_url)
+  selectedProvider.value = matched?.key ?? 'custom'
 
   // 博客偏好
   const oaVal = data[SETTING_KEYS.ONLY_OWN_ARTICLES]?.value

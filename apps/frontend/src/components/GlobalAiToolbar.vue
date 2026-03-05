@@ -11,6 +11,7 @@
         v-if="toolbarVisible"
         ref="toolbarRef"
         class="global-ai-toolbar"
+        :class="{ 'global-ai-toolbar--flipped': toolbarFlipped }"
         :style="toolbarStyle"
         @mousedown.prevent
       >
@@ -32,40 +33,6 @@
         </div>
       </div>
     </Transition>
-
-    <!-- AI 结果浮动面板（AI 生成完成后展示） -->
-    <Transition name="global-ai-result-fade">
-      <div
-        v-if="showResult"
-        ref="resultPanelRef"
-        class="global-ai-result"
-        :style="resultStyle"
-        @mousedown.prevent
-      >
-        <div class="global-ai-result__header">
-          <span class="global-ai-result__title">
-            <u-icon icon="fa-solid fa-wand-magic-sparkles" />
-            {{ resultActionLabel }}
-          </span>
-          <button class="global-ai-result__close" @click="closeResult" :aria-label="t('common.close')">
-            <u-icon icon="fa-solid fa-xmark" />
-          </button>
-        </div>
-        <div class="global-ai-result__body">
-          <div class="global-ai-result__text">{{ resultText }}</div>
-        </div>
-        <div class="global-ai-result__footer">
-          <button class="global-ai-result__btn" @click="copyResult">
-            <u-icon icon="fa-solid fa-copy" />
-            <span>{{ t('ai.copyResult') }}</span>
-          </button>
-          <button class="global-ai-result__btn global-ai-result__btn--primary" @click="replaceAndClose">
-            <u-icon icon="fa-solid fa-arrow-right-arrow-left" />
-            <span>{{ t('ai.replaceText') }}</span>
-          </button>
-        </div>
-      </div>
-    </Transition>
   </Teleport>
 </template>
 
@@ -76,28 +43,73 @@ import { UMessageFn } from '@u-blog/ui'
 import { useAiGenerate, type AiAction } from '@/composables/useAiGenerate'
 import { getSettings } from '@/api/settings'
 import { SETTING_KEYS } from '@/constants/settings'
+import { loadGuestAiConfig, hasGuestAiConfig, getActiveEntry } from '@/utils/guestCrypto'
+import type { GuestAiConfig, GuestProviderEntry } from '@/utils/guestCrypto'
+import { findProvider } from '@/constants/aiProviders'
+import { encryptForTransport } from '@/utils/transportCrypto'
+import { useUserStore } from '@/stores/model/user'
 
 defineOptions({ name: 'GlobalAiToolbar' })
 
 const { t } = useI18n()
 const { generating: aiLoading, generate: aiGenerate } = useAiGenerate()
+const userStore = useUserStore()
 
 const HIDE_DELAY = 200
 const MIN_SELECT_LEN = 1
 
-/* ─── AI 模型配置检测 ─── */
+/* ─── AI 模型配置检测（支持登录用户 + 游客本地配置） ─── */
 const aiConfigured = ref(false)
+/** 游客缓存的完整配置（运行时解密后保持在内存中） */
+let guestConfig: GuestAiConfig | null = null
+/** 游客当前激活厂商的有效条目（快速访问，避免每次查找） */
+let guestActiveEntry: GuestProviderEntry | null = null
+/** 游客当前激活厂商的 key */
+let guestActiveProvider = ''
 
 async function checkAiConfigured()
 {
-  try
+  // 登录用户：检查服务端配置
+  if (userStore.isLoggedIn)
   {
-    const data = await getSettings([SETTING_KEYS.OPENAI_API_KEY])
-    const item = data[SETTING_KEYS.OPENAI_API_KEY]
-    aiConfigured.value = !!(item?.masked || (item?.value && String(item.value).trim()))
+    try
+    {
+      const data = await getSettings([SETTING_KEYS.OPENAI_API_KEY])
+      const item = data[SETTING_KEYS.OPENAI_API_KEY]
+      aiConfigured.value = !!(item?.masked || (item?.value && String(item.value).trim()))
+    }
+    catch
+    {
+      aiConfigured.value = false
+    }
+    guestConfig = null
+    guestActiveEntry = null
+    guestActiveProvider = ''
+    return
   }
-  catch
+
+  // 游客：检查 localStorage 加密配置
+  if (hasGuestAiConfig())
   {
+    guestConfig = await loadGuestAiConfig()
+    if (guestConfig)
+    {
+      guestActiveEntry = getActiveEntry(guestConfig)
+      guestActiveProvider = guestConfig.activeProvider
+      aiConfigured.value = !!guestActiveEntry
+    }
+    else
+    {
+      guestActiveEntry = null
+      guestActiveProvider = ''
+      aiConfigured.value = false
+    }
+  }
+  else
+  {
+    guestConfig = null
+    guestActiveEntry = null
+    guestActiveProvider = ''
     aiConfigured.value = false
   }
 }
@@ -119,29 +131,20 @@ const aiActions = computed<ActionItem[]>(() => [
   { key: 'explain', icon: 'fa-solid fa-lightbulb', label: t('ai.explain') },
   { key: 'polish', icon: 'fa-solid fa-wand-magic-sparkles', label: t('ai.polish') },
   { key: 'condense', icon: 'fa-solid fa-compress', label: t('ai.condense') },
+  { key: 'expand', icon: 'fa-solid fa-expand', label: t('ai.expand') },
+  { key: 'continue', icon: 'fa-solid fa-forward', label: t('ai.continue') },
 ])
 
 /* ─── 工具条可见性与定位 ─── */
 const toolbarVisible = ref(false)
 const toolbarPos = ref({ top: 0, left: 0 })
+const toolbarFlipped = ref(false)
 const selectedText = ref('')
 let hideTimer: ReturnType<typeof setTimeout> | null = null
 
 const toolbarStyle = computed(() => ({
   top: `${toolbarPos.value.top}px`,
   left: `${toolbarPos.value.left}px`,
-}))
-
-/* ─── 结果面板状态 ─── */
-const showResult = ref(false)
-const resultText = ref('')
-const resultActionLabel = ref('')
-const resultPos = ref({ top: 0, left: 0 })
-const resultPanelRef = ref<HTMLElement | null>(null)
-
-const resultStyle = computed(() => ({
-  top: `${resultPos.value.top}px`,
-  left: `${resultPos.value.left}px`,
 }))
 
 /** 记录选中时的上下文，用于替换 */
@@ -218,16 +221,70 @@ function getInputSelection(el: HTMLInputElement | HTMLTextAreaElement): string
   return el.value.slice(start, end)
 }
 
+/**
+ * 计算 textarea/input 中选区的视口坐标
+ * 通过镜像 div 测量选中文本在输入框内的精确位置
+ */
+function getInputSelectionRect(el: HTMLInputElement | HTMLTextAreaElement)
+{
+  const start = el.selectionStart ?? 0
+  const end = el.selectionEnd ?? 0
+  if (start === end) return null
+
+  const cs = getComputedStyle(el)
+  const mirror = document.createElement('div')
+  const copyProps = [
+    'font', 'letterSpacing', 'wordSpacing', 'textIndent', 'textTransform',
+    'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
+    'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth',
+    'boxSizing', 'lineHeight',
+  ]
+  for (const p of copyProps)
+    (mirror.style as any)[p] = (cs as any)[p]
+
+  Object.assign(mirror.style, {
+    position: 'fixed',
+    visibility: 'hidden',
+    whiteSpace: el instanceof HTMLTextAreaElement ? 'pre-wrap' : 'pre',
+    wordWrap: el instanceof HTMLTextAreaElement ? 'break-word' : 'normal',
+    overflow: 'hidden',
+    width: cs.width,
+    top: '0',
+    left: '0',
+  })
+
+  const span = document.createElement('span')
+  span.textContent = el.value.substring(start, end) || '\u200b'
+  mirror.append(
+    document.createTextNode(el.value.substring(0, start)),
+    span,
+    document.createTextNode(el.value.substring(end)),
+  )
+
+  document.body.appendChild(mirror)
+  mirror.scrollTop = el.scrollTop
+
+  const elRect = el.getBoundingClientRect()
+  const mirrorRect = mirror.getBoundingClientRect()
+  const spanRect = span.getBoundingClientRect()
+  document.body.removeChild(mirror)
+
+  return {
+    top: elRect.top + (spanRect.top - mirrorRect.top) - el.scrollTop,
+    bottom: elRect.top + (spanRect.bottom - mirrorRect.top) - el.scrollTop,
+    left: elRect.left + (spanRect.left - mirrorRect.left) - el.scrollLeft,
+    width: spanRect.width,
+  }
+}
+
 function handleMouseUp(e: MouseEvent)
 {
   if (!aiConfigured.value || aiLoading.value) return
 
-  // 判断事件目标是否在 toolbar/result 面板内——如果是，不处理
   const target = e.target as HTMLElement
-  if (target.closest('.global-ai-toolbar') || target.closest('.global-ai-result'))
+  if (target.closest('.global-ai-toolbar'))
     return
 
-  // 优先检查 textarea / input 选区
   const activeEl = document.activeElement
   const inputEl = (activeEl instanceof HTMLTextAreaElement || activeEl instanceof HTMLInputElement)
     ? activeEl as HTMLInputElement | HTMLTextAreaElement
@@ -238,10 +295,12 @@ function handleMouseUp(e: MouseEvent)
     const text = getInputSelection(inputEl)
     if (text.trim().length >= MIN_SELECT_LEN && !isInsideWriteEditor(inputEl))
     {
-      // 用鼠标松开位置定位工具条，使其贴近实际选中文本
+      // 通过镜像 div 精确测量选区位置，工具条居中显示在选区正上方
+      const selRect = getInputSelectionRect(inputEl)
+      const fallbackRect = inputEl.getBoundingClientRect()
       showToolbar(text, {
-        top: e.clientY + window.scrollY - 8,
-        left: e.clientX + window.scrollX,
+        top: (selRect ? selRect.top : fallbackRect.top) + window.scrollY - 8,
+        left: (selRect ? selRect.left + selRect.width / 2 : fallbackRect.left + fallbackRect.width / 2) + window.scrollX,
       })
       savedInput = inputEl
       savedSelStart = inputEl.selectionStart ?? 0
@@ -265,6 +324,7 @@ function handleMouseUp(e: MouseEvent)
   const range = selection.getRangeAt(0)
   const rect = range.getBoundingClientRect()
 
+  // 工具条居中显示在选区正上方
   showToolbar(text, {
     top: rect.top + window.scrollY - 8,
     left: rect.left + window.scrollX + rect.width / 2,
@@ -280,11 +340,12 @@ function showToolbar(text: string, pos: { top: number; left: number })
   clearHideTimer()
   selectedText.value = text
   toolbarPos.value = pos
+  toolbarFlipped.value = false
   toolbarVisible.value = true
   nextTick(adjustToolbarPosition)
 }
 
-/** 调整工具条位置，防止超出视口 */
+/** 调整工具条位置，防止超出视口（上下左右） */
 function adjustToolbarPosition()
 {
   const el = toolbarRef.value
@@ -302,15 +363,22 @@ function adjustToolbarPosition()
   if (rect.right > vw - MARGIN)
     toolbarPos.value.left -= rect.right - vw + MARGIN
 
-  // 顶部超出（工具条在选区上方，可能溢出顶部）
+  // 顶部超出（工具条在选区上方，可能溢出顶部）——翻转到选区下方
   if (rect.top < MARGIN)
-    toolbarPos.value.top += rect.height + 16 // 翻转到下方
+  {
+    toolbarPos.value.top += rect.height + 24
+    toolbarFlipped.value = true
+  }
+
+  // 底部超出（翻转后可能溢出底部）
+  if (rect.bottom > window.innerHeight - MARGIN)
+    toolbarPos.value.top -= rect.bottom - window.innerHeight + MARGIN
 }
 
 /** 选区变化监听：选区清空时延迟隐藏 */
 function handleSelectionChange()
 {
-  if (aiLoading.value || showResult.value) return
+  if (aiLoading.value) return
 
   // 检查 contenteditable 选区
   const selection = window.getSelection()
@@ -348,100 +416,32 @@ function clearHideTimer()
   }
 }
 
-/* ─── AI 操作处理 ─── */
+/* ─── AI 操作处理（直接替换选中内容） ─── */
 
-async function handleAction(key: string)
+/** 替换选中文本（textarea/input 或 contenteditable） */
+function replaceSelectedText(newText: string)
 {
-  if (!selectedText.value) return
-
-  const text = selectedText.value
-  // 隐藏工具条，但保持 selectedText 以便后续替换
-  toolbarVisible.value = false
-
-  const actionLabels: Record<string, () => string> = {
-    translate: () => t('ai.translate'),
-    explain: () => t('ai.explain'),
-    polish: () => t('ai.polish'),
-    condense: () => t('ai.condense'),
-  }
-  resultActionLabel.value = actionLabels[key]?.() ?? key
-
-  // 记录结果面板位置（选区下方）
-  resultPos.value = {
-    top: toolbarPos.value.top + 40,
-    left: toolbarPos.value.left,
-  }
-
-  const result = await aiGenerate(key as AiAction, text)
-  if (!result) return
-
-  resultText.value = result
-  showResult.value = true
-  await nextTick()
-  adjustResultPanelPosition()
-}
-
-/** 调整结果面板位置，防止超出视口 */
-function adjustResultPanelPosition()
-{
-  const panel = resultPanelRef.value
-  if (!panel) return
-
-  const rect = panel.getBoundingClientRect()
-  const vw = window.innerWidth
-  const vh = window.innerHeight
-
-  if (rect.right > vw - 16)
-    resultPos.value.left -= rect.right - vw + 16
-
-  if (rect.left < 16)
-    resultPos.value.left += 16 - rect.left
-
-  if (rect.bottom > vh - 16)
-    resultPos.value.top -= rect.height + 56
-}
-
-/** 复制结果到剪贴板 */
-async function copyResult()
-{
-  try
-  {
-    await navigator.clipboard.writeText(resultText.value)
-    UMessageFn({ message: t('ai.copiedToClipboard'), type: 'success' })
-  }
-  catch
-  {
-    UMessageFn({ message: t('ai.copyFailed'), type: 'error' })
-  }
-}
-
-/** 替换原文并关闭结果面板 */
-function replaceAndClose()
-{
-  // textarea / input 替换
   if (savedInput)
   {
     try
     {
       savedInput.focus()
       savedInput.setSelectionRange(savedSelStart, savedSelEnd)
-      document.execCommand('insertText', false, resultText.value)
+      document.execCommand('insertText', false, newText)
       UMessageFn({ message: t('ai.replaced'), type: 'success' })
     }
     catch
     {
-      // 回退方案：直接修改 value
       const before = savedInput.value.slice(0, savedSelStart)
       const after = savedInput.value.slice(savedSelEnd)
-      savedInput.value = before + resultText.value + after
+      savedInput.value = before + newText + after
       savedInput.dispatchEvent(new Event('input', { bubbles: true }))
       UMessageFn({ message: t('ai.replaced'), type: 'success' })
     }
-    closeResult()
+    savedInput = null
     return
   }
 
-  // contenteditable 替换
   if (savedRange)
   {
     try
@@ -449,34 +449,46 @@ function replaceAndClose()
       const selection = window.getSelection()
       selection?.removeAllRanges()
       selection?.addRange(savedRange)
-      document.execCommand('insertText', false, resultText.value)
+      document.execCommand('insertText', false, newText)
       UMessageFn({ message: t('ai.replaced'), type: 'success' })
     }
     catch
     {
       UMessageFn({ message: t('ai.replaceFailed'), type: 'error' })
     }
+    savedRange = null
   }
-  closeResult()
 }
 
-/** 关闭结果面板 */
-function closeResult()
+async function handleAction(key: string)
 {
-  showResult.value = false
-  resultText.value = ''
-  savedRange = null
-  savedInput = null
-}
+  if (!selectedText.value) return
 
-/** 点击面板外关闭 */
-function handleDocClick(e: MouseEvent)
-{
-  const target = e.target as HTMLElement
-  if (target.closest('.global-ai-result') || target.closest('.global-ai-toolbar'))
-    return
+  const text = selectedText.value
+  // 工具条保持可见，模板自动切换为 loading 态（v-if="aiLoading"）
 
-  if (showResult.value) closeResult()
+  // 游客使用本地配置（按厂商取对应的 API Key，加密传输到后端）
+  let inlineConfig: { apiKey: string; baseUrl?: string; model?: string } | undefined
+  if (!userStore.isLoggedIn && guestActiveEntry)
+  {
+    const p = findProvider(guestActiveProvider)
+    inlineConfig = {
+      apiKey: await encryptForTransport(guestActiveEntry.apiKey),
+      baseUrl: guestActiveEntry.baseUrl ?? p?.baseUrl,
+      model: guestActiveEntry.model,
+    }
+  }
+
+  const result = await aiGenerate(key as AiAction, text, inlineConfig)
+
+  // 隐藏工具条
+  toolbarVisible.value = false
+  selectedText.value = ''
+
+  if (!result) return
+
+  // 替换选中内容
+  replaceSelectedText(result)
 }
 
 /* ─── 事件绑定生命周期 ─── */
@@ -484,20 +496,18 @@ onMounted(() =>
 {
   document.addEventListener('mouseup', handleMouseUp)
   document.addEventListener('selectionchange', handleSelectionChange)
-  document.addEventListener('mousedown', handleDocClick)
 })
 
 onBeforeUnmount(() =>
 {
   document.removeEventListener('mouseup', handleMouseUp)
   document.removeEventListener('selectionchange', handleSelectionChange)
-  document.removeEventListener('mousedown', handleDocClick)
   clearHideTimer()
 })
 </script>
 
 <style lang="scss">
-/* ========== 全站 AI 浮动工具条 ========== */
+/* ========== 全站 AI 浮动工具条（选区正上方弹出） ========== */
 .global-ai-toolbar {
   position: absolute;
   z-index: 10010;
@@ -512,7 +522,7 @@ onBeforeUnmount(() =>
   padding: 4px;
   gap: 2px;
 
-  /* 底部小三角 */
+  /* 底部小三角（指向选区） */
   &::after {
     content: '';
     position: absolute;
@@ -523,6 +533,19 @@ onBeforeUnmount(() =>
     border-right: 6px solid transparent;
     border-top: 6px solid var(--u-background-1, #fff);
     filter: drop-shadow(0 1px 0 var(--u-border-2, #e0e0e0));
+  }
+
+  /* 翻转态：工具条在选区下方 */
+  &--flipped {
+    transform: translate(-50%, 0);
+
+    &::after {
+      bottom: auto;
+      top: -6px;
+      border-top: none;
+      border-bottom: 6px solid var(--u-background-1, #fff);
+      filter: drop-shadow(0 -1px 0 var(--u-border-2, #e0e0e0));
+    }
   }
 
   &__loading {
@@ -583,126 +606,9 @@ onBeforeUnmount(() =>
   transform: translate(-50%, -100%) translateY(4px);
 }
 
-/* ========== AI 结果浮动面板 ========== */
-.global-ai-result {
-  position: absolute;
-  z-index: 10010;
-  transform: translateX(-50%);
-  width: 360px;
-  max-width: calc(100vw - 32px);
-  max-height: 50vh;
-  display: flex;
-  flex-direction: column;
-  background: var(--u-background-1, #fff);
-  border: 1px solid var(--u-border-2, #e0e0e0);
-  border-radius: 12px;
-  box-shadow: var(--u-shadow-3, 0 4px 16px rgba(0, 0, 0, 0.12));
-  overflow: hidden;
-  pointer-events: auto;
-
-  &__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--u-border-1, #f0f0f0);
-    flex-shrink: 0;
-  }
-
-  &__title {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--u-text-1, #333);
-  }
-
-  &__close {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border: none;
-    background: transparent;
-    color: var(--u-text-3, #999);
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s;
-
-    &:hover {
-      background: var(--u-background-3, #f5f5f5);
-      color: var(--u-text-1, #333);
-    }
-  }
-
-  &__body {
-    flex: 1;
-    overflow-y: auto;
-    padding: 12px 14px;
-  }
-
-  &__text {
-    font-size: 14px;
-    line-height: 1.7;
-    color: var(--u-text-1, #333);
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-
-  &__footer {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 14px;
-    border-top: 1px solid var(--u-border-1, #f0f0f0);
-    flex-shrink: 0;
-  }
-
-  &__btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 5px 12px;
-    font-size: 12px;
-    border: 1px solid var(--u-border-2, #e0e0e0);
-    border-radius: 6px;
-    background: var(--u-background-1, #fff);
-    color: var(--u-text-2, #666);
-    cursor: pointer;
-    transition: background 0.15s, border-color 0.15s, color 0.15s;
-
-    &:hover {
-      background: var(--u-background-3, #f5f5f5);
-      border-color: var(--u-border-3, #ccc);
-      color: var(--u-text-1, #333);
-    }
-
-    &--primary {
-      background: var(--u-primary, #409eff);
-      border-color: var(--u-primary, #409eff);
-      color: #fff;
-
-      &:hover {
-        background: var(--u-primary-light-2, #66b1ff);
-        border-color: var(--u-primary-light-2, #66b1ff);
-        color: #fff;
-      }
-    }
-  }
-}
-
-/* ---- 结果面板过渡 ---- */
-.global-ai-result-fade-enter-active,
-.global-ai-result-fade-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-.global-ai-result-fade-enter-from,
-.global-ai-result-fade-leave-to {
-  opacity: 0;
-  transform: translateX(-50%) translateY(-4px);
+.global-ai-toolbar--flipped.global-ai-toolbar-fade-enter-from,
+.global-ai-toolbar--flipped.global-ai-toolbar-fade-leave-to {
+  transform: translate(-50%, 0) translateY(-4px);
 }
 
 /* ---- 移动端适配 ---- */
@@ -713,12 +619,6 @@ onBeforeUnmount(() =>
 
   .global-ai-toolbar__btn span {
     display: none;
-  }
-
-  .global-ai-result {
-    width: calc(100vw - 32px);
-    left: 16px !important;
-    transform: none;
   }
 }
 </style>

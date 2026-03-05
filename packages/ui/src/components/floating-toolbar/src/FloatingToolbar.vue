@@ -8,7 +8,9 @@
     <Transition name="u-floating-toolbar-fade">
       <div
         v-if="visible && selectedText"
+        ref="toolbarRef"
         class="u-floating-toolbar"
+        :class="{ 'u-floating-toolbar--flipped': flipped }"
         :style="positionStyle"
         @mousedown.prevent
       >
@@ -26,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import type { UFloatingToolbarProps, UFloatingToolbarEmits } from '../types'
 import {
   CFloatingToolbarHideDelay,
@@ -53,6 +55,8 @@ const emit = defineEmits<UFloatingToolbarEmits>()
 const visible = ref(false)
 const selectedText = ref('')
 const pos = ref({ top: 0, left: 0 })
+const flipped = ref(false)
+const toolbarRef = ref<HTMLElement | null>(null)
 let hideTimer: ReturnType<typeof setTimeout> | null = null
 
 /** 动态定位样式 */
@@ -82,6 +86,7 @@ function handleMouseUp() {
   const rect = range.getBoundingClientRect()
 
   selectedText.value = text
+  flipped.value = false
   pos.value = {
     top: rect.top + window.scrollY - 8,
     left: rect.left + window.scrollX + rect.width / 2,
@@ -89,6 +94,39 @@ function handleMouseUp() {
 
   clearHideTimer()
   visible.value = true
+  nextTick(adjustPosition)
+}
+
+/** 调整工具条位置，防止超出视口（上下左右） */
+function adjustPosition()
+{
+  const el = toolbarRef.value
+  if (!el) return
+
+  const rect = el.getBoundingClientRect()
+  const vw = window.innerWidth
+  const MARGIN = 8
+
+  // 左侧超出
+  if (rect.left < MARGIN)
+    pos.value.left += MARGIN - rect.left
+
+  // 右侧超出
+  if (rect.right > vw - MARGIN)
+    pos.value.left -= rect.right - vw + MARGIN
+
+  // 顶部超出 → 翻转到选区下方
+  if (rect.top < MARGIN)
+  {
+    pos.value.top += rect.height + 24
+    flipped.value = true
+  }
+
+  // 底部超出（翻转后可能溢出底部）
+  if (rect.bottom > window.innerHeight - MARGIN)
+  {
+    pos.value.top -= rect.bottom - window.innerHeight + MARGIN
+  }
 }
 
 /** 选区变化监听：选区清空时延迟隐藏 */

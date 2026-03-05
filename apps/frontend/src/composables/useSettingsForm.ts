@@ -4,12 +4,16 @@ import { storeToRefs } from 'pinia'
 import { UMessageFn } from '@u-blog/ui'
 import { useAppStore } from '@/stores/app'
 import { useArticleStore } from '@/stores/model/article'
+import { useUserStore } from '@/stores/model/user'
 import { CArticleList } from '@/types/const'
 import type { ArticleList } from '@/types'
 import { getSettings, updateSettings } from '@/api/settings'
 import { uploadFile } from '@/api/request'
 import { SETTING_KEYS, MASKED_SETTING_KEYS } from '@/constants/settings'
 import { encryptForTransport } from '@/utils/transportCrypto'
+import { saveGuestAiConfig, loadGuestAiConfig, getActiveEntry } from '@/utils/guestCrypto'
+import type { GuestAiConfig } from '@/utils/guestCrypto'
+import { AI_PROVIDERS, matchProviderByUrl, findProvider } from '@/constants/aiProviders'
 import type { HomeSortType } from '@/api/article'
 import { HOME_SORT_DEFAULT } from '@/api/article'
 
@@ -19,7 +23,11 @@ export function useSettingsForm()
   const { t } = useI18n()
   const appStore = useAppStore()
   const articleStore = useArticleStore()
+  const userStore = useUserStore()
   const { theme, language, visualStyle, articleListType, homeSort } = storeToRefs(appStore)
+
+  /** 是否为登录用户 */
+  const isLoggedIn = computed(() => userStore.isLoggedIn)
 
   const currentListType = ref<ArticleList>(CArticleList.BASE)
   const listTypeOptions = computed(() => [
@@ -46,6 +54,75 @@ export function useSettingsForm()
     site_keywords: '',
     site_favicon: '',
   })
+
+  /* ─── 厂商预设 ─── */
+  /** 当前选中的厂商 key（'custom' 为自定义） */
+  const selectedProvider = ref<string>('custom')
+  /** 当前厂商的可选模型列表 */
+  const providerModels = computed(() =>
+  {
+    const p = findProvider(selectedProvider.value)
+    return p?.models ?? []
+  })
+  /** 厂商下拉选项（供 u-select 使用） */
+  const providerOptions = computed(() =>
+    [...AI_PROVIDERS.map(p => ({ value: p.key, label: p.label })), { value: 'custom', label: '自定义' }]
+  )
+  /** 模型下拉选项（供 u-select 使用） */
+  const modelOptions = computed(() =>
+    providerModels.value.map(m => ({ value: m.id, label: m.desc ? `${m.label}（${m.desc}）` : m.label }))
+  )
+  /** 运行时缓存：各厂商已填入的配置（还未保存时也能记住） */
+  const providerDraftCache: Record<string, { apiKey: string; model: string; baseUrl?: string }> = {}
+
+  /** 缓存当前表单值到 draft */
+  function cacheDraft()
+  {
+    const key = selectedProvider.value
+    providerDraftCache[key] = {
+      apiKey: form.openai_api_key,
+      model: form.openai_model,
+      ...(key === 'custom' ? { baseUrl: form.openai_base_url } : {}),
+    }
+  }
+
+  /** 厂商切换：先缓存当前 → 切换 → 恢复目标厂商的 draft 或预设 */
+  function handleProviderChange(providerKey: string)
+  {
+    // 缓存当前厂商的填写内容
+    cacheDraft()
+    selectedProvider.value = providerKey
+
+    // 恢复目标厂商缓存
+    const draft = providerDraftCache[providerKey]
+    if (draft)
+    {
+      form.openai_api_key = draft.apiKey
+      form.openai_model = draft.model
+      form.openai_base_url = draft.baseUrl ?? findProvider(providerKey)?.baseUrl ?? ''
+      return
+    }
+
+    // 无缓存：填预设值
+    if (providerKey === 'custom')
+    {
+      form.openai_api_key = ''
+      form.openai_base_url = ''
+      form.openai_model = ''
+      return
+    }
+    const p = findProvider(providerKey)
+    if (!p) return
+    form.openai_api_key = ''
+    form.openai_base_url = p.baseUrl
+    form.openai_model = p.defaultModel
+  }
+
+  /** 厂商模型下拉切换 */
+  function handleModelSelect(modelId: string)
+  {
+    form.openai_model = modelId
+  }
 
   const savingModel = ref(false)
   const savingSite = ref(false)
@@ -100,6 +177,49 @@ export function useSettingsForm()
 
   async function loadServerSettings()
   {
+    // 游客：从 localStorage 加载加密配置（按厂商独立存储）
+    if (!isLoggedIn.value)
+    {
+      const guestCfg = await loadGuestAiConfig()
+      if (guestCfg)
+      {
+        // 将所有已存的厂商配置注入 draftCache
+        for (const [pKey, entry] of Object.entries(guestCfg.providers))
+        {
+          providerDraftCache[pKey] = {
+            apiKey: entry.apiKey,
+            model: entry.model,
+            baseUrl: entry.baseUrl,
+          }
+        }
+        // 恢复激活厂商
+        selectedProvider.value = guestCfg.activeProvider || 'custom'
+        const activeEntry = guestCfg.providers[selectedProvider.value]
+        if (activeEntry)
+        {
+          form.openai_api_key = activeEntry.apiKey || ''
+          form.openai_model = activeEntry.model || ''
+          const p = findProvider(selectedProvider.value)
+          form.openai_base_url = activeEntry.baseUrl ?? p?.baseUrl ?? ''
+        }
+        else
+        {
+          form.openai_api_key = ''
+          form.openai_base_url = ''
+          form.openai_model = ''
+        }
+      }
+      else
+      {
+        form.openai_api_key = ''
+        form.openai_base_url = ''
+        form.openai_model = ''
+        selectedProvider.value = 'custom'
+      }
+      return
+    }
+
+    // 登录用户：从服务端加载
     const keys = [
       SETTING_KEYS.THEME,
       SETTING_KEYS.LANGUAGE,
@@ -165,6 +285,10 @@ export function useSettingsForm()
         (form as Record<string, string>)[key] = typeof val === 'string' ? val : String(val ?? '')
       
     }
+
+    // 根据已有 baseUrl 自动匹配厂商
+    const matched = matchProviderByUrl(form.openai_base_url)
+    selectedProvider.value = matched?.key ?? 'custom'
   }
 
   async function handleListTypeChange(value: ArticleList)
@@ -185,6 +309,43 @@ export function useSettingsForm()
     savingModel.value = true
     try
     {
+      // 游客：按厂商独立加密保存到 localStorage
+      if (!isLoggedIn.value)
+      {
+        if (!form.openai_api_key?.trim())
+        {
+          UMessageFn({ message: t('settings.openaiKeyRequired'), type: 'warning' })
+          savingModel.value = false
+          return
+        }
+        // 先缓存当前表单到 draft
+        cacheDraft()
+        // 从 draftCache 构建完整的 providers map
+        const existing = await loadGuestAiConfig()
+        const providers: GuestAiConfig['providers'] = existing?.providers ?? {}
+        // 更新所有已填写过的厂商
+        for (const [pKey, draft] of Object.entries(providerDraftCache))
+        {
+          if (draft.apiKey?.trim())
+          {
+            providers[pKey] = {
+              apiKey: draft.apiKey.trim(),
+              model: draft.model?.trim() || '',
+              ...(pKey === 'custom' && draft.baseUrl ? { baseUrl: draft.baseUrl.trim() } : {}),
+            }
+          }
+        }
+        await saveGuestAiConfig({
+          activeProvider: selectedProvider.value,
+          providers,
+        })
+        window.dispatchEvent(new CustomEvent('u-blog:settings-saved'))
+        UMessageFn({ message: t('settings.modelSaved'), type: 'success' })
+        savingModel.value = false
+        return
+      }
+
+      // 登录用户：保存到服务端
       const record: Record<string, { value: unknown }> = {}
       // base_url / model：有值则发送，空值跳过以保留服务端原值
       if (form.openai_base_url?.trim()) record[SETTING_KEYS.OPENAI_BASE_URL] = { value: form.openai_base_url.trim() }
@@ -256,6 +417,14 @@ export function useSettingsForm()
     faviconInputRef,
     faviconLoadError,
     maskedHints,
+    isLoggedIn,
+    selectedProvider,
+    providerModels,
+    providerOptions,
+    modelOptions,
+    AI_PROVIDERS,
+    handleProviderChange,
+    handleModelSelect,
     loadServerSettings,
     handleListTypeChange,
     handleHomeSortChange,

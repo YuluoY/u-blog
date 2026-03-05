@@ -256,9 +256,15 @@ router.post('/chat', chatAuthGuard, async (req: Request, res: Response) => {
   }
 })
 
-/* ---------- AI 文本生成（需要登录） ---------- */
-router.post('/ai/generate', requireAuth, async (req: Request, res: Response) => {
+/* ---------- AI 文本生成（登录用户或自备 API Key 的游客） ---------- */
+router.post('/ai/generate', async (req: Request, res: Response) => {
   const { prompt, content, config } = req.body || {}
+
+  // 游客必须提供自己的 config（含 apiKey），否则需要登录
+  if (!req.user && !config?.apiKey) {
+    res.status(401).json({ code: 401, data: null, message: '请先登录或配置 API Key' })
+    return
+  }
 
   // 参数校验
   if (!prompt || typeof prompt !== 'string') {
@@ -271,7 +277,7 @@ router.post('/ai/generate', requireAuth, async (req: Request, res: Response) => 
   }
 
   try {
-    // config 为用户自供的模型配置（非管理员场景）
+    // config 为用户自供的模型配置（游客或非管理员场景）
     const override: ModelConfigOverride | undefined = config?.apiKey ? config : undefined
     const text = await ChatService.generate(req, prompt, content, override)
     res.json({ code: 0, data: { text }, message: 'ok' })

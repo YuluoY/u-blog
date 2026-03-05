@@ -394,6 +394,34 @@
         </div>
         <!-- 在线模型 -->
         <div v-show="activeKey === 'model'" class="settings-drawer__pane">
+          <!-- 游客/登录模式提示 -->
+          <div class="settings-drawer__card">
+            <div class="settings-drawer__item">
+              <div class="settings-drawer__hint" style="margin-top: 0">
+                <u-icon :icon="isLoggedIn ? 'fa-solid fa-server' : 'fa-solid fa-user-secret'" style="margin-right: 4px" />
+                {{ isLoggedIn ? t('settings.modelLocalHint') : t('settings.modelGuestHint') }}
+              </div>
+            </div>
+          </div>
+          <!-- 厂商选择 -->
+          <div class="settings-drawer__card">
+            <div class="settings-drawer__item">
+              <div class="settings-drawer__item-head">
+                <span class="settings-drawer__title-box">
+                  <span class="settings-drawer__label">{{ t('settings.selectProvider') }}</span>
+                </span>
+              </div>
+              <u-select
+                :model-value="selectedProvider"
+                :options="providerOptions"
+                :placeholder="t('settings.selectProvider')"
+                size="small"
+                class="settings-drawer__input"
+                @change="handleProviderChange($event as string)"
+              />
+            </div>
+          </div>
+          <!-- API Key -->
           <div class="settings-drawer__card">
           <div class="settings-drawer__item">
             <div class="settings-drawer__item-head">
@@ -415,6 +443,7 @@
             />
           </div>
           </div>
+          <!-- Base URL -->
           <div class="settings-drawer__card">
           <div class="settings-drawer__item">
             <div class="settings-drawer__item-head">
@@ -435,6 +464,7 @@
             />
           </div>
           </div>
+          <!-- 模型选择 -->
           <div class="settings-drawer__card">
           <div class="settings-drawer__item">
             <div class="settings-drawer__item-head">
@@ -447,7 +477,19 @@
                 </u-tooltip>
               </span>
             </div>
+            <!-- 有预设模型列表时显示下拉 -->
+            <u-select
+              v-if="modelOptions.length"
+              :model-value="form.openai_model"
+              :options="modelOptions"
+              :placeholder="t('settings.selectModel')"
+              size="small"
+              class="settings-drawer__input"
+              @change="handleModelSelect($event as string)"
+            />
+            <!-- 自定义模式或兜底手动输入 -->
             <u-input
+              v-else
               v-model="form.openai_model"
               type="text"
               :placeholder="t('settings.modelShort')"
@@ -585,6 +627,12 @@ const {
   faviconInputRef,
   faviconLoadError,
   maskedHints,
+  isLoggedIn,
+  selectedProvider,
+  providerOptions,
+  modelOptions,
+  handleProviderChange,
+  handleModelSelect,
   loadServerSettings,
   handleListTypeChange,
   handleHomeSortChange,

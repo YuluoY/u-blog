@@ -3,7 +3,7 @@ import type { Repository } from 'typeorm'
 import OpenAI from 'openai'
 import type { Stream } from 'openai/streaming'
 import { UserSetting } from '@/module/schema/UserSetting'
-import { getDataSource, decrypt } from '@/utils'
+import { getDataSource, decrypt, decryptTransport } from '@/utils'
 
 /* ========== 类型定义 ========== */
 
@@ -193,7 +193,7 @@ class ChatService {
       max_tokens: config.maxTokens,
     })
 
-    const reply = completion.choices?.[0]?.message?.content?.trim()
+    const reply = this.stripThinking(completion.choices?.[0]?.message?.content)
     if (!reply) throw new Error('AI 模型返回了空回复')
     return reply
   }
@@ -215,8 +215,10 @@ class ChatService {
     // 若用户提供了自己的 API Key，使用其配置；否则使用全局配置
     let config: ModelConfig
     if (override?.apiKey) {
+      // 解密前端传输层加密的 API Key（__enc__:iv:ciphertext 格式）
+      const decryptedKey = decryptTransport(override.apiKey)
       config = {
-        apiKey: override.apiKey,
+        apiKey: decryptedKey,
         baseUrl: override.baseUrl || 'https://api.openai.com/v1',
         model: override.model || DEFAULT_MODEL,
         temperature: override.temperature ?? DEFAULT_TEMPERATURE,
@@ -239,9 +241,21 @@ class ChatService {
       max_tokens: config.maxTokens,
     })
 
-    const reply = completion.choices?.[0]?.message?.content?.trim()
+    const reply = this.stripThinking(completion.choices?.[0]?.message?.content)
     if (!reply) throw new Error('AI 模型返回了空回复')
     return reply
+  }
+
+  /**
+   * 剥离思考/推理标签（如 DeepSeek Reasoner 的 <think>...</think>）
+   * 保留纯内容部分
+   */
+  private stripThinking(raw?: string | null): string {
+    if (!raw) return ''
+    return raw
+      .replace(/<think>[\s\S]*?<\/think>/gi, '')
+      .replace(/<reasoning>[\s\S]*?<\/reasoning>/gi, '')
+      .trim()
   }
 }
 

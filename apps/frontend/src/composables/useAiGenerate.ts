@@ -3,9 +3,10 @@
  * ──────────────────────────────────────────────
  * 封装加载状态、错误处理与调用逻辑，
  * 供「个人简介 AI 生成」「编辑器文本润色/扩写」等场景复用。
+ * 支持登录用户（服务端配置）和游客（自备 API Key）两种模式。
  */
 import { ref } from 'vue'
-import { generateAiText } from '@/api/ai'
+import { generateAiText, type AiGenerateParams } from '@/api/ai'
 import { UNotificationFn } from '@u-blog/ui'
 import { useI18n } from 'vue-i18n'
 
@@ -72,16 +73,21 @@ export function useAiGenerate()
    * 执行 AI 文本生成
    * @param action  AI 动作类型
    * @param content 待处理的文本内容
+   * @param config  可选：游客自备的模型配置（API Key / Base URL / Model）
    * @returns 生成的文本；失败时返回空字符串
    */
-  async function generate(action: AiAction, content: string): Promise<string>
+  async function generate(
+    action: AiAction,
+    content: string,
+    config?: AiGenerateParams['config'],
+  ): Promise<string>
   {
     error.value = null
     generating.value = true
     try
     {
       const prompt = getPromptForAction(action, locale.value)
-      return await generateAiText({ prompt, content })
+      return await generateAiText({ prompt, content, config })
     }
     catch (err: any)
     {

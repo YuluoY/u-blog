@@ -66,8 +66,8 @@
     <!-- 移动端底部导航栏（⚤767px 可见，替代被隐藏的 IconBar） -->
     <MobileBottomNav />
 
-    <!-- 全站 AI 浮动工具栏：选中文本后弹出（WriteView 自带独立工具栏，此处自动跳过） -->
-    <GlobalAiToolbar v-if="!isWriteRoute" />
+    <!-- 全站 AI 浮动工具栏：选中文本后弹出（WriteEditor 内部的编辑器区域通过 isInsideWriteEditor 自动跳过） -->
+    <GlobalAiToolbar />
   </u-layout>
 </template>
 
