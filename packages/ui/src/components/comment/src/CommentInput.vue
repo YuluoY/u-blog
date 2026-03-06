@@ -169,7 +169,6 @@
 
 <script setup lang="ts">
 import EmojiPicker from 'vue3-emoji-picker'
-import 'vue3-emoji-picker/css'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { emojify } from 'node-emoji'

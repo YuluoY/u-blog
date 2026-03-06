@@ -60,15 +60,15 @@
           class="u-comment-item__children u-comment-list__replies"
         >
           <u-comment-item
-            v-for="r in visibleRepliesOf(root)"
-            :key="r.id"
-            :comment="r"
+            v-for="entry in visibleRepliesOf(root)"
+            :key="entry.item.id"
+            :comment="entry.item"
             :plain-content="plainContent"
             :replying-id="replyingId"
             :reply-content="replyContent"
             :reply-loading="replyLoading"
             :logged-in="loggedIn"
-            :depth="1"
+            :depth="entry.depth"
             :show-children="false"
             :owner-user-id="ownerUserId"
             @reply="(c) => $emit('reply', c)"
@@ -120,6 +120,7 @@ import { computed, ref } from 'vue'
 import type { UCommentItemData, UCommentListEmits, UCommentListProps } from '../types'
 import { CCommentEmptyText, CCommentReplyFoldThreshold } from '../consts'
 import UCommentItem from './CommentItem.vue'
+import { flattenCommentReplies } from './utils'
 import { UIcon } from '@/components/icon'
 
 defineOptions({
@@ -169,16 +170,8 @@ function buildTree(items: UCommentItemData[]): UCommentItemData[] {
   return roots as UCommentItemData[]
 }
 
-/**
- * 将某条评论下的所有回复按树展开为扁平数组（DFS），保证只渲染一级左边距
- */
-function flattenReplies(nodes: UCommentItemData[]): UCommentItemData[] {
-  if (!nodes?.length) return []
-  return nodes.flatMap((n) => [n, ...flattenReplies((n as { children?: UCommentItemData[] }).children ?? [])])
-}
-
 function flatRepliesOf(root: UCommentItemData & { children?: UCommentItemData[] }) {
-  return flattenReplies(root.children ?? [])
+  return flattenCommentReplies(root.children ?? [])
 }
 
 /** 当前应展示的回复列表：超过阈值且未展开时只展示前 N 条 */

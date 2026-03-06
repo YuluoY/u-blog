@@ -27,3 +27,10 @@ vi.mock('@u-blog/composables', () => ({
   useFixed: vi.fn(),
   useDebounceRef: vi.fn((val: any) => ({ value: val }))
 }))
+
+vi.mock('vue3-emoji-picker', () => ({
+  default: {
+    name: 'EmojiPicker',
+    template: '<div class="mock-emoji-picker"></div>'
+  }
+}))

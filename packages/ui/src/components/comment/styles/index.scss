@@ -2,6 +2,8 @@
  * Comment 评论组件样式
  * ============================================================ */
 
+@import 'vue3-emoji-picker/css';
+
 /* ---------- 变量 ---------- */
 .u-comment-item {
   --u-comment-avatar-size: 40px;
@@ -18,9 +20,16 @@
 /* ---------- CommentItem ---------- */
 .u-comment-item {
   position: relative;
+  scroll-margin-top: var(--u-comment-scroll-offset, 84px);
 
   & + & {
     border-top: 1px solid var(--u-comment-border);
+  }
+
+  &__author--scroll-target {
+    color: var(--u-primary, #007bff);
+    text-shadow: 0 0 14px color-mix(in srgb, var(--u-primary, #007bff) 38%, transparent);
+    animation: u-comment-target-author-flash 1.8s ease;
   }
 
   &__inner {
@@ -115,24 +124,36 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 0;
-    border: none;
-    background: transparent;
+    padding: 2px 8px;
+    border: 1px solid color-mix(in srgb, var(--u-primary, #4d96ff) 20%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--u-primary, #4d96ff) 8%, transparent);
     font-size: 1.2rem;
     color: var(--u-primary);
     cursor: pointer;
     line-height: 1.4;
-    transition: color 0.2s, opacity 0.2s;
+    transition: color 0.2s, opacity 0.2s, background-color 0.2s, border-color 0.2s;
 
     &:hover {
       opacity: 0.85;
-      text-decoration: underline;
+      text-decoration: none;
+      background: color-mix(in srgb, var(--u-primary, #4d96ff) 12%, transparent);
+      border-color: color-mix(in srgb, var(--u-primary, #4d96ff) 32%, transparent);
     }
   }
 
   &__reply-to-icon {
     font-size: 1rem;
     transform: scaleX(-1);
+  }
+
+  &__reply-to-label {
+    color: inherit;
+  }
+
+  &__reply-to-name {
+    color: var(--u-primary, #4d96ff);
+    font-weight: 600;
   }
 
   &__time {
@@ -296,9 +317,8 @@
   /* 子评论：仅根评论下第一级有左边距，再嵌套不再累加（只有一级左边距） */
   &__children {
     margin-top: 4px;
-    padding-left: 12px;
-    border-left: 2px solid var(--u-comment-border);
-    margin-left: 4px;
+    padding-left: 24px;
+    margin-left: 8px;
 
     .u-comment-item__inner {
       padding: 12px 0;
@@ -309,6 +329,34 @@
       padding-left: 0;
       border-left: none;
       margin-left: 0;
+    }
+  }
+
+  &--nested {
+    border-top: none;
+
+    .u-comment-item__inner {
+      padding: 12px 0;
+      background: transparent;
+    }
+
+    & + .u-comment-item--nested {
+      margin-top: 10px;
+    }
+  }
+
+  &--reply-level-1 {
+    .u-comment-item__head,
+    .u-comment-item__meta,
+    .u-comment-item__content,
+    .u-comment-item__actions {
+      padding-left: 2px;
+    }
+  }
+
+  &--reply-level-2 {
+    .u-comment-item__author {
+      color: color-mix(in srgb, var(--u-text-1) 82%, var(--u-primary, #4d96ff) 18%);
     }
   }
 }
@@ -334,6 +382,18 @@
   max-height: 300px;
 }
 
+@keyframes u-comment-target-author-flash {
+  0% {
+    color: color-mix(in srgb, var(--u-primary, #4d96ff) 82%, white 18%);
+    text-shadow: 0 0 14px color-mix(in srgb, var(--u-primary, #4d96ff) 36%, transparent);
+  }
+
+  100% {
+    color: var(--u-text-1);
+    text-shadow: none;
+  }
+}
+
 /* ---------- CommentList ---------- */
 .u-comment-list {
   display: flex;
@@ -348,7 +408,7 @@
   }
 
   &__replies {
-    /* 与 .u-comment-item__children 一致，仅此一级左边距 */
+    margin-top: 8px;
   }
 
   &__fold {

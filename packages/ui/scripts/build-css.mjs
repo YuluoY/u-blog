@@ -14,16 +14,56 @@ const SRC = resolve(ROOT, 'src')
 const DIST = resolve(ROOT, 'dist/es')
 const NODE_MODULES = resolve(ROOT, 'node_modules')
 
+function parsePackageRequest(url) {
+  if (!url) return null
+  const segments = url.split('/').filter(Boolean)
+  if (!segments.length) return null
+
+  if (url.startsWith('@')) {
+    if (segments.length < 2) return null
+    return {
+      packageName: `${segments[0]}/${segments[1]}`,
+      subpath: segments.slice(2).join('/'),
+    }
+  }
+
+  return {
+    packageName: segments[0],
+    subpath: segments.slice(1).join('/'),
+  }
+}
+
+function resolveExportEntry(pkgRoot, pkg, subpath) {
+  if (!subpath || !pkg?.exports) return null
+  const exportKey = `./${subpath}`
+  const exported = pkg.exports[exportKey]
+  if (!exported) return null
+
+  if (typeof exported === 'string') return resolve(pkgRoot, exported)
+  if (typeof exported === 'object') {
+    const entry = exported.style || exported.import || exported.default || exported.require
+    if (typeof entry === 'string') return resolve(pkgRoot, entry)
+  }
+
+  return null
+}
+
 // 自定义 importer：将裸包名解析到 node_modules
 const npmImporter = {
   findFileUrl(url) {
-    const pkgPath = resolve(NODE_MODULES, url)
+    const request = parsePackageRequest(url)
+    if (!request) return null
+
+    const pkgPath = resolve(NODE_MODULES, request.packageName)
     if (!existsSync(pkgPath)) return null
 
     // 是目录（npm 包），通过 package.json 的 style/main 字段解析入口
     const pkgJson = resolve(pkgPath, 'package.json')
     if (existsSync(pkgJson)) {
       const pkg = JSON.parse(readFileSync(pkgJson, 'utf-8'))
+      const exportEntry = resolveExportEntry(pkgPath, pkg, request.subpath)
+      if (exportEntry && existsSync(exportEntry)) return pathToFileURL(exportEntry)
+
       const entry = pkg.style || pkg.main || 'index.css'
       return pathToFileURL(resolve(pkgPath, entry))
     }

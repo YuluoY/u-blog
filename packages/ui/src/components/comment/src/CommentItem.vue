@@ -7,6 +7,8 @@
     :class="{
       'u-comment-item--replying': isReplying,
       'u-comment-item--nested': isNested,
+      'u-comment-item--reply-level-1': isSecondLevelReply,
+      'u-comment-item--reply-level-2': isThirdLevelReply,
     }"
     :data-comment-id="comment.id"
   >
@@ -40,7 +42,8 @@
               @click="onScrollToParent"
             >
               <u-icon icon="fa-solid fa-share" class="u-comment-item__reply-to-icon" />
-              回复 @{{ replyTargetName }}
+              <span class="u-comment-item__reply-to-label">回复 @</span>
+              <span class="u-comment-item__reply-to-name">{{ replyTargetName }}</span>
             </button>
           </template>
           <span class="u-comment-item__time">{{ formattedTime }}</span>
@@ -168,7 +171,8 @@ const emit = defineEmits<UCommentItemEmits>()
 const MAX_INDENT_DEPTH = 3
 const currentDepth = computed(() => props.depth ?? 0)
 const isNested = computed(() => currentDepth.value > 0)
-
+const isSecondLevelReply = computed(() => currentDepth.value === 1)
+const isThirdLevelReply = computed(() => currentDepth.value >= 2)
 /** 当前评论是否为博客作者发出（ownerUserId 匹配 或 user.role 为 super_admin） */
 const isOwner = computed(() => {
   const c = props.comment
@@ -281,6 +285,9 @@ const replyTargetName = computed(() => {
     const p = props.comment.parent.user
     return (p as { namec?: string }).namec ?? (p as { username?: string }).username ?? '匿名'
   }
+  if (props.comment.parent?.nickname) {
+    return props.comment.parent.nickname
+  }
   if (parentId.value == null) return ''
   return '该用户'
 })
@@ -333,7 +340,9 @@ function onLike() {
 /** 点击「回复 @某人」时平滑滚动到该评论 */
 function onScrollToParent() {
   const id = parentId.value
-  if (id != null) emit('scroll-to', id)
+  if (id != null) {
+    emit('scroll-to', id)
+  }
 }
 </script>
 

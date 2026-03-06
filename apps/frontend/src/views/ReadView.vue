@@ -223,6 +223,7 @@ import { setMobileToc, clearMobileToc } from '@/composables/useMobileToc'
 import { trackArticleView, trackArticleLike, trackComment } from '@/composables/useActivityTracker'
 import { useSeo, buildArticleJsonLd, buildBreadcrumbJsonLd } from '@/composables/useSeo'
 import { getOptimizedImageUrl, COVER_PRESETS } from '@/utils/image'
+import { scrollToCommentWithOffset } from '@/utils/commentScroll'
 
 const coverUrl = (src: string) => getOptimizedImageUrl(src, COVER_PRESETS.detail)
 
@@ -666,8 +667,7 @@ function scrollToComment(commentId: number)
 {
   nextTick(() =>
   {
-    const el = document.querySelector(`[data-comment-id="${commentId}"]`)
-    el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    scrollToCommentWithOffset(commentId)
   })
 }
 

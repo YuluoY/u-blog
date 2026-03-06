@@ -112,6 +112,7 @@ import type { IComment } from '@u-blog/model'
 import type { UCommentItemData } from '@u-blog/ui'
 import { storeToRefs } from 'pinia'
 import { filterSensitiveWords } from '@/utils/sensitiveFilter'
+import { scrollToCommentWithOffset } from '@/utils/commentScroll'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -309,8 +310,7 @@ function scrollToComment(commentId: number)
 {
   nextTick(() =>
   {
-    const el = document.querySelector(`[data-comment-id="${commentId}"]`)
-    el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    scrollToCommentWithOffset(commentId)
   })
 }
 
