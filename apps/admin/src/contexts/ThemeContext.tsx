@@ -12,13 +12,22 @@ import { theme as antdTheme } from 'antd'
 import { theme as baseTheme } from '../styles/theme'
 
 const STORAGE_THEME = 'u-blog-admin-theme'
+const FRONTEND_STORAGE_THEME = 'u-blog-theme'
 
 export type ThemeMode = 'light' | 'dark'
 
+function normalizeThemeMode(value: string | null): ThemeMode | null {
+  if (value === 'dark') return 'dark'
+  if (value === 'light' || value === 'default') return 'light'
+  return null
+}
+
 function getStoredThemeMode(): ThemeMode {
   if (typeof window === 'undefined') return 'light'
-  const stored = localStorage.getItem(STORAGE_THEME) as ThemeMode | null
-  if (stored === 'light' || stored === 'dark') return stored
+  const stored = normalizeThemeMode(localStorage.getItem(STORAGE_THEME))
+  if (stored) return stored
+  const frontendStored = normalizeThemeMode(localStorage.getItem(FRONTEND_STORAGE_THEME))
+  if (frontendStored) return frontendStored
   return 'light'
 }
 
@@ -42,6 +51,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const setThemeMode = useCallback((mode: ThemeMode) => {
     setThemeModeState(mode)
     localStorage.setItem(STORAGE_THEME, mode)
+    localStorage.setItem(FRONTEND_STORAGE_THEME, mode === 'dark' ? 'dark' : 'default')
   }, [])
 
   const toggleThemeWithTransition = useCallback(

@@ -273,13 +273,14 @@ export default class AnalyticsService {
     page?: number
     pageSize?: number
     type?: string
+    excludeType?: string
     ip?: string
     path?: string
     userId?: number
     startDate?: string
     endDate?: string
   }) {
-    const { page = 1, pageSize = 20, type, ip, path, userId, startDate, endDate } = params
+    const { page = 1, pageSize = 20, type, excludeType, ip, path, userId, startDate, endDate } = params
 
     const qb = this.repo.createQueryBuilder('log')
       .leftJoinAndSelect('log.user', 'user')
@@ -288,6 +289,7 @@ export default class AnalyticsService {
       .take(pageSize)
 
     if (type) qb.andWhere('log.type = :type', { type })
+    if (excludeType) qb.andWhere('log.type != :excludeType', { excludeType })
     if (ip) qb.andWhere('log.ip LIKE :ip', { ip: `%${ip}%` })
     if (path) qb.andWhere('log.path LIKE :path', { path: `%${path}%` })
     if (userId) qb.andWhere('log.userId = :userId', { userId })

@@ -23,6 +23,7 @@ export const en = {
     loading: 'Loading…',
     success: 'Success',
     fail: 'Failed',
+    backToFrontend: 'Back to site',
   },
   menu: {
     dashboard: 'Dashboard',

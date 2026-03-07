@@ -10,6 +10,7 @@ import { UserSetting } from '@/module/schema/UserSetting'
 import { View } from '@/module/schema/View'
 import { Likes } from '@/module/schema/Likes'
 import { Comment } from '@/module/schema/Comment'
+import { ActivityLog } from '@/module/schema/ActivityLog'
 import { FriendLink } from '@/module/schema/FriendLink'
 import {
   IUserRegisterDto, CUserRole, IUserLogin, IUser,
@@ -26,6 +27,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import appCfg from '@/app'
 import { createTransporter, sendMail } from '@/plugin/mailer'
+import { cacheDel } from '@/service/cache'
 
 /* ========== 类型定义 ========== */
 
@@ -745,49 +747,65 @@ class CommonService {
   /* ---------- 网站概览统计 ---------- */
 
   /**
-   * 网站概览统计：文章/分类/标签数量、浏览/点赞/评论汇总、运行天数、最后更新
-   * 仅统计已发布文章
+   * 网站概览统计：文章/分类/标签数量、PV/UV、点赞、评论、运行天数、最后更新
+   * - 文章数/最后更新：仅统计已发布文章
+   * - PV/UV：优先使用 ActivityLog 的 page_view 事件，缺失时回退到 View 表
+   * - 点赞/评论：直接统计真实交互表，避免冗余计数字段失真
    */
   async getSiteOverview(req: Request): Promise<SiteOverviewData> {
     const ds = getDataSource(req)
     const articleRepo = ds.getRepository(Article)
     const categoryRepo = ds.getRepository(Category)
     const tagRepo = ds.getRepository(Tag)
+    const commentRepo = ds.getRepository(Comment)
+    const likeRepo = ds.getRepository(Likes)
+    const activityLogRepo = ds.getRepository(ActivityLog)
 
-    const [articleCount, categoryCount, tagCount] = await Promise.all([
+    const [
+      articleCount,
+      categoryCount,
+      tagCount,
+      totalComments,
+      totalLikes,
+      totalViews,
+      totalUvResult,
+      latestArticle,
+    ] = await Promise.all([
       articleRepo.count({ where: { status: CArticleStatus.PUBLISHED } }),
       categoryRepo.count(),
       tagRepo.count(),
+      commentRepo.count(),
+      likeRepo.count(),
+      activityLogRepo.count({ where: { type: 'page_view' } }),
+      activityLogRepo
+        .createQueryBuilder('log')
+        .select('COUNT(DISTINCT log.ip)', 'totalUv')
+        .where('log.type = :type', { type: 'page_view' })
+        .getRawOne<{ totalUv: string }>(),
+      articleRepo
+        .createQueryBuilder('a')
+        .select('MAX(a.updatedAt)', 'latestUpdated')
+        .where('a.status = :status', { status: CArticleStatus.PUBLISHED })
+        .getRawOne<{ latestUpdated: Date | null }>(),
     ])
 
-    /* 统计独立访客数（按 IP 去重） */
-    const viewRepo = ds.getRepository(View)
-    const uvResult = await viewRepo
-      .createQueryBuilder('v')
-      .select('COUNT(DISTINCT v.ip)', 'totalUv')
-      .getRawOne<{ totalUv: string }>()
-    const totalUniqueVisitors = Number(uvResult?.totalUv ?? 0)
+    let resolvedTotalViews = totalViews
+    let resolvedTotalUniqueVisitors = Number(totalUvResult?.totalUv ?? 0)
 
-    const agg = await articleRepo
-      .createQueryBuilder('a')
-      .select('COALESCE(SUM(a.viewCount), 0)', 'totalViews')
-      .addSelect('COALESCE(SUM(a.likeCount), 0)', 'totalLikes')
-      .addSelect('COALESCE(SUM(a.commentCount), 0)', 'totalComments')
-      .addSelect('MIN(a.createdAt)', 'earliestCreated')
-      .addSelect('MAX(a.updatedAt)', 'latestUpdated')
-      .where('a.status = :status', { status: CArticleStatus.PUBLISHED })
-      .getRawOne<{
-        totalViews: string
-        totalLikes: string
-        totalComments: string
-        earliestCreated: Date | null
-        latestUpdated: Date | null
-      }>()
+    if (resolvedTotalViews <= 0) {
+      const viewRepo = ds.getRepository(View)
+      const [fallbackTotalViews, fallbackUvResult] = await Promise.all([
+        viewRepo.count(),
+        viewRepo
+          .createQueryBuilder('v')
+          .select('COUNT(DISTINCT v.ip)', 'totalUv')
+          .getRawOne<{ totalUv: string }>(),
+      ])
+      resolvedTotalViews = fallbackTotalViews
+      resolvedTotalUniqueVisitors = Number(fallbackUvResult?.totalUv ?? 0)
+    }
 
-    const totalViews = Number(agg?.totalViews ?? 0)
-    const totalLikes = Number(agg?.totalLikes ?? 0)
-    const totalComments = Number(agg?.totalComments ?? 0)
-    const latestUpdated = agg?.latestUpdated ? new Date(agg.latestUpdated) : null
+    const latestUpdated = latestArticle?.latestUpdated ? new Date(latestArticle.latestUpdated) : null
 
     // 网站上线日期（固定值），用于计算运行天数
     const SITE_LAUNCH_DATE = new Date('2026-02-23T00:00:00+08:00')
@@ -799,7 +817,17 @@ class CommonService {
       lastUpdate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
     }
 
-    return { articleCount, categoryCount, tagCount, totalViews, totalUniqueVisitors, totalLikes, totalComments, runningDays, lastUpdate }
+    return {
+      articleCount,
+      categoryCount,
+      tagCount,
+      totalViews: resolvedTotalViews,
+      totalUniqueVisitors: resolvedTotalUniqueVisitors,
+      totalLikes,
+      totalComments,
+      runningDays,
+      lastUpdate,
+    }
   }
 
   /* ---------- 浏览量统计 ---------- */
@@ -952,6 +980,7 @@ class CommonService {
       // 已点赞 → 取消
       await likeRepo.remove(existing)
       await articleRepo.decrement({ id: articleId }, 'likeCount', 1)
+      cacheDel('site-overview').catch(() => {})
       const updated = await articleRepo.findOne({ where: { id: articleId }, select: ['id', 'likeCount'] })
       return { liked: false, likeCount: Math.max(0, updated?.likeCount ?? 0) }
     } else {
@@ -964,6 +993,7 @@ class CommonService {
       })
       await likeRepo.save(like)
       await articleRepo.increment({ id: articleId }, 'likeCount', 1)
+      cacheDel('site-overview').catch(() => {})
       const updated = await articleRepo.findOne({ where: { id: articleId }, select: ['id', 'likeCount'] })
       return { liked: true, likeCount: updated?.likeCount ?? (article.likeCount + 1) }
     }
@@ -1040,6 +1070,7 @@ class CommonService {
     if (existing) {
       await likeRepo.remove(existing)
       await commentRepo.decrement({ id: commentId }, 'likeCount', 1)
+      cacheDel('site-overview').catch(() => {})
       const updated = await commentRepo.findOne({ where: { id: commentId }, select: ['id', 'likeCount'] })
       return { liked: false, likeCount: Math.max(0, updated?.likeCount ?? 0) }
     } else {
@@ -1051,6 +1082,7 @@ class CommonService {
       })
       await likeRepo.save(like)
       await commentRepo.increment({ id: commentId }, 'likeCount', 1)
+      cacheDel('site-overview').catch(() => {})
       const updated = await commentRepo.findOne({ where: { id: commentId }, select: ['id', 'likeCount'] })
       return { liked: true, likeCount: updated?.likeCount ?? ((comment.likeCount ?? 0) + 1) }
     }

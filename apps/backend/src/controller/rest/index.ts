@@ -12,6 +12,7 @@ import RestService from '@/service/rest'
 import CommonService from '@/service/common'
 import SubscribeService from '@/service/subscribe'
 import { Article } from '@/module/schema/Article'
+import { Comment } from '@/module/schema/Comment'
 import { Tag } from '@/module/schema/Tag'
 import sanitizeHtml from 'sanitize-html'
 import { USERS_SENSITIVE_FIELDS, stripSensitiveFields } from '@/middleware/RestWriteGuard'
@@ -116,7 +117,27 @@ class RestController
     if (!id || Number.isNaN(id)) {
       return formatResponse([new Error('id 必填') as any, null], req.__('rest.delSuccess'), req.__('rest.delFail'))
     }
+    const isComment = req.params?.model === 'comment' || req.model?.metadata?.name === 'Comment'
+    let commentArticleId: number | null = null
+
+    if (isComment) {
+      const commentRepo = getDataSource(req).getRepository(Comment)
+      const comment = await commentRepo.findOne({ where: { id }, select: ['id', 'articleId'] })
+      commentArticleId = Number(comment?.articleId ?? 0) || null
+    }
+
     const tryData = await tryit<void, Error>(() => RestService.del(req.model, id))
+
+    if (tryData[0] == null && commentArticleId) {
+      const articleRepo = getDataSource(req).getRepository(Article)
+      await articleRepo
+        .createQueryBuilder()
+        .update(Article)
+        .set({ commentCount: () => 'GREATEST("commentCount" - 1, 0)' })
+        .where('id = :id', { id: commentArticleId })
+        .execute()
+    }
+
     // 删除成功后异步清除相关缓存
     if (tryData[0] == null) invalidateCacheForModel(req)
     return formatResponse(tryData, req.__('rest.delSuccess'), req.__('rest.delFail'))

@@ -1,9 +1,25 @@
 import { useMemo, useState } from 'react'
-import { Card, Row, Col, Statistic, Table, Select, Input, Space, Tag, Spin } from 'antd'
+import {
+  Card,
+  Col,
+  Input,
+  Row,
+  Select,
+  Space,
+  Spin,
+  Statistic,
+  Table,
+  Tag,
+} from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { GlobalOutlined, LinkOutlined, ClockCircleOutlined, FileSearchOutlined } from '@ant-design/icons'
+import {
+  ClockCircleOutlined,
+  FileSearchOutlined,
+  GlobalOutlined,
+  LinkOutlined,
+} from '@ant-design/icons'
 import { useCrawlerOverview, useCrawlerLogs } from './useCrawlerMonitor'
-import type { CrawlerLogParams } from './api'
+import { type CrawlerLogItem, type CrawlerLogParams } from './api'
 
 function formatBytes(val: number | null) {
   if (!val || val <= 0) return '-'
@@ -14,65 +30,64 @@ function formatBytes(val: number | null) {
 
 export default function CrawlerMonitorPage() {
   const [params, setParams] = useState<CrawlerLogParams>({ page: 1, pageSize: 20 })
+
   const { data: overview, isLoading: loadingOverview } = useCrawlerOverview()
   const { data: logsData, isLoading: loadingLogs } = useCrawlerLogs(params)
 
   const botOptions = useMemo(
-    () => (overview?.topBots || []).map((x) => ({ label: `${x.bot} (${x.count})`, value: x.bot })),
+    () => (overview?.topBots || []).map((item) => ({ label: `${item.bot} (${item.count})`, value: item.bot })),
     [overview?.topBots],
   )
 
-  const columns: ColumnsType<any> = useMemo(() => [
+  const columns: ColumnsType<CrawlerLogItem> = useMemo(() => [
     {
       title: '爬虫',
       dataIndex: 'bot',
       width: 140,
-      render: (v: string) => <Tag color="blue">{v}</Tag>,
+      render: (value: string) => <Tag color="blue">{value}</Tag>,
     },
     {
       title: '路径',
       dataIndex: 'path',
       width: 220,
       ellipsis: true,
-      render: (v: string | null) => v || '-',
+      render: (value: string | null) => value || '-',
     },
     {
       title: 'IP / 地区',
       key: 'ipLocation',
       width: 220,
-      render: (_: any, row: any) => (
-        <span>{row.ip || '-'} {row.location ? `· ${row.location}` : ''}</span>
-      ),
+      render: (_value, row) => <span>{row.ip || '-'} {row.location ? `· ${row.location}` : ''}</span>,
     },
     {
       title: '缓存',
       dataIndex: 'cacheHit',
       width: 90,
-      render: (v: boolean) => <Tag color={v ? 'success' : 'default'}>{v ? 'HIT' : 'MISS'}</Tag>,
+      render: (value: boolean) => <Tag color={value ? 'success' : 'default'}>{value ? 'HIT' : 'MISS'}</Tag>,
     },
     {
       title: '渲染耗时',
       dataIndex: 'renderMs',
       width: 100,
-      render: (v: number | null) => (typeof v === 'number' ? `${v}ms` : '-'),
+      render: (value: number | null) => (typeof value === 'number' ? `${value}ms` : '-'),
     },
     {
       title: 'HTML大小',
       dataIndex: 'htmlBytes',
       width: 110,
-      render: (v: number | null) => formatBytes(v),
+      render: (value: number | null) => formatBytes(value),
     },
     {
       title: '状态码',
       dataIndex: 'statusCode',
       width: 90,
-      render: (v: number | null) => v ?? '-',
+      render: (value: number | null) => value ?? '-',
     },
     {
       title: '时间',
       dataIndex: 'createdAt',
       width: 170,
-      render: (v: string) => (v ? new Date(v).toLocaleString('zh-CN') : '-'),
+      render: (value: string) => (value ? new Date(value).toLocaleString('zh-CN') : '-'),
     },
   ], [])
 
@@ -113,13 +128,13 @@ export default function CrawlerMonitorPage() {
               style={{ width: 180 }}
               options={botOptions}
               value={params.bot || undefined}
-              onChange={(v) => setParams((p) => ({ ...p, bot: v || undefined, page: 1 }))}
+              onChange={(value) => setParams((prev) => ({ ...prev, bot: value || undefined, page: 1 }))}
             />
             <Input.Search
               allowClear
               placeholder="按路径过滤，如 /read/"
               style={{ width: 220 }}
-              onSearch={(v) => setParams((p) => ({ ...p, path: v || undefined, page: 1 }))}
+              onSearch={(value) => setParams((prev) => ({ ...prev, path: value || undefined, page: 1 }))}
             />
           </Space>
         }
@@ -135,8 +150,8 @@ export default function CrawlerMonitorPage() {
             pageSize: logsData?.pageSize ?? 20,
             total: logsData?.total ?? 0,
             showSizeChanger: true,
-            showTotal: (t) => `共 ${t} 条`,
-            onChange: (page, pageSize) => setParams((p) => ({ ...p, page, pageSize })),
+            showTotal: (total) => `共 ${total} 条`,
+            onChange: (page, pageSize) => setParams((prev) => ({ ...prev, page, pageSize })),
           }}
         />
       </Card>

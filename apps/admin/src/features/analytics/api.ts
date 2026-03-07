@@ -86,6 +86,7 @@ export interface LogListParams {
   page?: number
   pageSize?: number
   type?: string
+  excludeType?: string
   ip?: string
   path?: string
   userId?: number

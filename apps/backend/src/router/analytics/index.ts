@@ -127,6 +127,7 @@ router.get('/logs', requireAuth, adminOnly, async (req: Request, res: Response) 
       page: parseInt(req.query.page as string) || 1,
       pageSize: Math.min(parseInt(req.query.pageSize as string) || 20, 100),
       type: (req.query.type as string) || undefined,
+      excludeType: (req.query.excludeType as string) || undefined,
       ip: (req.query.ip as string) || undefined,
       path: (req.query.path as string) || undefined,
       userId: req.query.userId ? parseInt(req.query.userId as string) : undefined,

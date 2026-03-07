@@ -16,6 +16,7 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   LogoutOutlined,
+  ExportOutlined,
   GlobalOutlined,
   BulbOutlined,
   MoonOutlined,
@@ -35,7 +36,7 @@ import {
   NotificationOutlined,
 } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
-import { useAuth, FRONTEND_LOGIN_URL } from '../features/auth/AuthContext'
+import { useAuth, FRONTEND_HOME_URL } from '../features/auth/AuthContext'
 import { useGuestMode } from '../contexts/GuestModeContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { setStoredLang, type Lang } from '../app/i18n'
@@ -228,7 +229,11 @@ export default function AdminLayout() {
   const handleLogout = () => {
     logout()
     // 登出后返回前端首页（不传 returnUrl，避免用户反复重定向）
-    window.location.href = FRONTEND_LOGIN_URL.replace('/login', '')
+    window.location.href = FRONTEND_HOME_URL
+  }
+
+  const handleBackToFrontend = () => {
+    window.location.href = FRONTEND_HOME_URL
   }
 
   const langOptions = [
@@ -302,6 +307,14 @@ export default function AdminLayout() {
           />
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <Space size="middle">
+              <Button
+                type="default"
+                size="small"
+                icon={<ExportOutlined />}
+                onClick={handleBackToFrontend}
+              >
+                {t('common.backToFrontend')}
+              </Button>
               <Select
                 size="small"
                 value={i18n.language as Lang}

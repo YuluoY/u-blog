@@ -107,8 +107,8 @@ export default function AnalyticsPage() {
   const { message } = App.useApp()
 
   const [days, setDays] = useState(30)
-  const [logParams, setLogParams] = useState<LogListParams>({ page: 1, pageSize: 15 })
-  const [logTab, setLogTab] = useState<'all' | 'crawler'>('all')
+  const [logParams, setLogParams] = useState<LogListParams>({ page: 1, pageSize: 15, excludeType: 'crawler_visit' })
+  const [logTab, setLogTab] = useState<'actor' | 'crawler'>('actor')
   const [clearIp, setClearIp] = useState('')
 
   const { data: overview, isLoading: loadingOverview } = useOverview()
@@ -213,15 +213,18 @@ export default function AnalyticsPage() {
     { title: '访问量', dataIndex: 'count', width: 100 },
   ], [])
 
-  /** 事件类型选项 */
-  const typeOptions = Object.entries(TYPE_LABELS).map(([k, v]) => ({ label: `${v} (${k})`, value: k }))
+  /** 当前分组下可选的事件类型 */
+  const typeOptions = useMemo(() => Object.entries(TYPE_LABELS)
+    .filter(([key]) => (logTab === 'crawler' ? key === 'crawler_visit' : key !== 'crawler_visit'))
+    .map(([key, label]) => ({ label: `${label} (${key})`, value: key })), [logTab])
 
   function handleLogTabChange(key: string) {
-    const nextTab = key === 'crawler' ? 'crawler' : 'all'
+    const nextTab = key === 'crawler' ? 'crawler' : 'actor'
     setLogTab(nextTab)
     setLogParams((p) => ({
       ...p,
       type: nextTab === 'crawler' ? 'crawler_visit' : undefined,
+      excludeType: nextTab === 'actor' ? 'crawler_visit' : undefined,
       page: 1,
     }))
   }
@@ -413,7 +416,7 @@ export default function AnalyticsPage() {
           onChange={handleLogTabChange}
           style={{ marginBottom: 12 }}
           items={[
-            { key: 'all', label: '全部行为' },
+            { key: 'actor', label: '用户 / 游客行为' },
             { key: 'crawler', label: 'SEO 抓取' },
           ]}
         />

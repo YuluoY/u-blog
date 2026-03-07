@@ -195,6 +195,7 @@ export async function invalidateTaxonomyCache(): Promise<void> {
   await Promise.all([
     cacheDelByPattern('category:*'),
     cacheDelByPattern('tag:*'),
+    cacheDel('site-overview'),
     cacheDel('cloud-weights'),
   ])
 }

@@ -8,7 +8,12 @@
   </head>
   <body>
     <script>
-      (function(){var t=localStorage.getItem('u-blog-admin-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);})();
+      (function(){
+        var t=localStorage.getItem('u-blog-admin-theme');
+        var f=localStorage.getItem('u-blog-theme');
+        var next=t==='dark'||t==='light'?t:(f==='dark'?'dark':(f==='light'||f==='default'?'light':null));
+        if(next==='dark'||next==='light')document.documentElement.setAttribute('data-theme',next);
+      })();
     </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

@@ -23,6 +23,7 @@ export const zh = {
     loading: '加载中…',
     success: '操作成功',
     fail: '操作失败',
+    backToFrontend: '返回前台',
   },
   menu: {
     dashboard: '仪表盘',

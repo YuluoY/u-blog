@@ -18,6 +18,9 @@ export const FRONTEND_LOGIN_URL =
       ? `${window.location.origin}/login`
       : 'http://localhost:5173/login'
 
+/** 前台站点首页地址 */
+export const FRONTEND_HOME_URL = FRONTEND_LOGIN_URL.replace(/\/login$/, '')
+
 /**
  * 模块级 Promise 去重：
  * React 18 StrictMode 在开发环境下会双重挂载组件，导致 checkAuth 被调用两次。
