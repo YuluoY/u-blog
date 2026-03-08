@@ -620,10 +620,10 @@ async function normalizeArticleMeta(input: {
   const descFromPayload = typeof input.desc === 'string' ? input.desc.trim() : ''
   const coverFromPayload = typeof input.cover === 'string' ? input.cover.trim() : ''
 
-  const normalizedTitle = heading || titleFromPayload || (isCreate ? summary.slice(0, 60).replace(/\.\.\.$/, '').trim() || 'Untitled' : '')
-  const normalizedDesc = summary || descFromPayload || (isCreate ? '' : undefined)
+  const normalizedTitle = titleFromPayload || heading || (isCreate ? summary.slice(0, 60).replace(/\.\.\.$/, '').trim() || 'Untitled' : '')
+  const normalizedDesc = descFromPayload || summary || (isCreate ? '' : undefined)
   const extractedCover = extractFirstImage(content)
-  const normalizedCover = extractedCover || coverFromPayload || await buildDefaultCoverFileUrl(normalizedTitle || 'Untitled')
+  const normalizedCover = coverFromPayload || extractedCover || await buildDefaultCoverFileUrl(normalizedTitle || 'Untitled')
 
   return {
     title: normalizedTitle || undefined,

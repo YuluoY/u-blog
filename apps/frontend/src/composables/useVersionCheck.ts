@@ -13,8 +13,10 @@ import { ref, onUnmounted } from 'vue'
  * - 可见性切换时主动检测（用户切回标签页时立即感知）
  */
 
-/** 默认检测间隔 5 分钟 */
-const DEFAULT_INTERVAL_MS = 5 * 60 * 1000
+/** 默认检测间隔 1 分钟 */
+const DEFAULT_INTERVAL_MS = 60 * 1000
+/** 首次检测延迟：给首屏渲染留一点缓冲，但避免等待过久 */
+const INITIAL_DELAY_MS = 5_000
 
 /** 全局共享状态（多个组件实例共用同一份检测结果） */
 const hasNewVersion = ref(false)
@@ -75,25 +77,37 @@ export function useVersionCheck(intervalMs = DEFAULT_INTERVAL_MS)
   // 仅生产环境启用
   if (import.meta.env.PROD && currentHash)
   {
-    // 延迟 30 秒后首次检测（避免阻塞页面加载）
+    // 短暂延迟后首次检测，避免首屏刚渲染完成就立刻发请求
     const delay = setTimeout(() =>
     {
       checkVersion()
       timer = setInterval(checkVersion, intervalMs)
-    }, 30_000)
+    }, INITIAL_DELAY_MS)
 
-    // 页面可见性切换时主动检测
+    // 页面可见性切换 / 窗口重新聚焦 / 网络恢复时主动检测
     const onVisibilityChange = () =>
     {
       if (document.visibilityState === 'visible') checkVersion()
     }
+    const onFocus = () =>
+    {
+      checkVersion()
+    }
+    const onOnline = () =>
+    {
+      checkVersion()
+    }
     document.addEventListener('visibilitychange', onVisibilityChange)
+    window.addEventListener('focus', onFocus)
+    window.addEventListener('online', onOnline)
 
     onUnmounted(() =>
     {
       clearTimeout(delay)
       if (timer) clearInterval(timer)
       document.removeEventListener('visibilitychange', onVisibilityChange)
+      window.removeEventListener('focus', onFocus)
+      window.removeEventListener('online', onOnline)
     })
   }
 

@@ -621,14 +621,22 @@ async function handleSubmit()
 {
   if (!props.userId) return
   const autoTitle = extractAutoTitle(props.content)
-  if (!autoTitle) return
+  if (!autoTitle && !form.title.trim()) return
   const autoDesc = extractSummary(props.content)
   const autoCover = extractFirstImage(props.content)
 
-  // 每次点击发布都同步表单展示值，确保 UI 与提交值一致
-  form.title = autoTitle
-  form.desc = autoDesc
-  form.cover = autoCover
+  const resolvedTitle = form.title.trim() || autoTitle
+  const resolvedDesc = descManuallyEdited
+    ? form.desc.trim()
+    : form.desc.trim() || autoDesc
+  const resolvedCover = coverManuallyEdited
+    ? form.cover.trim()
+    : form.cover.trim() || autoCover
+
+  // 仅补齐缺失字段，保留用户手动修改/替换的值
+  form.title = resolvedTitle
+  form.desc = resolvedDesc
+  form.cover = resolvedCover
 
   const publishedAt = publishNow.value
     ? new Date().toISOString()
@@ -647,16 +655,16 @@ async function handleSubmit()
   
 
   const payload: WriteSaveFormPayload = {
-    title: autoTitle,
+    title: resolvedTitle,
     content: props.content,
-    desc: autoDesc || undefined,
+    desc: resolvedDesc || undefined,
     status: form.status,
     publishedAt,
     categoryId: categoryId ?? null,
     tags: form.tags.length > 0 ? form.tags : undefined,
     isPrivate: form.isPrivate,
     isTop: form.isTop,
-    cover: autoCover || undefined,
+    cover: resolvedCover || undefined,
     protect: encryptedProtect,
   }
   emit('submit', payload)
