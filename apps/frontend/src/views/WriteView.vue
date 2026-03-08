@@ -62,6 +62,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { UNotificationFn } from '@u-blog/ui'
 import { useAppStore } from '@/stores/app'
 import { useDraggablePosition } from '@/composables/useDraggablePosition'
+import { useArticleStore } from '@/stores/model/article'
 import { useUserStore } from '@/stores/model/user'
 import { CTheme, CTable } from '@u-blog/model'
 import { useWriteDraft } from '@/composables/useWriteDraft'
@@ -79,6 +80,7 @@ const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const appStore = useAppStore()
+const articleStore = useArticleStore()
 const userStore = useUserStore()
 const { user } = storeToRefs(userStore)
 const editorTheme = computed(() => (appStore.theme === CTheme.DARK ? 'dark' : 'light'))
@@ -206,6 +208,9 @@ async function onSaveSubmit(payload: {
         content,
         userId,
       })
+      const refreshedArticle = await api(CTable.ARTICLE).getArticleById(String(editArticleId.value))
+      if (refreshedArticle)
+        articleStore.syncArticle(refreshedArticle)
       panelVisible.value = false
       UNotificationFn({
         message: t('write.updateSuccess'),

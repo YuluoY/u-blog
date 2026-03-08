@@ -146,6 +146,23 @@ export const useArticleStore = defineStore('article', () =>
   }
 
   /**
+   * 同步单篇文章到当前详情、首页列表和归档列表，避免编辑后仍展示旧缓存。
+   */
+  const syncArticle = (article: IArticle) =>
+  {
+    const mergeList = (list: IArticle[]) =>
+      list.map(item =>
+      {
+        if (item.id !== article.id) return item
+        return { ...item, ...article }
+      })
+
+    setCurrentArticle(article)
+    setArticleList(mergeList(articleList.value))
+    setArchiveList(mergeList(archiveList.value))
+  }
+
+  /**
    * 同步文章浏览量（从 ReadView 浏览后回写到列表，避免回到首页/归档看到旧数据）
    */
   const updateArticleViewCount = (articleId: number, viewCount: number) =>
@@ -189,6 +206,7 @@ export const useArticleStore = defineStore('article', () =>
     setArticleList,
     setArchiveList,
     setCurrentArticle,
+    syncArticle,
     qryArticleList,
     qryArchiveList,
     loadMoreArchive,

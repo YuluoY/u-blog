@@ -248,10 +248,10 @@ const { openSubscribeModal } = useSubscribe()
 const article = computed(() =>
 {
   const id = route.params.id as string
-  const found = articleStore.findArticleById(id)
-  if (found) return found
   const cur = currentArticle.value
   if (cur && (String(cur.id) === id || cur.id === parseInt(id))) return cur
+  const found = articleStore.findArticleById(id)
+  if (found) return found
   return null
 })
 
