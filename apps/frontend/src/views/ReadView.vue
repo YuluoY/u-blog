@@ -233,6 +233,7 @@ defineOptions({
 
 const { t } = useI18n()
 const route = useRoute()
+const router = useRouter()
 const articleStore = useArticleStore()
 const commentStore = useCommentStore()
 const userStore = useUserStore()
@@ -778,6 +779,12 @@ watch(() => route.params.id, async newId =>
     const articleId = parseInt(newId as string, 10)
     if (articleId && !Number.isNaN(articleId))
     {
+      const publicArticle = await articleStore.qryPublicArticleById(String(articleId))
+      if (!publicArticle)
+      {
+        router.replace({ name: 'NotFound', query: { from: route.fullPath } })
+        return
+      }
       try
       {
         const { viewCount } = await recordArticleView(articleId)

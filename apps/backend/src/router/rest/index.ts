@@ -1,5 +1,6 @@
 import express, { type Router } from 'express'
 import type { Request, Response } from 'express'
+import { CArticleStatus } from '@u-blog/model'
 import RestController from '@/controller/rest'
 import { requireAuth } from '@/middleware/AuthGuard'
 import { restWriteGuard, userSettingQueryGuard } from '@/middleware/RestWriteGuard'
@@ -7,6 +8,56 @@ import { Article } from '@/module/schema/Article'
 import { getDataSource } from '@/utils'
 
 const router = express.Router({ mergeParams: true }) as Router
+
+/**
+ * 公开文章详情：仅允许读取已发布且非私密文章。
+ * GET /rest/article/public-detail?id=1
+ */
+router.get('/public-detail', async (req: Request, res: Response) => {
+  if (req.params?.model !== 'article') {
+    res.status(400).json({ code: 400, data: null, message: '仅支持文章模型' })
+    return
+  }
+
+  const id = Number(req.query?.id)
+  if (!id || Number.isNaN(id)) {
+    res.status(400).json({ code: 400, data: null, message: 'id 必填' })
+    return
+  }
+
+  try {
+    const ds = getDataSource(req)
+    const repo = ds.getRepository(Article)
+    const article = await repo
+      .createQueryBuilder('article')
+      .leftJoinAndSelect('article.category', 'category')
+      .leftJoinAndSelect('article.tags', 'tags')
+      .leftJoinAndSelect('article.user', 'user')
+      .addSelect('article.protect')
+      .where('article.id = :id', { id })
+      .andWhere('article.status = :status', { status: CArticleStatus.PUBLISHED })
+      .andWhere('article.isPrivate = :isPrivate', { isPrivate: false })
+      .getOne()
+
+    if (!article) {
+      res.status(404).json({ code: 404, data: null, message: '文章不存在或不可访问' })
+      return
+    }
+
+    const payload = { ...article } as Article & { isProtected?: boolean }
+    if (payload.protect) {
+      payload.isProtected = true
+      payload.content = ''
+    } else {
+      payload.isProtected = false
+    }
+    delete payload.protect
+
+    res.json({ code: 0, data: payload, message: 'ok' })
+  } catch {
+    res.status(500).json({ code: 500, data: null, message: '获取文章详情失败' })
+  }
+})
 
 /**
  * 文章密码验证：匹配密码后返回完整正文
@@ -31,9 +82,11 @@ router.post('/verify-protect', async (req: Request, res: Response) => {
       .createQueryBuilder('article')
       .addSelect('article.protect')
       .where('article.id = :id', { id: Number(id) })
+      .andWhere('article.status = :status', { status: CArticleStatus.PUBLISHED })
+      .andWhere('article.isPrivate = :isPrivate', { isPrivate: false })
       .getOne()
     if (!article) {
-      res.json({ code: 1, data: null, message: '文章不存在' })
+      res.json({ code: 1, data: null, message: '文章不存在或不可访问' })
       return
     }
     if (!article.protect) {

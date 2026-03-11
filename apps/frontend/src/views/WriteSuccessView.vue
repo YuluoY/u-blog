@@ -18,7 +18,7 @@
 
       <!-- 操作按钮 -->
       <div class="write-success__actions">
-        <u-button type="primary" @click="goRead">
+        <u-button v-if="canRead" type="primary" @click="goRead">
           <u-icon :icon="['fas', 'book-open']" />
           {{ t('write.goReadArticle') }}
         </u-button>
@@ -59,11 +59,12 @@ const articleId = computed(() => route.query.id as string | undefined)
 const articleTitle = computed(() =>
   route.query.title ? decodeURIComponent(route.query.title as string) : ''
 )
+const canRead = computed(() => route.query.canRead !== '0')
 
 /** 阅读文章 */
 function goRead()
 {
-  if (articleId.value)
+  if (articleId.value && canRead.value)
   
     router.push({ name: 'read', params: { id: articleId.value } })
   

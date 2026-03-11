@@ -853,7 +853,7 @@ class CommonService {
     const viewRepo = ds.getRepository(View)
 
     // 校验文章存在
-    const article = await articleRepo.findOne({ where: { id: articleId, status: CArticleStatus.PUBLISHED } })
+    const article = await articleRepo.findOne({ where: { id: articleId, status: CArticleStatus.PUBLISHED, isPrivate: false } })
     if (!article) throw new Error('文章不存在或未发布')
 
     // 去重：同一 IP + 同一文章在窗口期内不重复计数
@@ -956,7 +956,7 @@ class CommonService {
     const userId = req.user?.id ?? null
 
     // 校验文章存在
-    const article = await articleRepo.findOne({ where: { id: articleId, status: CArticleStatus.PUBLISHED } })
+    const article = await articleRepo.findOne({ where: { id: articleId, status: CArticleStatus.PUBLISHED, isPrivate: false } })
     if (!article) throw new Error('文章不存在或未发布')
 
     let existing: Likes | null = null
@@ -1009,8 +1009,12 @@ class CommonService {
     fingerprint: string | undefined,
   ): Promise<{ liked: boolean }> {
     const ds = getDataSource(req)
+    const articleRepo = ds.getRepository(Article)
     const likeRepo = ds.getRepository(Likes)
     const userId = req.user?.id ?? null
+
+    const article = await articleRepo.findOne({ where: { id: articleId, status: CArticleStatus.PUBLISHED, isPrivate: false } })
+    if (!article) throw new Error('文章不存在或未发布')
 
     let existing: Likes | null = null
 

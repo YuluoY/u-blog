@@ -209,7 +209,11 @@ export default class AnalyticsService {
       })
     }
 
-    return result
+    const firstActiveIndex = result.findIndex(item => item.pv > 0 || item.uv > 0)
+    if (firstActiveIndex <= 0)
+      return result
+
+    return result.slice(firstActiveIndex)
   }
 
   /** 页面排行 Top N */

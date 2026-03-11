@@ -22,7 +22,14 @@ app.set('trust proxy', true)
 
 // HTTP 响应 gzip 压缩：文章正文等大 JSON 传输体积可降低 60-80%
 // threshold 1KB — 过小的响应不值得压缩
-app.use(compression({ threshold: 1024 }))
+app.use(compression({
+	threshold: 1024,
+	filter: (req, res) => {
+		const accept = String(req.headers.accept || '')
+		if (accept.includes('text/event-stream')) return false
+		return compression.filter(req, res)
+	},
+}))
 
 // 安全头（helmet）
 app.use(helmet({

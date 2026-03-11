@@ -32,7 +32,10 @@ export async function sendXiaohuiStream(
   // 携带 JWT token（已登录用户）
   const token = getAccessToken()
 
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'Accept': 'text/event-stream',
+  }
   if (token) headers['Authorization'] = `Bearer ${token}`
 
   const res = await fetch('/api/xiaohui/chat', {

@@ -183,6 +183,11 @@ async function chatAuthGuard(req: Request, res: Response, next: NextFunction): P
   }
 }
 
+function writeSse(res: Response, payload: unknown): void {
+  res.write(`data: ${JSON.stringify(payload)}\n\n`)
+  ;(res as Response & { flush?: () => void }).flush?.()
+}
+
 router.post('/chat', chatAuthGuard, async (req: Request, res: Response) => {
   const { message, messages, config, context: ragContext } = req.body || {}
 
@@ -231,7 +236,7 @@ router.post('/chat', chatAuthGuard, async (req: Request, res: Response) => {
     // SSE 超时保护：最长 3 分钟
     const SSE_TIMEOUT_MS = 3 * 60 * 1000
     const sseTimer = setTimeout(() => {
-      res.write(`data: ${JSON.stringify({ error: '响应超时，请重新发送' })}\n\n`)
+      writeSse(res, { error: '响应超时，请重新发送' })
       res.end()
     }, SSE_TIMEOUT_MS)
 
@@ -239,18 +244,18 @@ router.post('/chat', chatAuthGuard, async (req: Request, res: Response) => {
       const delta = chunk.choices?.[0]?.delta?.content
       if (delta) {
         // SSE 格式：data: JSON\n\n
-        res.write(`data: ${JSON.stringify({ token: delta })}\n\n`)
+        writeSse(res, { token: delta })
       }
       // 流结束标志
       if (chunk.choices?.[0]?.finish_reason) {
-        res.write(`data: ${JSON.stringify({ done: true })}\n\n`)
+        writeSse(res, { done: true })
       }
     }
     clearTimeout(sseTimer)
   } catch (err: any) {
     // 错误也通过 SSE 事件发送，前端统一处理
     const msg = err?.message || 'AI 请求失败'
-    res.write(`data: ${JSON.stringify({ error: msg })}\n\n`)
+    writeSse(res, { error: msg })
   } finally {
     res.end()
   }

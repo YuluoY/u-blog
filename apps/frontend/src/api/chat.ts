@@ -39,7 +39,10 @@ export async function sendChatMessageStream(
   const { getAccessToken } = await import('./request')
   const token = getAccessToken()
 
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'Accept': 'text/event-stream',
+  }
   if (token) headers['Authorization'] = `Bearer ${token}`
 
   const res = await fetch('/api/chat', {

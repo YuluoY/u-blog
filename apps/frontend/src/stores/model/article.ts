@@ -138,6 +138,14 @@ export const useArticleStore = defineStore('article', () =>
     return article
   }
 
+  /** 公开详情查询：仅返回已发布且非私密文章 */
+  const qryPublicArticleById = async(id: string) =>
+  {
+    const article = await api(CTable.ARTICLE).getPublicArticleById(id)
+    setCurrentArticle(article)
+    return article
+  }
+
   /** 本地查找 */
   const findArticleById = (id: string) =>
   {
@@ -211,6 +219,7 @@ export const useArticleStore = defineStore('article', () =>
     qryArchiveList,
     loadMoreArchive,
     qryArticleById,
+    qryPublicArticleById,
     updateArticleLikeCount,
     updateArticleViewCount,
     findArticleById,

@@ -435,6 +435,7 @@ function extractFirstImage(mdContent: string): string
 
 /* ---------- 初始化表单 ---------- */
 let initDone = false
+let suppressFieldTrack = false
 
 async function initForm()
 {
@@ -542,11 +543,11 @@ let coverManuallyEdited = false
 
 watch(() => form.desc, () =>
 {
-  if (initDone) descManuallyEdited = true
+  if (initDone && !suppressFieldTrack) descManuallyEdited = true
 })
 watch(() => form.cover, () =>
 {
-  if (initDone) coverManuallyEdited = true
+  if (initDone && !suppressFieldTrack) coverManuallyEdited = true
 })
 
 watch(() => props.content, newContent =>
@@ -671,6 +672,24 @@ async function handleSubmit()
 }
 
 /**
+ * 每次打开发布抽屉时，根据当前正文重新同步标题与简介。
+ * 用户显式要求“打开即同步”，因此这里以正文提取结果为准。
+ */
+function syncDraftMetaFromContent()
+{
+  const nextTitle = extractFirstHeading(props.content) || extractAutoTitle(props.content)
+  const nextDesc = extractSummary(props.content)
+
+  suppressFieldTrack = true
+  if (nextTitle)
+    form.title = nextTitle
+  if (nextDesc)
+    form.desc = nextDesc
+  descManuallyEdited = false
+  suppressFieldTrack = false
+}
+
+/**
  * 编辑模式：加载已有文章数据到表单
  * @param article 文章完整对象
  */
@@ -723,6 +742,8 @@ function clearCache()
 defineExpose({
   /** 触发表单提交 */
   submit: handleSubmit,
+  /** 打开发布抽屉时同步正文提取的标题/简介 */
+  syncDraftMetaFromContent,
   /** 是否可提交（标题非空 & 已登录） */
   canSubmit,
   /** 提交按钮文案 */

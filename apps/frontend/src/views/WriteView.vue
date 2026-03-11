@@ -64,7 +64,7 @@ import { useAppStore } from '@/stores/app'
 import { useDraggablePosition } from '@/composables/useDraggablePosition'
 import { useArticleStore } from '@/stores/model/article'
 import { useUserStore } from '@/stores/model/user'
-import { CTheme, CTable } from '@u-blog/model'
+import { CTheme, CTable, CArticleStatus, type IArticle } from '@u-blog/model'
 import { useWriteDraft } from '@/composables/useWriteDraft'
 import WriteEditor from '@/components/WriteEditor.vue'
 import WriteSaveForm from '@/components/WriteSaveForm.vue'
@@ -116,7 +116,13 @@ const fabStyle = computed(() => ({
 function onFabClick()
 {
   if (fabDragging.value) return
+  saveFormRef.value?.syncDraftMetaFromContent()
   panelVisible.value = true
+}
+
+function canReadFromRoute(article: Pick<IArticle, 'status' | 'isPrivate'> | null | undefined)
+{
+  return !!article && article.status === CArticleStatus.PUBLISHED && article.isPrivate !== true
 }
 
 function onEditorContent(v: string)
@@ -217,8 +223,8 @@ async function onSaveSubmit(payload: {
         type: 'success',
         deduplicate: true,
       })
-      // 跳转到文章阅读页
-      router.push(`/read/${editArticleId.value}`)
+      if (canReadFromRoute(refreshedArticle))
+        router.push(`/read/${editArticleId.value}`)
     }
     else
     {
@@ -240,7 +246,8 @@ async function onSaveSubmit(payload: {
         name: 'writeSuccess',
         query: {
           id: String(article.id),
-          title: encodeURIComponent(payload.title)
+          title: encodeURIComponent(payload.title),
+          canRead: canReadFromRoute(article) ? '1' : '0',
         }
       })
     }

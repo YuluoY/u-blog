@@ -11,6 +11,11 @@ import { CUserRole } from '@u-blog/model'
 const router = express.Router() as Router
 const adminOnly = [requireAuth, requireRole(CUserRole.ADMIN)]
 
+function writeSse(res: Response, payload: unknown): void {
+  res.write(`data: ${JSON.stringify(payload)}\n\n`)
+  ;(res as Response & { flush?: () => void }).flush?.()
+}
+
 /** 延迟工具函数 */
 const sleep = (ms: number) => new Promise<void>(r => setTimeout(r, ms))
 
@@ -251,7 +256,7 @@ router.post('/chat', xiaohuiAbuseGuard, xiaohuiLimiter, async (req: Request, res
     const SSE_TIMEOUT_MS = 3 * 60 * 1000
     const sseTimer = setTimeout(() => {
       status = 'error'
-      res.write(`data: ${JSON.stringify({ error: '响应超时，请重新发送' })}\n\n`)
+      writeSse(res, { error: '响应超时，请重新发送' })
       res.end()
     }, SSE_TIMEOUT_MS)
 
@@ -283,7 +288,7 @@ router.post('/chat', xiaohuiAbuseGuard, xiaohuiLimiter, async (req: Request, res
         const jsonStr = line.slice(6).trim()
         if (jsonStr === '[DONE]') {
           // 流式完成
-          res.write(`data: ${JSON.stringify({ done: true })}\n\n`)
+          writeSse(res, { done: true })
           continue
         }
 
@@ -304,7 +309,7 @@ router.post('/chat', xiaohuiAbuseGuard, xiaohuiLimiter, async (req: Request, res
           const finishReason = chunk.choices?.[0]?.finish_reason
           if (finishReason === 'tool_calls' || finishReason === 'function_call') {
             console.warn('[xiaohui] 拦截到工具调用 finish_reason:', finishReason)
-            res.write(`data: ${JSON.stringify({ done: true })}\n\n`)
+            writeSse(res, { done: true })
             continue
           }
 
@@ -317,7 +322,7 @@ router.post('/chat', xiaohuiAbuseGuard, xiaohuiLimiter, async (req: Request, res
             // 拆分为小片段逐个推送，前端打字机效果
             const segments = splitIntoSegments(safeContent)
             for (let si = 0; si < segments.length; si++) {
-              res.write(`data: ${JSON.stringify({ token: segments[si] })}\n\n`)
+              writeSse(res, { token: segments[si] })
               // 多片段间加 20ms 延迟实现平滑输出
               if (segments.length > 1 && si < segments.length - 1) {
                 await sleep(20)
@@ -326,7 +331,7 @@ router.post('/chat', xiaohuiAbuseGuard, xiaohuiLimiter, async (req: Request, res
           }
           // 非流式 finish_reason
           if (finishReason) {
-            res.write(`data: ${JSON.stringify({ done: true })}\n\n`)
+            writeSse(res, { done: true })
           }
         } catch {
           // 忽略无法解析的行
@@ -340,7 +345,7 @@ router.post('/chat', xiaohuiAbuseGuard, xiaohuiLimiter, async (req: Request, res
   } catch (err: any) {
     status = 'error'
     const msg = err?.message || '小惠暂时无法回答，请稍后再试'
-    res.write(`data: ${JSON.stringify({ error: msg })}\n\n`)
+    writeSse(res, { error: msg })
   } finally {
     res.end()
 

@@ -70,6 +70,8 @@ export interface IArticleApis {
   getArticleList: (page?: number, pageSize?: number, sort?: HomeSortType, userId?: number) => Promise<IArticle[]>
   /** 归档用：按时间倒序分页拉取文章 */
   getArticleListForArchive: (take?: number, skip?: number, userId?: number) => Promise<IArticle[]>
+  /** 公开详情：仅允许读取已发布且非私密文章 */
+  getPublicArticleById: (id: string) => Promise<IArticle | null>
   /** 根据 id 查询单篇文章 */
   getArticleById: (id: string) => Promise<IArticle | null>
   /** 新建文章（草稿或发布） */
@@ -139,6 +141,24 @@ const apis: IArticleApis = {
       })
       const arr = Array.isArray(list) ? list : []
       return arr[0] ?? null
+    }
+    catch
+    {
+      return null
+    }
+  },
+
+  async getPublicArticleById(id: string)
+  {
+    try
+    {
+      const res = await request.get<{ code: number; data: IArticle | null; message: string }>(
+        '/rest/article/public-detail',
+        { params: { id } },
+      )
+      if (res.data.code === 0)
+        return res.data.data ?? null
+      return null
     }
     catch
     {

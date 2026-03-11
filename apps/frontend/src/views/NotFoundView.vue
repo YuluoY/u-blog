@@ -22,13 +22,11 @@
 
       <!-- 操作按钮 -->
       <div class="not-found__actions">
-        <u-button type="primary" @click="goHome">
-          <u-icon icon="fa-solid fa-house" />
-          <span>{{ t('notFound.backHome') }}</span>
+        <u-button type="primary" icon="fa-solid fa-house" @click="goHome">
+          {{ t('notFound.backHome') }}
         </u-button>
-        <u-button plain @click="goBack">
-          <u-icon icon="fa-solid fa-arrow-left" />
-          <span>{{ t('notFound.goBack') }}</span>
+        <u-button plain icon="fa-solid fa-arrow-left" @click="goBack">
+          {{ t('notFound.goBack') }}
         </u-button>
       </div>
     </div>
@@ -170,9 +168,33 @@ function goBack()
   /* 操作按钮 */
   &__actions {
     display: flex;
-    gap: 12px;
+    gap: 14px;
     flex-wrap: wrap;
     justify-content: center;
+
+    :deep(.u-button) {
+      min-width: 184px;
+      height: 48px;
+      padding: 0 22px;
+      border-radius: 14px;
+      font-size: 1rem;
+      font-weight: 600;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    :deep(.u-button + .u-button) {
+      margin-left: 0;
+    }
+
+    :deep(.u-button .u-button__icon) {
+      font-size: 0.95rem;
+    }
+
+    :deep(.u-button span) {
+      display: inline-flex;
+      align-items: center;
+      line-height: 1;
+    }
   }
 }
 
@@ -189,6 +211,16 @@ function goBack()
 
     &__desc {
       font-size: 13px;
+    }
+
+    &__actions {
+      width: 100%;
+      gap: 10px;
+
+      :deep(.u-button) {
+        width: 100%;
+        min-width: 0;
+      }
     }
   }
 }

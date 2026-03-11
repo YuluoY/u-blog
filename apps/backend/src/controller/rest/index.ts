@@ -22,6 +22,7 @@ import {
   invalidateTaxonomyCache,
   invalidateSettingsCache,
 } from '@/service/cache'
+import { blogKB } from '@/service/xiaohui/blogKnowledge'
 
 const DEFAULT_COVER_WIDTH = 1200
 const DEFAULT_COVER_HEIGHT = 630
@@ -35,6 +36,7 @@ function invalidateCacheForModel(req: Request): void {
   switch (modelName) {
     case 'article':
       invalidateArticleCache().catch(() => {})
+      blogKB.invalidate().catch(() => {})
       break
     case 'comment':
       invalidateCommentCache().catch(() => {})
@@ -42,6 +44,7 @@ function invalidateCacheForModel(req: Request): void {
     case 'category':
     case 'tag':
       invalidateTaxonomyCache().catch(() => {})
+      blogKB.invalidate().catch(() => {})
       break
     case 'setting':
       invalidateSettingsCache().catch(() => {})
