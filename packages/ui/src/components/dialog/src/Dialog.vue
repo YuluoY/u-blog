@@ -235,6 +235,9 @@ function setupDialogInteractions() {
       w.value = width
       h.value = height
       isCollapsed.value = false
+    },
+    end: (width, height) => {
+      emits('resize', width, height)
     }
   })
   useDraggle({

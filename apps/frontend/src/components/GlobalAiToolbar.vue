@@ -2,23 +2,45 @@
   GlobalAiToolbar — 全站 AI 浮动工具栏（仅限可输入区域）
   仅当用户在 可编辑 DOM（textarea / input / contenteditable）中选中文本时弹出。
   WriteView 自带独立工具栏，此组件自动跳过。
+  阶段：actions → custom-input / loading → preview（可拖拽/缩放）
 -->
 <template>
   <Teleport to="body">
-    <!-- AI 浮动工具条：仅在可编辑输入区域选中文本后弹出 -->
+    <!-- 阶段 1/2：工具条 + 自定义输入 + Loading -->
     <Transition name="global-ai-toolbar-fade">
       <div
-        v-if="toolbarVisible"
+        v-if="toolbarVisible && phase !== 'preview'"
         ref="toolbarRef"
         class="global-ai-toolbar"
         :class="{ 'global-ai-toolbar--flipped': toolbarFlipped }"
         :style="toolbarStyle"
         @mousedown.prevent
       >
-        <div v-if="aiLoading" class="global-ai-toolbar__loading">
+        <!-- Loading 态 -->
+        <div v-if="phase === 'loading'" class="global-ai-toolbar__loading">
           <u-icon icon="fa-solid fa-spinner" />
           <span>{{ t('ai.processing') }}</span>
         </div>
+
+        <!-- 自定义指令输入态 -->
+        <div v-else-if="phase === 'custom-input'" class="global-ai-toolbar__custom">
+          <input
+            ref="customInputRef"
+            v-model="customPrompt"
+            class="global-ai-toolbar__input"
+            :placeholder="t('ai.customPlaceholder')"
+            @keydown.enter.prevent="handleCustomSend"
+            @mousedown.stop
+          />
+          <button class="global-ai-toolbar__btn global-ai-toolbar__btn--primary" :disabled="!customPrompt.trim()" @click="handleCustomSend">
+            <u-icon icon="fa-solid fa-paper-plane" />
+          </button>
+          <button class="global-ai-toolbar__btn" @click="phase = 'actions'">
+            <u-icon icon="fa-solid fa-arrow-left" />
+          </button>
+        </div>
+
+        <!-- 默认操作按钮列表 -->
         <div v-else class="global-ai-toolbar__actions">
           <button
             v-for="act in aiActions"
@@ -33,6 +55,50 @@
         </div>
       </div>
     </Transition>
+
+    <!-- 阶段 3：结果预览弹窗（使用 UDialog，自带拖拽 + 缩放） -->
+    <u-dialog
+      v-model="previewVisible"
+      :title="previewTitle"
+      :width="dialogWidth"
+      :height="dialogHeight"
+      :z-index="10011"
+      @cancel="handleDiscard"
+      @resize="onDialogResize"
+    >
+      <!-- 结果内容 -->
+      <div class="global-ai-preview__content">{{ aiResult }}</div>
+
+      <!-- 底部操作按钮 -->
+      <template #footer>
+        <div class="global-ai-preview__footer">
+          <div class="global-ai-preview__actions-left">
+            <button class="global-ai-preview__btn global-ai-preview__btn--primary" @click="handleReplace">
+              <u-icon icon="fa-solid fa-check" />
+              <span>{{ t('ai.replaceText') }}</span>
+            </button>
+            <button class="global-ai-preview__btn" @click="handleInsertAfter">
+              <u-icon icon="fa-solid fa-plus" />
+              <span>{{ t('ai.insertAfter') }}</span>
+            </button>
+            <button class="global-ai-preview__btn" @click="handleCopy">
+              <u-icon icon="fa-solid fa-copy" />
+              <span>{{ t('ai.copyResult') }}</span>
+            </button>
+          </div>
+          <div class="global-ai-preview__actions-right">
+            <button class="global-ai-preview__btn" @click="handleRetry">
+              <u-icon icon="fa-solid fa-rotate" />
+              <span>{{ t('ai.retry') }}</span>
+            </button>
+            <button class="global-ai-preview__btn" @click="handleDiscard">
+              <u-icon icon="fa-solid fa-xmark" />
+              <span>{{ t('ai.discard') }}</span>
+            </button>
+          </div>
+        </div>
+      </template>
+    </u-dialog>
   </Teleport>
 </template>
 
@@ -58,18 +124,22 @@ const userStore = useUserStore()
 const HIDE_DELAY = 200
 const MIN_SELECT_LEN = 1
 
+/* ─── 阶段状态机 ─── */
+type ToolbarPhase = 'actions' | 'custom-input' | 'loading' | 'preview'
+const phase = ref<ToolbarPhase>('actions')
+const aiResult = ref('')
+const lastAction = ref<string>('')
+const customPrompt = ref('')
+const customInputRef = ref<HTMLInputElement | null>(null)
+
 /* ─── AI 模型配置检测（支持登录用户 + 游客本地配置） ─── */
 const aiConfigured = ref(false)
-/** 游客缓存的完整配置（运行时解密后保持在内存中） */
 let guestConfig: GuestAiConfig | null = null
-/** 游客当前激活厂商的有效条目（快速访问，避免每次查找） */
 let guestActiveEntry: GuestProviderEntry | null = null
-/** 游客当前激活厂商的 key */
 let guestActiveProvider = ''
 
 async function checkAiConfigured()
 {
-  // 登录用户：检查服务端配置
   if (userStore.isLoggedIn)
   {
     try
@@ -88,7 +158,6 @@ async function checkAiConfigured()
     return
   }
 
-  // 游客：检查 localStorage 加密配置
   if (hasGuestAiConfig())
   {
     guestConfig = await loadGuestAiConfig()
@@ -128,12 +197,24 @@ interface ActionItem { key: string; icon: string; label: string }
 
 const aiActions = computed<ActionItem[]>(() => [
   { key: 'translate', icon: 'fa-solid fa-language', label: t('ai.translate') },
-  { key: 'explain', icon: 'fa-solid fa-lightbulb', label: t('ai.explain') },
   { key: 'polish', icon: 'fa-solid fa-wand-magic-sparkles', label: t('ai.polish') },
   { key: 'condense', icon: 'fa-solid fa-compress', label: t('ai.condense') },
-  { key: 'expand', icon: 'fa-solid fa-expand', label: t('ai.expand') },
-  { key: 'continue', icon: 'fa-solid fa-forward', label: t('ai.continue') },
+  { key: 'custom', icon: 'fa-solid fa-pen-nib', label: t('ai.custom') },
 ])
+
+/* ─── action key 到 label 映射（预览标题用） ─── */
+const actionLabelMap = computed(() =>
+{
+  const m: Record<string, string> = {}
+  for (const a of aiActions.value) m[a.key] = a.label
+  return m
+})
+
+const previewTitle = computed(() =>
+{
+  const label = actionLabelMap.value[lastAction.value] || lastAction.value
+  return t('ai.previewTitle', { action: label })
+})
 
 /* ─── 工具条可见性与定位 ─── */
 const toolbarVisible = ref(false)
@@ -153,9 +234,47 @@ let savedInput: HTMLInputElement | HTMLTextAreaElement | null = null
 let savedSelStart = 0
 let savedSelEnd = 0
 
+/* ─── 预览弹窗可见性（由 phase 驱动） ─── */
+const previewVisible = computed({
+  get: () => phase.value === 'preview',
+  set: (val: boolean) =>
+  {
+    if (!val) closePreview()
+  },
+})
+
+/* ─── 预览弹窗宽高本地缓存 ─── */
+const AI_DIALOG_SIZE_KEY = 'ai-toolbar-dialog-size'
+
+function loadDialogSize(): { w: number; h: number }
+{
+  try
+  {
+    const raw = localStorage.getItem(AI_DIALOG_SIZE_KEY)
+    if (raw)
+    {
+      const parsed = JSON.parse(raw)
+      if (parsed.w > 0 && parsed.h > 0) return parsed
+    }
+  }
+  catch
+  { /* ignore */ }
+  return { w: 420, h: 300 }
+}
+
+const cachedSize = loadDialogSize()
+const dialogWidth = ref(cachedSize.w)
+const dialogHeight = ref(cachedSize.h)
+
+function onDialogResize(width: number, height: number)
+{
+  dialogWidth.value = width
+  dialogHeight.value = height
+  localStorage.setItem(AI_DIALOG_SIZE_KEY, JSON.stringify({ w: width, h: height }))
+}
+
 /* ─── 可编辑元素检测 ─── */
 
-/** 判断节点是否位于可编辑 DOM 内 */
 function isInEditableContext(node: Node | null): boolean
 {
   if (!node) return false
@@ -174,7 +293,6 @@ function isInEditableContext(node: Node | null): boolean
   return false
 }
 
-/** 找到最近的 textarea/input 祖先（如果有） */
 function findInputAncestor(node: Node | null): HTMLInputElement | HTMLTextAreaElement | null
 {
   let el: Node | null = node
@@ -193,7 +311,6 @@ function isTextInput(el: HTMLInputElement): boolean
   return !t || t === 'text' || t === 'search' || t === 'url' || t === 'email'
 }
 
-/** 检查选区是否在 WriteEditor 内部 */
 function isInsideWriteEditor(node: Node | null): boolean
 {
   if (!node) return false
@@ -207,12 +324,8 @@ function isInsideWriteEditor(node: Node | null): boolean
   return false
 }
 
-/* ─── 选区检测：仅在可编辑区域触发 ─── */
+/* ─── 选区检测 ─── */
 
-/**
- * 从 textarea / input 获取选中文本
- * （这些元素的选区不反映在 window.getSelection() 中）
- */
 function getInputSelection(el: HTMLInputElement | HTMLTextAreaElement): string
 {
   const start = el.selectionStart ?? 0
@@ -221,10 +334,6 @@ function getInputSelection(el: HTMLInputElement | HTMLTextAreaElement): string
   return el.value.slice(start, end)
 }
 
-/**
- * 计算 textarea/input 中选区的视口坐标
- * 通过镜像 div 测量选中文本在输入框内的精确位置
- */
 function getInputSelectionRect(el: HTMLInputElement | HTMLTextAreaElement)
 {
   const start = el.selectionStart ?? 0
@@ -279,10 +388,12 @@ function getInputSelectionRect(el: HTMLInputElement | HTMLTextAreaElement)
 
 function handleMouseUp(e: MouseEvent)
 {
-  if (!aiConfigured.value || aiLoading.value) return
+  if (!aiConfigured.value) return
+  // preview 阶段不响应选区
+  if (phase.value === 'preview' || phase.value === 'loading') return
 
   const target = e.target as HTMLElement
-  if (target.closest('.global-ai-toolbar'))
+  if (target.closest('.global-ai-toolbar') || target.closest('.u-dialog'))
     return
 
   const activeEl = document.activeElement
@@ -295,7 +406,6 @@ function handleMouseUp(e: MouseEvent)
     const text = getInputSelection(inputEl)
     if (text.trim().length >= MIN_SELECT_LEN && !isInsideWriteEditor(inputEl))
     {
-      // 通过镜像 div 精确测量选区位置，工具条居中显示在选区正上方
       const selRect = getInputSelectionRect(inputEl)
       const fallbackRect = inputEl.getBoundingClientRect()
       showToolbar(text, {
@@ -310,7 +420,6 @@ function handleMouseUp(e: MouseEvent)
     }
   }
 
-  // 检查 contenteditable 中的选区
   const selection = window.getSelection()
   if (!selection || selection.isCollapsed) return
 
@@ -324,7 +433,6 @@ function handleMouseUp(e: MouseEvent)
   const range = selection.getRangeAt(0)
   const rect = range.getBoundingClientRect()
 
-  // 工具条居中显示在选区正上方
   showToolbar(text, {
     top: rect.top + window.scrollY - 8,
     left: rect.left + window.scrollX + rect.width / 2,
@@ -342,10 +450,12 @@ function showToolbar(text: string, pos: { top: number; left: number })
   toolbarPos.value = pos
   toolbarFlipped.value = false
   toolbarVisible.value = true
+  phase.value = 'actions'
+  aiResult.value = ''
+  customPrompt.value = ''
   nextTick(adjustToolbarPosition)
 }
 
-/** 调整工具条位置，防止超出视口（上下左右） */
 function adjustToolbarPosition()
 {
   const el = toolbarRef.value
@@ -355,36 +465,30 @@ function adjustToolbarPosition()
   const vw = window.innerWidth
   const MARGIN = 8
 
-  // 左侧超出
   if (rect.left < MARGIN)
     toolbarPos.value.left += MARGIN - rect.left
 
-  // 右侧超出
   if (rect.right > vw - MARGIN)
     toolbarPos.value.left -= rect.right - vw + MARGIN
 
-  // 顶部超出（工具条在选区上方，可能溢出顶部）——翻转到选区下方
   if (rect.top < MARGIN)
   {
     toolbarPos.value.top += rect.height + 24
     toolbarFlipped.value = true
   }
 
-  // 底部超出（翻转后可能溢出底部）
   if (rect.bottom > window.innerHeight - MARGIN)
     toolbarPos.value.top -= rect.bottom - window.innerHeight + MARGIN
 }
 
-/** 选区变化监听：选区清空时延迟隐藏 */
 function handleSelectionChange()
 {
-  if (aiLoading.value) return
+  // preview / loading 阶段不触发隐藏
+  if (phase.value === 'loading' || phase.value === 'preview') return
 
-  // 检查 contenteditable 选区
   const selection = window.getSelection()
   const hasContentEditableSelection = selection && !selection.isCollapsed && selection.toString().trim().length > 0
 
-  // 检查 input/textarea 选区
   const activeEl = document.activeElement
   let hasInputSelection = false
   if (activeEl instanceof HTMLTextAreaElement || activeEl instanceof HTMLInputElement)
@@ -402,8 +506,11 @@ function scheduleHide()
   clearHideTimer()
   hideTimer = setTimeout(() =>
   {
+    // 不在 custom-input 聚焦时隐藏
+    if (phase.value === 'custom-input') return
     toolbarVisible.value = false
     selectedText.value = ''
+    phase.value = 'actions'
   }, HIDE_DELAY)
 }
 
@@ -416,9 +523,72 @@ function clearHideTimer()
   }
 }
 
-/* ─── AI 操作处理（直接替换选中内容） ─── */
+/* ─── 构建游客配置 ─── */
+async function buildGuestConfig()
+{
+  if (!userStore.isLoggedIn && guestActiveEntry)
+  {
+    const p = findProvider(guestActiveProvider)
+    return {
+      apiKey: await encryptForTransport(guestActiveEntry.apiKey),
+      baseUrl: guestActiveEntry.baseUrl ?? p?.baseUrl,
+      model: guestActiveEntry.model,
+    }
+  }
+  return undefined
+}
 
-/** 替换选中文本（textarea/input 或 contenteditable） */
+/* ─── AI 操作处理 ─── */
+
+async function executeAiAction(action: string, text: string, prompt?: string)
+{
+  phase.value = 'loading'
+  lastAction.value = action
+
+  const inlineConfig = await buildGuestConfig()
+  const result = await aiGenerate(action as AiAction, text, inlineConfig, prompt)
+
+  if (!result)
+  {
+    // 失败回到 actions 态
+    phase.value = 'actions'
+    return
+  }
+
+  aiResult.value = result
+
+  // 切换到 preview（UDialog 自动居中）
+  toolbarVisible.value = false
+  phase.value = 'preview'
+}
+
+async function handleAction(key: string)
+{
+  if (!selectedText.value) return
+
+  if (key === 'custom')
+  {
+    phase.value = 'custom-input'
+    customPrompt.value = ''
+    nextTick(() =>
+    {
+      adjustToolbarPosition()
+      customInputRef.value?.focus()
+    })
+    return
+  }
+
+  await executeAiAction(key, selectedText.value)
+}
+
+async function handleCustomSend()
+{
+  const prompt = customPrompt.value.trim()
+  if (!prompt || !selectedText.value) return
+  await executeAiAction('custom', selectedText.value, prompt)
+}
+
+/* ─── 替换选中文本 ─── */
 function replaceSelectedText(newText: string)
 {
   if (savedInput)
@@ -460,35 +630,96 @@ function replaceSelectedText(newText: string)
   }
 }
 
-async function handleAction(key: string)
+/* ─── 插入到选区后方 ─── */
+function insertAfterSelection(newText: string)
 {
-  if (!selectedText.value) return
-
-  const text = selectedText.value
-  // 工具条保持可见，模板自动切换为 loading 态（v-if="aiLoading"）
-
-  // 游客使用本地配置（按厂商取对应的 API Key，加密传输到后端）
-  let inlineConfig: { apiKey: string; baseUrl?: string; model?: string } | undefined
-  if (!userStore.isLoggedIn && guestActiveEntry)
+  if (savedInput)
   {
-    const p = findProvider(guestActiveProvider)
-    inlineConfig = {
-      apiKey: await encryptForTransport(guestActiveEntry.apiKey),
-      baseUrl: guestActiveEntry.baseUrl ?? p?.baseUrl,
-      model: guestActiveEntry.model,
+    try
+    {
+      savedInput.focus()
+      // 光标移到选区末尾后插入
+      savedInput.setSelectionRange(savedSelEnd, savedSelEnd)
+      document.execCommand('insertText', false, newText)
+      UMessageFn({ message: t('ai.inserted'), type: 'success' })
     }
+    catch
+    {
+      const before = savedInput.value.slice(0, savedSelEnd)
+      const after = savedInput.value.slice(savedSelEnd)
+      savedInput.value = before + newText + after
+      savedInput.dispatchEvent(new Event('input', { bubbles: true }))
+      UMessageFn({ message: t('ai.inserted'), type: 'success' })
+    }
+    savedInput = null
+    return
   }
 
-  const result = await aiGenerate(key as AiAction, text, inlineConfig)
+  if (savedRange)
+  {
+    try
+    {
+      const selection = window.getSelection()
+      const collapsed = savedRange.cloneRange()
+      collapsed.collapse(false) // 折叠到选区末尾
+      selection?.removeAllRanges()
+      selection?.addRange(collapsed)
+      document.execCommand('insertText', false, newText)
+      UMessageFn({ message: t('ai.inserted'), type: 'success' })
+    }
+    catch
+    {
+      UMessageFn({ message: t('ai.replaceFailed'), type: 'error' })
+    }
+    savedRange = null
+  }
+}
 
-  // 隐藏工具条
+/* ─── 预览面板操作 ─── */
+
+function handleReplace()
+{
+  replaceSelectedText(aiResult.value)
+  closePreview()
+}
+
+function handleInsertAfter()
+{
+  insertAfterSelection(aiResult.value)
+  closePreview()
+}
+
+async function handleCopy()
+{
+  try
+  {
+    await navigator.clipboard.writeText(aiResult.value)
+    UMessageFn({ message: t('ai.copiedToClipboard'), type: 'success' })
+  }
+  catch
+  {
+    UMessageFn({ message: t('ai.copyFailed'), type: 'error' })
+  }
+}
+
+async function handleRetry()
+{
+  if (!selectedText.value || !lastAction.value) return
+  const prompt = lastAction.value === 'custom' ? customPrompt.value.trim() : undefined
+  await executeAiAction(lastAction.value, selectedText.value, prompt)
+}
+
+function handleDiscard()
+{
+  closePreview()
+}
+
+function closePreview()
+{
+  phase.value = 'actions'
+  aiResult.value = ''
   toolbarVisible.value = false
   selectedText.value = ''
-
-  if (!result) return
-
-  // 替换选中内容
-  replaceSelectedText(result)
 }
 
 /* ─── 事件绑定生命周期 ─── */
@@ -586,6 +817,101 @@ onBeforeUnmount(() =>
       background: var(--u-primary-light-8, rgba(64, 158, 255, 0.1));
       color: var(--u-primary, #409eff);
     }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    &--primary {
+      color: var(--u-primary, #409eff);
+    }
+  }
+
+  /* 自定义指令输入态 */
+  &__custom {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px;
+  }
+
+  &__input {
+    width: 220px;
+    height: 28px;
+    padding: 0 8px;
+    font-size: 12px;
+    border: 1px solid var(--u-border-2, #e0e0e0);
+    border-radius: 6px;
+    background: var(--u-background-2, #f5f5f5);
+    color: var(--u-text-1, #333);
+    outline: none;
+    transition: border-color 0.15s;
+
+    &:focus {
+      border-color: var(--u-primary, #409eff);
+    }
+
+    &::placeholder {
+      color: var(--u-text-4, #bbb);
+    }
+  }
+}
+
+/* ========== UDialog 内的 AI 预览内容样式 ========== */
+.global-ai-preview__content {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--u-text-1, #333);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.global-ai-preview__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
+}
+
+.global-ai-preview__actions-left,
+.global-ai-preview__actions-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.global-ai-preview__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  font-size: 12px;
+  border: 1px solid var(--u-border-2, #e0e0e0);
+  border-radius: 6px;
+  background: var(--u-background-1, #fff);
+  color: var(--u-text-2, #666);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+  &:hover {
+    border-color: var(--u-primary, #409eff);
+    color: var(--u-primary, #409eff);
+    background: var(--u-primary-light-8, rgba(64, 158, 255, 0.05));
+  }
+
+  &--primary {
+    background: var(--u-primary, #409eff);
+    border-color: var(--u-primary, #409eff);
+    color: #fff;
+
+    &:hover {
+      background: var(--u-primary-dark-2, #337ecc);
+      border-color: var(--u-primary-dark-2, #337ecc);
+      color: #fff;
+    }
   }
 }
 
@@ -619,6 +945,10 @@ onBeforeUnmount(() =>
 
   .global-ai-toolbar__btn span {
     display: none;
+  }
+
+  .global-ai-toolbar__input {
+    width: 160px;
   }
 }
 </style>

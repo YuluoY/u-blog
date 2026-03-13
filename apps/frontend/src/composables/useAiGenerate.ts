@@ -19,6 +19,7 @@ export type AiAction =
   | 'continue'  // 续写
   | 'explain'   // 解释
   | 'bio'       // 生成个人简介
+  | 'custom'    // 自定义指令
 
 /**
  * 根据动作类型和当前语言环境获取系统提示词
@@ -29,7 +30,7 @@ function getPromptForAction(action: AiAction, locale: string): string
 {
   const isZh = locale.startsWith('zh')
 
-  const prompts: Record<AiAction, string> = {
+  const prompts: Record<Exclude<AiAction, 'custom'>, string> = {
     polish: isZh
       ? '你是一位专业的文字编辑。请润色以下文本，使其更加流畅、优雅，保持原意不变。仅返回润色后的文本，不要任何解释。'
       : 'You are a professional editor. Polish the following text to make it more fluent and elegant while preserving the original meaning. Return only the polished text, no explanations.',
@@ -53,7 +54,7 @@ function getPromptForAction(action: AiAction, locale: string): string
       : 'You are a creative personal branding consultant. Generate a concise, personality-rich bio based on the user info below. Requirements: 1. Under 80 words 2. Natural and friendly 3. Highlight personal traits 4. Suitable for a blog profile. Return only the bio text, no explanations or prefixes.',
   }
 
-  return prompts[action]
+  return prompts[action as Exclude<AiAction, 'custom'>]
 }
 
 /**
@@ -74,19 +75,23 @@ export function useAiGenerate()
    * @param action  AI 动作类型
    * @param content 待处理的文本内容
    * @param config  可选：游客自备的模型配置（API Key / Base URL / Model）
+   * @param customPrompt 可选：自定义指令（仅 action='custom' 时使用）
    * @returns 生成的文本；失败时返回空字符串
    */
   async function generate(
     action: AiAction,
     content: string,
     config?: AiGenerateParams['config'],
+    customPrompt?: string,
   ): Promise<string>
   {
     error.value = null
     generating.value = true
     try
     {
-      const prompt = getPromptForAction(action, locale.value)
+      const prompt = action === 'custom' && customPrompt
+        ? customPrompt
+        : getPromptForAction(action, locale.value)
       return await generateAiText({ prompt, content, config })
     }
     catch (err: any)

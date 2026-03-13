@@ -145,7 +145,11 @@ export function useResize(opts: UseResizeOptions): UseResizeReturn
 
   const onMouseup = () =>
   {
-    isPress.value = false
+    if (isPress.value)
+    {
+      isPress.value = false
+      opts.end?.(rect.value.width, rect.value.height)
+    }
   }
  
   window.addEventListener('mousemove', onMousemove, { passive: false })

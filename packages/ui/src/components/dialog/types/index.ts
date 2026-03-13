@@ -179,6 +179,14 @@ export interface UDialogEmits {
    * @returns {void}
    */
   (e: 'click-modal'): void
+
+  /**
+   * @description 缩放结束时触发
+   * @param {number} width  当前宽度(px)
+   * @param {number} height 当前高度(px)
+   * @returns {void}
+   */
+  (e: 'resize', width: number, height: number): void
 }
 
 export interface UDialogExposes {
