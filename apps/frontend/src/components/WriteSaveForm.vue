@@ -36,7 +36,7 @@
       </h4>
       <div class="write-save-form__cover-area">
         <u-upload
-          :model-value="form.cover"
+          v-model="form.cover"
           accept="image/jpeg,image/png,image/webp,image/gif"
           :max-size="5"
           :placeholder="t('write.coverUpload')"
@@ -468,6 +468,9 @@ async function initForm()
     coverMediaId.value = cached.coverMediaId ?? null
     form.isProtected = cached.isProtected ?? false
     form.protectPassword = cached.protectPassword ?? ''
+    titleManuallyEdited = cached.titleManuallyEdited ?? false
+    descManuallyEdited = cached.descManuallyEdited ?? false
+    coverManuallyEdited = cached.coverManuallyEdited ?? false
   }
   else
   {
@@ -485,6 +488,9 @@ async function initForm()
     form.publishedAt = toDatetimeLocal(new Date())
     publishNow.value = true
     coverMediaId.value = null
+    titleManuallyEdited = false
+    descManuallyEdited = false
+    coverManuallyEdited = false
   }
 
   initDone = true
@@ -516,12 +522,15 @@ function savePublishSettingsDebounced()
     putPublishSettings({
       title: form.title,
       desc: form.desc,
+      titleManuallyEdited,
+      descManuallyEdited,
       categoryId: form.categoryId === '' ? null : Number(form.categoryId),
       tags: form.tags,
       status: form.status,
       isPrivate: form.isPrivate,
       isTop: form.isTop,
       cover: form.cover,
+      coverManuallyEdited,
       coverMediaId: coverMediaId.value,
       publishedAt: form.publishedAt,
       publishNow: publishNow.value,
@@ -537,10 +546,15 @@ function savePublishSettingsDebounced()
 onMounted(initForm)
 
 /** content 变化时自动补全标题、简介和封面图（仅当用户未手动填写时） */
-/** 记录用户是否手动修改过简介 / 封面，避免覆盖用户输入 */
+/** 记录用户是否手动修改过标题 / 简介 / 封面，避免覆盖用户输入 */
+let titleManuallyEdited = false
 let descManuallyEdited = false
 let coverManuallyEdited = false
 
+watch(() => form.title, () =>
+{
+  if (initDone && !suppressFieldTrack) titleManuallyEdited = true
+})
 watch(() => form.desc, () =>
 {
   if (initDone && !suppressFieldTrack) descManuallyEdited = true
@@ -554,7 +568,7 @@ watch(() => props.content, newContent =>
 {
   if (!initDone) return
   // 标题为空时从内容提取
-  if (form.title === '')
+  if (!titleManuallyEdited && form.title === '')
   
     form.title = extractFirstHeading(newContent)
   
@@ -681,11 +695,10 @@ function syncDraftMetaFromContent()
   const nextDesc = extractSummary(props.content)
 
   suppressFieldTrack = true
-  if (nextTitle)
+  if (!titleManuallyEdited && !form.title.trim() && nextTitle)
     form.title = nextTitle
-  if (nextDesc)
+  if (!descManuallyEdited && !form.desc.trim() && nextDesc)
     form.desc = nextDesc
-  descManuallyEdited = false
   suppressFieldTrack = false
 }
 
@@ -718,6 +731,9 @@ function loadEditData(article: {
   form.isPrivate = article.isPrivate ?? false
   form.isTop = article.isTop ?? false
   form.cover = article.cover || ''
+  titleManuallyEdited = !!form.title
+  descManuallyEdited = !!form.desc
+  coverManuallyEdited = !!form.cover
   // 密码保护：超管编辑时后端返回明文 protect，否则通过 isProtected 标记还原状态
   form.isProtected = !!(article.protect || article.isProtected)
   form.protectPassword = article.protect || ''

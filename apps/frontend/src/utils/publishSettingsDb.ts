@@ -38,12 +38,18 @@ export interface PublishSettingsRecord {
   id: string
   title: string
   desc: string
+  /** 标题是否被用户显式修改过 */
+  titleManuallyEdited?: boolean
+  /** 摘要是否被用户显式修改过 */
+  descManuallyEdited?: boolean
   categoryId: number | null
   tags: number[]
   status: string
   isPrivate: boolean
   isTop: boolean
   cover: string
+  /** 封面是否被用户显式修改过 */
+  coverManuallyEdited?: boolean
   coverMediaId: number | null
   publishedAt: string
   publishNow: boolean
