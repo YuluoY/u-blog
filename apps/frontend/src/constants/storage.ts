@@ -66,6 +66,8 @@ export const STORAGE_KEYS = {
   XIAOHUI_FOLDERS: `${PREFIX}xiaohui-folders`,
   /** 小惠文件夹展开状态 JSON */
   XIAOHUI_FOLDERS_OPEN: `${PREFIX}xiaohui-folders-open`,
+  /** 右下角小惠浮窗位置（right/bottom） */
+  FLOATING_CHAT_WIDGET_POSITION: `${PREFIX}floating-chat-widget-position`,
   /** 全局字号缩放（百分比 80~130，默认 100） */
   FONT_SIZE_SCALE: `${PREFIX}font-size-scale`,
   /** 全局行高缩放（百分比 100~200，默认 150） */
@@ -74,4 +76,6 @@ export const STORAGE_KEYS = {
   CONTENT_SPACING_SCALE: `${PREFIX}content-spacing-scale`,
   /** 全局字体族 preset（system / serif / mono） */
   FONT_FAMILY_PRESET: `${PREFIX}font-family-preset`,
+  /** 撰写/阅读页段落首行缩进开关 */
+  TEXT_INDENT_ENABLED: `${PREFIX}text-indent-enabled`,
 } as const

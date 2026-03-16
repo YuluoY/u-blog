@@ -2,7 +2,7 @@
   <u-layout class="read-view-layout">
     <u-region region="center" class="read-view__center">
       <div class="read-view__body">
-        <div class="read-view__content">
+        <div class="read-view__content" :class="{ 'text-indent-on': textIndentEnabled }">
           <!-- 文章标题区 -->
           <div v-if="article" class="read-view__title-block">
             <img
@@ -224,8 +224,10 @@ import { trackArticleView, trackArticleLike, trackComment } from '@/composables/
 import { useSeo, buildArticleJsonLd, buildBreadcrumbJsonLd } from '@/composables/useSeo'
 import { getOptimizedImageUrl, COVER_PRESETS } from '@/utils/image'
 import { scrollToCommentWithOffset } from '@/utils/commentScroll'
+import { STORAGE_KEYS } from '@/constants/storage'
 
 const coverUrl = (src: string) => getOptimizedImageUrl(src, COVER_PRESETS.detail)
+const textIndentEnabled = localStorage.getItem(STORAGE_KEYS.TEXT_INDENT_ENABLED) !== '0'
 
 defineOptions({
   name: 'ReadView'
@@ -1378,11 +1380,6 @@ watch(() => route.params.id, async newId =>
     :deep(.md-editor-preview) {
       font-size: 14px;
 
-      /* 文章正文段落首行缩进 2em，排除列表/引用/表格内的 p */
-      > p {
-        text-indent: 2em;
-      }
-
       p, li, td, th, dd, dt {
         font-size: 14px;
         line-height: 1.7;
@@ -1395,6 +1392,11 @@ watch(() => route.params.id, async newId =>
         font-size: 13px;
         padding: 8px 12px;
       }
+    }
+
+    /* 文章正文段落首行缩进 2em，仅当用户开启时生效 */
+    &.text-indent-on :deep(.md-editor-preview > p) {
+      text-indent: 2em;
     }
   }
 

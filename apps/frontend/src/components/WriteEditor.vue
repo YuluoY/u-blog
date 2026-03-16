@@ -1,28 +1,61 @@
 <template>
-  <div ref="editorWrapRef" class="write-editor-wrap">
+  <div ref="editorWrapRef" class="write-editor-wrap" :class="{ 'text-indent-on': textIndentEnabled }">
     <MdEditor
       v-model="content"
       :theme="theme"
       :code-style-reverse="false"
       class="write-view__editor"
-      :toolbars="toolbars"
-      :def-toolbars="defToolbars"
+      :toolbars="computedToolbars"
       :on-save="onSave"
       @on-save="onSave"
       :on-upload-img="onUploadImg"
-    />
+    >
+      <template #defToolbars>
+        <NormalToolbar :title="textIndentEnabled ? '关闭首行缩进' : '开启首行缩进'" @onClick="toggleTextIndent">
+          <svg
+            class="md-editor-icon"
+            :class="{ 'indent-active': textIndentEnabled }"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <!-- 四条横线代表段落 -->
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+            <!-- 中间两行缩进 -->
+            <line x1="7" y1="10" x2="21" y2="10" />
+            <line x1="7" y1="14" x2="21" y2="14" />
+            <!-- 缩进箭头 -->
+            <polyline points="3,9 5,12 3,15" />
+          </svg>
+        </NormalToolbar>
+      </template>
+    </MdEditor>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-import { MdEditor, allToolbar, type ToolbarNames } from 'md-editor-v3'
+import { MdEditor, NormalToolbar, allToolbar, type ToolbarNames } from 'md-editor-v3'
 import 'md-editor-v3/lib/style.css'
+import { STORAGE_KEYS } from '@/constants/storage'
 
-/** 有自定义工具栏时，在「保存」右侧插入索引 0，使 defToolbars 第一个按钮显示 */
-const toolbars = computed((): ToolbarNames[] | undefined =>
+/* ---------- 首行缩进偏好（localStorage 持久化） ---------- */
+const textIndentEnabled = ref(
+  localStorage.getItem(STORAGE_KEYS.TEXT_INDENT_ENABLED) !== '0' // 默认开启
+)
+function toggleTextIndent()
 {
-  if (!props.defToolbars) return undefined
+  textIndentEnabled.value = !textIndentEnabled.value
+  localStorage.setItem(STORAGE_KEYS.TEXT_INDENT_ENABLED, textIndentEnabled.value ? '1' : '0')
+}
+
+/** 在「=」分隔符前插入自定义工具栏按钮（index 0 = defToolbars 第一个 slot 子节点） */
+const computedToolbars = computed((): ToolbarNames[] =>
+{
   const arr = allToolbar as unknown as ToolbarNames[]
   const eqIdx = (arr as (string | number)[]).indexOf('=')
   const left = (arr as (string | number)[]).slice(0, eqIdx >= 0 ? eqIdx : undefined)
@@ -38,11 +71,9 @@ const props = withDefaults(
   defineProps<{
     initialContent: string
     theme?: 'light' | 'dark'
-    defToolbars?: unknown
   }>(),
   {
-    theme: 'light',
-    defToolbars: undefined
+    theme: 'light'
   }
 )
 
@@ -167,9 +198,14 @@ defineExpose({
   z-index: 10 !important;
 }
 
-/* 撰写预览区：文章段落首行缩进 */
-.write-editor-wrap :deep(.md-editor-preview > p) {
+/* 撰写预览区：文章段落首行缩进（仅开启时应用） */
+.write-editor-wrap.text-indent-on :deep(.md-editor-preview > p) {
   text-indent: 2em;
+}
+
+/* 首行缩进按钮激活态 */
+.write-editor-wrap :deep(.indent-active) {
+  color: var(--u-primary, #007bff);
 }
 
 /* ========== 编辑器选中文本高亮 ========== */
