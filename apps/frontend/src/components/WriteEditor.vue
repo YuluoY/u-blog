@@ -53,13 +53,13 @@ function toggleTextIndent()
   localStorage.setItem(STORAGE_KEYS.TEXT_INDENT_ENABLED, textIndentEnabled.value ? '1' : '0')
 }
 
-/** 在「=」分隔符前插入自定义工具栏按钮（index 0 = defToolbars 第一个 slot 子节点） */
+/** 在「=」分隔符前插入自定义工具栏按钮（index 0 = defToolbars 第一个 slot 子节点），并移除内置 save 按钮 */
 const computedToolbars = computed((): ToolbarNames[] =>
 {
-  const arr = allToolbar as unknown as ToolbarNames[]
-  const eqIdx = (arr as (string | number)[]).indexOf('=')
-  const left = (arr as (string | number)[]).slice(0, eqIdx >= 0 ? eqIdx : undefined)
-  const right = eqIdx >= 0 ? (arr as (string | number)[]).slice(eqIdx) : []
+  const arr = (allToolbar as unknown as (string | number)[]).filter(item => item !== 'save')
+  const eqIdx = arr.indexOf('=')
+  const left = arr.slice(0, eqIdx >= 0 ? eqIdx : undefined)
+  const right = eqIdx >= 0 ? arr.slice(eqIdx) : []
   return [...left, 0, ...right] as ToolbarNames[]
 })
 

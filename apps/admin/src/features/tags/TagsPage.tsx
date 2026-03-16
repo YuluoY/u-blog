@@ -36,7 +36,7 @@ export default function TagsPage() {
     }
   }
 
-  const { containerRef, scrollY } = useTableScrollY({ hasPagination: false })
+  const { containerRef, scrollY } = useTableScrollY()
 
   return (
     <div className="admin-content">

@@ -21,7 +21,7 @@
                 <span class="read-view__meta-origin" :class="article.isOriginal !== false ? 'read-view__meta-origin--original' : 'read-view__meta-origin--repost'">{{ article.isOriginal !== false ? t('article.original') : t('article.repost') }}</span>
                 <span v-if="article.category" class="read-view__meta-category">{{ article.category.name }}</span>
                 <template v-if="article.tags?.length">
-                  <span v-for="tag in article.tags" :key="tag.id" class="read-view__meta-tag" :style="tag.color ? { borderColor: 'transparent', backgroundColor: `${tag.color}1f`, color: tag.color } : undefined">{{ tag.name }}</span>
+                  <span v-for="tag in article.tags" :key="tag.id" class="read-view__meta-tag" :style="tagColorStyle(tag.color)">{{ tag.name }}</span>
                 </template>
               </div>
               <div class="read-view__meta-byline">
@@ -228,6 +228,19 @@ import { STORAGE_KEYS } from '@/constants/storage'
 
 const coverUrl = (src: string) => getOptimizedImageUrl(src, COVER_PRESETS.detail)
 const textIndentEnabled = localStorage.getItem(STORAGE_KEYS.TEXT_INDENT_ENABLED) !== '0'
+
+/** 根据 tag.color 生成内联样式，兼容 hex、hsl、渐变等格式 */
+function tagColorStyle(color?: string): Record<string, string> | undefined
+{
+  if (!color) return undefined
+  const isGradient = color.startsWith('linear-gradient') || color.startsWith('radial-gradient')
+  if (isGradient)
+    return { borderColor: 'transparent', background: color, color: '#fff' }
+  if (color.startsWith('#'))
+    return { borderColor: 'transparent', backgroundColor: `${color}1f`, color }
+  // hsl/rgb 等格式：直接用作文字色，背景用半透明（无法拼接后缀）
+  return { borderColor: 'transparent', color }
+}
 
 defineOptions({
   name: 'ReadView'
@@ -1299,6 +1312,11 @@ watch(() => route.params.id, async newId =>
   top: 24px;
 }
 
+/* 文章正文段落首行缩进 2em，仅当用户开启时生效 */
+.read-view__content.text-indent-on :deep(.md-editor-preview > p) {
+  text-indent: 2em;
+}
+
 /* 响应式：平板及以下隐藏目录侧栏 */
 @media (max-width: 992px) {
   .read-view__catalog {
@@ -1392,11 +1410,6 @@ watch(() => route.params.id, async newId =>
         font-size: 13px;
         padding: 8px 12px;
       }
-    }
-
-    /* 文章正文段落首行缩进 2em，仅当用户开启时生效 */
-    &.text-indent-on :deep(.md-editor-preview > p) {
-      text-indent: 2em;
     }
   }
 

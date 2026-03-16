@@ -34,7 +34,7 @@ export default function FriendLinksPage() {
     review.mutate({ id, status })
   }
 
-  const { containerRef, scrollY } = useTableScrollY({ hasPagination: false })
+  const { containerRef, scrollY } = useTableScrollY()
 
   return (
     <div className="admin-content">

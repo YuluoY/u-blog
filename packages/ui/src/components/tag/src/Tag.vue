@@ -100,7 +100,16 @@ const customColorStyle = computed<CSSProperties | undefined>(() => {
       borderColor: 'transparent',
     }
   }
-  // 非 hex 格式（如 CSS 渐变），回退为直接 backgroundColor
+  // 非 hex 格式（如 CSS 渐变）
+  // CSS background-color 不支持渐变，需要使用 background 简写属性
+  if (c.startsWith('linear-gradient') || c.startsWith('radial-gradient')) {
+    return {
+      background: c,
+      color: props.textColor || '#fff',
+      borderColor: 'transparent',
+    }
+  }
+  // 其他格式（如 hsl、rgb 等）
   return {
     backgroundColor: c,
     color: props.textColor || undefined,

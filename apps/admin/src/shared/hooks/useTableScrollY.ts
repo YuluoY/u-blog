@@ -24,7 +24,13 @@ export function useTableScrollY(options: UseTableScrollYOptions = {}) {
     const el = containerRef.current
     if (!el) return
     const h = el.clientHeight
-    const toolbarH = toolbarRef?.current?.offsetHeight ?? 0
+    // 优先使用 toolbarRef，否则自动检测容器内的 toolbar 元素
+    const toolbarEl = toolbarRef?.current ?? el.querySelector<HTMLElement>('.admin-content__toolbar')
+    let toolbarH = 0
+    if (toolbarEl) {
+      const style = getComputedStyle(toolbarEl)
+      toolbarH = toolbarEl.offsetHeight + parseFloat(style.marginTop) + parseFloat(style.marginBottom)
+    }
     // 动态测量 antd Table 表头实际高度，兼容多行表头、不同列数等场景
     const headerEl = el.querySelector<HTMLElement>('.ant-table-header')
     const headerH = headerEl?.offsetHeight ?? TABLE_HEADER_HEIGHT_FALLBACK
@@ -36,11 +42,11 @@ export function useTableScrollY(options: UseTableScrollYOptions = {}) {
   useEffect(() => {
     update()
     const container = containerRef.current
-    const toolbar = toolbarRef?.current
     if (!container) return
     const ro = new ResizeObserver(update)
     ro.observe(container)
-    // 同时观察 toolbar，应对其高度变化（如换行）
+    // 同时观察 toolbar（显式 ref 或自动检测），应对其高度变化（如换行）
+    const toolbar = toolbarRef?.current ?? container.querySelector<HTMLElement>('.admin-content__toolbar')
     if (toolbar) ro.observe(toolbar)
     // 延迟再次计算，确保 antd Table 完成渲染后拿到正确表头高度
     const timer = setTimeout(update, 100)

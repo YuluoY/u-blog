@@ -30,7 +30,7 @@ export default function CategoriesPage() {
     }
   }
 
-  const { containerRef, scrollY } = useTableScrollY({ hasPagination: false })
+  const { containerRef, scrollY } = useTableScrollY()
 
   return (
     <div className="admin-content">
