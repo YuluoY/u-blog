@@ -38,13 +38,14 @@
         <u-upload
           v-model="form.cover"
           accept="image/jpeg,image/png,image/webp,image/gif"
-          :max-size="5"
+          :max-size="COVER_MAX_SIZE_MB"
           :placeholder="t('write.coverUpload')"
           aspect-ratio="16/9"
           :disabled="coverUploading"
           @change="onCoverFileChange"
           @remove="onCoverRemove"
           @exceed="onCoverExceed"
+          @invalid="onCoverInvalid"
         >
           <template #tip>
             {{ coverUploading ? t('write.coverUploading') : t('write.coverUploadHint') }}
@@ -216,6 +217,7 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const COVER_MAX_SIZE_MB = 10
 
 /* ---------- 表单状态 ---------- */
 const form = reactive<{
@@ -267,7 +269,20 @@ const submitLabel = computed(() =>
 /* ---------- 封面超限提示 ---------- */
 function onCoverExceed()
 {
-  UNotificationFn({ message: t('write.coverUploadHint'), type: 'warning', deduplicate: true })
+  UNotificationFn({
+    message: t('write.coverUploadTooLarge', { size: COVER_MAX_SIZE_MB }),
+    type: 'warning',
+    deduplicate: true,
+  })
+}
+
+function onCoverInvalid()
+{
+  UNotificationFn({
+    message: t('write.coverUploadInvalidType'),
+    type: 'warning',
+    deduplicate: true,
+  })
 }
 
 /**

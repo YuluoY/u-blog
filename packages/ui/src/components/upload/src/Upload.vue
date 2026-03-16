@@ -133,7 +133,14 @@ function openFileDialog() {
 /** 文件选取回调 */
 function onFileChange(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0]
-  if (file) processFile(file)
+  if (file) {
+    if (!isAcceptedFile(file)) {
+      emit('invalid', file)
+    }
+    else {
+      processFile(file)
+    }
+  }
   // 重置 input，允许再次选择同一文件
   if (inputRef.value) inputRef.value.value = ''
 }
@@ -154,17 +161,21 @@ function onDrop(e: DragEvent) {
   if (props.disabled || !props.drag) return
   const file = e.dataTransfer?.files?.[0]
   if (!file) return
-  // 类型校验（与 accept 一致）
-  if (props.accept && props.accept !== '*') {
-    const accepted = props.accept.split(',').map((s) => s.trim())
-    const ok = accepted.some((a) => {
-      if (a.startsWith('.')) return file.name.toLowerCase().endsWith(a.toLowerCase())
-      if (a.endsWith('/*')) return file.type.startsWith(a.replace('/*', '/'))
-      return file.type === a
-    })
-    if (!ok) return
+  if (!isAcceptedFile(file)) {
+    emit('invalid', file)
+    return
   }
   processFile(file)
+}
+
+function isAcceptedFile(file: File) {
+  if (!props.accept || props.accept === '*') return true
+  const accepted = props.accept.split(',').map((s) => s.trim())
+  return accepted.some((a) => {
+    if (a.startsWith('.')) return file.name.toLowerCase().endsWith(a.toLowerCase())
+    if (a.endsWith('/*')) return file.type.startsWith(a.replace('/*', '/'))
+    return file.type === a
+  })
 }
 
 /* ---------- 核心：读取文件 → base64 → 触发更新 ---------- */

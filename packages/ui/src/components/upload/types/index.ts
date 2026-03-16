@@ -41,6 +41,7 @@ export interface UUploadEmits {
   (e: 'change', file: UploadFile): void
   (e: 'remove'): void
   (e: 'exceed', file: File): void
+  (e: 'invalid', file: File): void
 }
 
 export interface UUploadExposes {

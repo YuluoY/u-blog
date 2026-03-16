@@ -1,9 +1,10 @@
 # 撰写发布自动提取元信息
 
-- Version: 1.2.5
+- Version: 1.2.6
 - Last Updated: 2026-03-16
 - Code Paths:
   - apps/frontend/src/components/WriteSaveForm.vue
+  - packages/ui/src/components/upload/src/Upload.vue
   - apps/frontend/src/utils/publishSettingsDb.ts
   - apps/backend/src/controller/rest/index.ts
 
@@ -24,6 +25,7 @@
 ## 关键约束与边界
 - 前端仅在字段缺失时自动补齐，用户已手动修改的标题/简介/封面不会被覆盖。
 - 发布抽屉再次打开时，只会补齐仍为空的标题/简介，不再覆盖用户已填写内容。
+- 前端封面上传限制为 10MB；若超限或文件格式不匹配，会通过 UI 通知组件直接提示。
 - 后端同样遵循“用户输入优先，自动提取兜底”的规则，避免更新时把手动封面替换回正文首图。
 - 后端为最终兜底，即使前端未传封面，也会自动补齐默认封面。
 - 默认封面为后端落盘 PNG 文件，风格统一且按标题自动变化配色。
@@ -46,3 +48,4 @@
 - 2026-03-08 **Update**: 自动元信息调整为“用户输入优先，正文提取兜底”
 - 2026-03-16 **Fix**: 发布抽屉重新打开时仅补齐空的标题/简介，保留用户手动修改结果
 - 2026-03-16 **Update**: 发布配置缓存新增手动编辑标记，避免跨次打开时重复自动补全
+- 2026-03-16 **Update**: 封面上传上限提升到 10MB，并为超限/格式错误增加 UI 通知提示
