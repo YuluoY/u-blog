@@ -69,8 +69,8 @@
     <!-- 全站 AI 浮动工具栏：选中文本后弹出 -->
     <GlobalAiToolbar />
 
-    <!-- 右下角浮动客服对话入口（PC端，复用小惠接口） -->
-    <FloatingChatWidget />
+    <!-- 右下角浮动客服对话入口（PC端，复用小惠接口）—— 暂时隐藏 -->
+    <!-- <FloatingChatWidget /> -->
   </u-layout>
 </template>
 
