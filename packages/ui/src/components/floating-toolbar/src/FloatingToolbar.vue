@@ -73,28 +73,7 @@ const positionStyle = computed(() => ({
  */
 function handleMouseUp() {
   if (props.loading) return
-
-  const selection = window.getSelection()
-  if (!selection || selection.isCollapsed) return
-
-  const text = selection.toString().trim()
-  if (text.length < props.minLength) return
-
-  if (props.container && !props.container.contains(selection.anchorNode)) return
-
-  const range = selection.getRangeAt(0)
-  const rect = range.getBoundingClientRect()
-
-  selectedText.value = text
-  flipped.value = false
-  pos.value = {
-    top: rect.top + window.scrollY - 8,
-    left: rect.left + window.scrollX + rect.width / 2,
-  }
-
-  clearHideTimer()
-  visible.value = true
-  nextTick(adjustPosition)
+  checkAndShowToolbar()
 }
 
 /** 调整工具条位置，防止超出视口（上下左右） */
@@ -127,6 +106,43 @@ function adjustPosition()
   {
     pos.value.top -= rect.bottom - window.innerHeight + MARGIN
   }
+}
+
+/**
+ * 键盘松开时检查选区（Shift+方向键 / Ctrl+A 等键盘选中场景）
+ */
+function handleKeyUp(e: KeyboardEvent)
+{
+  if (props.loading) return
+  // 仅在可能产生选区的按键时检测
+  if (!e.shiftKey && !(e.ctrlKey && e.key === 'a') && !(e.metaKey && e.key === 'a')) return
+  checkAndShowToolbar()
+}
+
+/** 通用选区检测 + 弹出逻辑（mouseup / keyup 共用） */
+function checkAndShowToolbar()
+{
+  const selection = window.getSelection()
+  if (!selection || selection.isCollapsed) return
+
+  const text = selection.toString().trim()
+  if (text.length < props.minLength) return
+
+  if (props.container && !props.container.contains(selection.anchorNode)) return
+
+  const range = selection.getRangeAt(0)
+  const rect = range.getBoundingClientRect()
+
+  selectedText.value = text
+  flipped.value = false
+  pos.value = {
+    top: rect.top + window.scrollY - 8,
+    left: rect.left + window.scrollX + rect.width / 2,
+  }
+
+  clearHideTimer()
+  visible.value = true
+  nextTick(adjustPosition)
 }
 
 /** 选区变化监听：选区清空时延迟隐藏 */
@@ -173,11 +189,13 @@ watch(visible, (val) => {
 
 onMounted(() => {
   document.addEventListener('mouseup', handleMouseUp)
+  document.addEventListener('keyup', handleKeyUp)
   document.addEventListener('selectionchange', handleSelectionChange)
 })
 
 onBeforeUnmount(() => {
   document.removeEventListener('mouseup', handleMouseUp)
+  document.removeEventListener('keyup', handleKeyUp)
   document.removeEventListener('selectionchange', handleSelectionChange)
   clearHideTimer()
 })

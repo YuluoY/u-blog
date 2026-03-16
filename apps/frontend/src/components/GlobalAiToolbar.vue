@@ -1,8 +1,8 @@
 <!--
   GlobalAiToolbar — 全站 AI 浮动工具栏（仅限可输入区域）
   仅当用户在 可编辑 DOM（textarea / input / contenteditable）中选中文本时弹出。
-  WriteView 自带独立工具栏，此组件自动跳过。
-  阶段：actions → custom-input / loading → preview（可拖拽/缩放）
+  支持多轮对话：首次生成后可在弹窗内继续追问，SSE 流式输出，可中断。
+  阶段：actions → custom-input / loading → preview（可拖拽/缩放/全屏）
 -->
 <template>
   <Teleport to="body">
@@ -20,6 +20,9 @@
         <div v-if="phase === 'loading'" class="global-ai-toolbar__loading">
           <u-icon icon="fa-solid fa-spinner" />
           <span>{{ t('ai.processing') }}</span>
+          <button class="global-ai-toolbar__btn global-ai-toolbar__btn--stop" @click="handleAbort">
+            <u-icon icon="fa-solid fa-stop" />
+          </button>
         </div>
 
         <!-- 自定义指令输入态 -->
@@ -58,16 +61,74 @@
 
     <!-- 阶段 3：结果预览弹窗（使用 UDialog，自带拖拽 + 缩放） -->
     <u-dialog
+      ref="dialogRef"
       v-model="previewVisible"
       :title="previewTitle"
-      :width="dialogWidth"
-      :height="dialogHeight"
+      :width="currentDialogWidth"
+      :height="currentDialogHeight"
       :z-index="10011"
       @cancel="handleDiscard"
       @resize="onDialogResize"
     >
-      <!-- 结果内容 -->
-      <div class="global-ai-preview__content">{{ aiResult }}</div>
+      <!-- 对话消息列表 -->
+      <div ref="chatBodyRef" class="global-ai-chat" :class="{ 'global-ai-chat--fullscreen': isFullscreen }">
+        <div
+          v-for="(msg, idx) in chatMessages"
+          :key="idx"
+          class="global-ai-chat__msg"
+          :class="`global-ai-chat__msg--${msg.role}`"
+        >
+          <div class="global-ai-chat__bubble">
+            <span v-if="msg.role === 'assistant'" v-html="renderMarkdown(msg.content)" />
+            <span v-else>{{ msg.content }}</span>
+          </div>
+        </div>
+        <!-- 流式输出中的实时内容 -->
+        <div v-if="streamingText" class="global-ai-chat__msg global-ai-chat__msg--assistant">
+          <div class="global-ai-chat__bubble">
+            <span v-html="renderMarkdown(streamingText)" />
+            <span class="global-ai-chat__cursor" />
+          </div>
+        </div>
+        <!-- 正在等待响应（无内容时） -->
+        <div v-else-if="chatLoading" class="global-ai-chat__msg global-ai-chat__msg--assistant">
+          <div class="global-ai-chat__bubble global-ai-chat__bubble--loading">
+            <u-icon icon="fa-solid fa-spinner" />
+            <span>{{ t('ai.processing') }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 追问输入区 -->
+      <div class="global-ai-chat__input-row">
+        <textarea
+          ref="followUpInputRef"
+          v-model="followUpText"
+          class="global-ai-chat__input"
+          :placeholder="t('ai.followUpPlaceholder')"
+          :disabled="chatLoading"
+          rows="1"
+          @keydown="handleFollowUpKeydown"
+          @input="autoResizeTextarea"
+        />
+        <!-- 发送 / 停止按钮 -->
+        <button
+          v-if="chatLoading"
+          class="global-ai-chat__send global-ai-chat__send--stop"
+          :title="t('ai.stop')"
+          @click="handleAbort"
+        >
+          <u-icon icon="fa-solid fa-stop" />
+        </button>
+        <button
+          v-else
+          class="global-ai-chat__send"
+          :disabled="!followUpText.trim()"
+          @click="handleFollowUp"
+        >
+          <u-icon icon="fa-solid fa-paper-plane" />
+        </button>
+      </div>
 
       <!-- 底部操作按钮 -->
       <template #footer>
@@ -87,9 +148,8 @@
             </button>
           </div>
           <div class="global-ai-preview__actions-right">
-            <button class="global-ai-preview__btn" @click="handleRetry">
-              <u-icon icon="fa-solid fa-rotate" />
-              <span>{{ t('ai.retry') }}</span>
+            <button class="global-ai-preview__btn" :title="isFullscreen ? t('ai.exitFullscreen') : t('ai.fullscreen')" @click="toggleFullscreen">
+              <u-icon :icon="isFullscreen ? 'fa-solid fa-compress' : 'fa-solid fa-expand'" />
             </button>
             <button class="global-ai-preview__btn" @click="handleDiscard">
               <u-icon icon="fa-solid fa-xmark" />
@@ -107,6 +167,7 @@ import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { UMessageFn } from '@u-blog/ui'
 import { useAiGenerate, type AiAction } from '@/composables/useAiGenerate'
+import { sendChatMessageStream, type ChatMessagePayload } from '@/api/chat'
 import { getSettings } from '@/api/settings'
 import { SETTING_KEYS } from '@/constants/settings'
 import { loadGuestAiConfig, hasGuestAiConfig, getActiveEntry } from '@/utils/guestCrypto'
@@ -124,6 +185,32 @@ const userStore = useUserStore()
 const HIDE_DELAY = 200
 const MIN_SELECT_LEN = 1
 
+/* ─── 简单文本渲染（转义 HTML + 换行 + 代码块） ─── */
+function renderMarkdown(text: string): string
+{
+  // 转义 HTML 特殊字符，防止 XSS
+  const escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+
+  // 简单代码块（```...```）
+  const withCodeBlocks = escaped.replace(
+    /```(\w*)\n([\s\S]*?)```/g,
+    '<pre><code>$2</code></pre>',
+  )
+
+  // 内联代码（`...`）
+  const withInlineCode = withCodeBlocks.replace(
+    /`([^`]+)`/g,
+    '<code>$1</code>',
+  )
+
+  // 换行
+  return withInlineCode.replace(/\n/g, '<br>')
+}
+
 /* ─── 阶段状态机 ─── */
 type ToolbarPhase = 'actions' | 'custom-input' | 'loading' | 'preview'
 const phase = ref<ToolbarPhase>('actions')
@@ -131,6 +218,22 @@ const aiResult = ref('')
 const lastAction = ref<string>('')
 const customPrompt = ref('')
 const customInputRef = ref<HTMLInputElement | null>(null)
+
+/* ─── 对话消息与追问 ─── */
+interface ChatMsg { role: 'user' | 'assistant'; content: string }
+const chatMessages = ref<ChatMsg[]>([])
+const chatLoading = ref(false)
+const streamingText = ref('')
+const followUpText = ref('')
+const followUpInputRef = ref<HTMLTextAreaElement | null>(null)
+const chatBodyRef = ref<HTMLElement | null>(null)
+
+/* ─── 中断控制 ─── */
+let abortController: AbortController | null = null
+
+/* ─── 全屏控制 ─── */
+const isFullscreen = ref(false)
+const dialogRef = ref<any>(null)
 
 /* ─── AI 模型配置检测（支持登录用户 + 游客本地配置） ─── */
 const aiConfigured = ref(false)
@@ -259,18 +362,30 @@ function loadDialogSize(): { w: number; h: number }
   }
   catch
   { /* ignore */ }
-  return { w: 420, h: 300 }
+  return { w: 520, h: 420 }
 }
 
 const cachedSize = loadDialogSize()
 const dialogWidth = ref(cachedSize.w)
 const dialogHeight = ref(cachedSize.h)
 
+// 全屏时用视口比例 1（UDialog 的 <=1 作为视口比例），否则使用缓存的 px 值
+const currentDialogWidth = computed(() => isFullscreen.value ? 1 : dialogWidth.value)
+const currentDialogHeight = computed(() => isFullscreen.value ? 1 : dialogHeight.value)
+
 function onDialogResize(width: number, height: number)
 {
+  if (isFullscreen.value) return
   dialogWidth.value = width
   dialogHeight.value = height
   localStorage.setItem(AI_DIALOG_SIZE_KEY, JSON.stringify({ w: width, h: height }))
+}
+
+function toggleFullscreen()
+{
+  isFullscreen.value = !isFullscreen.value
+  // 切換后重新初始化 UDialog 位置
+  nextTick(() => dialogRef.value?.resetPosition?.())
 }
 
 /* ─── 可编辑元素检测 ─── */
@@ -309,19 +424,6 @@ function isTextInput(el: HTMLInputElement): boolean
 {
   const t = el.type?.toLowerCase()
   return !t || t === 'text' || t === 'search' || t === 'url' || t === 'email'
-}
-
-function isInsideWriteEditor(node: Node | null): boolean
-{
-  if (!node) return false
-  let el: Node | null = node
-  while (el)
-  {
-    if (el instanceof HTMLElement && el.classList.contains('write-editor-wrap'))
-      return true
-    el = el.parentNode
-  }
-  return false
 }
 
 /* ─── 选区检测 ─── */
@@ -389,56 +491,13 @@ function getInputSelectionRect(el: HTMLInputElement | HTMLTextAreaElement)
 function handleMouseUp(e: MouseEvent)
 {
   if (!aiConfigured.value) return
-  // preview 阶段不响应选区
   if (phase.value === 'preview' || phase.value === 'loading') return
 
   const target = e.target as HTMLElement
   if (target.closest('.global-ai-toolbar') || target.closest('.u-dialog'))
     return
 
-  const activeEl = document.activeElement
-  const inputEl = (activeEl instanceof HTMLTextAreaElement || activeEl instanceof HTMLInputElement)
-    ? activeEl as HTMLInputElement | HTMLTextAreaElement
-    : null
-
-  if (inputEl && (inputEl instanceof HTMLTextAreaElement || isTextInput(inputEl as HTMLInputElement)))
-  {
-    const text = getInputSelection(inputEl)
-    if (text.trim().length >= MIN_SELECT_LEN && !isInsideWriteEditor(inputEl))
-    {
-      const selRect = getInputSelectionRect(inputEl)
-      const fallbackRect = inputEl.getBoundingClientRect()
-      showToolbar(text, {
-        top: (selRect ? selRect.top : fallbackRect.top) + window.scrollY - 8,
-        left: (selRect ? selRect.left + selRect.width / 2 : fallbackRect.left + fallbackRect.width / 2) + window.scrollX,
-      })
-      savedInput = inputEl
-      savedSelStart = inputEl.selectionStart ?? 0
-      savedSelEnd = inputEl.selectionEnd ?? 0
-      savedRange = null
-      return
-    }
-  }
-
-  const selection = window.getSelection()
-  if (!selection || selection.isCollapsed) return
-
-  const text = selection.toString().trim()
-  if (text.length < MIN_SELECT_LEN) return
-
-  const anchorNode = selection.anchorNode
-  if (!isInEditableContext(anchorNode)) return
-  if (isInsideWriteEditor(anchorNode)) return
-
-  const range = selection.getRangeAt(0)
-  const rect = range.getBoundingClientRect()
-
-  showToolbar(text, {
-    top: rect.top + window.scrollY - 8,
-    left: rect.left + window.scrollX + rect.width / 2,
-  })
-  savedRange = range.cloneRange()
-  savedInput = null
+  checkAndShowToolbar()
 }
 
 const toolbarRef = ref<HTMLElement | null>(null)
@@ -453,6 +512,8 @@ function showToolbar(text: string, pos: { top: number; left: number })
   phase.value = 'actions'
   aiResult.value = ''
   customPrompt.value = ''
+  chatMessages.value = []
+  followUpText.value = ''
   nextTick(adjustToolbarPosition)
 }
 
@@ -481,9 +542,66 @@ function adjustToolbarPosition()
     toolbarPos.value.top -= rect.bottom - window.innerHeight + MARGIN
 }
 
+/**
+ * 检查当前选区并尝试弹出工具条
+ * 适用于所有选区产生方式（鼠标、键盘、Ctrl+A 等）
+ */
+function checkAndShowToolbar(): boolean
+{
+  if (!aiConfigured.value) return false
+  if (phase.value === 'preview' || phase.value === 'loading') return false
+
+  const activeEl = document.activeElement
+  const inputEl = (activeEl instanceof HTMLTextAreaElement || activeEl instanceof HTMLInputElement)
+    ? activeEl as HTMLInputElement | HTMLTextAreaElement
+    : null
+
+  if (inputEl && (inputEl instanceof HTMLTextAreaElement || isTextInput(inputEl as HTMLInputElement)))
+  {
+    const text = getInputSelection(inputEl)
+    if (text.trim().length >= MIN_SELECT_LEN)
+    {
+      const selRect = getInputSelectionRect(inputEl)
+      const fallbackRect = inputEl.getBoundingClientRect()
+      showToolbar(text, {
+        top: (selRect ? selRect.top : fallbackRect.top) + window.scrollY - 8,
+        left: (selRect ? selRect.left + selRect.width / 2 : fallbackRect.left + fallbackRect.width / 2) + window.scrollX,
+      })
+      savedInput = inputEl
+      savedSelStart = inputEl.selectionStart ?? 0
+      savedSelEnd = inputEl.selectionEnd ?? 0
+      savedRange = null
+      return true
+    }
+  }
+
+  const selection = window.getSelection()
+  if (!selection || selection.isCollapsed) return false
+
+  const text = selection.toString().trim()
+  if (text.length < MIN_SELECT_LEN) return false
+
+  const anchorNode = selection.anchorNode
+  if (!isInEditableContext(anchorNode)) return false
+
+  const range = selection.getRangeAt(0)
+  const rect = range.getBoundingClientRect()
+
+  showToolbar(text, {
+    top: rect.top + window.scrollY - 8,
+    left: rect.left + window.scrollX + rect.width / 2,
+  })
+  savedRange = range.cloneRange()
+  savedInput = null
+  return true
+}
+
+let selChangeTimer: ReturnType<typeof setTimeout> | null = null
+const SEL_CHANGE_DELAY = 200
+
 function handleSelectionChange()
 {
-  // preview / loading 阶段不触发隐藏
+  // preview / loading 阶段不响应
   if (phase.value === 'loading' || phase.value === 'preview') return
 
   const selection = window.getSelection()
@@ -498,7 +616,25 @@ function handleSelectionChange()
   }
 
   if (!hasContentEditableSelection && !hasInputSelection)
+  {
+    // 选区清空 → 隐藏
+    if (selChangeTimer)
+    {
+      clearTimeout(selChangeTimer); selChangeTimer = null
+    }
     scheduleHide()
+    return
+  }
+
+  // 工具条已显示时不重复触发
+  if (toolbarVisible.value) return
+
+  // 延迟触发，避免打字过程中频繁弹出
+  if (selChangeTimer) clearTimeout(selChangeTimer)
+  selChangeTimer = setTimeout(() =>
+  {
+    selChangeTimer = null; checkAndShowToolbar()
+  }, SEL_CHANGE_DELAY)
 }
 
 function scheduleHide()
@@ -538,6 +674,32 @@ async function buildGuestConfig()
   return undefined
 }
 
+/* ─── 中断 AI 请求 ─── */
+function handleAbort()
+{
+  if (abortController)
+  {
+    abortController.abort()
+    abortController = null
+  }
+  chatLoading.value = false
+
+  // 如果有流式输出中的文本，保存为消息
+  if (streamingText.value)
+  {
+    chatMessages.value.push({ role: 'assistant', content: streamingText.value })
+    aiResult.value = streamingText.value
+    streamingText.value = ''
+    toolbarVisible.value = false
+    phase.value = 'preview'
+  }
+  else if (phase.value === 'loading')
+  {
+    // 还没有任何输出就取消了，回到 actions
+    phase.value = 'actions'
+  }
+}
+
 /* ─── AI 操作处理 ─── */
 
 async function executeAiAction(action: string, text: string, prompt?: string)
@@ -546,20 +708,22 @@ async function executeAiAction(action: string, text: string, prompt?: string)
   lastAction.value = action
 
   const inlineConfig = await buildGuestConfig()
+
+  // 首次操作使用非流式 API（简单快速）
   const result = await aiGenerate(action as AiAction, text, inlineConfig, prompt)
 
   if (!result)
   {
-    // 失败回到 actions 态
     phase.value = 'actions'
     return
   }
 
   aiResult.value = result
+  chatMessages.value = [{ role: 'assistant', content: result }]
 
-  // 切换到 preview（UDialog 自动居中）
   toolbarVisible.value = false
   phase.value = 'preview'
+  scrollChatToBottom()
 }
 
 async function handleAction(key: string)
@@ -586,6 +750,112 @@ async function handleCustomSend()
   const prompt = customPrompt.value.trim()
   if (!prompt || !selectedText.value) return
   await executeAiAction('custom', selectedText.value, prompt)
+}
+
+/* ─── 追问（多轮对话 — SSE 流式） ─── */
+async function handleFollowUp()
+{
+  const instruction = followUpText.value.trim()
+  if (!instruction || chatLoading.value) return
+
+  chatMessages.value.push({ role: 'user', content: instruction })
+  followUpText.value = ''
+  chatLoading.value = true
+  streamingText.value = ''
+  resetTextareaHeight()
+  scrollChatToBottom()
+
+  // 构建对话历史给 /chat SSE 接口
+  const messages: ChatMessagePayload[] = [
+    { role: 'user', content: `原文：\n${selectedText.value}` },
+  ]
+  for (const msg of chatMessages.value)
+    messages.push({ role: msg.role, content: msg.content })
+
+  abortController = new AbortController()
+
+  try
+  {
+    const fullText = await sendChatMessageStream(
+      messages,
+      token =>
+      {
+        streamingText.value += token
+        scrollChatToBottom()
+      },
+      abortController.signal,
+    )
+
+    // 流式完成，写入消息列表
+    streamingText.value = ''
+    chatMessages.value.push({ role: 'assistant', content: fullText })
+    aiResult.value = fullText
+  }
+  catch (e)
+  {
+    if ((e as Error).name === 'AbortError')
+    {
+      // 用户手动取消 → streamingText 已在 handleAbort 中处理
+    }
+    else
+    {
+      const msg = (e as Error).message || t('ai.generateFailed')
+      UMessageFn({ message: msg, type: 'error' })
+      // 如有部分输出也保留
+      if (streamingText.value)
+      {
+        chatMessages.value.push({ role: 'assistant', content: streamingText.value })
+        aiResult.value = streamingText.value
+        streamingText.value = ''
+      }
+    }
+  }
+  finally
+  {
+    abortController = null
+    chatLoading.value = false
+  }
+  scrollChatToBottom()
+}
+
+/* ─── Textarea 自适应高度 + Shift+Enter ─── */
+function handleFollowUpKeydown(e: KeyboardEvent)
+{
+  if (e.key === 'Enter' && !e.shiftKey)
+  {
+    e.preventDefault()
+    handleFollowUp()
+  }
+  // Shift+Enter 默认行为即换行，不拦截
+}
+
+function autoResizeTextarea()
+{
+  const el = followUpInputRef.value
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = `${Math.min(el.scrollHeight, 120)}px`
+}
+
+function resetTextareaHeight()
+{
+  nextTick(() =>
+  {
+    const el = followUpInputRef.value
+    if (el)
+    
+      el.style.height = 'auto'
+    
+  })
+}
+
+function scrollChatToBottom()
+{
+  nextTick(() =>
+  {
+    const el = chatBodyRef.value
+    if (el) el.scrollTop = el.scrollHeight
+  })
 }
 
 /* ─── 替换选中文本 ─── */
@@ -691,22 +961,18 @@ function handleInsertAfter()
 
 async function handleCopy()
 {
+  // 复制最新的 AI 回复
+  const lastAssistant = [...chatMessages.value].reverse().find(m => m.role === 'assistant')
+  const textToCopy = lastAssistant?.content || aiResult.value
   try
   {
-    await navigator.clipboard.writeText(aiResult.value)
+    await navigator.clipboard.writeText(textToCopy)
     UMessageFn({ message: t('ai.copiedToClipboard'), type: 'success' })
   }
   catch
   {
     UMessageFn({ message: t('ai.copyFailed'), type: 'error' })
   }
-}
-
-async function handleRetry()
-{
-  if (!selectedText.value || !lastAction.value) return
-  const prompt = lastAction.value === 'custom' ? customPrompt.value.trim() : undefined
-  await executeAiAction(lastAction.value, selectedText.value, prompt)
 }
 
 function handleDiscard()
@@ -716,10 +982,20 @@ function handleDiscard()
 
 function closePreview()
 {
+  // 中断进行中的请求
+  if (abortController)
+  {
+    abortController.abort(); abortController = null
+  }
   phase.value = 'actions'
   aiResult.value = ''
   toolbarVisible.value = false
   selectedText.value = ''
+  chatMessages.value = []
+  followUpText.value = ''
+  chatLoading.value = false
+  streamingText.value = ''
+  isFullscreen.value = false
 }
 
 /* ─── 事件绑定生命周期 ─── */
@@ -734,6 +1010,14 @@ onBeforeUnmount(() =>
   document.removeEventListener('mouseup', handleMouseUp)
   document.removeEventListener('selectionchange', handleSelectionChange)
   clearHideTimer()
+  if (selChangeTimer)
+  {
+    clearTimeout(selChangeTimer); selChangeTimer = null
+  }
+  if (abortController)
+  {
+    abortController.abort(); abortController = null
+  }
 })
 </script>
 
@@ -826,6 +1110,15 @@ onBeforeUnmount(() =>
     &--primary {
       color: var(--u-primary, #409eff);
     }
+
+    &--stop {
+      color: var(--u-danger, #f56c6c);
+
+      &:hover {
+        background: rgba(245, 108, 108, 0.1);
+        color: var(--u-danger, #f56c6c);
+      }
+    }
   }
 
   /* 自定义指令输入态 */
@@ -859,6 +1152,172 @@ onBeforeUnmount(() =>
 }
 
 /* ========== UDialog 内的 AI 预览内容样式 ========== */
+/* ========== UDialog 内的 AI 对话样式 ========== */
+.global-ai-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  padding: 4px 0;
+
+  &--fullscreen {
+    padding: 8px 16px;
+    gap: 14px;
+  }
+
+  &__msg {
+    display: flex;
+
+    &--user {
+      justify-content: flex-end;
+    }
+
+    &--assistant {
+      justify-content: flex-start;
+    }
+  }
+
+  &__bubble {
+    max-width: 85%;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 14px;
+    line-height: 1.7;
+    word-break: break-word;
+
+    // Markdown 渲染重置
+    p { margin: 0 0 0.5em; }
+    p:last-child { margin-bottom: 0; }
+    pre {
+      background: var(--u-background-3, #f0f0f0);
+      padding: 8px 10px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 13px;
+    }
+    code {
+      font-size: 13px;
+      background: var(--u-background-3, #f0f0f0);
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+    pre code {
+      background: none;
+      padding: 0;
+    }
+    ul, ol { margin: 4px 0; padding-left: 20px; }
+
+    .global-ai-chat__msg--assistant & {
+      background: var(--u-background-2, #f5f5f5);
+      color: var(--u-text-1, #333);
+      border-bottom-left-radius: 2px;
+    }
+
+    .global-ai-chat__msg--user & {
+      background: var(--u-primary, #409eff);
+      color: #fff;
+      border-bottom-right-radius: 2px;
+      white-space: pre-wrap;
+    }
+
+    &--loading {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--u-text-3, #999);
+
+      .u-icon {
+        animation: global-ai-spin 1s linear infinite;
+      }
+    }
+  }
+
+  &__cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    background: var(--u-primary, #409eff);
+    vertical-align: text-bottom;
+    margin-left: 1px;
+    animation: global-ai-blink 0.8s steps(2) infinite;
+  }
+
+  &__input-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    padding-top: 8px;
+    border-top: 1px solid var(--u-border-2, #e0e0e0);
+    flex-shrink: 0;
+  }
+
+  &__input {
+    flex: 1;
+    min-height: 36px;
+    max-height: 120px;
+    padding: 6px 10px;
+    font-size: 13px;
+    font-family: inherit;
+    border: 1px solid var(--u-border-2, #e0e0e0);
+    border-radius: 8px;
+    background: var(--u-background-1, #fff);
+    color: var(--u-text-1, #333);
+    outline: none;
+    resize: none;
+    overflow-y: auto;
+    line-height: 1.5;
+    transition: border-color 0.15s;
+
+    &:focus {
+      border-color: var(--u-primary, #409eff);
+    }
+
+    &::placeholder {
+      color: var(--u-text-4, #bbb);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  &__send {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 8px;
+    background: var(--u-primary, #409eff);
+    color: #fff;
+    font-size: 13px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s;
+
+    &:hover {
+      background: var(--u-primary-dark-2, #337ecc);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    &--stop {
+      background: var(--u-danger, #f56c6c);
+
+      &:hover {
+        background: var(--u-danger-dark, #e64545);
+      }
+    }
+  }
+}
+
 .global-ai-preview__content {
   font-size: 14px;
   line-height: 1.7;
@@ -918,6 +1377,11 @@ onBeforeUnmount(() =>
 @keyframes global-ai-spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+@keyframes global-ai-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
 
 /* ---- 工具条淡入淡出 ---- */

@@ -212,6 +212,15 @@ export default {
     discard: 'Discard',
     previewTitle: '{action} Result',
     inserted: 'Inserted',
+    followUpPlaceholder: 'Ask a follow-up... (Shift+Enter for newline)',
+    stop: 'Stop',
+    fullscreen: 'Fullscreen',
+    exitFullscreen: 'Exit Fullscreen',
+  },
+  chatWidget: {
+    open: 'AI Assistant',
+    close: 'Close',
+    newChat: 'New Chat',
   },
   about: {
     title: 'About',

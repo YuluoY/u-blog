@@ -95,6 +95,11 @@
   border: 1px solid var(--u-upload-border);
   border-radius: var(--u-upload-radius);
   background: var(--u-background-2, #f5f5f5);
+  cursor: pointer;
+
+  .is-disabled & {
+    cursor: not-allowed;
+  }
 }
 
 .u-upload__card-img {

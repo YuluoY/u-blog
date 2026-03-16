@@ -5,7 +5,12 @@
 <template>
   <div class="u-upload" :class="rootClasses">
     <!-- picture-card 模式：有值时显示预览卡片 -->
-    <div v-if="hasPreview" class="u-upload__card" :style="ratioStyle">
+    <div
+      v-if="hasPreview"
+      class="u-upload__card"
+      :style="ratioStyle"
+      @click="openFileDialog"
+    >
       <img :src="modelValue" class="u-upload__card-img" :style="{ objectFit: fit }" alt="" />
       <div class="u-upload__card-actions">
         <button

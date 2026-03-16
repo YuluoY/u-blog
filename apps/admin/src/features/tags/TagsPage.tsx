@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTableScrollY } from '../../shared/hooks/useTableScrollY'
 import { useTags } from './useTags'
 import { useTagMutations } from './useTagMutations'
@@ -21,6 +21,12 @@ export default function TagsPage() {
     setEditing(record)
     setModalOpen(true)
   }
+
+  // 收集已有 tag 的颜色（编辑时排除当前项），用于去重
+  const existingColors = useMemo(
+    () => list.filter((t) => t.color && t.id !== editing?.id).map((t) => t.color!),
+    [list, editing],
+  )
 
   const handleSubmit = async (values: { name: string; desc?: string; color?: string }) => {
     if (editing) {
@@ -54,6 +60,7 @@ export default function TagsPage() {
         onSubmit={handleSubmit}
         loading={create.isPending || update.isPending}
         initial={editing}
+        existingColors={existingColors}
       />
     </div>
   )

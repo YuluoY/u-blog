@@ -187,6 +187,10 @@ export const restWriteGuard = async (
 
 	// ---------- 4. 行级所有权模型 ----------
 	if (OWNERSHIP_MODELS.has(model)) {
+		// 新增时自动注入 userId（所有角色），确保数据库 NOT NULL 约束不会被违反
+		if (method === 'POST' && req.path.endsWith('/add')) {
+			req.body.userId = user.id
+		}
 		// admin+ 无需所有权校验
 		if (isAdmin(user.role)) {
 			next()

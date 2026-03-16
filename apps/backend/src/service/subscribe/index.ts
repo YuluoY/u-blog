@@ -3,6 +3,7 @@ import { type DataSource, Repository } from 'typeorm'
 import { Subscriber } from '@/module/schema/Subscriber'
 import { Article } from '@/module/schema/Article'
 import { createTransporter } from '@/plugin/mailer'
+import ownerNotifier from './owner-notifier'
 
 /** 站点 URL，用于拼接邮件中的链接 */
 const SITE_URL = () => process.env.SITE_URL || 'http://localhost:5173'
@@ -39,6 +40,7 @@ class SubscribeService {
       if (name) existing.name = name
       await repo.save(existing)
       await this.sendVerificationEmail(existing)
+      ownerNotifier.enqueue(existing.email, existing.name)
       return existing
     }
 
@@ -51,6 +53,7 @@ class SubscribeService {
     })
     await repo.save(subscriber)
     await this.sendVerificationEmail(subscriber)
+    ownerNotifier.enqueue(subscriber.email, subscriber.name)
     return subscriber
   }
 

@@ -1378,6 +1378,11 @@ watch(() => route.params.id, async newId =>
     :deep(.md-editor-preview) {
       font-size: 14px;
 
+      /* 文章正文段落首行缩进 2em，排除列表/引用/表格内的 p */
+      > p {
+        text-indent: 2em;
+      }
+
       p, li, td, th, dd, dt {
         font-size: 14px;
         line-height: 1.7;

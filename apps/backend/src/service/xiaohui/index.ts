@@ -3,9 +3,10 @@ import { getDataSource, getClientIp } from '@/utils'
 import { resolveIpLocation } from '@/utils/ipGeo'
 import { XiaohuiConversation, type IXiaohuiMessage } from '@/module/schema/XiaohuiConversation'
 
-/** OpenClaw Gateway 配置（从环境变量或硬编码） */
-const OPENCLAW_URL = process.env.OPENCLAW_URL || 'http://127.0.0.1:18789'
-const OPENCLAW_TOKEN = process.env.OPENCLAW_TOKEN || 'bffd7a8a0d8afe536ede4004958b60a3ef0998f1f6024980'
+/** DeepSeek API 配置（从环境变量或硬编码） */
+const DEEPSEEK_URL = process.env.DEEPSEEK_URL || 'https://api.deepseek.com'
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || 'sk-94cb9fae48e242a4a7fe4d83fa291767'
+const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || 'deepseek-chat'
 
 /**
  * 小惠系统提示词 — 严格约束 AI 行为边界
@@ -176,7 +177,7 @@ const DANGEROUS_INPUT_PATTERNS = [
 
 /**
  * 小惠 AI 助手服务
- * 代理本地 OpenClaw Gateway 的 OpenAI 兼容 HTTP API
+ * 直接调用 DeepSeek OpenAI 兼容 HTTP API
  */
 export default class XiaohuiService {
 
@@ -233,25 +234,22 @@ export default class XiaohuiService {
       })),
     ]
 
-    const response = await fetch(`${OPENCLAW_URL}/v1/chat/completions`, {
+    const response = await fetch(`${DEEPSEEK_URL}/v1/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENCLAW_TOKEN}`,
-        'x-openclaw-agent-id': 'main',
+        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'openclaw',
+        model: DEEPSEEK_MODEL,
         messages: openaiMessages,
         stream: true,
-        // 绝对禁止工具调用：API 层面阻断，即使 agent 配置了工具也无法触发
-        tool_choice: 'none',
       }),
     })
 
     if (!response.ok || !response.body) {
       const text = await response.text().catch(() => 'Unknown error')
-      throw new Error(`OpenClaw 请求失败: ${response.status} ${text}`)
+      throw new Error(`DeepSeek 请求失败: ${response.status} ${text}`)
     }
 
     return response.body
@@ -270,23 +268,21 @@ export default class XiaohuiService {
       })),
     ]
 
-    const response = await fetch(`${OPENCLAW_URL}/v1/chat/completions`, {
+    const response = await fetch(`${DEEPSEEK_URL}/v1/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENCLAW_TOKEN}`,
-        'x-openclaw-agent-id': 'main',
+        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'openclaw',
+        model: DEEPSEEK_MODEL,
         messages: openaiMessages,
         stream: false,
-        tool_choice: 'none',
       }),
     })
 
     if (!response.ok) {
-      throw new Error(`OpenClaw 请求失败: ${response.status}`)
+      throw new Error(`DeepSeek 请求失败: ${response.status}`)
     }
 
     const data = await response.json() as any

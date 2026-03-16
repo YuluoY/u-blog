@@ -1,19 +1,18 @@
 # 全站 AI 浮动工具栏
 
-- **Version**: 2.0.0
-- **Last Updated**: 2026-03-07
-- **Code Paths**: `apps/frontend/src/components/GlobalAiToolbar.vue`, `apps/frontend/src/components/LayoutBase.vue`, `apps/frontend/src/constants/aiProviders.ts`, `apps/frontend/src/utils/guestCrypto.ts`, `apps/frontend/src/composables/useSettingsForm.ts`, `apps/frontend/src/views/SettingView.vue`, `apps/backend/src/router/common/index.ts`
+- **Version**: 3.0.0
+- **Last Updated**: 2026-03-15
+- **Code Paths**: `apps/frontend/src/components/GlobalAiToolbar.vue`, `apps/frontend/src/components/LayoutBase.vue`, `apps/frontend/src/constants/aiProviders.ts`, `apps/frontend/src/utils/guestCrypto.ts`, `apps/frontend/src/composables/useSettingsForm.ts`, `apps/frontend/src/views/SettingView.vue`, `apps/backend/src/router/common/index.ts`, `apps/backend/src/service/common/index.ts`
 
 ## 功能目的
 
-在网站任意**可编辑输入区域**（textarea、input[type=text/search/url/email]、contenteditable）选中文本时，弹出 AI 浮动工具栏，提供翻译、解释、润色、缩写、**扩写、续写**六种 AI 操作，点击后**直接替换选中内容**。撰写页（WriteView）自带独立工具栏，此组件自动跳过。
+在网站任意**可编辑输入区域**（textarea、input[type=text/search/url/email]、contenteditable）选中文本时，弹出 AI 浮动工具栏，提供翻译、润色、缩写、自定义等 AI 操作。**撰写页（WriteView）已统一使用全局工具栏**，支持多轮对话追问。
 
 ## 触发条件
 
-1. **登录用户**：在设置页/抽屉中配置了在线模型（`OPENAI_API_KEY` 已设置）
+1. **登录用户**：在设置页/抽屉中配置了在线模型（`OPENAI_API_KEY` 已设置），或继承站长配置
 2. **游客**：在设置抽屉中配置了自备 API Key（加密存储于 localStorage）
-3. 在可编辑 DOM 中选中至少 1 个字符的文本
-4. 当前页面不是撰写页（WriteView）
+3. 在可编辑 DOM 中选中至少 1 个字符的文本（鼠标选中或 Ctrl/Cmd+A 全选均可触发）
 
 ## 使用方式
 
@@ -108,3 +107,8 @@
 - `2026-03-07` **Feat**: 游客 AI 功能——未登录用户可自备 API Key 使用工具栏，配置通过 PBKDF2+AES-256-GCM 加密存 localStorage
 - `2026-03-07` **Feat**: 新增 5 家国内大模型厂商预设下拉（DeepSeek/Qwen/GLM/MiniMax/Doubao），自动填入 baseUrl 与模型
 - `2026-03-07` **Feat**: SettingsDrawer 和 SettingView 均支持厂商网格选择 + 模型按钮切换
+- `2026-03-15` **Refactor**: 统一全站 AI 工具栏，撰写页不再排除，WriteEditor 移除独立 AI 代码
+- `2026-03-15` **Feat**: AI 结果弹窗新增多轮对话——首次生成后可在弹窗内继续追问，上下文自动传递
+- `2026-03-15` **Fix**: 用 `selectionchange` 替代 `keyup` 检测选区，修复 CodeMirror (md-editor-v3) 中 Ctrl/Cmd+A 全选不触发工具栏的问题
+- `2026-03-15` **Refactor**: 提取 `checkAndShowToolbar()` 共享函数，`handleMouseUp` 和 `handleSelectionChange` 复用同一逻辑
+- `2026-03-15` **Fix**: 后端 `getSettings` 用户级设置回退——已登录用户缺失 user-scoped key 时自动继承站长（super_admin）的配置

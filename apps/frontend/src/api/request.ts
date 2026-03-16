@@ -155,7 +155,7 @@ export async function uploadFile(file: File): Promise<UploadResult>
   const formData = new FormData()
   formData.append('file', file)
   const res = await instance.post<BackendResponse<UploadResult>>('/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
+    headers: { 'Content-Type': undefined },
     timeout: 60000,
   })
   const payload = res.data

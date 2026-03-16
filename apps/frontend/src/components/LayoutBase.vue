@@ -66,8 +66,11 @@
     <!-- 移动端底部导航栏（⚤767px 可见，替代被隐藏的 IconBar） -->
     <MobileBottomNav />
 
-    <!-- 全站 AI 浮动工具栏：选中文本后弹出（WriteEditor 内部的编辑器区域通过 isInsideWriteEditor 自动跳过） -->
+    <!-- 全站 AI 浮动工具栏：选中文本后弹出 -->
     <GlobalAiToolbar />
+
+    <!-- 右下角浮动客服对话入口（PC端，复用小惠接口） -->
+    <FloatingChatWidget />
   </u-layout>
 </template>
 
@@ -82,6 +85,7 @@ import SidePanel from '@/components/AppShell/SidePanel.vue'
 import PopoverPanel from '@/components/AppShell/PopoverPanel.vue'
 import SettingsDrawer from '@/components/AppShell/SettingsDrawer.vue'
 import GlobalAiToolbar from '@/components/GlobalAiToolbar.vue'
+import FloatingChatWidget from '@/components/FloatingChatWidget.vue'
 import { useSidebarStore } from '@/stores/sidebar'
 import { useAppStore } from '@/stores/app'
 import { useProgressBar, registerProgressBar } from '@/composables/useProgressBar'

@@ -1239,6 +1239,31 @@ class CommonService {
           masked: masked ? true : undefined,
         }
       }
+
+      // 3. 已登录用户缺失的 user-scoped key → 回退到 super_admin 的设置
+      const superAdminId = await this.getSuperAdminId(req)
+      if (userId && superAdminId && userId !== superAdminId) {
+        const requestedUserKeys = userKeys.length > 0 ? userKeys : (!keys ? [...USER_SCOPED_KEYS] : [])
+        const missingKeys = requestedUserKeys.filter(k => !(k in out))
+        if (missingKeys.length > 0) {
+          const fallbackQb = userSettingRepo.createQueryBuilder('us')
+            .where('us.userId = :userId', { userId: superAdminId })
+            .andWhere('us.key IN (:...keys)', { keys: missingKeys })
+          const fallbackList = await fallbackQb.getMany()
+          for (const row of fallbackList) {
+            let val = row.value
+            if (CommonService.ENCRYPT_KEYS.has(row.key) && typeof val === 'string' && val.includes(':')) {
+              try { val = decrypt(val) } catch { /* 兼容旧数据 */ }
+            }
+            const masked = MASK_KEYS.has(row.key)
+            out[row.key] = {
+              value: masked ? maskValue(val) : val,
+              desc: row.desc ?? undefined,
+              masked: masked ? true : undefined,
+            }
+          }
+        }
+      }
     }
 
     return out

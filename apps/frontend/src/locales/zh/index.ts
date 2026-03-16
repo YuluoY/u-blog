@@ -212,6 +212,15 @@ export default {
     discard: '放弃',
     previewTitle: '{action}结果',
     inserted: '已插入',
+    followUpPlaceholder: '继续追问... (Shift+Enter 换行)',
+    stop: '停止生成',
+    fullscreen: '全屏',
+    exitFullscreen: '退出全屏',
+  },
+  chatWidget: {
+    open: '智能助手',
+    close: '关闭',
+    newChat: '新对话',
   },
   about: {
     title: '关于',

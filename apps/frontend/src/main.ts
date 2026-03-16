@@ -3,8 +3,30 @@ import App from '@/App.vue'
 import 'normalize.css'
 import '@/assets/styles/index.scss'
 import { createPinia } from 'pinia'
+import { config as mdEditorConfig } from 'md-editor-v3'
 
 import router from '@/router'
+
+// md-editor-v3 全局配置
+mdEditorConfig({
+  markdownItConfig(md)
+  {
+    // 单个换行符渲染为 <br>，使预览区换行与编辑区一致
+    md.set({ breaks: true })
+
+    // 文章内链接在新标签页打开
+    const defaultRender = md.renderer.rules.link_open
+      || ((tokens: any[], idx: number, options: any, _env: any, self: any) => self.renderToken(tokens, idx, options))
+
+    md.renderer.rules.link_open = (tokens: any[], idx: number, options: any, env: any, self: any) =>
+    {
+      const token = tokens[idx]
+      token.attrSet('target', '_blank')
+      token.attrSet('rel', 'noopener noreferrer')
+      return defaultRender(tokens, idx, options, env, self)
+    }
+  },
+})
 import i18n from './locales'
 import UccUI from './plugins/ui'
 import SnowfallPlugin from '@u-blog/snowfall'
