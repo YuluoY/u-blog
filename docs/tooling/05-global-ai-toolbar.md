@@ -1,8 +1,8 @@
 # 全站 AI 浮动工具栏
 
-- **Version**: 3.0.0
-- **Last Updated**: 2026-03-15
-- **Code Paths**: `apps/frontend/src/components/GlobalAiToolbar.vue`, `apps/frontend/src/components/LayoutBase.vue`, `apps/frontend/src/constants/aiProviders.ts`, `apps/frontend/src/utils/guestCrypto.ts`, `apps/frontend/src/composables/useSettingsForm.ts`, `apps/frontend/src/views/SettingView.vue`, `apps/backend/src/router/common/index.ts`, `apps/backend/src/service/common/index.ts`
+- **Version**: 3.1.1
+- **Last Updated**: 2026-03-16
+- **Code Paths**: `apps/frontend/src/components/GlobalAiToolbar.vue`, `apps/frontend/src/components/FloatingChatWidget.vue`, `apps/frontend/src/components/LayoutBase.vue`, `apps/frontend/src/composables/useDraggablePosition.ts`, `apps/frontend/src/constants/storage.ts`, `apps/frontend/src/assets/images/xiaohui.png`, `apps/frontend/src/constants/aiProviders.ts`, `apps/frontend/src/utils/guestCrypto.ts`, `apps/frontend/src/composables/useSettingsForm.ts`, `apps/frontend/src/views/SettingView.vue`, `apps/backend/src/router/common/index.ts`, `apps/backend/src/service/common/index.ts`
 
 ## 功能目的
 
@@ -20,6 +20,14 @@
 - 工具栏弹出于**选中区域正下方**（水平居中于实际选区），包含：翻译 / 解释 / 润色 / 缩写 / 扩写 / 续写
 - 点击操作后，工具栏切换为 loading 态（旋转图标 + 文字提示）
 - AI 生成完成后**直接替换选中文本**，并通过 UMessage toast 提示「已替换」
+
+## 小惠浮窗
+
+- 右下角新增卡片式小惠入口，不再使用单一圆形按钮
+- 入口卡片与对话面板均基于同一锚点定位，支持拖拽并持久化到 localStorage
+- 拖拽位置缓存 key：`u-blog-floating-chat-widget-position`
+- 展开后的面板头部可拖拽；发送按钮内嵌于输入框右侧，减少底部工具噪音
+- 浮窗头像改为站内资源 `xiaohui.png`，和小惠面板保持统一视觉
 
 ## 游客 AI 功能
 
@@ -112,3 +120,6 @@
 - `2026-03-15` **Fix**: 用 `selectionchange` 替代 `keyup` 检测选区，修复 CodeMirror (md-editor-v3) 中 Ctrl/Cmd+A 全选不触发工具栏的问题
 - `2026-03-15` **Refactor**: 提取 `checkAndShowToolbar()` 共享函数，`handleMouseUp` 和 `handleSelectionChange` 复用同一逻辑
 - `2026-03-15` **Fix**: 后端 `getSettings` 用户级设置回退——已登录用户缺失 user-scoped key 时自动继承站长（super_admin）的配置
+- `2026-03-16` **Feat**: 小惠浮窗改为可拖拽卡片式入口，位置持久化到 localStorage
+- `2026-03-16` **Update**: 小惠对话面板发送按钮内嵌到输入框，并统一头像视觉资源
+- `2026-03-16` **Update**: 小惠浮窗头像资源切换为 `apps/frontend/src/assets/images/xiaohui.png`

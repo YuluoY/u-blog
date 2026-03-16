@@ -5,28 +5,39 @@
 -->
 <template>
   <Teleport to="body">
-    <!-- 浮动按钮 -->
-    <Transition name="fcw-fab-fade">
-      <button
-        v-show="fabVisible"
-        class="fcw-fab"
-        :title="t('chatWidget.open')"
-        @click="togglePanel"
-      >
-        <u-icon v-if="!panelVisible" icon="fa-solid fa-comment-dots" />
-        <u-icon v-else icon="fa-solid fa-xmark" />
-        <!-- 未读指示点 -->
-        <span v-if="hasUnread && !panelVisible" class="fcw-fab__dot" />
-      </button>
-    </Transition>
+    <div
+      v-show="fabVisible"
+      ref="widgetRef"
+      class="fcw-root"
+      :class="{ 'is-open': panelVisible, 'is-dragging': widgetDragging }"
+      :style="widgetStyle"
+    >
+      <Transition name="fcw-fab-fade">
+        <button
+          v-show="!panelVisible"
+          class="fcw-launcher fcw-drag-handle"
+          :title="t('chatWidget.open')"
+          @click="handleLauncherClick"
+        >
+          <img :src="xiaohuiAvatar" :alt="t('xiaohui.name')" class="fcw-launcher__avatar" />
+          <div class="fcw-launcher__copy">
+            <div class="fcw-launcher__eyebrow">{{ t('chatWidget.open') }}</div>
+            <div class="fcw-launcher__title">{{ t('xiaohui.name') }}</div>
+            <div class="fcw-launcher__desc">{{ t('xiaohui.hint') }}</div>
+          </div>
+          <div class="fcw-launcher__action">
+            <u-icon icon="fa-solid fa-sparkles" />
+          </div>
+          <span v-if="hasUnread" class="fcw-launcher__dot" />
+        </button>
+      </Transition>
 
-    <!-- 对话面板 -->
-    <Transition name="fcw-panel-slide">
-      <div v-if="panelVisible" class="fcw-panel">
+      <Transition name="fcw-panel-slide">
+        <div v-if="panelVisible" class="fcw-panel">
         <!-- 头部 -->
         <div class="fcw-panel__header">
-          <div class="fcw-panel__header-info">
-            <span class="fcw-panel__avatar">🤖</span>
+          <div class="fcw-panel__header-info fcw-drag-handle">
+            <img :src="xiaohuiAvatar" :alt="t('xiaohui.name')" class="fcw-panel__avatar" />
             <div>
               <div class="fcw-panel__name">{{ t('xiaohui.name') }}</div>
               <div class="fcw-panel__hint">{{ t('xiaohui.hint') }}</div>
@@ -46,7 +57,7 @@
         <div ref="chatBodyRef" class="fcw-panel__body">
           <!-- 空状态 -->
           <div v-if="!messages.length && !streaming" class="fcw-panel__empty">
-            <span class="fcw-panel__empty-emoji">💬</span>
+            <img :src="xiaohuiAvatar" :alt="t('xiaohui.name')" class="fcw-panel__empty-avatar" />
             <p>{{ t('xiaohui.emptyDesc') }}</p>
             <!-- 快捷提示词 -->
             <div class="fcw-panel__prompts">
@@ -65,7 +76,12 @@
           <!-- 消息气泡 -->
           <template v-for="(msg, idx) in messages" :key="msg.id">
             <div class="fcw-msg" :class="`fcw-msg--${msg.role}`">
-              <div v-if="msg.role === 'assistant'" class="fcw-msg__avatar">🤖</div>
+              <img
+                v-if="msg.role === 'assistant'"
+                :src="xiaohuiAvatar"
+                :alt="t('xiaohui.name')"
+                class="fcw-msg__avatar"
+              />
               <div class="fcw-msg__bubble">
                 <MarkdownPreview
                   v-if="msg.role === 'assistant'"
@@ -84,7 +100,7 @@
 
           <!-- loading（还没有 token 时） -->
           <div v-if="loading && !streaming" class="fcw-msg fcw-msg--assistant">
-            <div class="fcw-msg__avatar">🤖</div>
+            <img :src="xiaohuiAvatar" :alt="t('xiaohui.name')" class="fcw-msg__avatar" />
             <div class="fcw-msg__bubble fcw-msg__bubble--loading">
               <u-icon icon="fa-solid fa-spinner" />
               <span>{{ t('ai.processing') }}</span>
@@ -94,35 +110,38 @@
 
         <!-- 输入区 -->
         <div class="fcw-panel__footer">
-          <textarea
-            ref="inputRef"
-            v-model="inputText"
-            class="fcw-panel__input"
-            :placeholder="t('xiaohui.placeholder')"
-            :disabled="loading"
-            rows="1"
-            @keydown="handleInputKeydown"
-            @input="autoResizeInput"
-          />
-          <button
-            v-if="loading"
-            class="fcw-panel__send fcw-panel__send--stop"
-            :title="t('xiaohui.stop')"
-            @click="handleStop"
-          >
-            <u-icon icon="fa-solid fa-stop" />
-          </button>
-          <button
-            v-else
-            class="fcw-panel__send"
-            :disabled="!inputText.trim()"
-            @click="handleSend"
-          >
-            <u-icon icon="fa-solid fa-paper-plane" />
-          </button>
+          <div class="fcw-panel__input-shell">
+            <textarea
+              ref="inputRef"
+              v-model="inputText"
+              class="fcw-panel__input"
+              :placeholder="t('xiaohui.placeholder')"
+              :disabled="loading"
+              rows="1"
+              @keydown="handleInputKeydown"
+              @input="autoResizeInput"
+            />
+            <button
+              v-if="loading"
+              class="fcw-panel__send fcw-panel__send--stop"
+              :title="t('xiaohui.stop')"
+              @click="handleStop"
+            >
+              <u-icon icon="fa-solid fa-stop" />
+            </button>
+            <button
+              v-else
+              class="fcw-panel__send"
+              :disabled="!inputText.trim()"
+              @click="handleSend"
+            >
+              <u-icon icon="fa-solid fa-paper-plane" />
+            </button>
+          </div>
         </div>
-      </div>
-    </Transition>
+        </div>
+      </Transition>
+    </div>
   </Teleport>
 </template>
 
@@ -133,11 +152,15 @@ import { useI18n } from 'vue-i18n'
 import { sendXiaohuiStream, type XiaohuiMessage } from '@/api/xiaohui'
 import { normalizeStreamingMarkdown } from '@/utils/markdownStreaming'
 import MarkdownPreview from '@/components/MarkdownPreview.vue'
+import { useDraggablePosition } from '@/composables/useDraggablePosition'
+import { STORAGE_KEYS } from '@/constants/storage'
+import xiaohuiAvatar from '@/assets/images/xiaohui.png'
 
 defineOptions({ name: 'FloatingChatWidget' })
 
 const { t } = useI18n()
 const route = useRoute()
+const widgetRef = ref<HTMLElement | null>(null)
 
 /* ─── 可见性控制 ─── */
 const panelVisible = ref(false)
@@ -147,18 +170,31 @@ const hasUnread = ref(false)
 const hiddenRoutes = ['xiaohui', 'chat']
 const fabVisible = computed(() => !hiddenRoutes.includes(route.name as string))
 
+const {
+  position: widgetPosition,
+  isDragging: widgetDragging,
+  ensureInViewport,
+} = useDraggablePosition(widgetRef, {
+  storageKey: STORAGE_KEYS.FLOATING_CHAT_WIDGET_POSITION,
+  defaultPosition: { right: 40, bottom: 40 },
+  edgePadding: 16,
+  dragHandleSelector: '.fcw-drag-handle',
+})
+
+const widgetStyle = computed(() => ({
+  right: `${widgetPosition.value.right}px`,
+  bottom: `${widgetPosition.value.bottom}px`,
+}))
+
 function togglePanel()
 {
   panelVisible.value = !panelVisible.value
-  if (panelVisible.value)
-  {
-    hasUnread.value = false
-    nextTick(() =>
-    {
-      scrollToBottom()
-      inputRef.value?.focus()
-    })
-  }
+}
+
+function handleLauncherClick()
+{
+  if (widgetDragging.value) return
+  togglePanel()
 }
 
 /* ─── 消息管理 ─── */
@@ -210,6 +246,25 @@ onMounted(loadMessages)
 
 // 自动保存
 watch(messages, saveMessages, { deep: true })
+watch(panelVisible, visible =>
+{
+  if (visible)
+  {
+    hasUnread.value = false
+    nextTick(() =>
+    {
+      ensureInViewport()
+      scrollToBottom()
+      inputRef.value?.focus()
+    })
+    return
+  }
+
+  nextTick(() =>
+  {
+    ensureInViewport()
+  })
+})
 
 /* ─── 快捷提示词 ─── */
 const quickPrompts = computed(() => [
@@ -373,82 +428,137 @@ onBeforeUnmount(() =>
 </script>
 
 <style lang="scss">
-/* ========== 浮动按钮 ========== */
-.fcw-fab {
+/* ========== 根容器 ========== */
+.fcw-root {
   position: fixed;
   z-index: 9999;
-  right: 24px;
-  bottom: 24px;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  border: none;
-  background: var(--u-primary, #409eff);
-  color: #fff;
-  font-size: 22px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
-  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+  width: fit-content;
 
-  &:hover {
-    background: var(--u-primary-dark-2, #337ecc);
-    transform: scale(1.08);
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+  &.is-dragging {
+    user-select: none;
   }
 
-  &:active {
-    transform: scale(0.96);
-  }
-
-  &__dot {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--u-danger, #f56c6c);
-    border: 2px solid #fff;
-    animation: fcw-dot-pulse 1.5s ease-in-out infinite;
-  }
-
-  // 移动端隐藏
   @media (max-width: 768px) {
     display: none;
   }
 }
 
+/* ========== 卡片式入口 ========== */
+.fcw-launcher {
+  position: relative;
+  width: 240px;
+  min-height: 76px;
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) 34px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(90, 126, 255, 0.32);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top right, rgba(113, 174, 255, 0.22), transparent 34%),
+    linear-gradient(135deg, rgba(37, 60, 112, 0.96), rgba(24, 28, 51, 0.96));
+  box-shadow: 0 16px 42px rgba(6, 11, 30, 0.34);
+  backdrop-filter: blur(16px);
+  color: #fff;
+  cursor: grab;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 48px rgba(6, 11, 30, 0.42);
+    border-color: rgba(122, 169, 255, 0.6);
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  &__avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    object-fit: cover;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.24);
+  }
+
+  &__copy {
+    min-width: 0;
+    text-align: left;
+  }
+
+  &__eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(233, 241, 255, 0.72);
+  }
+
+  &__title {
+    margin-top: 2px;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  &__desc {
+    margin-top: 4px;
+    font-size: 11px;
+    color: rgba(233, 241, 255, 0.82);
+    line-height: 1.35;
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  &__action {
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.14);
+    font-size: 14px;
+    color: #fff;
+  }
+
+  &__dot {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--u-danger, #f56c6c);
+    border: 2px solid rgba(12, 16, 36, 0.95);
+    animation: fcw-dot-pulse 1.5s ease-in-out infinite;
+  }
+}
+
 /* ========== 对话面板 ========== */
 .fcw-panel {
-  position: fixed;
-  z-index: 9998;
-  right: 24px;
-  bottom: 88px;
-  width: 380px;
-  height: 540px;
+  width: 396px;
+  height: 560px;
   max-height: calc(100vh - 120px);
-  border-radius: 16px;
-  background: var(--u-background-1, #fff);
-  border: 1px solid var(--u-border-2, #e0e0e0);
-  box-shadow: 0 8px 36px rgba(0, 0, 0, 0.15);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(26, 29, 45, 0.98), rgba(20, 20, 28, 0.98));
+  border: 1px solid rgba(101, 121, 168, 0.3);
+  box-shadow: 0 22px 56px rgba(0, 0, 0, 0.42);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-
-  @media (max-width: 768px) {
-    display: none;
-  }
 
   /* ── 头部 ── */
   &__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 16px;
-    background: var(--u-primary, #409eff);
+    padding: 14px 16px;
+    background: linear-gradient(135deg, #4a8bff, #2f5ec8);
     color: #fff;
     flex-shrink: 0;
   }
@@ -457,11 +567,20 @@ onBeforeUnmount(() =>
     display: flex;
     align-items: center;
     gap: 10px;
+    cursor: grab;
+
+    &:active {
+      cursor: grabbing;
+    }
   }
 
   &__avatar {
-    font-size: 28px;
-    line-height: 1;
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    object-fit: cover;
+    border: 1px solid rgba(255, 255, 255, 0.26);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
   }
 
   &__name {
@@ -503,11 +622,12 @@ onBeforeUnmount(() =>
   &__body {
     flex: 1;
     overflow-y: auto;
-    padding: 12px 14px;
+    padding: 16px 16px 14px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
     min-height: 0;
+    background: rgba(22, 22, 28, 0.92);
   }
 
   /* ── 空状态 ── */
@@ -518,21 +638,26 @@ onBeforeUnmount(() =>
     align-items: center;
     justify-content: center;
     gap: 8px;
-    color: var(--u-text-3, #999);
+    color: rgba(233, 241, 255, 0.72);
     font-size: 13px;
     text-align: center;
-    padding: 16px;
+    padding: 24px 16px;
   }
 
-  &__empty-emoji {
-    font-size: 40px;
-    margin-bottom: 4px;
+  &__empty-avatar {
+    width: 92px;
+    height: 92px;
+    object-fit: cover;
+    border-radius: 26px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+    margin-bottom: 6px;
   }
 
   &__prompts {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
     margin-top: 12px;
     justify-content: center;
   }
@@ -541,57 +666,61 @@ onBeforeUnmount(() =>
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 5px 10px;
+    padding: 7px 12px;
     font-size: 12px;
-    border: 1px solid var(--u-border-2, #e0e0e0);
-    border-radius: 16px;
-    background: var(--u-background-1, #fff);
-    color: var(--u-text-2, #666);
+    border: 1px solid rgba(139, 153, 190, 0.26);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(239, 243, 255, 0.86);
     cursor: pointer;
     transition: all 0.15s;
 
     &:hover {
-      border-color: var(--u-primary, #409eff);
-      color: var(--u-primary, #409eff);
-      background: var(--u-primary-light-9, rgba(64, 158, 255, 0.05));
+      border-color: rgba(108, 156, 255, 0.62);
+      color: #fff;
+      background: rgba(84, 128, 235, 0.16);
     }
   }
 
   /* ── 输入区 ── */
   &__footer {
+    padding: 14px 16px 16px;
+    border-top: 1px solid rgba(139, 153, 190, 0.16);
+    flex-shrink: 0;
+    background: rgba(24, 24, 32, 0.96);
+  }
+
+  &__input-shell {
+    position: relative;
     display: flex;
     align-items: flex-end;
-    gap: 6px;
-    padding: 10px 14px;
-    border-top: 1px solid var(--u-border-2, #e0e0e0);
-    flex-shrink: 0;
-    background: var(--u-background-1, #fff);
   }
 
   &__input {
-    flex: 1;
+    width: 100%;
     min-height: 36px;
-    max-height: 100px;
-    padding: 7px 10px;
-    font-size: 13px;
+    max-height: 110px;
+    padding: 13px 58px 13px 14px;
+    font-size: 14px;
     font-family: inherit;
-    border: 1px solid var(--u-border-2, #e0e0e0);
-    border-radius: 10px;
-    background: var(--u-background-2, #f5f5f5);
-    color: var(--u-text-1, #333);
+    border: 1px solid rgba(98, 118, 165, 0.26);
+    border-radius: 18px;
+    background: rgba(10, 14, 26, 0.55);
+    color: rgba(248, 250, 255, 0.96);
     outline: none;
     resize: none;
     overflow-y: auto;
-    line-height: 1.5;
-    transition: border-color 0.15s;
+    line-height: 1.55;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
 
     &:focus {
-      border-color: var(--u-primary, #409eff);
-      background: var(--u-background-1, #fff);
+      border-color: rgba(110, 162, 255, 0.7);
+      background: rgba(10, 14, 26, 0.72);
+      box-shadow: 0 0 0 3px rgba(86, 132, 243, 0.16);
     }
 
     &::placeholder {
-      color: var(--u-text-4, #bbb);
+      color: rgba(198, 207, 228, 0.42);
     }
 
     &:disabled {
@@ -601,22 +730,26 @@ onBeforeUnmount(() =>
   }
 
   &__send {
+    position: absolute;
+    right: 10px;
+    bottom: 8px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 34px;
-    height: 34px;
+    width: 38px;
+    height: 38px;
     border: none;
-    border-radius: 10px;
-    background: var(--u-primary, #409eff);
+    border-radius: 14px;
+    background: linear-gradient(135deg, #5b8fff, #3664cf);
     color: #fff;
-    font-size: 13px;
+    font-size: 14px;
     cursor: pointer;
     flex-shrink: 0;
-    transition: background 0.15s;
+    transition: transform 0.15s ease, filter 0.15s ease;
 
     &:hover {
-      background: var(--u-primary-dark-2, #337ecc);
+      transform: translateY(-1px);
+      filter: brightness(1.06);
     }
 
     &:disabled {
@@ -649,27 +782,32 @@ onBeforeUnmount(() =>
 
   &__avatar {
     flex-shrink: 0;
-    font-size: 20px;
-    line-height: 1;
+    width: 30px;
+    height: 30px;
+    object-fit: cover;
+    border-radius: 11px;
     margin-top: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
   }
 
   &__bubble {
     max-width: 82%;
-    padding: 8px 12px;
-    border-radius: 12px;
+    padding: 10px 13px;
+    border-radius: 16px;
     font-size: 13px;
     line-height: 1.6;
     word-break: break-word;
 
     .fcw-msg--assistant & {
-      background: var(--u-background-2, #f5f5f5);
-      color: var(--u-text-1, #333);
-      border-bottom-left-radius: 2px;
+      background: rgba(255, 255, 255, 0.05);
+      color: rgba(242, 246, 255, 0.92);
+      border: 1px solid rgba(126, 143, 185, 0.16);
+      border-bottom-left-radius: 4px;
 
       // MarkdownPreview 样式覆盖
       .markdown-preview {
         font-size: 13px !important;
+        color: inherit;
 
         .md-editor-preview-wrapper {
           padding: 0 !important;
@@ -678,9 +816,9 @@ onBeforeUnmount(() =>
     }
 
     .fcw-msg--user & {
-      background: var(--u-primary, #409eff);
+      background: linear-gradient(135deg, #4d86ff, #3262cd);
       color: #fff;
-      border-bottom-right-radius: 2px;
+      border-bottom-right-radius: 4px;
       white-space: pre-wrap;
     }
 

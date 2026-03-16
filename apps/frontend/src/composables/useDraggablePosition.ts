@@ -26,6 +26,8 @@ export interface UseDraggablePositionOptions {
   defaultPosition?: DraggablePosition
   /** 距视口边缘的最小间距 (px) */
   edgePadding?: number
+  /** 仅允许从指定句柄区域开始拖拽 */
+  dragHandleSelector?: string
 }
 
 const DEFAULT_POS: DraggablePosition = { right: 24, bottom: 24 }
@@ -42,6 +44,7 @@ export function useDraggablePosition(
     storageKey,
     defaultPosition = DEFAULT_POS,
     edgePadding = EDGE_PADDING,
+    dragHandleSelector,
   } = options
 
   /** 当前位置 */
@@ -117,6 +120,9 @@ export function useDraggablePosition(
     // 仅响应主键（左键 / 触摸首指）
     if (e.button !== 0) return
 
+    const target = e.target as HTMLElement | null
+    if (dragHandleSelector && (!target || !target.closest(dragHandleSelector))) return
+
     e.preventDefault()
     el.setPointerCapture(e.pointerId)
 
@@ -182,6 +188,12 @@ export function useDraggablePosition(
     savePosition(position.value)
   }
 
+  function ensureInViewport()
+  {
+    position.value = clampPosition(position.value)
+    savePosition(position.value)
+  }
+
   /* ─── 生命周期绑定 ─── */
   onMounted(() =>
   {
@@ -212,5 +224,7 @@ export function useDraggablePosition(
     position,
     /** 是否正在拖拽（可用于阻止 click 冒泡） */
     isDragging,
+    /** 主动修正到视口内 */
+    ensureInViewport,
   }
 }
