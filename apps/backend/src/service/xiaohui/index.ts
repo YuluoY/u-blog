@@ -2,11 +2,10 @@ import type { Request } from 'express'
 import { getDataSource, getClientIp } from '@/utils'
 import { resolveIpLocation } from '@/utils/ipGeo'
 import { XiaohuiConversation, type IXiaohuiMessage } from '@/module/schema/XiaohuiConversation'
-
-/** DeepSeek API 配置（从环境变量或硬编码） */
-const DEEPSEEK_URL = process.env.DEEPSEEK_URL || 'https://api.deepseek.com'
-const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || 'sk-94cb9fae48e242a4a7fe4d83fa291767'
-const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || 'deepseek-chat'
+import {
+  buildXiaohuiOpenClawHeaders,
+  resolveXiaohuiOpenClawConfig,
+} from './openclaw'
 
 /**
  * 小惠系统提示词 — 严格约束 AI 行为边界
@@ -177,7 +176,7 @@ const DANGEROUS_INPUT_PATTERNS = [
 
 /**
  * 小惠 AI 助手服务
- * 直接调用 DeepSeek OpenAI 兼容 HTTP API
+ * 统一通过 OpenClaw 本地网关转发模型调用，避免在业务代码中硬编码第三方供应商地址和密钥。
  */
 export default class XiaohuiService {
 
@@ -225,6 +224,7 @@ export default class XiaohuiService {
     messages: IXiaohuiMessage[],
     userContext: string = ''
   ): Promise<ReadableStream<Uint8Array>> {
+    const openClawConfig = resolveXiaohuiOpenClawConfig()
     const systemPrompt = XIAOHUI_SYSTEM_PROMPT + userContext
     const openaiMessages = [
       { role: 'system' as const, content: systemPrompt },
@@ -234,14 +234,11 @@ export default class XiaohuiService {
       })),
     ]
 
-    const response = await fetch(`${DEEPSEEK_URL}/v1/chat/completions`, {
+    const response = await fetch(`${openClawConfig.url}/v1/chat/completions`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
-      },
+      headers: buildXiaohuiOpenClawHeaders(openClawConfig.token),
       body: JSON.stringify({
-        model: DEEPSEEK_MODEL,
+        model: openClawConfig.model,
         messages: openaiMessages,
         stream: true,
       }),
@@ -249,7 +246,7 @@ export default class XiaohuiService {
 
     if (!response.ok || !response.body) {
       const text = await response.text().catch(() => 'Unknown error')
-      throw new Error(`DeepSeek 请求失败: ${response.status} ${text}`)
+      throw new Error(`OpenClaw 请求失败: ${response.status} ${text}`)
     }
 
     return response.body
@@ -259,6 +256,7 @@ export default class XiaohuiService {
    * 非流式对话 — 返回完整回复
    */
   static async chat(messages: IXiaohuiMessage[], userContext: string = ''): Promise<string> {
+    const openClawConfig = resolveXiaohuiOpenClawConfig()
     const systemPrompt = XIAOHUI_SYSTEM_PROMPT + userContext
     const openaiMessages = [
       { role: 'system' as const, content: systemPrompt },
@@ -268,21 +266,18 @@ export default class XiaohuiService {
       })),
     ]
 
-    const response = await fetch(`${DEEPSEEK_URL}/v1/chat/completions`, {
+    const response = await fetch(`${openClawConfig.url}/v1/chat/completions`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
-      },
+      headers: buildXiaohuiOpenClawHeaders(openClawConfig.token),
       body: JSON.stringify({
-        model: DEEPSEEK_MODEL,
+        model: openClawConfig.model,
         messages: openaiMessages,
         stream: false,
       }),
     })
 
     if (!response.ok) {
-      throw new Error(`DeepSeek 请求失败: ${response.status}`)
+      throw new Error(`OpenClaw 请求失败: ${response.status}`)
     }
 
     const data = await response.json() as any

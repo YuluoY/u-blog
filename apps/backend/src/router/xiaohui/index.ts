@@ -1,6 +1,7 @@
 import express, { type Router, type Request, type Response, type NextFunction } from 'express'
 import rateLimit from 'express-rate-limit'
 import XiaohuiService from '@/service/xiaohui'
+import { resolveXiaohuiOpenClawConfig } from '@/service/xiaohui/openclaw'
 import { detectBlogIntent, BlogContextBuilder } from '@/service/xiaohui/blogContext'
 import type { IXiaohuiMessage } from '@/module/schema/XiaohuiConversation'
 import { getClientIp } from '@/utils'
@@ -427,7 +428,8 @@ router.post('/ip-guard/unban', ...adminOnly, (req: Request, res: Response) => {
  */
 router.get('/status', async (_req: Request, res: Response) => {
   try {
-    const response = await fetch(`${process.env.OPENCLAW_URL || 'http://127.0.0.1:18789'}/`, {
+    const openClawConfig = resolveXiaohuiOpenClawConfig()
+    const response = await fetch(`${openClawConfig.url}/`, {
       method: 'HEAD',
       signal: AbortSignal.timeout(3000),
     })

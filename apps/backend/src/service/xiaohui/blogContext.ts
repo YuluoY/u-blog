@@ -32,6 +32,15 @@ export type BlogIntent =
 export function detectBlogIntent(message: string): BlogIntent {
   const msg = message.trim()
 
+  /**
+   * “最新文章”和“最近发布了什么新文章”属于同一业务意图，但自然语言表达差异很大。
+   * 这里拆成更窄的几个正则，而不是把原规则里的间隔字符一味放宽，
+   * 目的是避免把“最近最热的文章”这类带比较含义的问题误判成最新文章查询。
+   */
+  const asksLatestArticles = /(?:最新|新发布|刚发的?).{0,6}(?:文章|博[客文]|帖子|post)/i.test(msg)
+    || /(?:最近|近期).{0,10}(?:发布|更新|发[了布]?|新增|写了).{0,10}(?:什么|哪些|哪几|哪篇|有哪[些篇]?|多少)?(?:新)?(?:文章|博[客文]|帖子|post)/i.test(msg)
+    || /(?:最近|近期).{0,6}(?:有|出了).{0,8}(?:什么|哪些|哪几|哪篇|有哪[些篇]?)(?:新)?(?:文章|博[客文]|帖子|post)/i.test(msg)
+
   // ---- 设置类意图 ----
   // 主题切换
   if (/(?:切换|换成?|设置?|改为?|用|变|开启).{0,4}(?:暗[色黑]|深色|dark|夜间)\s*(?:模式|主题)?/i.test(msg))
@@ -69,7 +78,7 @@ export function detectBlogIntent(message: string): BlogIntent {
 
   // ---- 博客数据类意图 ----
   // 最新文章
-  if (/(?:最新|最近|近期|新发布|刚发的?).{0,4}(?:文章|博[客文]|帖子|post)/i.test(msg))
+  if (asksLatestArticles)
     return { type: 'latest_articles' }
 
   // 热门文章
