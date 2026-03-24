@@ -8,7 +8,13 @@ import type { ConfigurationOptions } from 'i18n'
 import type { CookieOptions } from 'express'
 import type { DataSourceOptions } from 'typeorm'
 import dotenv from 'dotenv'
-dotenv.config()
+
+// Docker 生产环境通过 docker-compose environment 块注入，dotenv 仅本地开发生效
+if (process.env.NODE_ENV !== 'production') {
+	dotenv.config({ path: '../../.env.development' })
+} else {
+	dotenv.config()
+}
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 

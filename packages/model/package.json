@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "build": "tsup && node patch-dts.mjs",
-    "dev": "tsup --watch",
+    "dev": "node ./scripts/model-dev.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "exports": {

@@ -18,25 +18,33 @@ COPY apps/frontend/ apps/frontend/
 COPY packages/ packages/
 
 # 安装依赖
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
-# 按顺序构建 packages → frontend
+# 生产构建跳过 DTS 生成（节省内存，运行时不需要类型声明）
+ENV NODE_OPTIONS="--max-old-space-size=1536"
+ENV SKIP_DTS=1
 RUN pnpm --filter @u-blog/model run build \
  && pnpm --filter @u-blog/types run build \
  && pnpm --filter @u-blog/utils run build \
  && pnpm --filter @u-blog/helper run build \
  && pnpm --filter @u-blog/composables run build \
+ && pnpm --filter @u-blog/snowfall run build \
  && pnpm --filter @u-blog/ui run build:es \
+ && pnpm --filter @u-blog/ui run build:css \
  && pnpm --filter @u-blog/frontend run build:prod
 
 # ---- Stage 2: Nginx 服务 ----
 FROM nginx:alpine AS runner
 
-# 复制构建产物到 Nginx 静态目录
-COPY --from=builder /app/apps/frontend/dist /usr/share/nginx/html/frontend
+# 复制构建产物到 Nginx 静态目录（root 指向 /usr/share/nginx/html）
+COPY --from=builder /app/apps/frontend/dist /usr/share/nginx/html
 
-# 复制 Nginx 配置
-COPY deploy/nginx/frontend.conf /etc/nginx/conf.d/frontend.conf
-
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+# SPA 路由回退：所有非静态文件请求都返回 index.html
+RUN printf 'server {\n\
+  listen 80;\n\
+  root /usr/share/nginx/html;\n\
+  index index.html;\n\
+  location / {\n\
+    try_files $uri $uri/ /index.html;\n\
+  }\n\
+}\n' > /etc/nginx/conf.d/default.conf

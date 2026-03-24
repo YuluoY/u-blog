@@ -37,6 +37,9 @@ export interface CellPosition {
 
 export type NodeState = 'idle' | 'hovered' | 'near' | 'pressed' | 'focus-visible' | 'dimmed'
 
+/** 单格：业务项 + 布局坐标 + 展示用色相 */
+export type HoneycombCell<T extends HoneycombItem = HoneycombItem> = T & CellPosition & { hue: number }
+
 /* ---------- 色相调色板（12 种低饱和差异色） ---------- */
 const HEX_HUES = [215, 260, 330, 165, 25, 290, 140, 50, 195, 310, 180, 350]
 
@@ -46,9 +49,9 @@ const ODD_DELTAS = [[-1, 0], [-1, 1], [0, -1], [0, 1], [1, 0], [1, 1]] as const
 
 /* ---------- Composable ---------- */
 
-export function useHoneycombGrid(
+export function useHoneycombGrid<T extends HoneycombItem>(
   containerRef: Ref<HTMLElement | null>,
-  items: ComputedRef<HoneycombItem[]>,
+  items: ComputedRef<T[]>,
 )
 {
   /* ---- 响应式状态 ---- */
@@ -125,7 +128,7 @@ export function useHoneycombGrid(
   })
 
   /** 合并 item 数据 + 布局位置 + 色相 */
-  const cellLayout = computed(() =>
+  const cellLayout = computed((): HoneycombCell<T>[] =>
     items.value.map((item, i) => ({
       ...item,
       ...cellPositions.value[i],
@@ -241,7 +244,7 @@ export function useHoneycombGrid(
   }
 
   /** 统一点击：桌面直跳、移动端先展后跳 */
-  function onCellClick(e: Event, cell: { id: number; url: string })
+  function onCellClick(e: Event, cell: Pick<HoneycombCell<T>, 'id' | 'url'>)
   {
     if (isTouch.value)
     {

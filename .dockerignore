@@ -17,3 +17,6 @@ docs/
 .env.development
 apps/mobile/
 pnpm-debug.log
+apps/prerender/cache/
+apps/prerender/node_modules/
+apps/prerender/package-lock.json

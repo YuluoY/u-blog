@@ -21,9 +21,11 @@ COPY packages/types/ packages/types/
 COPY packages/utils/ packages/utils/
 
 # 安装依赖（--frozen-lockfile 保证一致性）
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
-# 构建共享 packages（backend 依赖：model → types → utils）
+# 生产构建跳过 DTS 生成（节省内存，运行时不需要类型声明）
+ENV NODE_OPTIONS="--max-old-space-size=1536"
+ENV SKIP_DTS=1
 RUN pnpm --filter @u-blog/model run build \
  && pnpm --filter @u-blog/types run build \
  && pnpm --filter @u-blog/utils run build
@@ -34,8 +36,8 @@ FROM node:20-alpine AS runner
 # 安装 pnpm（运行时也需要 workspace 解析）
 RUN corepack enable && corepack prepare pnpm@10.13.1 --activate
 
-# bcrypt 需要的原生编译依赖
-RUN apk add --no-cache python3 make g++
+# bcrypt 需要的原生编译依赖 + 时区数据
+RUN apk add --no-cache python3 make g++ tzdata
 
 WORKDIR /app
 
@@ -49,7 +51,7 @@ COPY --from=builder /app/packages/ packages/
 COPY --from=builder /app/apps/backend/ apps/backend/
 
 # 仅安装生产依赖
-RUN pnpm install --frozen-lockfile --prod=false
+RUN pnpm install --no-frozen-lockfile --prod=false
 
 # 创建上传目录
 RUN mkdir -p /app/apps/backend/public/uploads \

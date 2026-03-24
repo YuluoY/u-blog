@@ -1152,6 +1152,13 @@ onBeforeUnmount(() =>
 }
 
 /* ========== UDialog 内的 AI 预览内容样式 ========== */
+/* AI 对话弹窗：body 改为 flex 布局，输入框固定在底部 */
+.u-dialog__body:has(> .global-ai-chat) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 /* ========== UDialog 内的 AI 对话样式 ========== */
 .global-ai-chat {
   display: flex;

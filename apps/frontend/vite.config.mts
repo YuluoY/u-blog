@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite'
 import { fileURLToPath, URL } from 'node:url'
-import { writeFileSync } from 'node:fs'
+import { writeFileSync, mkdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 import crypto from 'node:crypto'
 
@@ -20,7 +20,7 @@ const GLOBAL_STYLES = `
 
 // 构建哈希：每次构建产出唯一标识，前端用于检测版本更新
 const BUILD_HASH = crypto.randomBytes(8).toString('hex')
-const BUILD_TIME = new Date().toISOString()
+const BUILD_TIME = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false })
 
 /**
  * Vite 插件：构建完成后在 dist 目录输出 version.json
@@ -32,6 +32,7 @@ function versionJsonPlugin() {
     apply: 'build' as const,
     closeBundle() {
       const outDir = resolve(__dirname, 'dist')
+      mkdirSync(outDir, { recursive: true })
       const versionData = JSON.stringify({ hash: BUILD_HASH, buildTime: BUILD_TIME })
       writeFileSync(resolve(outDir, 'version.json'), versionData, 'utf-8')
     }

@@ -1,7 +1,7 @@
 # Prerender 动态渲染服务
 
-- **Version**: 1.0.0
-- **Last Updated**: 2025-07-22
+- **Version**: 1.1.0
+- **Last Updated**: 2026-03-18
 - **Code Paths**:
   - `deploy/prerender/server.js` — Prerender 服务入口 (Express + Puppeteer)
   - `deploy/prerender/package.json` — 依赖声明
@@ -14,6 +14,11 @@
 
 Vue 3 SPA 博客（uluo.cloud）在搜索引擎爬虫直接抓取时只能看到空的 `<div id="app"></div>`，导致无法被收录。Prerender 服务通过 Puppeteer 渲染完整 HTML，并注入 SEO 元数据（title / description / OG / JSON-LD / 文章内容），使爬虫能够索引完整页面内容。
 
+在 `2026-03-18` 的修复中，Prerender 额外补上了两类 SEO 稳定性能力：
+
+- **属性安全转义**：文章标题/描述中的引号、特殊字符会被正确转义，避免生成损坏的 `meta` / `og:*` 标签；
+- **最近文章直链索引**：在 `/`、`/home`、`/archive` 与 `/read/:id` 的 prerender HTML 中补充一组最近公开文章直链，降低国内爬虫只抓入口页时无法继续发现文章 URL 的风险。
+
 ## 使用方式
 
 ### 请求链路
@@ -23,7 +28,7 @@ Vue 3 SPA 博客（uluo.cloud）在搜索引擎爬虫直接抓取时只能看到
   → map $is_crawler 检测 UA
   → rewrite /prerender-proxy (internal)
   → proxy_pass http://127.0.0.1:3010/render?url=...
-  → Puppeteer 渲染 + 文章内容注入
+  → Puppeteer 渲染 + 文章内容/最近文章直链注入
   → 返回完整 HTML
 ```
 
@@ -69,6 +74,11 @@ curl -s "https://uluo.cloud/sitemap.xml" | head -10
 - 解决方案：服务端直接调用后端 API 获取文章内容，将 markdown 转 HTML 注入隐藏 `<article>` 元素
 - 简单 markdown 转换器不支持表格等复杂语法，但能覆盖标题/段落/代码块/列表/链接等常用格式
 
+### 直链发现策略
+- `/`、`/home`、`/archive`、`/read/:id` 会额外注入最近公开文章直链索引；
+- 该索引只复用已公开文章，不引入私密/草稿内容；
+- 目标是把 URL 发现从“依赖复杂首页 DOM”收敛成“稳定 anchor 列表”，增强百度/360 这类入口页优先爬虫的深抓概率。
+
 ### 服务器配置
 - Chrome for Testing: `/root/.cache/puppeteer/chrome/linux-145.0.7632.77/chrome-linux64/chrome`
 - 服务目录: `/var/www/u-blog/prerender/`
@@ -98,6 +108,10 @@ ssh root@118.25.178.227 '... pm2 restart u-blog-prerender && nginx -t && nginx -
 
 ## Changelog
 
+- `2026-03-18` **Fix**: 修复 Prerender 输出中 `meta` / `og:*` 属性值未转义引号导致的损坏 HTML
+- `2026-03-18` **Feat**: 为 `/`、`/home`、`/archive`、`/read/:id` 注入最近文章直链索引，增强入口页 URL 发现能力
+- `2026-03-18` **Update**: 提升缓存版本，避免旧预渲染缓存继续返回历史损坏 HTML
+- `2026-03-18` **Doc**: 同步记录 Prerender 的 SEO 稳定性修复
 - `2025-07-22` **Feat**: 创建 Prerender 服务，支持 Puppeteer 渲染 + 文章内容注入 + 30+ 爬虫 UA 检测
 - `2025-07-22` **Feat**: Nginx 配置集成 map + internal proxy + @spa_fallback 降级策略
 - `2025-07-22` **Feat**: 文章页注入 Open Graph / Twitter Card / JSON-LD 结构化数据

@@ -1,0 +1,15 @@
+{
+  "name": "u-blog-prerender",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Prerender service for u-blog SEO — Puppeteer 自带 Chromium，无需系统安装浏览器",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "clear-cache": "rm -rf cache/*"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "puppeteer": "^24.7.2"
+  }
+}

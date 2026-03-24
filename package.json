@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "setup": "node scripts/setup.js",
     "dev": "node scripts/dev.js",
     "start": "pnpm run dev",
     "typecheck": "pnpm --filter @u-blog/backend exec tsc --noEmit && pnpm --filter ./apps/frontend exec vue-tsc --noEmit",

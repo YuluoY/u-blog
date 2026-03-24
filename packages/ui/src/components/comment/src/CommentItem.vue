@@ -167,6 +167,21 @@ const props = withDefaults(defineProps<UCommentItemProps>(), {
 })
 const emit = defineEmits<UCommentItemEmits>()
 
+/**
+ * 评论区 IP 属地展示：后端 `resolveIpLocation` 存为「城市, 省份, 国家」，此处只展示省份（或州/大区）。
+ * - 三段及以上：取中间段（省/州），与 ip-api 的 City, Region, Country 顺序一致。
+ * - 两段：多为「省, 国」等缺市场景，取首段。
+ * - 一段或无逗号：原样返回（如「本地」、历史数据）。
+ */
+function formatCommentIpLocationDisplay(raw: string): string {
+  const s = raw.trim()
+  if (!s) return s
+  const segments = s.split(',').map((x) => x.trim()).filter(Boolean)
+  if (segments.length >= 3) return segments[1]
+  if (segments.length === 2) return segments[0]
+  return s
+}
+
 /** 最大嵌套缩进层级 */
 const MAX_INDENT_DEPTH = 3
 const currentDepth = computed(() => props.depth ?? 0)
@@ -273,7 +288,7 @@ const locationOrDeviceText = computed(() => {
   const browserStr = typeof browser === 'string' ? browser.trim() : ''
   const deviceStr = typeof device === 'string' ? device.trim() : ''
   const devicePart = browserStr && deviceStr ? `${browserStr} · ${deviceStr}` : browserStr || deviceStr || ''
-  const regionPart = locStr || '未知地区'
+  const regionPart = locStr ? formatCommentIpLocationDisplay(locStr) : '未知地区'
   const parts = [regionPart, devicePart].filter(Boolean)
   if (parts.length > 0) return parts.join(' · ')
   return '未知地区 · 未知设备'

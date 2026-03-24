@@ -4,7 +4,7 @@ export default defineConfig({
   entry: ['src/index.ts'],
   format: ['cjs', 'esm'],
   outDir: 'dist',
-  dts: {
+  dts: process.env.SKIP_DTS ? false : {
     resolve: true,
     compilerOptions: {
       composite: false

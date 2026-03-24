@@ -14,7 +14,7 @@ export default defineConfig({
   outDir: 'dist',
   
   // 是否生成 d.ts 类型文件
-  dts: {
+  dts: process.env.SKIP_DTS ? false : {
     resolve: true
   },
   
