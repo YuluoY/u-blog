@@ -1,6 +1,30 @@
-import { resolve, dirname } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { resolve } from 'node:path'
 import YAML from 'yaml'
+
+// ---- 显式导入所有 TypeORM 实体 & 订阅者 ----
+// tsx/esbuild 下 TypeORM 的 glob 路径无法通过原生 import() 加载 .ts 文件，
+// 必须以 class 引用方式注册，确保装饰器元数据被正确收集。
+import { ActivityLog } from '../module/schema/ActivityLog'
+import { Announcement } from '../module/schema/Announcement'
+import { Article } from '../module/schema/Article'
+import { Category } from '../module/schema/Category'
+import { Comment } from '../module/schema/Comment'
+import { Follower } from '../module/schema/Follower'
+import { FriendLink } from '../module/schema/FriendLink'
+import { Likes } from '../module/schema/Likes'
+import { Media } from '../module/schema/Media'
+import { PageBlock } from '../module/schema/PageBlock'
+import { Permission } from '../module/schema/Permission'
+import { Role } from '../module/schema/Role'
+import { Route } from '../module/schema/Route'
+import { Setting } from '../module/schema/Setting'
+import { Subscriber } from '../module/schema/Subscriber'
+import { Tag } from '../module/schema/Tag'
+import { UserSetting } from '../module/schema/UserSetting'
+import { Users } from '../module/schema/Users'
+import { View } from '../module/schema/View'
+import { XiaohuiConversation } from '../module/schema/XiaohuiConversation'
+import { UsersSubscriber } from '../module/subscriber/Users'
 import type { SignOptions } from 'jsonwebtoken'
 import type { ConfigObject } from 'svg-captcha'
 import type { Options } from 'swagger-jsdoc'
@@ -15,8 +39,6 @@ if (process.env.NODE_ENV !== 'production') {
 } else {
 	dotenv.config()
 }
-
-const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export interface PluginsConfig {
 	cookie: CookieOptions
@@ -41,8 +63,12 @@ const appCfg: IAppConfig = {
 	port: 3000,
 	/**
 	 * 静态资源路径
+	 *
+	 * 使用 process.cwd() 而非 __dirname，因为 tsc 编译后 __dirname 会变为
+	 * dist/src/app，导致 resolve('../..', 'public') 指向 dist/public 而非 public。
+	 * PM2 通过 ecosystem.config.js 指定 cwd 为 apps/backend，保证路径稳定。
 	 */
-	staticPath: resolve(__dirname, '../..', 'public'),
+	staticPath: resolve(process.cwd(), 'public'),
 	/**
 	 * 邮箱验证码有效期，5分钟
 	 */
@@ -72,8 +98,13 @@ const appCfg: IAppConfig = {
 		// dropSchema: process.env.NODE_ENV === 'development',
 		schema: 'public',
 		logging: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : false,
-		entities: [resolve(__dirname, '../module/schema/**/*.ts')],
-		subscribers: [resolve(__dirname, '../module/subscriber/**/*.ts')]
+		entities: [
+			ActivityLog, Announcement, Article, Category, Comment,
+			Follower, FriendLink, Likes, Media, PageBlock,
+			Permission, Role, Route, Setting, Subscriber,
+			Tag, UserSetting, Users, View, XiaohuiConversation,
+		],
+		subscribers: [UsersSubscriber]
 	},
 
 	/**
