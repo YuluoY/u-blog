@@ -36,3 +36,40 @@ export function formatDateTime(
   const day = String(date.getDate()).padStart(2, '0')
   return `${year}年${month}月${day}日`
 }
+
+/**
+ * 将日期值转换为相对时间描述（"刚刚"、"5 分钟前"、"3 天前"等）。
+ *
+ * 时间跨度超过 30 天后回退到 `formatDateTime` 的绝对日期格式。
+ *
+ * @param value 日期值
+ * @returns 相对时间文本
+ */
+export function formatDistanceToNow(
+  value: Date | string | number | null | undefined,
+): string {
+  if (value === null || value === undefined || value === '') return '--'
+
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) return '--'
+
+  const now = Date.now()
+  const diff = now - date.getTime()
+
+  /* 负值（未来时间）一律显示"刚刚" */
+  if (diff < 0) return '刚刚'
+
+  const seconds = Math.floor(diff / 1000)
+  if (seconds < 60) return '刚刚'
+
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes} 分钟前`
+
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours} 小时前`
+
+  const days = Math.floor(hours / 24)
+  if (days < 30) return `${days} 天前`
+
+  return formatDateTime(date)
+}

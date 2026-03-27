@@ -9,9 +9,10 @@ export interface CommentItem {
   pid?: number | null
   ip?: string | null
   ipLocation?: string | null
+  email?: string | null
   createdAt?: string
   article?: { id: number; title: string } | null
-  user?: { id: number; username: string; namec?: string | null } | null
+  user?: { id: number; username: string; namec?: string | null; email?: string | null } | null
   parent?: { id: number; user?: { username: string; namec?: string | null } | null } | null
 }
 

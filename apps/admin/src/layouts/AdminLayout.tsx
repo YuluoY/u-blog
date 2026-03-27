@@ -34,6 +34,7 @@ import {
   EyeOutlined,
   MailOutlined,
   NotificationOutlined,
+  ThunderboltOutlined,
 } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { useAuth, FRONTEND_HOME_URL } from '../features/auth/AuthContext'
@@ -77,6 +78,7 @@ function buildMenuConfig(t: (key: string) => string): {
           { key: '/media', icon: PictureOutlined, label: t('menu.media') },
           { key: '/about-blocks', icon: ReadOutlined, label: t('menu.aboutBlocks') },
           { key: '/announcements', icon: NotificationOutlined, label: t('menu.announcements') },
+          { key: '/moments', icon: ThunderboltOutlined, label: t('menu.moments') },
           { key: '/likes', icon: LikeOutlined, label: t('menu.likes') },
           { key: '/views', icon: EyeOutlined, label: t('menu.views') },
         ],
@@ -110,7 +112,6 @@ function buildMenuConfig(t: (key: string) => string): {
         children: [
           { key: '/settings', icon: SettingOutlined, label: t('menu.settings') },
           { key: '/analytics', icon: BarChartOutlined, label: t('menu.analytics') },
-          { key: '/seo-monitor', icon: GlobalOutlined, label: t('menu.crawlerMonitor') },
           { key: '/system', icon: ControlOutlined, label: t('menu.system') },
         ],
       },
@@ -130,13 +131,12 @@ const GUEST_ALLOWED_PATHS = new Set([
   '/likes', '/views',
   '/comments', '/friend-links', '/subscribers', '/xiaohui',
   '/announcements',
+  '/moments',
   '/analytics',
-  '/seo-monitor',
-  '/crawler-monitor',
 ])
 
 const ADMIN_HIDDEN_PATHS = new Set([
-  '/roles', '/permissions', '/routes', '/system',
+  '/roles', '/permissions', '/routes',
 ])
 
 /** 根据角色判断某路径是否可见 */

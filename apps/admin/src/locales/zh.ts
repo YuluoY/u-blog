@@ -24,6 +24,7 @@ export const zh = {
     success: '操作成功',
     fail: '操作失败',
     backToFrontend: '返回前台',
+    refresh: '刷新',
   },
   menu: {
     dashboard: '仪表盘',
@@ -42,11 +43,11 @@ export const zh = {
     routes: '路由管理',
     xiaohui: '小惠对话',
     system: '系统管理',
-    crawlerMonitor: 'SEO监控',
     likes: '点赞记录',
     views: '浏览记录',
     subscribers: '订阅管理',
     announcements: '公告管理',
+    moments: '动态管理',
     group: {
       content: '内容管理',
       interact: '互动',

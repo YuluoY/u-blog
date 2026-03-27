@@ -163,10 +163,15 @@ const xiaohuiLimiter = rateLimit({
 
 /**
  * POST /xiaohui/chat — 小惠 AI 流式对话
- * 游客和已登录用户均可使用，所有对话记录到数据库
+ * 所有用户可用（含游客），安全层对所有角色统一生效。
+ * 非管理员用户会额外追加文件操作禁令系统提示。
  */
 router.post('/chat', xiaohuiAbuseGuard, xiaohuiLimiter, async (req: Request, res: Response) => {
   const { message, messages, sessionId } = req.body || {}
+
+  // 判断当前用户是否为管理员（AuthGuard 全局中间件已解析 JWT 到 req.user）
+  const userRole = (req as any).user?.role as string | undefined
+  const isAdmin = userRole === CUserRole.ADMIN || userRole === CUserRole.SUPER_ADMIN
 
   // 兼容两种传参：messages 数组（多轮）或 message 字符串（单条）
   let chatMessages: IXiaohuiMessage[]
@@ -251,7 +256,7 @@ router.post('/chat', xiaohuiAbuseGuard, xiaohuiLimiter, async (req: Request, res
   let status: 'success' | 'error' | 'aborted' = 'success'
 
   try {
-    const stream = await XiaohuiService.chatStream(chatMessages, fullContext)
+    const stream = await XiaohuiService.chatStream(chatMessages, fullContext, isAdmin)
 
     // SSE 超时保护：最长 3 分钟
     const SSE_TIMEOUT_MS = 3 * 60 * 1000
@@ -296,17 +301,14 @@ router.post('/chat', xiaohuiAbuseGuard, xiaohuiLimiter, async (req: Request, res
         try {
           const chunk = JSON.parse(jsonStr)
 
-          // 【绝对防御】拦截工具调用：阻断 AI 任何文件操作行为
-          // 即使 tool_choice:"none" 被绕过，这里也会拦截 tool_calls delta
+          // 【绝对防御】拦截工具调用：无论角色，阻断 AI 任何工具调用行为
           const toolCalls = chunk.choices?.[0]?.delta?.tool_calls
           if (toolCalls && Array.isArray(toolCalls) && toolCalls.length > 0) {
-            // 记录拦截日志（安全审计）
             console.warn('[xiaohui] 拦截到工具调用:', JSON.stringify(toolCalls))
-            // 跳过此 chunk，不转发给客户端
             continue
           }
 
-          // finish_reason 为 tool_calls 时，也表示 AI 想调用工具，直接终止
+          // finish_reason 为 tool_calls 时直接终止
           const finishReason = chunk.choices?.[0]?.finish_reason
           if (finishReason === 'tool_calls' || finishReason === 'function_call') {
             console.warn('[xiaohui] 拦截到工具调用 finish_reason:', finishReason)
@@ -350,7 +352,7 @@ router.post('/chat', xiaohuiAbuseGuard, xiaohuiLimiter, async (req: Request, res
   } finally {
     res.end()
 
-    // 异步写入对话日志（不阻塞响应）
+    // 异步写入对话日志，写入成功后触发 LLM 隐私审计（均不阻塞响应）
     const latencyMs = Date.now() - startTime
     const userMsg = lastUserMsg?.content || ''
     XiaohuiService.logConversation(
@@ -362,7 +364,12 @@ router.post('/chat', xiaohuiAbuseGuard, xiaohuiLimiter, async (req: Request, res
       latencyMs,
       status,
       userLocation
-    ).catch(() => {})
+    ).then(conversationId => {
+      // Layer 3: 仅在对话正常完成且有回复时，异步执行 LLM 隐私审计
+      if (conversationId && status === 'success' && fullReply) {
+        XiaohuiService.auditResponsePrivacy(req, conversationId, fullReply).catch(() => {})
+      }
+    }).catch(() => {})
   }
 })
 

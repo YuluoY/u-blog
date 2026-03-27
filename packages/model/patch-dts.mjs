@@ -114,6 +114,73 @@ if (!content.includes('gender?: Gender')) {
   patched = true
 }
 
+// 注入 CTable 中缺失的 MOMENT 字段
+if (!content.includes('MOMENT')) {
+  content = content.replace(
+    /(declare const CTable:[\s\S]*?)(\n};)/,
+    `$1\n    readonly MOMENT: "moment";$2`
+  )
+  patched = true
+}
+
+// 注入 CMomentImageLayout / CMomentVisibility / IMoment / IMomentDto / IMomentVo 类型定义
+if (!content.includes('CMomentImageLayout')) {
+  const momentInject = `declare const CMomentImageLayout: {
+    readonly GRID: "grid";
+    readonly LONG: "long";
+    readonly SCROLL: "scroll";
+};
+type MomentImageLayout = typeof CMomentImageLayout[keyof typeof CMomentImageLayout];
+declare const CMomentVisibility: {
+    readonly PUBLIC: "public";
+    readonly PRIVATE: "private";
+};
+type MomentVisibility = typeof CMomentVisibility[keyof typeof CMomentVisibility];
+interface IMoment extends IBaseSchema, Pick<IBaseFields, 'id'> {
+    userId: number;
+    user?: IUser;
+    content: string;
+    images?: string[] | null;
+    imageLayout?: MomentImageLayout | null;
+    mood?: string | null;
+    tags?: string[] | null;
+    weather?: string | null;
+    visibility: MomentVisibility;
+    isPinned: boolean;
+    likeCount: number;
+    commentCount: number;
+}
+interface IMomentDto extends Omit<IMoment, keyof IBaseFields | 'deletedAt' | 'user' | 'likeCount' | 'commentCount'> {
+}
+interface IMomentVo extends Omit<IMoment, 'deletedAt'> {
+}
+`
+  const exportBlock = content.match(/export \{[^}]+\};/)
+  if (exportBlock) {
+    content = content.replace(exportBlock[0], momentInject + exportBlock[0])
+    let newExport = content.match(/export \{[^}]+\};/)[0]
+    newExport = newExport.replace(
+      'CTheme,',
+      'CMomentImageLayout, CMomentVisibility, CTheme,'
+    )
+    newExport = newExport.replace(
+      'type Theme,',
+      'type MomentImageLayout, type MomentVisibility, type IMoment, type IMomentDto, type IMomentVo, type Theme,'
+    )
+    content = content.replace(content.match(/export \{[^}]+\};/)[0], newExport)
+  }
+  patched = true
+}
+
+// 注入 ILike 中缺失的 momentId 字段
+if (!content.includes('momentId')) {
+  content = content.replace(
+    /(interface ILike[\s\S]*?)(commentId\?:)/,
+    '$1momentId?: number;\n    moment?: IMoment;\n    $2'
+  )
+  patched = true
+}
+
 // 注入 CFriendLinkStatus / IFriendLink / IFriendLinkDto / IFriendLinkVo 类型定义
 if (!content.includes('CFriendLinkStatus')) {
   const cFriendLinkStatusInject = `declare const CFriendLinkStatus: {

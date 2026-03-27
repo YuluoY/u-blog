@@ -6,8 +6,12 @@
   <template v-else>
     <LayoutBase>
       <RouterView v-slot="{ Component }">
-        <!-- 撰写页保持挂载，避免切换回来时 MdEditor 重新渲染、内容不丢失 -->
-        <KeepAlive :include="['WriteView']">
+        <!--
+          KeepAlive 缓存策略：
+          - HomeView：保留已加载的文章列表与滚动位置，避免返回时重新请求+无限滚动状态丢失
+          - WriteView：保持 MdEditor 挂载，避免切换回来时内容不丢失
+        -->
+        <KeepAlive :include="['HomeView', 'WriteView']">
           <component :is="Component" />
         </KeepAlive>
       </RouterView>

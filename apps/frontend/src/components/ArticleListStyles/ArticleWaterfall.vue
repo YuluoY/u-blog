@@ -6,8 +6,11 @@
       class="article-waterfall__item"
       @click="emit('jump', String(item.id))"
     >
-      <div v-if="item.cover" class="article-waterfall__cover">
-        <img :src="coverUrl(item.cover)" :alt="item.title" :loading="index === 0 ? 'eager' : 'lazy'" :fetchpriority="index === 0 ? 'high' : undefined" />
+      <div class="article-waterfall__cover">
+        <div class="article-waterfall__cover-placeholder">
+          <u-icon icon="fa-solid fa-image" />
+        </div>
+        <img v-if="item.cover" :src="coverUrl(item.cover)" :alt="item.title" :loading="index === 0 ? 'eager' : 'lazy'" :fetchpriority="index === 0 ? 'high' : undefined" @error="($event.target as HTMLImageElement).style.display = 'none'" />
       </div>
       <div class="article-waterfall__body">
         <div class="article-waterfall__title-row">
@@ -110,12 +113,26 @@ const emit = defineEmits<{
     aspect-ratio: 4 / 3;
     background: var(--u-background-2);
     overflow: hidden;
+    position: relative;
 
     img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      position: relative;
+      z-index: 1;
     }
+  }
+
+  &__cover-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: var(--u-text-4);
+    opacity: 0.4;
   }
 
   &__body {

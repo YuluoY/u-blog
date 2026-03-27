@@ -1,4 +1,4 @@
-import { Entity, PrimaryColumn, Column, ManyToOne, JoinColumn, PrimaryGeneratedColumn } from 'typeorm'
+import { Entity, PrimaryColumn, Column, ManyToOne, JoinColumn, PrimaryGeneratedColumn, type Relation } from 'typeorm'
 import { CTable } from '@u-blog/model'
 import { BaseSchema } from '../BaseSchema'
 import { IsInt, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator'
@@ -36,5 +36,5 @@ export class Setting {
 
 	@ManyToOne(() => Route)
 	@JoinColumn({ name: 'routeId' })
-	route?: Route | null
+	route?: Relation<Route | null>
 }

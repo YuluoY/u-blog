@@ -15,7 +15,21 @@
             show-word-limit
           />
         </u-form-item>
-        <u-form-item :label="t('write.descPlaceholder')">
+        <u-form-item>
+          <template #label>
+            <span class="write-save-form__label-with-action">
+              {{ t('write.descPlaceholder') }}
+              <button
+                type="button"
+                class="write-save-form__ai-desc-btn"
+                :disabled="aiDescGenerating || !props.content.trim()"
+                @click="onGenerateAiDesc"
+              >
+                <u-icon :icon="['fas', 'wand-magic-sparkles']" />
+                {{ aiDescGenerating ? t('write.aiDescGenerating') : t('write.aiDescGenerate') }}
+              </button>
+            </span>
+          </template>
           <u-input
             v-model="form.desc"
             type="textarea"
@@ -60,6 +74,15 @@
           >
             <u-icon :icon="coverUrlMode ? ['fas', 'upload'] : ['fas', 'link']" />
             {{ coverUrlMode ? t('write.coverFileMode') : t('write.coverUrlMode') }}
+          </button>
+          <button
+            type="button"
+            class="write-save-form__cover-toggle-btn"
+            :disabled="coverGenerating"
+            @click="onGenerateCover"
+          >
+            <u-icon :icon="['fas', 'wand-magic-sparkles']" />
+            {{ coverGenerating ? t('write.coverGenerating') : t('write.coverGenerate') }}
           </button>
         </div>
         <u-input
@@ -163,9 +186,10 @@ import { UNotificationFn } from '@u-blog/ui'
 import { CArticleStatus, type ArticleStatus } from '@u-blog/model'
 import api from '@/api'
 import { CTable } from '@u-blog/model'
+import { useAiGenerate } from '@/composables/useAiGenerate'
 import type { ICategory, ITag } from '@u-blog/model'
 import type { UploadFile } from '@u-blog/ui'
-import { uploadFile, deleteMedia } from '@/api/request'
+import { uploadFile, deleteMedia, generateCover } from '@/api/request'
 import { getPublishSettings, putPublishSettings, clearPublishSettings, type PublishSettingsRecord } from '@/utils/publishSettingsDb'
 import { encryptForTransport } from '@/utils/transportCrypto'
 
@@ -249,10 +273,14 @@ const form = reactive<{
 const publishNow = ref(true)
 const coverUrlMode = ref(false)
 
+const { generating: aiDescGenerating, generate: generateAiText } = useAiGenerate()
+
 /** 封面对应的 Media 记录 ID，用于删除/覆盖清理 */
 const coverMediaId = ref<number | null>(null)
 /** 封面上传中状态 */
 const coverUploading = ref(false)
+/** 封面生成中状态 */
+const coverGenerating = ref(false)
 
 /* ---------- 暴露给父组件的状态 ---------- */
 
@@ -265,6 +293,75 @@ const submitLabel = computed(() =>
   if (props.editMode) return t('write.updateArticle')
   return form.status === CArticleStatus.PUBLISHED ? t('write.publish') : t('write.saveAsDraft')
 })
+
+/* ---------- AI 生成描述 ---------- */
+const AI_DESC_PROMPT = '你是一位专业的博客编辑。请根据以下文章内容，生成一段简洁的文章描述/摘要。要求：1. 不超过200字 2. 概括文章核心内容 3. 语言流畅自然 4. 适合在文章列表中展示。仅返回描述文本，不要任何前缀或解释。'
+
+async function onGenerateAiDesc()
+{
+  if (!props.userId)
+  {
+    UNotificationFn({ message: t('write.loginRequired'), type: 'warning', deduplicate: true })
+    return
+  }
+  const content = props.content.trim()
+  if (!content)
+  {
+    UNotificationFn({ message: t('write.coverGenerateNoTitle'), type: 'warning', deduplicate: true })
+    return
+  }
+  const result = await generateAiText('custom', content, undefined, AI_DESC_PROMPT)
+  if (result)
+  {
+    suppressFieldTrack = true
+    form.desc = result
+    suppressFieldTrack = false
+    descManuallyEdited = true
+    savePublishSettingsDebounced()
+    UNotificationFn({ message: t('write.aiDescGenerateSuccess'), type: 'success', deduplicate: true })
+  }
+}
+
+/* ---------- 生成默认封面 ---------- */
+async function onGenerateCover()
+{
+  const title = form.title.trim() || extractAutoTitle(props.content)
+  if (!title)
+  {
+    UNotificationFn({ message: t('write.coverGenerateNoTitle'), type: 'warning', deduplicate: true })
+    return
+  }
+  coverGenerating.value = true
+  try
+  {
+    // 清理旧封面 Media（若存在）
+    const oldMediaId = coverMediaId.value
+    if (oldMediaId)
+    {
+      deleteMedia(oldMediaId).catch(() =>
+      {})
+      coverMediaId.value = null
+    }
+    const url = await generateCover(title)
+    form.cover = url
+    coverMediaId.value = null // 生成封面不经过 Media 表
+    coverManuallyEdited = true
+    savePublishSettingsDebounced()
+    UNotificationFn({ message: t('write.coverGenerateSuccess'), type: 'success', deduplicate: true })
+  }
+  catch (err)
+  {
+    UNotificationFn({
+      message: err instanceof Error ? err.message : t('write.coverGenerateFail'),
+      type: 'error',
+      deduplicate: true,
+    })
+  }
+  finally
+  {
+    coverGenerating.value = false
+  }
+}
 
 /* ---------- 封面超限提示 ---------- */
 function onCoverExceed()
@@ -368,10 +465,10 @@ const allTagOptions = computed(() =>
   tagList.value.map(tag => ({ value: tag.id, label: tag.name }))
 )
 
-/* ---------- 从 Markdown 提取首个标题作为默认标题 ---------- */
+/* ---------- 从 Markdown 提取首个一级标题作为默认标题 ---------- */
 function extractFirstHeading(mdContent: string): string
 {
-  const m = mdContent.match(/^#+\s+(.+)$/m)
+  const m = mdContent.match(/^#\s+(.+)$/m)
   return m ? m[1].trim() : ''
 }
 
@@ -475,8 +572,8 @@ async function initForm()
     form.status = (cached.status as ArticleStatus) || CArticleStatus.PUBLISHED
     form.isPrivate = cached.isPrivate ?? false
     form.isTop = cached.isTop ?? false
-    // 自动提取封面图：仅当缓存中无封面且有内容时自动填充
-    form.cover = cached.cover || extractFirstImage(props.content)
+    // 自动提取封面图：仅当缓存中无封面且有内容时自动填充（过滤临时 blob/data URL）
+    form.cover = sanitizeCoverUrl(cached.cover || '') || extractFirstImage(props.content)
     form.publishedAt = cached.publishedAt || toDatetimeLocal(new Date())
     publishNow.value = cached.publishNow ?? true
     coverUrlMode.value = cached.coverUrlMode ?? false
@@ -544,7 +641,7 @@ function savePublishSettingsDebounced()
       status: form.status,
       isPrivate: form.isPrivate,
       isTop: form.isTop,
-      cover: form.cover,
+      cover: sanitizeCoverUrl(form.cover),
       coverManuallyEdited,
       coverMediaId: coverMediaId.value,
       publishedAt: form.publishedAt,
@@ -582,21 +679,24 @@ watch(() => form.cover, () =>
 watch(() => props.content, newContent =>
 {
   if (!initDone) return
-  // 标题为空时从内容提取
-  if (!titleManuallyEdited && form.title === '')
-  
-    form.title = extractFirstHeading(newContent)
-  
-  // 简介为空且用户未手动编辑过时，自动提取
-  if (!descManuallyEdited && form.desc === '')
-  
-    form.desc = extractSummary(newContent)
-  
-  // 封面为空且用户未手动编辑过时，自动提取首张图片
-  if (!coverManuallyEdited && form.cover === '')
-  
-    form.cover = extractFirstImage(newContent)
-  
+  // 用户未手动编辑过标题时，跟随内容一级标题同步
+  if (!titleManuallyEdited)
+  {
+    const heading = extractFirstHeading(newContent)
+    if (heading) form.title = heading
+  }
+  // 用户未手动编辑过简介时，跟随内容摘要同步
+  if (!descManuallyEdited)
+  {
+    const summary = extractSummary(newContent)
+    if (summary) form.desc = summary
+  }
+  // 用户未手动编辑过封面时，跟随内容首张图片同步
+  if (!coverManuallyEdited)
+  {
+    const img = extractFirstImage(newContent)
+    if (img) form.cover = img
+  }
 })
 
 watch(publishNow, now =>
@@ -646,22 +746,42 @@ async function loadTags()
   }
 }
 
+/**
+ * 过滤掉临时预览 URL（blob: / data:），只保留有效的服务端地址
+ */
+function sanitizeCoverUrl(url: string): string
+{
+  const trimmed = url.trim()
+  if (trimmed.startsWith('blob:') || trimmed.startsWith('data:')) return ''
+  return trimmed
+}
+
 /* ---------- 提交处理 ---------- */
 async function handleSubmit()
 {
   if (!props.userId) return
+  // 封面仍在上传中，阻止提交
+  if (coverUploading.value)
+  {
+    UNotificationFn({
+      message: t('write.coverUploading'),
+      type: 'warning',
+      deduplicate: true,
+    })
+    return
+  }
   const autoTitle = extractAutoTitle(props.content)
   if (!autoTitle && !form.title.trim()) return
   const autoDesc = extractSummary(props.content)
-  const autoCover = extractFirstImage(props.content)
+  const autoCover = sanitizeCoverUrl(extractFirstImage(props.content))
 
   const resolvedTitle = form.title.trim() || autoTitle
   const resolvedDesc = descManuallyEdited
     ? form.desc.trim()
     : form.desc.trim() || autoDesc
   const resolvedCover = coverManuallyEdited
-    ? form.cover.trim()
-    : form.cover.trim() || autoCover
+    ? sanitizeCoverUrl(form.cover)
+    : sanitizeCoverUrl(form.cover) || autoCover
 
   // 仅补齐缺失字段，保留用户手动修改/替换的值
   form.title = resolvedTitle
@@ -706,15 +826,19 @@ async function handleSubmit()
  */
 function syncDraftMetaFromContent()
 {
-  const nextTitle = extractFirstHeading(props.content) || extractAutoTitle(props.content)
+  const nextTitle = extractFirstHeading(props.content)
   const nextDesc = extractSummary(props.content)
+  const nextCover = extractFirstImage(props.content)
 
   suppressFieldTrack = true
-  if (!titleManuallyEdited && !form.title.trim() && nextTitle)
+  if (!titleManuallyEdited && nextTitle)
     form.title = nextTitle
-  if (!descManuallyEdited && !form.desc.trim() && nextDesc)
+  if (!descManuallyEdited && nextDesc)
     form.desc = nextDesc
+  if (!coverManuallyEdited && nextCover)
+    form.cover = nextCover
   suppressFieldTrack = false
+  savePublishSettingsDebounced()
 }
 
 /**
@@ -746,6 +870,11 @@ function loadEditData(article: {
   form.isPrivate = article.isPrivate ?? false
   form.isTop = article.isTop ?? false
   form.cover = article.cover || ''
+  /**
+   * 编辑现有文章时，封面已经是持久化数据，不应该继续继承新建草稿阶段缓存的 mediaId。
+   * 否则后续“重新上传/生成封面”会把旧草稿 mediaId 当成当前封面去删，误伤其他文章正在使用的文件。
+   */
+  coverMediaId.value = null
   titleManuallyEdited = !!form.title
   descManuallyEdited = !!form.desc
   coverManuallyEdited = !!form.cover
@@ -831,6 +960,37 @@ defineExpose({
   }
 }
 
+.write-save-form__label-with-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.write-save-form__ai-desc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--u-primary, #007bff);
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--u-primary-light-9, #e6f2ff);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
 /* ---------- 封面图区域 ---------- */
 .write-save-form__cover-area {
   display: flex;
@@ -841,6 +1001,7 @@ defineExpose({
 /* URL 模式切换 */
 .write-save-form__cover-toggle {
   display: flex;
+  gap: 0.5rem;
 }
 
 .write-save-form__cover-toggle-btn {

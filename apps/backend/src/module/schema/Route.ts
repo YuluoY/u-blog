@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm'
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany, type Relation } from 'typeorm'
 import { CTable } from '@u-blog/model'
 import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator'
 import { BaseSchema } from '../BaseSchema'
@@ -91,5 +91,5 @@ export class Route {
 	parent?: Route
 	
 	@OneToMany(() => Setting, setting => setting.route)
-	settings?: Setting[]
+	settings?: Relation<Setting[]>
 }

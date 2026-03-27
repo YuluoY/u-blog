@@ -1,6 +1,7 @@
 import type { IBaseFields, IBaseSchema } from '../base'
 import type { IArticle } from './article'
 import type { IComment } from './comment'
+import type { IMoment } from './moment'
 import type { IUser } from './user'
 
 export interface ILike extends IBaseSchema, Pick<IBaseFields, 'id'> {
@@ -13,6 +14,10 @@ export interface ILike extends IBaseSchema, Pick<IBaseFields, 'id'> {
 
   commentId?: number
   comment?: IComment
+
+  /** 动态 ID（动态点赞时使用） */
+  momentId?: number
+  moment?: IMoment
 
   /** 游客点赞时的客户端 IP */
   ip?: string | null

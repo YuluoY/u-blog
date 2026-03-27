@@ -2,7 +2,7 @@
   <u-layout class="read-view-layout">
     <u-region region="center" class="read-view__center">
       <div class="read-view__body">
-        <div class="read-view__content" :class="{ 'text-indent-on': textIndentEnabled }">
+        <div class="read-view__content">
           <!-- 文章标题区 -->
           <div v-if="article" class="read-view__title-block">
             <img
@@ -221,13 +221,9 @@ import { filterSensitiveWords } from '@/utils/sensitiveFilter'
 import { useSubscribe } from '@/composables/useSubscribe'
 import { setMobileToc, clearMobileToc } from '@/composables/useMobileToc'
 import { trackArticleView, trackArticleLike, trackComment } from '@/composables/useActivityTracker'
-import { useSeo, buildArticleJsonLd, buildBreadcrumbJsonLd } from '@/composables/useSeo'
 import { getOptimizedImageUrl, COVER_PRESETS } from '@/utils/image'
 import { scrollToCommentWithOffset } from '@/utils/commentScroll'
-import { STORAGE_KEYS } from '@/constants/storage'
-
 const coverUrl = (src: string) => getOptimizedImageUrl(src, COVER_PRESETS.detail)
-const textIndentEnabled = localStorage.getItem(STORAGE_KEYS.TEXT_INDENT_ENABLED) !== '0'
 
 /** 根据 tag.color 生成内联样式，兼容 hex、hsl、渐变等格式 */
 function tagColorStyle(color?: string): Record<string, string> | undefined
@@ -281,33 +277,6 @@ const canEdit = computed(() =>
   if (!isLoggedIn.value || !article.value) return false
   const articleUserId = article.value.userId ?? (article.value.user as any)?.id
   return user.value?.id === articleUserId
-})
-
-/* ---- SEO 元信息：动态注入 title / meta / JSON-LD ---- */
-useSeo(() =>
-{
-  const a = article.value
-  if (!a) return { title: '阅读' }
-  const authorName = a.user?.namec || (a.user as any)?.username || ''
-  const keywords = [
-    a.category?.name,
-    ...(a.tags?.map((t: any) => t.name) || []),
-  ].filter(Boolean).join(',')
-  return {
-    title: a.title,
-    description: a.desc || `${a.title} - ${authorName}`,
-    keywords,
-    author: authorName,
-    image: a.cover || undefined,
-    type: 'article',
-    publishedTime: a.publishedAt ? new Date(a.publishedAt).toISOString() : undefined,
-    modifiedTime: a.updatedAt ? new Date(a.updatedAt).toISOString() : undefined,
-    jsonLd: buildArticleJsonLd({
-      ...a,
-      id: Number(a.id),
-      publishedAt: a.publishedAt,
-    }),
-  }
 })
 
 /* ---- 密码保护 ---- */
@@ -814,12 +783,13 @@ watch(() => route.params.id, async newId =>
       // 异步查询点赞状态
       fetchLikeStatus(articleId)
     }
+    // 进入/切换文章时重置滚动到顶部（仅在有目标文章时执行，离开页面时不干扰 useScrollRestore 的恢复）
+    nextTick(() =>
+    {
+      const main = document.querySelector('.layout-base__main')
+      if (main) main.scrollTop = 0
+    })
   }
-  nextTick(() =>
-  {
-    const main = document.querySelector('.layout-base__main')
-    if (main) main.scrollTop = 0
-  })
 }, { immediate: true })
 </script>
 
@@ -1310,11 +1280,6 @@ watch(() => route.params.id, async newId =>
   width: 200px;
   position: sticky;
   top: 24px;
-}
-
-/* 文章正文段落首行缩进 2em，仅当用户开启时生效 */
-.read-view__content.text-indent-on :deep(.md-editor-preview > p) {
-  text-indent: 2em;
 }
 
 /* 响应式：平板及以下隐藏目录侧栏 */

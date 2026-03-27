@@ -120,3 +120,11 @@
   background-color: var(--u-background-1);
   border-color: var(--u-border-1);
 }
+
+/**
+ * 首行缩进：markdown-it core 规则为含 \u3000\u3000 的段落添加此 class，
+ * CSS text-indent 补偿 markdown-it paragraph trim 丢失的段首缩进。
+ */
+.md-editor-preview .u-text-indent {
+  text-indent: 2em;
+}

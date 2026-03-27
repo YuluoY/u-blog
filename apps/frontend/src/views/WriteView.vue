@@ -214,6 +214,12 @@ async function onSaveSubmit(payload: {
         content,
         userId,
       })
+      
+      // 更新成功后清理草稿和发布配置缓存
+      draft.value = ''
+      await putDraft('')
+      saveFormRef.value?.clearCache()
+
       const refreshedArticle = await api(CTable.ARTICLE).getArticleById(String(editArticleId.value))
       if (refreshedArticle)
         articleStore.syncArticle(refreshedArticle)

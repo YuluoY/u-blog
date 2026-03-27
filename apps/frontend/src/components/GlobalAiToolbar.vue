@@ -32,7 +32,6 @@
             v-model="customPrompt"
             class="global-ai-toolbar__input"
             :placeholder="t('ai.customPlaceholder')"
-            @keydown.enter.prevent="handleCustomSend"
             @mousedown.stop
           />
           <button class="global-ai-toolbar__btn global-ai-toolbar__btn--primary" :disabled="!customPrompt.trim()" @click="handleCustomSend">

@@ -44,6 +44,9 @@ import { CTheme } from '@u-blog/model'
 import { useAppStore } from '@/stores/app'
 import { fetchAnnouncementById, type AnnouncementItem } from '@/api/announcement'
 import 'md-editor-v3/lib/preview.css'
+import { ensureMdEditorConfig } from '@/utils/mdEditorSetup'
+
+ensureMdEditorConfig()
 
 const route = useRoute()
 const { t } = useI18n()

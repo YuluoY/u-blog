@@ -68,7 +68,6 @@ const TYPE_LABELS: Record<string, string> = {
   register: '注册',
   comment: '评论',
   click: '点击',
-  crawler_visit: '爬虫访问',
 }
 
 /** 事件类型标签颜色 */
@@ -83,7 +82,6 @@ const TYPE_COLORS: Record<string, string> = {
   register: 'purple',
   comment: 'gold',
   click: 'lime',
-  crawler_visit: 'volcano',
 }
 
 function getTypeLabel(type: string): string {
@@ -107,8 +105,7 @@ export default function AnalyticsPage() {
   const { message } = App.useApp()
 
   const [days, setDays] = useState(30)
-  const [logParams, setLogParams] = useState<LogListParams>({ page: 1, pageSize: 15, excludeType: 'crawler_visit' })
-  const [logTab, setLogTab] = useState<'actor' | 'crawler'>('actor')
+  const [logParams, setLogParams] = useState<LogListParams>({ page: 1, pageSize: 15 })
   const [clearIp, setClearIp] = useState('')
 
   const { data: overview, isLoading: loadingOverview } = useOverview()
@@ -213,21 +210,9 @@ export default function AnalyticsPage() {
     { title: '访问量', dataIndex: 'count', width: 100 },
   ], [])
 
-  /** 当前分组下可选的事件类型 */
+  /** 当前可选的事件类型 */
   const typeOptions = useMemo(() => Object.entries(TYPE_LABELS)
-    .filter(([key]) => (logTab === 'crawler' ? key === 'crawler_visit' : key !== 'crawler_visit'))
-    .map(([key, label]) => ({ label: `${label} (${key})`, value: key })), [logTab])
-
-  function handleLogTabChange(key: string) {
-    const nextTab = key === 'crawler' ? 'crawler' : 'actor'
-    setLogTab(nextTab)
-    setLogParams((p) => ({
-      ...p,
-      type: nextTab === 'crawler' ? 'crawler_visit' : undefined,
-      excludeType: nextTab === 'actor' ? 'crawler_visit' : undefined,
-      page: 1,
-    }))
-  }
+    .map(([key, label]) => ({ label: `${label} (${key})`, value: key })), [])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -410,16 +395,6 @@ export default function AnalyticsPage() {
 
       {/* ---- 行为日志明细 ---- */}
       <Card title="行为日志明细" extra={<WriteAction><Button size="small" icon={<DownloadOutlined />} onClick={() => exportToJSON(logsData?.list ?? [], 'activity-logs')}>导出</Button></WriteAction>}>
-        <Tabs
-          size="small"
-          activeKey={logTab}
-          onChange={handleLogTabChange}
-          style={{ marginBottom: 12 }}
-          items={[
-            { key: 'actor', label: '用户 / 游客行为' },
-            { key: 'crawler', label: 'SEO 抓取' },
-          ]}
-        />
         <Space wrap style={{ marginBottom: 16 }}>
           <Select
             placeholder="事件类型"

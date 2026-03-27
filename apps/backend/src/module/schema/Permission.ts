@@ -1,5 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany } from 'typeorm'
-import { CTable, CPermission, type Permission as PermissionType, PermissionAction, CPermissionAction } from '@u-blog/model'
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, type Relation } from 'typeorm'
+import { CTable, CPermission, type Permission as PermissionType, type PermissionAction, CPermissionAction } from '@u-blog/model'
 import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator'
 import { BaseSchema } from '../BaseSchema'
 import { Role } from './Role'
@@ -61,6 +61,6 @@ export class Permission {
 
 	@ManyToMany(() => Role, role => role.permissions)
 	@IsOptional()
-	roles?: Role[] | null
+	roles?: Relation<Role[] | null>
 }
 

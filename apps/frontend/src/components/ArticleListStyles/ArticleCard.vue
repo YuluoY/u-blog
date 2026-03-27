@@ -7,10 +7,10 @@
       @click="emit('jump', String(item.id))"
     >
       <div class="article-card-list__cover">
-        <img v-if="item.cover" :src="coverUrl(item.cover)" :alt="item.title" :loading="index === 0 ? 'eager' : 'lazy'" :fetchpriority="index === 0 ? 'high' : undefined" />
-        <div v-else class="article-card-list__cover-placeholder">
+        <div class="article-card-list__cover-placeholder">
           <u-icon icon="fa-solid fa-image" />
         </div>
+        <img v-if="item.cover" :src="coverUrl(item.cover)" :alt="item.title" :loading="index === 0 ? 'eager' : 'lazy'" :fetchpriority="index === 0 ? 'high' : undefined" @error="($event.target as HTMLImageElement).style.display = 'none'" />
       </div>
       <div class="article-card-list__body">
         <div class="article-card-list__title-row">
@@ -121,17 +121,20 @@ const emit = defineEmits<{
     aspect-ratio: 16 / 10;
     background: var(--u-background-2);
     overflow: hidden;
+    position: relative;
 
     img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      position: relative;
+      z-index: 1;
     }
   }
 
   &__cover-placeholder {
-    width: 100%;
-    height: 100%;
+    position: absolute;
+    inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;

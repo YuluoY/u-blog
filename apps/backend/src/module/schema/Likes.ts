@@ -1,16 +1,18 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Check } from 'typeorm'
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm'
 import { CTable } from '@u-blog/model'
 import { IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, ValidateIf } from 'class-validator'
 import { Users } from './Users'
 import { Article } from './Article'
 import { Comment } from './Comment'
+import { Moment } from './Moment'
 import { BaseSchema } from '../BaseSchema'
 
 /**
- * 点赞表
+ * 点赞表 —— 支持文章、评论、动态三种实体的点赞
+ *
+ * articleId / commentId / momentId 中至少有一个非空，标识点赞目标。
  */
 @Entity({ name: CTable.LIKE, comment: '点赞表' })
-@Check(`("articleId" IS NOT NULL AND "commentId" IS NULL) OR ("articleId" IS NULL AND "commentId" IS NOT NULL)`)
 @BaseSchema
 export class Likes {
 	@PrimaryGeneratedColumn({ type: 'bigint', comment: '主键' })
@@ -26,8 +28,7 @@ export class Likes {
 	user?: Users | null
 
 	@Column({ name: 'articleId', type: 'int', nullable: true, comment: '文章id' })
-	@ValidateIf((o) => o.commentId == null)
-	@IsNotEmpty({ message: '文章ID和评论ID必须有一个不为空' })
+	@IsOptional()
 	@IsInt({ message: '文章ID必须为整数' })
 	articleId?: number | null
 
@@ -36,14 +37,22 @@ export class Likes {
 	article?: Article | null
 
 	@Column({ name: 'commentId', type: 'bigint', nullable: true, comment: '评论id' })
-	@ValidateIf((o) => o.articleId == null)
-	@IsNotEmpty({ message: '文章ID和评论ID必须有一个不为空' })
+	@IsOptional()
 	@IsInt({ message: '评论ID必须为整数' })
 	commentId?: number | null
 
 	@ManyToOne(() => Comment)
 	@JoinColumn({ name: 'commentId' })
 	comment?: Comment | null
+
+	@Column({ name: 'momentId', type: 'bigint', nullable: true, comment: '动态id' })
+	@IsOptional()
+	@IsInt({ message: '动态ID必须为整数' })
+	momentId?: number | null
+
+	@ManyToOne(() => Moment)
+	@JoinColumn({ name: 'momentId' })
+	moment?: Moment | null
 
 	/** 游客点赞时的客户端 IP */
 	@Column({ type: 'varchar', length: 100, nullable: true, comment: '客户端 IP' })

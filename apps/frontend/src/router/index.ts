@@ -3,6 +3,7 @@ import type { RouteRecordRaw } from 'vue-router'
 import permission from './promission'
 
 const HomeView = () => import('@/views/HomeView.vue')
+const MomentsView = () => import('@/views/MomentsView.vue')
 const AboutView = () => import('@/views/AboutView.vue')
 const NotFoundView = () => import('@/views/NotFoundView.vue')
 const ArchiveView = () => import('@/views/ArchiveView.vue')
@@ -33,13 +34,25 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/moments',
+    name: 'moments',
+    component: MomentsView,
+    meta: {
+      title: '动态',
+      isAffix: true,
+      index: 2,
+      isLeftSide: true,
+      isRightSide: true
+    }
+  },
+  {
     path: '/about',
     name: 'about',
     component: AboutView,
     meta: {
       title: '关于',
       isAffix: true,
-      index: 3
+      index: 4
     }
   },
   {
@@ -49,7 +62,7 @@ const routes: RouteRecordRaw[] = [
     meta: {
       title: '归档',
       isAffix: true,
-      index: 2,
+      index: 3,
       isLeftSide: true,
       isRightSide: true
     }
@@ -59,7 +72,7 @@ const routes: RouteRecordRaw[] = [
     name: 'message',
     component: MessageView,
     meta: {
-      index: 4,
+      index: 5,
       title: '留言',
       isAffix: true
     }
@@ -69,7 +82,7 @@ const routes: RouteRecordRaw[] = [
     name: 'chat',
     component: ChatView,
     meta: {
-      index: 6,
+      index: 7,
       title: '助手',
       isAffix: true,
       requiresAuth: true,
@@ -80,7 +93,7 @@ const routes: RouteRecordRaw[] = [
     name: 'links',
     component: FriendLinksView,
     meta: {
-      index: 5,
+      index: 6,
       title: '友链',
       isAffix: true,
     }
@@ -90,7 +103,7 @@ const routes: RouteRecordRaw[] = [
     name: 'xiaohui',
     component: XiaohuiView,
     meta: {
-      index: 7,
+      index: 8,
       title: '小惠',
       isAffix: true,
     }

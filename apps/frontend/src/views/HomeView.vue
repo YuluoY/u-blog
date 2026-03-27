@@ -31,7 +31,6 @@ import ArticleListStyles from '@/components/ArticleListStyles'
 import { CArticleList } from '@/types/const'
 import { useAppStore } from '@/stores/app'
 import { useArticleStore } from '@/stores/model/article'
-import { useSeo } from '@/composables/useSeo'
 
 defineOptions({
   name: 'HomeView'
@@ -39,12 +38,6 @@ defineOptions({
 
 const { t } = useI18n()
 
-/* SEO 元信息 */
-useSeo({
-  title: '首页',
-  description: 'U-Blog 个人技术博客，分享前端、后端、全栈开发经验与技术文章',
-  keywords: '博客,技术博客,前端开发,Vue,React,Node.js,全栈',
-})
 const appStore = useAppStore()
 const { articleListType } = storeToRefs(appStore)
 const articleStore = useArticleStore()

@@ -8,9 +8,9 @@ import { Tag } from '@/module/schema/Tag'
 import { Setting } from '@/module/schema/Setting'
 import { UserSetting } from '@/module/schema/UserSetting'
 import { View } from '@/module/schema/View'
+import { ActivityLog } from '@/module/schema/ActivityLog'
 import { Likes } from '@/module/schema/Likes'
 import { Comment } from '@/module/schema/Comment'
-import { ActivityLog } from '@/module/schema/ActivityLog'
 import { FriendLink } from '@/module/schema/FriendLink'
 import {
   IUserRegisterDto, CUserRole, IUserLogin, IUser,
@@ -410,6 +410,9 @@ class CommonService {
     if (user.isActive === false) throw new Error('账号未激活')
 
     // 4. 验证密码 —— 兼容 bcrypt（新）和 AES（旧）两种格式
+    if (!data.password) throw new Error('请输入密码')
+    if (!user.password) throw new Error('账号密码未设置，请联系管理员')
+
     const isBcryptHash = user.password.startsWith('$2')
     let passwordMatch = false
 
@@ -566,6 +569,23 @@ class CommonService {
     const mediaRepo = ds.getRepository(Media)
     const media = await mediaRepo.findOne({ where: { id } })
     if (!media) throw new Error('媒体记录不存在')
+
+    /**
+     * 上传封面在文章保存后会通过 article.cover 持久化引用。
+     * 这里必须先挡住“仍被文章使用的文件”被误删，否则文章只剩下 URL 字符串，
+     * 首页/详情页再次渲染时就会直接出现 404。
+     */
+    if (media.url) {
+      const articleRepo = ds.getRepository(Article)
+      const referencedByArticle = await articleRepo.exist({ where: { cover: media.url } })
+      if (referencedByArticle) {
+        throw new Error('媒体仍被文章封面引用，无法删除')
+      }
+    }
+
+    if (media.articleId != null || media.commentId != null || media.userId != null) {
+      throw new Error('媒体仍存在业务关联，无法删除')
+    }
 
     if (media.url) {
       const filePath = path.join(appCfg.staticPath, media.url)
@@ -747,65 +767,72 @@ class CommonService {
   /* ---------- 网站概览统计 ---------- */
 
   /**
-   * 网站概览统计：文章/分类/标签数量、PV/UV、点赞、评论、运行天数、最后更新
-   * - 文章数/最后更新：仅统计已发布文章
-   * - PV/UV：优先使用 ActivityLog 的 page_view 事件，缺失时回退到 View 表
-   * - 点赞/评论：直接统计真实交互表，避免冗余计数字段失真
+   * 网站概览统计：文章/分类/标签数量、浏览/访客、点赞、评论、运行天数、最后更新。
+   *
+   * 这里区分“内容层统计”和“站点访问层统计”：
+   * 1. 点赞 / 评论直接基于真实交互表统计，避免 article 冗余字段与网站总览混淆。
+   *    - totalLikes = like 表总量（文章点赞 + 评论点赞）
+   *    - totalComments = comment 表中未删除评论总量（包含文章评论与独立页面评论）
+   * 2. 总浏览 / 访客优先复用 activity_log 中的 page_view 事件：
+   *    - totalViews = 网站页面访问总次数（PV）
+   *    - totalUniqueVisitors = 按 IP 去重后的访问人数（UV）
+   * 3. 兼容历史数据：若 activity_log 尚未积累 page_view，则回退到旧 View 表，
+   *    至少保证老环境仍能得到可解释的站点访问统计。
    */
   async getSiteOverview(req: Request): Promise<SiteOverviewData> {
     const ds = getDataSource(req)
     const articleRepo = ds.getRepository(Article)
     const categoryRepo = ds.getRepository(Category)
     const tagRepo = ds.getRepository(Tag)
-    const commentRepo = ds.getRepository(Comment)
+    const activityRepo = ds.getRepository(ActivityLog)
+    const viewRepo = ds.getRepository(View)
     const likeRepo = ds.getRepository(Likes)
-    const activityLogRepo = ds.getRepository(ActivityLog)
+    const commentRepo = ds.getRepository(Comment)
 
     const [
-      articleCount,
       categoryCount,
       tagCount,
-      totalComments,
+      articleStats,
+      pageViewStats,
+      fallbackViewStats,
       totalLikes,
-      totalViews,
-      totalUvResult,
-      latestArticle,
+      totalComments,
     ] = await Promise.all([
-      articleRepo.count({ where: { status: CArticleStatus.PUBLISHED } }),
       categoryRepo.count(),
       tagRepo.count(),
-      commentRepo.count(),
-      likeRepo.count(),
-      activityLogRepo.count({ where: { type: 'page_view' } }),
-      activityLogRepo
-        .createQueryBuilder('log')
-        .select('COUNT(DISTINCT log.ip)', 'totalUv')
-        .where('log.type = :type', { type: 'page_view' })
-        .getRawOne<{ totalUv: string }>(),
       articleRepo
         .createQueryBuilder('a')
-        .select('MAX(a.updatedAt)', 'latestUpdated')
+        .select('COUNT(a.id)', 'articleCount')
+        .addSelect('MAX(a.updatedAt)', 'latestUpdated')
         .where('a.status = :status', { status: CArticleStatus.PUBLISHED })
-        .getRawOne<{ latestUpdated: Date | null }>(),
+        .getRawOne<{
+          articleCount: string
+          latestUpdated: Date | string | null
+        }>(),
+      activityRepo
+        .createQueryBuilder('log')
+        .select('COUNT(*)', 'totalPv')
+        .addSelect('COUNT(DISTINCT log.ip)', 'totalUv')
+        .where('log.type = :type', { type: 'page_view' })
+        .getRawOne<{ totalPv: string; totalUv: string }>(),
+      viewRepo
+        .createQueryBuilder('view')
+        .select('COUNT(*)', 'totalPv')
+        .addSelect('COUNT(DISTINCT view.ip)', 'totalUv')
+        .where('view.articleId IS NULL')
+        .getRawOne<{ totalPv: string; totalUv: string }>(),
+      likeRepo.count(),
+      commentRepo
+        .createQueryBuilder('comment')
+        .where('comment.deletedAt IS NULL')
+        .getCount(),
     ])
 
-    let resolvedTotalViews = totalViews
-    let resolvedTotalUniqueVisitors = Number(totalUvResult?.totalUv ?? 0)
-
-    if (resolvedTotalViews <= 0) {
-      const viewRepo = ds.getRepository(View)
-      const [fallbackTotalViews, fallbackUvResult] = await Promise.all([
-        viewRepo.count(),
-        viewRepo
-          .createQueryBuilder('v')
-          .select('COUNT(DISTINCT v.ip)', 'totalUv')
-          .getRawOne<{ totalUv: string }>(),
-      ])
-      resolvedTotalViews = fallbackTotalViews
-      resolvedTotalUniqueVisitors = Number(fallbackUvResult?.totalUv ?? 0)
-    }
-
-    const latestUpdated = latestArticle?.latestUpdated ? new Date(latestArticle.latestUpdated) : null
+    const latestUpdated = articleStats?.latestUpdated ? new Date(articleStats.latestUpdated) : null
+    const activityTotalViews = parseInt(pageViewStats?.totalPv ?? '0', 10)
+    const activityTotalUniqueVisitors = Number(pageViewStats?.totalUv ?? 0)
+    const fallbackTotalViews = parseInt(fallbackViewStats?.totalPv ?? '0', 10)
+    const fallbackTotalUniqueVisitors = Number(fallbackViewStats?.totalUv ?? 0)
 
     // 网站上线日期（固定值），用于计算运行天数
     const SITE_LAUNCH_DATE = new Date('2026-02-23T00:00:00+08:00')
@@ -818,11 +845,11 @@ class CommonService {
     }
 
     return {
-      articleCount,
+      articleCount: parseInt(articleStats?.articleCount ?? '0', 10),
       categoryCount,
       tagCount,
-      totalViews: resolvedTotalViews,
-      totalUniqueVisitors: resolvedTotalUniqueVisitors,
+      totalViews: activityTotalViews > 0 ? activityTotalViews : fallbackTotalViews,
+      totalUniqueVisitors: activityTotalViews > 0 ? activityTotalUniqueVisitors : fallbackTotalUniqueVisitors,
       totalLikes,
       totalComments,
       runningDays,
@@ -856,9 +883,11 @@ class CommonService {
     const article = await articleRepo.findOne({ where: { id: articleId, status: CArticleStatus.PUBLISHED, isPrivate: false } })
     if (!article) throw new Error('文章不存在或未发布')
 
-    // 去重：同一 IP + 同一文章在窗口期内不重复计数
+    // 开发环境关闭文章浏览去重，避免本地联调时因为固定 localhost IP 导致“怎么看都不涨”。
+    // 生产环境仍保留窗口去重，防止刷新刷量。
     let shouldCount = true
-    if (ip) {
+    const shouldApplyDedup = process.env.NODE_ENV === 'production'
+    if (shouldApplyDedup && ip) {
       const since = new Date(Date.now() - CommonService.ARTICLE_VIEW_DEDUP_MS)
       const existing = await viewRepo
         .createQueryBuilder('v')
@@ -881,6 +910,7 @@ class CommonService {
     // 去重通过时，递增文章 viewCount
     if (shouldCount) {
       await articleRepo.increment({ id: articleId }, 'viewCount', 1)
+      cacheDel('site-overview').catch(() => {})
     }
 
     // 返回最新的 viewCount
@@ -919,6 +949,7 @@ class CommonService {
         agent: agent ?? null,
       })
       await viewRepo.save(view)
+      cacheDel('site-overview').catch(() => {})
     }
 
     // 查询今日 UV（articleId IS NULL 的独立 IP 数）

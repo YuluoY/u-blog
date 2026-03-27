@@ -36,27 +36,45 @@ export async function sendChatMessageStream(
 ): Promise<string>
 {
   // 从 request 模块获取内存中的 access token，确保鉴权与 axios 实例一致
-  const { getAccessToken } = await import('./request')
-  const token = getAccessToken()
+  const { getAccessToken, tryRefreshToken } = await import('./request')
 
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    'Accept': 'text/event-stream',
+  async function doFetch(accessToken: string | null): Promise<Response>
+  {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'text/event-stream',
+    }
+    if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`
+
+    return fetch('/api/chat', {
+      method: 'POST',
+      headers,
+      credentials: 'include',
+      body: JSON.stringify({
+        messages,
+        ...(config ? { config } : {}),
+        ...(ragContext ? { context: ragContext } : {}),
+        ...(blogOwnerId ? { blogOwnerId } : {}),
+      }),
+      signal,
+    })
   }
-  if (token) headers['Authorization'] = `Bearer ${token}`
 
-  const res = await fetch('/api/chat', {
-    method: 'POST',
-    headers,
-    credentials: 'include',
-    body: JSON.stringify({
-      messages,
-      ...(config ? { config } : {}),
-      ...(ragContext ? { context: ragContext } : {}),
-      ...(blogOwnerId ? { blogOwnerId } : {}),
-    }),
-    signal,
-  })
+  let res = await doFetch(getAccessToken())
+
+  // 401 时尝试刷新 token 后重试一次，与 axios 拦截器行为对齐
+  if (res.status === 401)
+  {
+    try
+    {
+      const newToken = await tryRefreshToken()
+      res = await doFetch(newToken)
+    }
+    catch
+    {
+      // 刷新失败，抛出原始 401
+    }
+  }
 
   // 非 SSE 响应（如 JSON 错误）
   if (!res.ok || !res.body)

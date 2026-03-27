@@ -76,6 +76,4 @@ export const STORAGE_KEYS = {
   CONTENT_SPACING_SCALE: `${PREFIX}content-spacing-scale`,
   /** 全局字体族 preset（system / serif / mono） */
   FONT_FAMILY_PRESET: `${PREFIX}font-family-preset`,
-  /** 撰写/阅读页段落首行缩进开关 */
-  TEXT_INDENT_ENABLED: `${PREFIX}text-indent-enabled`,
 } as const

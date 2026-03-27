@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm'
-import { CTable, UserRole, CUserRole, CGender, type Gender } from '@u-blog/model'
+import { CTable, type UserRole, CUserRole, CGender, type Gender } from '@u-blog/model'
 import { IsArray, IsBoolean, IsDate, IsDateString, IsEmail, IsEnum, IsInt, IsIP, IsNotEmpty, IsObject, IsOptional, IsString, Max, MaxLength, Min, MinLength, ValidateNested } from 'class-validator'
 import { BaseSchema } from '../BaseSchema'
 

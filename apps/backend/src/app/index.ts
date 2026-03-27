@@ -33,7 +33,7 @@ import type { CookieOptions } from 'express'
 import type { DataSourceOptions } from 'typeorm'
 import dotenv from 'dotenv'
 
-// Docker 生产环境通过 docker-compose environment 块注入，dotenv 仅本地开发生效
+// 生产环境通过 PM2 环境注入，dotenv 仅本地开发生效
 if (process.env.NODE_ENV !== 'production') {
 	dotenv.config({ path: '../../.env.development' })
 } else {
@@ -87,10 +87,10 @@ const appCfg: IAppConfig = {
 		password: process.env.DB_PASSWORD,
 		database: process.env.DB_DATABASE,
 
-		poolSize: 8, // 根据你的服务器配置调整
+		poolSize: 5,
 		extra: {
-			max: 20,           // 最大连接数
-			min: 5,            // 最小连接数
+			max: 10,           // 最大连接数（小型博客无需过多）
+			min: 2,            // 最小空闲连接
 			idleTimeoutMillis: 30000,     // 30秒空闲超时
 			connectionTimeoutMillis: 5000, // 5秒连接超时
 		},

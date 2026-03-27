@@ -13,6 +13,7 @@ import CommonService from '@/service/common'
 import SubscribeService from '@/service/subscribe'
 import { Article } from '@/module/schema/Article'
 import { Comment } from '@/module/schema/Comment'
+import { Media } from '@/module/schema/Media'
 import { Tag } from '@/module/schema/Tag'
 import sanitizeHtml from 'sanitize-html'
 import { USERS_SENSITIVE_FIELDS, stripSensitiveFields } from '@/middleware/RestWriteGuard'
@@ -125,8 +126,18 @@ class RestController
 
     if (isComment) {
       const commentRepo = getDataSource(req).getRepository(Comment)
-      const comment = await commentRepo.findOne({ where: { id }, select: ['id', 'articleId'] })
+      const comment = await commentRepo.findOne({ where: { id }, select: ['id', 'articleId', 'pid'] })
       commentArticleId = Number(comment?.articleId ?? 0) || null
+
+      /**
+       * 兼容历史回复数据：
+       * 早期回复评论未必写入 articleId，这会导致删除回复时文章 commentCount 无法回退。
+       * 这里回查父评论所属文章，保证文章聚合计数与评论树保持一致。
+       */
+      if (!commentArticleId && comment?.pid) {
+        const parent = await commentRepo.findOne({ where: { id: comment.pid }, select: ['id', 'articleId'] })
+        commentArticleId = Number(parent?.articleId ?? 0) || null
+      }
     }
 
     const tryData = await tryit<void, Error>(() => RestService.del(req.model, id))
@@ -199,6 +210,22 @@ class RestController
       if (typeof data.content === 'string') {
         data.content = sanitizeHtml(data.content, COMMENT_SANITIZE_OPTS)
       }
+
+      /**
+       * 回复评论时前端当前只传 pid，不一定显式传 articleId。
+       * 为了让文章 commentCount、后续删除回退、通知链路都保持同一领域语义，
+       * 这里统一在落库前补齐 articleId，避免把“回复属于哪篇文章”的信息丢掉。
+       */
+      if (data.pid != null && data.articleId == null) {
+        const parentId = Number(data.pid)
+        if (!Number.isNaN(parentId)) {
+          const commentRepo = getDataSource(req).getRepository(Comment)
+          const parent = await commentRepo.findOne({ where: { id: parentId }, select: ['id', 'articleId'] })
+          if (parent?.articleId != null) {
+            data.articleId = parent.articleId
+          }
+        }
+      }
     }
 
     let payload: typeof data = data
@@ -231,16 +258,17 @@ class RestController
       const tagIds = Array.isArray(raw?.tags) ? (raw.tags as number[]).filter((id): id is number => Number.isInteger(id)) : []
       const saved = tryData[1]
       const id = saved?.id as number | undefined
-      if (id != null && tagIds.length > 0) {
+      if (id != null) {
         const ds = getDataSource(req)
         const articleRepo = ds.getRepository(Article)
-        const tagRepo = ds.getRepository(Tag)
         const article = await articleRepo.findOne({ where: { id } })
-        if (article) {
+        if (article && tagIds.length > 0) {
+          const tagRepo = ds.getRepository(Tag)
           const tags = await tagRepo.find({ where: { id: In(tagIds) } })
           ;(article as Article & { tags?: Tag[] }).tags = tags
           await articleRepo.save(article)
         }
+        await syncArticleCoverMedia(req, id, saved?.cover ?? article?.cover)
       }
     }
 
@@ -326,6 +354,7 @@ class RestController
         const tags = tagIds.length > 0 ? await tagRepo.find({ where: { id: In(tagIds) } }) : []
         ;(article as Article & { tags?: Tag[] }).tags = tags
         await articleRepo.save(article)
+        await syncArticleCoverMedia(req, numId, article.cover)
       }
     }
     // Users 表更新：过滤响应中的敏感字段
@@ -350,6 +379,45 @@ function isUsersModel(req: Request): boolean {
 /** 判断当前操作的是否为 Article 模型 */
 function isArticleModel(req: Request): boolean {
   return req.model?.metadata?.name === 'Article' || req.params?.model === 'article'
+}
+
+/**
+ * 将文章当前封面 URL 与 Media 记录建立稳定关联。
+ *
+ * 设计意图：
+ * 1. 上传封面时前端先拿到一个临时 mediaId，真正发布文章时此前实现只保存 cover URL，
+ *    没有把该 Media 绑定到文章，后续任意 deleteMedia 都可能把仍被文章使用的文件删掉。
+ * 2. 这里在文章新增/更新成功后统一做一次回填，让“文章封面”成为显式领域关系，
+ *    同时把该文章旧的封面 Media 解绑，避免一篇文章挂多条封面媒体关联。
+ *
+ * @param req 当前请求，用于复用同一数据源上下文
+ * @param articleId 文章 ID
+ * @param cover 文章最终落库后的封面 URL
+ */
+async function syncArticleCoverMedia(req: Request, articleId: number, cover: string | null | undefined): Promise<void> {
+  const ds = getDataSource(req)
+  const mediaRepo = ds.getRepository(Media)
+
+  // 先解绑旧关联，保证一篇文章只有当前封面这一条媒体绑定。
+  await mediaRepo
+    .createQueryBuilder()
+    .update(Media)
+    .set({ articleId: null })
+    .where('"articleId" = :articleId', { articleId })
+    .execute()
+
+  const normalizedCover = typeof cover === 'string' ? cover.trim() : ''
+  if (!normalizedCover.startsWith('/uploads/')) return
+
+  const media = await mediaRepo.findOne({
+    where: { url: normalizedCover },
+    select: ['id', 'articleId', 'url'],
+  })
+  if (!media) return
+
+  if (media.articleId !== articleId) {
+    await mediaRepo.update(media.id, { articleId })
+  }
 }
 
 /** 从用户数据（单条或数组）中移除敏感字段 */
@@ -552,7 +620,7 @@ function escapeXml(text: string): string {
 }
 
 /** 默认封面：生成与上传封面风格一致的 PNG 文件，返回 /uploads URL */
-async function buildDefaultCoverFileUrl(title: string): Promise<string> {
+export async function buildDefaultCoverFileUrl(title: string): Promise<string> {
   const rawTitle = (title || '无题小记').trim()
   const coverTitle = sanitizeCoverTitle(rawTitle) || '无题小记'
   const titleLines = wrapCoverTitleLines(coverTitle, 24, 3)
@@ -589,13 +657,13 @@ async function buildDefaultCoverFileUrl(title: string): Promise<string> {
 <circle cx="144" cy="452" r="72" fill="rgba(255,255,255,0.20)" filter="url(#blur40)"/>
 <circle cx="968" cy="470" r="64" fill="rgba(255,255,255,0.16)" filter="url(#blur40)"/>
 
-<text x="600" y="154" text-anchor="middle" font-size="30" letter-spacing="10" font-family="Avenir Next,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif" fill="rgba(255,255,255,0.86)">NOTES</text>
+<text x="600" y="154" text-anchor="middle" font-size="30" letter-spacing="10" font-family="Noto Sans CJK SC,Noto Sans SC,PingFang SC,Microsoft YaHei,Avenir Next,-apple-system,BlinkMacSystemFont,sans-serif" fill="rgba(255,255,255,0.86)">NOTES</text>
 <line x1="516" y1="182" x2="684" y2="182" stroke="rgba(255,255,255,0.78)" stroke-width="3" stroke-linecap="round"/>
 
-<text x="600" y="252" text-anchor="middle" font-size="38" font-family="Avenir Next,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif" fill="rgba(40,50,38,0.82)">✎</text>
-<text x="600" y="${firstLineY}" text-anchor="middle" clip-path="url(#titleClip)" font-size="56" font-family="Avenir Next,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif" fill="#ffffff" font-weight="700">${titleTspans}</text>
+<text x="600" y="252" text-anchor="middle" font-size="38" font-family="Noto Sans CJK SC,Noto Sans SC,PingFang SC,Microsoft YaHei,Avenir Next,-apple-system,BlinkMacSystemFont,sans-serif" fill="rgba(40,50,38,0.82)">✎</text>
+<text x="600" y="${firstLineY}" text-anchor="middle" clip-path="url(#titleClip)" font-size="56" font-family="Noto Sans CJK SC,Noto Sans SC,PingFang SC,Microsoft YaHei,Avenir Next,-apple-system,BlinkMacSystemFont,sans-serif" fill="#ffffff" font-weight="700">${titleTspans}</text>
 
-<text x="600" y="520" text-anchor="middle" font-size="40" font-family="Avenir Next,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif" fill="rgba(255,255,255,0.55)">uluo.cloud</text>
+<text x="600" y="520" text-anchor="middle" font-size="40" font-family="Noto Sans CJK SC,Noto Sans SC,PingFang SC,Microsoft YaHei,Avenir Next,-apple-system,BlinkMacSystemFont,sans-serif" fill="rgba(255,255,255,0.55)">uluo.cloud</text>
 </svg>`
 
   const uploadsDir = join(appCfg.staticPath, 'uploads')

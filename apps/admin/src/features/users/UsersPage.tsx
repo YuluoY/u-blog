@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Table, Button, Modal, Form, Input, Select, Tooltip } from 'antd'
-import { DownloadOutlined, SearchOutlined } from '@ant-design/icons'
+import { Table, Button, Modal, Form, Input, Select, Tooltip, Upload } from 'antd'
+import { DownloadOutlined, SearchOutlined, UploadOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { useTableScrollY } from '../../shared/hooks/useTableScrollY'
 import { useTableFilter } from '../../shared/hooks/useTableFilter'
@@ -8,6 +8,7 @@ import { formatDateTime, formatDateRelative } from '../../shared/utils/formatDat
 import { exportToJSON } from '../../shared/utils/exportData'
 import { WriteAction } from '../../shared/components/WriteAction'
 import { useGuestMode } from '../../contexts/GuestModeContext'
+import { uploadFile } from '../../shared/api/upload'
 import { useUsers } from './useUsers'
 import { useUserMutations } from './useUserMutations'
 import type { UserItem } from './api'
@@ -18,6 +19,19 @@ const ROLE_OPTIONS = [
   { value: 'user', label: '用户' },
 ]
 
+/** 解析所在地 JSON，返回可读文本；格式：{labels:['省','市','区'],detail?} */
+function parseLocationLabel(raw: string | null | undefined): string {
+  if (!raw) return '—'
+  try {
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed?.labels) && parsed.labels.length > 0) {
+      const base = parsed.labels.join('')
+      return parsed.detail ? `${base} ${parsed.detail}` : base
+    }
+  } catch {}
+  return raw
+}
+
 export default function UsersPage() {
   const { data: list = [], isLoading } = useUsers()
   const { update } = useUserMutations()
@@ -27,7 +41,10 @@ export default function UsersPage() {
   )
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<UserItem | null>(null)
+  const [avatarUploading, setAvatarUploading] = useState(false)
   const [form] = Form.useForm()
+  /** 响应式监听头像字段，确保上传后预览即时刷新 */
+  const avatarPreview = Form.useWatch('avatar', form)
 
   const handleEdit = (record: UserItem) => {
     setEditing(record)
@@ -36,8 +53,22 @@ export default function UsersPage() {
       role: record.role ?? 'user',
       bio: record.bio ?? '',
       location: record.location ?? '',
+      avatar: record.avatar ?? '',
     })
     setModalOpen(true)
+  }
+
+  const handleAvatarUpload = async (file: File) => {
+    setAvatarUploading(true)
+    try {
+      const result = await uploadFile(file)
+      form.setFieldValue('avatar', result.url)
+    } catch {
+      // uploadFile 内部已有全局错误提示
+    } finally {
+      setAvatarUploading(false)
+    }
+    return false // 阻止 Upload 组件自动上传
   }
 
   const handleSubmit = async () => {
@@ -65,9 +96,9 @@ export default function UsersPage() {
       ],
       onFilter: (value, record) => record.role === value,
     },
-    { title: '头像', dataIndex: 'avatar', width: 120,  render: (v: string) => <Tooltip title={v}><div className="admin-table-cell-ellipsis-2">{v ?? '—'}</div></Tooltip> },
+    { title: '头像', dataIndex: 'avatar', width: 80, align: 'center' as const,  render: (v: string) => v ? <img src={v} alt="avatar" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} /> : '—' },
     { title: '简介', dataIndex: 'bio', width: 140,  render: (v: string) => <Tooltip title={v}><div className="admin-table-cell-ellipsis-2">{v ?? '—'}</div></Tooltip> },
-    { title: '所在地', dataIndex: 'location', width: 110,  render: (v: string) => <Tooltip title={v}><div className="admin-table-cell-ellipsis-2">{v ?? '—'}</div></Tooltip> },
+    { title: '所在地', dataIndex: 'location', width: 110,  render: (v: string) => { const label = parseLocationLabel(v); return <Tooltip title={label}><div className="admin-table-cell-ellipsis-2">{label}</div></Tooltip> } },
     {
       title: '创建',
       dataIndex: 'createdAt',
@@ -127,6 +158,27 @@ export default function UsersPage() {
         width={480}
       >
         <Form form={form} layout="vertical">
+          <Form.Item name="avatar" label="头像">
+            <Input placeholder="头像 URL" />
+          </Form.Item>
+          <Form.Item>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Upload
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                showUploadList={false}
+                beforeUpload={(file) => { handleAvatarUpload(file); return false }}
+              >
+                <Button icon={<UploadOutlined />} loading={avatarUploading} size="small">上传头像</Button>
+              </Upload>
+              {avatarPreview && (
+                <img
+                  src={avatarPreview}
+                  alt="preview"
+                  style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }}
+                />
+              )}
+            </div>
+          </Form.Item>
           <Form.Item name="namec" label="昵称">
             <Input maxLength={100} />
           </Form.Item>

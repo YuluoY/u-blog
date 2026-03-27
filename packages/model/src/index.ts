@@ -18,6 +18,7 @@ export * from './schema/friendLink'
 export * from './schema/activityLog'
 export * from './schema/subscriber'
 export * from './schema/announcement'
+export * from './schema/moment'
 export * from './base'
 
 export { CVisualStyle, type VisualStyle } from './base'

@@ -1,5 +1,5 @@
 /** 小惠 AI 助手 API 模块 */
-import { getAccessToken } from './request'
+import { getAccessToken, tryRefreshToken } from './request'
 
 /** 小惠对话消息格式 */
 export interface XiaohuiMessage {
@@ -29,22 +29,38 @@ export async function sendXiaohuiStream(
   signal?: AbortSignal,
 ): Promise<string>
 {
-  // 携带 JWT token（已登录用户）
-  const token = getAccessToken()
+  async function doFetch(accessToken: string | null): Promise<Response>
+  {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'text/event-stream',
+    }
+    if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`
 
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    'Accept': 'text/event-stream',
+    return fetch('/api/xiaohui/chat', {
+      method: 'POST',
+      headers,
+      credentials: 'include',
+      body: JSON.stringify({ messages, sessionId }),
+      signal,
+    })
   }
-  if (token) headers['Authorization'] = `Bearer ${token}`
 
-  const res = await fetch('/api/xiaohui/chat', {
-    method: 'POST',
-    headers,
-    credentials: 'include',
-    body: JSON.stringify({ messages, sessionId }),
-    signal,
-  })
+  let res = await doFetch(getAccessToken())
+
+  // 401 时尝试刷新 token 后重试一次，与 axios 拦截器行为对齐
+  if (res.status === 401)
+  {
+    try
+    {
+      const newToken = await tryRefreshToken()
+      res = await doFetch(newToken)
+    }
+    catch
+    {
+      // 刷新失败，抛出原始 401
+    }
+  }
 
   // 非 SSE 响应（如 JSON 错误）
   if (!res.ok || !res.body)

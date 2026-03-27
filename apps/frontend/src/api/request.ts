@@ -38,16 +38,77 @@ instance.interceptors.request.use(config =>
   return config
 })
 
-/* ---------- 响应拦截器：401 时清除 token，并提取后端 message ---------- */
+/* ---------- 401 自动刷新 token 队列 ---------- */
+let isRefreshing = false
+let refreshQueue: Array<{ resolve: (token: string) => void; reject: (err: unknown) => void }> = []
+
+/**
+ * 尝试通过 refresh token（httpOnly cookie）恢复 access token。
+ * 同一时刻只发一次 /refresh，并发 401 请求排队等待。
+ * 也被 fetch() SSE 流（chat / xiaohui）在遇到 401 时调用，确保全局统一刷新。
+ */
+export function tryRefreshToken(): Promise<string>
+{
+  if (isRefreshing)
+  {
+    return new Promise((resolve, reject) =>
+    {
+      refreshQueue.push({ resolve, reject })
+    })
+  }
+  isRefreshing = true
+  return instance
+    .post<{ code: number; data: { token: string } }>('/refresh', {})
+    .then(res =>
+    {
+      const token = res.data?.data?.token
+      if (res.data?.code === 0 && token)
+      {
+        accessToken = token
+        refreshQueue.forEach(q => q.resolve(token))
+        return token
+      }
+      throw new Error('refresh failed')
+    })
+    .catch(err =>
+    {
+      accessToken = null
+      refreshQueue.forEach(q => q.reject(err))
+      throw err
+    })
+    .finally(() =>
+    {
+      isRefreshing = false
+      refreshQueue = []
+    })
+}
+
+/* ---------- 响应拦截器：401 时自动刷新 token 并重试原始请求 ---------- */
 instance.interceptors.response.use(
   response =>
   {
     endProgress()
     return response
   },
-  error =>
+  async error =>
   {
     failProgress()
+    const originalConfig = error.config
+    // 401 且非 /refresh 请求本身 → 尝试刷新 token 后重试
+    if (error.response?.status === 401 && !originalConfig?._retried && !originalConfig?.url?.includes('/refresh'))
+    {
+      originalConfig._retried = true
+      try
+      {
+        const newToken = await tryRefreshToken()
+        originalConfig.headers.Authorization = `Bearer ${newToken}`
+        return instance(originalConfig)
+      }
+      catch
+      {
+        accessToken = null
+      }
+    }
     if (error.response?.status === 401)
     
       accessToken = null
@@ -164,6 +225,20 @@ export async function uploadFile(file: File): Promise<UploadResult>
     throw new Error(payload.message || '上传失败')
   
   return payload.data
+}
+
+/**
+ * 生成默认封面图
+ * @param title 文章标题，用于封面文字排版
+ * @returns 生成后的封面 URL（/uploads/cover-article-xxx.png）
+ */
+export async function generateCover(title: string): Promise<string>
+{
+  const res = await instance.post<BackendResponse<{ url: string }>>('/generate-cover', { title })
+  const payload = res.data
+  if (payload.code !== 0)
+    throw new Error(payload.message || '封面生成失败')
+  return payload.data.url
 }
 
 /**

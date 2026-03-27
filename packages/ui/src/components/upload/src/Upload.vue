@@ -1,6 +1,6 @@
 <!--
   上传组件：支持拖拽 / 点击上传，picture-card 模式带图片预览与悬浮操作，
-  校验文件类型与大小，v-model 绑定 base64 / URL 字符串。
+  校验文件类型与大小，v-model 绑定 objectURL / 服务端 URL 字符串。
 -->
 <template>
   <div class="u-upload" :class="rootClasses">
@@ -178,7 +178,7 @@ function isAcceptedFile(file: File) {
   })
 }
 
-/* ---------- 核心：读取文件 → base64 → 触发更新 ---------- */
+/* ---------- 核心：读取文件 → objectURL 预览 → 触发更新 ---------- */
 
 function processFile(file: File) {
   // 大小校验
@@ -186,24 +186,24 @@ function processFile(file: File) {
     emit('exceed', file)
     return
   }
-  const reader = new FileReader()
-  reader.onload = () => {
-    const url = reader.result as string
-    const info: UploadFile = {
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      url,
-      raw: file,
-    }
-    emit('update:modelValue', url)
-    emit('change', info)
+  // 使用 objectURL 作为预览地址，避免 base64 导致数据体积膨胀
+  const url = URL.createObjectURL(file)
+  const info: UploadFile = {
+    name: file.name,
+    size: file.size,
+    type: file.type,
+    url,
+    raw: file,
   }
-  reader.readAsDataURL(file)
+  emit('update:modelValue', url)
+  emit('change', info)
 }
 
-/** 移除当前文件 */
+/** 移除当前文件，释放 objectURL 避免内存泄漏 */
 function handleRemove() {
+  if (props.modelValue && props.modelValue.startsWith('blob:')) {
+    URL.revokeObjectURL(props.modelValue)
+  }
   emit('update:modelValue', '')
   emit('remove')
 }

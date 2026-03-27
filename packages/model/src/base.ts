@@ -41,6 +41,7 @@ export const CTable = {
   XIAOHUI_CONVERSATION: 'xiaohui_conversation',
   SUBSCRIBER: 'subscriber',
   ANNOUNCEMENT: 'announcement',
+  MOMENT: 'moment',
 } as const
 
 export const CLanguage = {

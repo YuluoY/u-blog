@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToMany, JoinTable } from 'typeorm'
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToMany, JoinTable, type Relation } from 'typeorm'
 import { CTable } from '@u-blog/model'
 import { IsArray, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator'
 import { BaseSchema } from '../BaseSchema'
@@ -37,6 +37,6 @@ export class Role {
     joinColumn: { name: 'roleId', referencedColumnName: 'id' },
     inverseJoinColumn: { name: 'permissionId', referencedColumnName: 'id' }
   })
-  permissions?: Permission[]
+  permissions?: Relation<Permission[]>
 }
 

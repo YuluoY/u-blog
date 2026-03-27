@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, ManyToMany, JoinTable } from 'typeorm'
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, ManyToMany, JoinTable, type Relation } from 'typeorm'
 import { CTable, CArticleStatus, type ArticleStatus } from '@u-blog/model'
 import { IsBoolean, IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, Min } from 'class-validator'
 import { Users } from './Users'
@@ -39,7 +39,7 @@ export class Article {
 		joinColumn: { name: 'articleId', referencedColumnName: 'id' },
 		inverseJoinColumn: { name: 'tagId', referencedColumnName: 'id' }
 	})
-	tags?: Tag[] | null
+	tags?: Relation<Tag[] | null>
 
 	@Column({ type: 'varchar', length: 100, unique: true, comment: '标题' })
 	@IsNotEmpty({ message: '标题不能为空' })

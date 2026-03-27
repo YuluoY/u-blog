@@ -7,8 +7,11 @@
       @click="emit('jump', String(item.id))"
     >
       <div class="article-compact__index">{{ index + 1 }}</div>
-      <div v-if="item.cover" class="article-compact__thumb">
-        <img :src="coverUrl(item.cover)" :alt="item.title" :loading="index === 0 ? 'eager' : 'lazy'" :fetchpriority="index === 0 ? 'high' : undefined" />
+      <div class="article-compact__thumb">
+        <div class="article-compact__thumb-placeholder">
+          <u-icon icon="fa-solid fa-image" />
+        </div>
+        <img v-if="item.cover" :src="coverUrl(item.cover)" :alt="item.title" :loading="index === 0 ? 'eager' : 'lazy'" :fetchpriority="index === 0 ? 'high' : undefined" @error="($event.target as HTMLImageElement).style.display = 'none'" />
       </div>
       <div class="article-compact__main">
         <div class="article-compact__title-row">
@@ -113,12 +116,26 @@ const emit = defineEmits<{
     border-radius: 6px;
     overflow: hidden;
     background: var(--u-background-2);
+    position: relative;
 
     img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      position: relative;
+      z-index: 1;
     }
+  }
+
+  &__thumb-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: var(--u-text-4);
+    opacity: 0.4;
   }
 
   &__main {

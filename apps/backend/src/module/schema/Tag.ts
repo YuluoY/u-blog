@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, ManyToMany, JoinTable } from 'typeorm'
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, ManyToMany, JoinTable, type Relation } from 'typeorm'
 import { CTable } from '@u-blog/model'
 import { IsInt, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator'
 import { Users } from './Users'
@@ -47,6 +47,6 @@ export class Tag {
 		joinColumn: { name: 'tagId', referencedColumnName: 'id' },
 		inverseJoinColumn: { name: 'articleId', referencedColumnName: 'id' }
 	})
-	articles?: Article[] | null
+	articles?: Relation<Article[] | null>
 }
 

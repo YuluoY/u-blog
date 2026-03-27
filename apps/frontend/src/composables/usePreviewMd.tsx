@@ -8,6 +8,7 @@ import type { ComputedRef } from 'vue'
 import { defineComponent, type Component, type CSSProperties, watch, computed, shallowRef, markRaw } from 'vue'
 import { storeToRefs } from 'pinia'
 import 'md-editor-v3/lib/preview.css'
+import { ensureMdEditorConfig } from '@/utils/mdEditorSetup'
 
 export const usePreviewMd = (): {
   Preview: Component | null
@@ -16,6 +17,8 @@ export const usePreviewMd = (): {
   scrollElement: import('vue').ShallowRef<HTMLElement | undefined>
 } =>
 {
+  ensureMdEditorConfig()
+
   const id = 'preview-only'
   const route = useRoute()
   const currentArticleId = computed(() => {

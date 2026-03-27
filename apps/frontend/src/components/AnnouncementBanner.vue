@@ -154,7 +154,7 @@ onMounted(async() =>
   overflow: hidden;
   backdrop-filter: blur(6px);
   transition: background 0.2s;
-  z-index: 99;
+  z-index: 1;
 
   &--clickable {
     cursor: pointer;

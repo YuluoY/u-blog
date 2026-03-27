@@ -24,6 +24,7 @@ export const en = {
     success: 'Success',
     fail: 'Failed',
     backToFrontend: 'Back to site',
+    refresh: 'Refresh',
   },
   menu: {
     dashboard: 'Dashboard',
@@ -42,11 +43,11 @@ export const en = {
     routes: 'Routes',
     xiaohui: 'Xiaohui Chat',
     system: 'System',
-    crawlerMonitor: 'SEO Monitor',
     likes: 'Likes',
     views: 'Views',
     subscribers: 'Subscribers',
     announcements: 'Announcements',
+    moments: 'Moments',
     group: {
       content: 'Content',
       interact: 'Interact',

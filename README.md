@@ -197,48 +197,6 @@ pnpm version-packages
 pnpm release
 ```
 
-## � Docker 一键部署
-
-适用于全新服务器部署，所有服务（PostgreSQL、Redis、Backend、Frontend、Admin、Nginx）均运行在 Docker 容器中。
-
-### 前置要求
-
-- Docker >= 20 + Docker Compose V2
-- 服务器 80/8080 端口可用
-
-### 部署步骤
-
-```bash
-# 1. 克隆项目
-git clone <repo-url> /var/www/u-blog && cd /var/www/u-blog
-
-# 2. 创建环境配置
-cp .env.example .env
-# 编辑 .env，填入数据库密码、JWT 密钥、域名等必填项
-nano .env
-
-# 3. 一键启动
-docker compose up -d
-```
-
-首次启动会自动构建镜像（约 10 分钟），后续更新只需：
-
-```bash
-docker compose build && docker compose up -d
-```
-
-### 环境配置说明
-
-| 文件 | 用途 | 是否提交到 Git |
-|------|------|---------------|
-| `.env.example` | 部署模板（含注释说明） | ✅ |
-| `.env` | Docker Compose 实际读取的配置 | ❌ |
-| `.env.development` | 本地开发配置 | ✅ |
-
-### 从 PM2 迁移到 Docker
-
-如果当前使用 PM2 + 宿主机数据库，参考 `scripts/migrate-to-docker.sh` 完成数据迁移。
-
 ## �📂 技术栈总览
 
 | 项目 | 框架 | 语言 | 构建工具 | UI 库 |
@@ -272,4 +230,3 @@ MIT
 ## 👤 作者
 
 Yuluo
-

@@ -127,9 +127,6 @@ process.on('exit', killAllProcesses);
 
 (async () => {
   await buildPackagesFirst();
-  
-  console.log('🎯 启动 packages watch 模式...\n');
-  watchPackages.forEach((pkg) => runServer(pkg));
 
   console.log('\n🔨 正在启动后端...');
   runServer(backendPackage);
@@ -138,6 +135,15 @@ process.on('exit', killAllProcesses);
     await waitForPort(BACKEND_PORT);
     console.log(`✅ 后端已就绪 (localhost:${BACKEND_PORT})，启动前端与后台...\n`);
     appPackages.forEach((pkg) => runServer(pkg));
+
+    /**
+     * 共享包 watch 首次启动时会立即触发一次重建。
+     * 如果它与后端 tsx 启动并发进行，tsx 可能读到 tsup 正在重写中的临时产物，
+     * 从而报出“导出不存在 / Parse error”这类伪故障。
+     * 因此这里改为先用预构建产物拉起后端，待后端稳定后再启动 packages watch。
+     */
+    console.log('\n🎯 启动 packages watch 模式...\n');
+    watchPackages.forEach((pkg) => runServer(pkg));
   } catch (err) {
     console.error('🚨', err.message);
     console.error('   请确认后端已能正常启动并监听端口', BACKEND_PORT);

@@ -31,6 +31,17 @@ export default function CommentsPage() {
       render: (_: unknown, r: CommentItem) => (r.user ? (r.user.namec || r.user.username) : '—'),
     },
     {
+      title: '邮箱',
+      key: 'email',
+      width: 160,
+      render: (_: unknown, r: CommentItem) => {
+        const email = r.user?.email || r.email
+        return email
+          ? <Tooltip title={email}><div className="admin-table-cell-ellipsis-2">{email}</div></Tooltip>
+          : '—'
+      },
+    },
+    {
       title: '文章名',
       key: 'articleTitle',
       width: 160,
@@ -82,7 +93,7 @@ export default function CommentsPage() {
       <div className="admin-content__table-wrap">
         <div ref={containerRef} className="admin-content__table-body">
           <div className="admin-content__toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Input.Search placeholder="搜索 ID / 内容 / 路径 / IP" allowClear onSearch={onSearch} style={{ width: 240 }} prefix={<SearchOutlined />} />
+            <Input.Search placeholder="搜索 ID / 内容 / 路径 / IP / 邮箱" allowClear onSearch={onSearch} style={{ width: 280 }} prefix={<SearchOutlined />} />
             <WriteAction>
               <Button icon={<DownloadOutlined />} onClick={() => exportToJSON(list, 'comments')}>导出</Button>
             </WriteAction>

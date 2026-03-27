@@ -57,6 +57,43 @@ declare module 'axios' {
   }
 }
 
+/* ---------- 401 自动刷新 token 队列 ---------- */
+let isRefreshing = false
+let refreshQueue: Array<{ resolve: (token: string) => void; reject: (err: unknown) => void }> = []
+
+/**
+ * 尝试通过 refresh token（httpOnly cookie）恢复 access token。
+ * 同一时刻只发一次 /refresh，并发 401 请求排队等待。
+ */
+function tryRefreshToken(): Promise<string> {
+  if (isRefreshing) {
+    return new Promise((resolve, reject) => {
+      refreshQueue.push({ resolve, reject })
+    })
+  }
+  isRefreshing = true
+  return apiClient
+    .post<BackendResponse<{ token: string }>>('/refresh', {}, { skipGlobalError: true })
+    .then(res => {
+      const token = res.data?.data?.token
+      if (res.data?.code === 0 && token) {
+        accessToken = token
+        refreshQueue.forEach(q => q.resolve(token))
+        return token
+      }
+      throw new Error('refresh failed')
+    })
+    .catch(err => {
+      accessToken = null
+      refreshQueue.forEach(q => q.reject(err))
+      throw err
+    })
+    .finally(() => {
+      isRefreshing = false
+      refreshQueue = []
+    })
+}
+
 apiClient.interceptors.response.use(
   (res) => {
     const payload = res.data as BackendResponse<unknown>
@@ -69,11 +106,26 @@ apiClient.interceptors.response.use(
     }
     return res
   },
-  (err: AxiosError<BackendResponse>) => {
+  async (err: AxiosError<BackendResponse>) => {
+    const status = err.response?.status
+    const originalConfig = err.config as typeof err.config & { _retried?: boolean }
+
+    // 401 且非 /refresh 请求本身 → 尝试刷新 token 后重试
+    if (status === 401 && originalConfig && !originalConfig._retried && !originalConfig.url?.includes('/refresh')) {
+      originalConfig._retried = true
+      try {
+        const newToken = await tryRefreshToken()
+        originalConfig.headers = originalConfig.headers ?? {}
+        originalConfig.headers.Authorization = `Bearer ${newToken}`
+        return apiClient(originalConfig)
+      } catch {
+        // refresh 也失败，走到下面的 401 处理
+      }
+    }
+
     if (err.config?.skipGlobalError) {
       return Promise.reject(err)
     }
-    const status = err.response?.status
     const payload = err.response?.data
     const msg = payload?.message || err.message || '网络错误'
     if (status === 401) {

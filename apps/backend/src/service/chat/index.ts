@@ -92,6 +92,10 @@ class ChatService {
     if (apiKey && apiKey.includes(':')) {
       try { decryptedKey = decrypt(apiKey) } catch { decryptedKey = apiKey }
     }
+    // 兼容：若存储层解密结果仍是传输层加密格式（TRANSPORT_KEY 曾不匹配导致双层加密），再尝试传输层解密
+    if (decryptedKey && decryptedKey.startsWith('__enc__:')) {
+      decryptedKey = decryptTransport(decryptedKey)
+    }
     if (!decryptedKey) {
       throw new Error('未配置 AI 模型 API Key，请在设置面板 → 模型配置中填写')
     }

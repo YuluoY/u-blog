@@ -2,6 +2,7 @@ import express, { type Router } from 'express'
 import type { Request, Response, NextFunction } from 'express'
 import rateLimit from 'express-rate-limit'
 import CommonController from '@/controller/common'
+import { buildDefaultCoverFileUrl } from '@/controller/rest'
 import * as SettingsController from '@/controller/settings'
 import { UploadHandler } from '@/middleware/UploadHandler'
 import { requireAuth } from '@/middleware/AuthGuard'
@@ -296,6 +297,21 @@ router.post('/ai/generate', async (req: Request, res: Response) => {
 router.post('/upload', requireAuth, UploadHandler('file'), async (req: Request, res: Response) => {
   const result = await CommonController.upload(req, res)
   toResponse(result, res)
+})
+
+/**
+ * 生成默认封面图：根据标题生成渐变 + 文字排版的 PNG 封面
+ * @body { title: string } 文章标题
+ * @returns { code: 0, data: { url: string } }
+ */
+router.post('/generate-cover', requireAuth, async (req: Request, res: Response) => {
+  const title = typeof req.body?.title === 'string' ? req.body.title.trim() : ''
+  try {
+    const url = await buildDefaultCoverFileUrl(title || '无题小记')
+    res.json({ code: 0, data: { url }, message: 'ok' })
+  } catch (err: any) {
+    res.json({ code: 1, data: null, message: err?.message || '封面生成失败' })
+  }
 })
 
 /* ---------- 个人资料更新（需要登录） ---------- */

@@ -109,6 +109,95 @@ router.post('/pm2/restart', ...adminOnly, async (_req: Request, res: Response) =
   }
 })
 
+/**
+ * GET /system/pm2/logs — 获取 PM2 进程日志
+ * Query: { name: string; lines?: number }
+ */
+router.get('/pm2/logs', ...adminOnly, async (req: Request, res: Response) => {
+  const name = req.query.name as string
+  const lines = Math.min(Math.max(parseInt(req.query.lines as string) || 200, 10), 500)
+  if (!name || typeof name !== 'string') {
+    res.json({ code: 1, data: null, message: '缺少进程名称' })
+    return
+  }
+  try {
+    const logs = await SystemService.getPm2Logs(name, lines)
+    res.json({ code: 0, data: { logs }, message: 'ok' })
+  } catch (err: any) {
+    res.json({ code: 1, data: null, message: err.message || '获取日志失败' })
+  }
+})
+
+/* =================== 数据审计 / 备份导出 =================== */
+
+/**
+ * GET /system/data/counters — 审计文章/评论计数是否与数据库明细一致
+ */
+router.get('/data/counters', ...adminOnly, async (req: Request, res: Response) => {
+  try {
+    const data = await SystemService.auditContentCounters(req)
+    res.json({ code: 0, data, message: 'ok' })
+  } catch (err: any) {
+    res.json({ code: 1, data: null, message: err.message || '获取计数审计结果失败' })
+  }
+})
+
+/**
+ * POST /system/data/counters/repair — 修复文章/评论冗余计数字段
+ */
+router.post('/data/counters/repair', ...adminOnly, async (req: Request, res: Response) => {
+  try {
+    const data = await SystemService.repairContentCounters(req)
+    res.json({ code: 0, data, message: '计数修复完成' })
+  } catch (err: any) {
+    res.json({ code: 1, data: null, message: err.message || '计数修复失败' })
+  }
+})
+
+/**
+ * GET /system/backups — 获取备份列表
+ */
+router.get('/backups', ...adminOnly, async (_req: Request, res: Response) => {
+  try {
+    const data = SystemService.listBackups()
+    res.json({ code: 0, data, message: 'ok' })
+  } catch (err: any) {
+    res.json({ code: 1, data: null, message: err.message || '获取备份列表失败' })
+  }
+})
+
+/**
+ * POST /system/backups — 创建手动备份
+ */
+router.post('/backups', ...adminOnly, async (req: Request, res: Response) => {
+  try {
+    const data = await SystemService.createBlogBackup(req)
+    res.json({ code: 0, data, message: '备份创建成功' })
+  } catch (err: any) {
+    res.json({ code: 1, data: null, message: err.message || '创建备份失败' })
+  }
+})
+
+/**
+ * GET /system/backups/download?name=... — 下载指定备份
+ */
+router.get('/backups/download', ...adminOnly, async (req: Request, res: Response) => {
+  const name = String(req.query.name || '').trim()
+  if (!name) {
+    res.json({ code: 1, data: null, message: '缺少备份文件名' })
+    return
+  }
+
+  try {
+    const filePath = SystemService.getBackupFilePath(name)
+    res.download(filePath, name)
+  } catch (err: any) {
+    if (!res.headersSent) {
+      res.json({ code: 1, data: null, message: err.message || '下载备份失败' })
+    }
+  }
+})
+
 /* =================== 部署上传 =================== */
 
 /** 上传临时目录 */

@@ -1,5 +1,59 @@
 import type { Request, Response, NextFunction } from 'express'
-import { toModelName, getDataSource } from '@/utils'
+import type { EntityTarget, ObjectLiteral } from 'typeorm'
+import { getDataSource } from '@/utils'
+import { appendFileSync } from 'node:fs'
+
+// ---- 实体类引用 ----
+// 使用实体 class 而非字符串查找 repository，避免 TypeORM metadata 匹配问题
+import { ActivityLog } from '@/module/schema/ActivityLog'
+import { Announcement } from '@/module/schema/Announcement'
+import { Article } from '@/module/schema/Article'
+import { Category } from '@/module/schema/Category'
+import { Comment } from '@/module/schema/Comment'
+import { Follower } from '@/module/schema/Follower'
+import { FriendLink } from '@/module/schema/FriendLink'
+import { Likes } from '@/module/schema/Likes'
+import { Media } from '@/module/schema/Media'
+import { PageBlock } from '@/module/schema/PageBlock'
+import { Permission } from '@/module/schema/Permission'
+import { Role } from '@/module/schema/Role'
+import { Route } from '@/module/schema/Route'
+import { Setting } from '@/module/schema/Setting'
+import { Subscriber } from '@/module/schema/Subscriber'
+import { Tag } from '@/module/schema/Tag'
+import { UserSetting } from '@/module/schema/UserSetting'
+import { Users } from '@/module/schema/Users'
+import { View } from '@/module/schema/View'
+import { XiaohuiConversation } from '@/module/schema/XiaohuiConversation'
+import { Moment } from '@/module/schema/Moment'
+
+/**
+ * URL 路径名 → 实体 class 的映射表
+ * key 与路由 `/rest/:model` 中的 model 一一对应
+ */
+const ENTITY_MAP: Record<string, EntityTarget<ObjectLiteral>> = {
+	article: Article,
+	comment: Comment,
+	category: Category,
+	tag: Tag,
+	media: Media,
+	view: View,
+	like: Likes,
+	friend_link: FriendLink,
+	page_block: PageBlock,
+	subscriber: Subscriber,
+	route: Route,
+	announcement: Announcement,
+	users: Users,
+	setting: Setting,
+	user_setting: UserSetting,
+	activity_log: ActivityLog,
+	follower: Follower,
+	role: Role,
+	permission: Permission,
+	xiaohui_conversation: XiaohuiConversation,
+	moment: Moment,
+}
 
 /**
  * 允许通过通用 REST 接口访问的模型白名单
@@ -10,7 +64,7 @@ import { toModelName, getDataSource } from '@/utils'
 const PUBLIC_QUERY_MODELS = new Set([
 	'article', 'comment', 'category', 'tag',
 	'media', 'view', 'like', 'friend_link', 'page_block',
-	'subscriber', 'route', 'announcement',
+	'subscriber', 'route', 'announcement', 'moment',
 ])
 const AUTH_REQUIRED_MODELS = new Set([
 	'users', 'setting', 'user_setting', 'activity_log',
@@ -36,7 +90,18 @@ export const ModelHandler = (req: Request, res: Response, next: NextFunction) =>
 		return
 	}
 	const database = getDataSource(req)
-	req.model = database.getRepository(toModelName(model))
+	const entity = ENTITY_MAP[model]
+	// DEBUG: 跟踪 entity metadata 查找问题（写入文件，绕过 stdout 管道）
+	const debugMsg = `[ModelHandler] ${new Date().toISOString()} model=${model}, entity=${(entity as any)?.name}, isInitialized=${database.isInitialized}, entityMetadatas=${database.entityMetadatas?.length}\n`
+	try { appendFileSync('/tmp/model-handler.log', debugMsg) } catch {}
+	process.stdout.write(debugMsg)
+	try {
+		req.model = database.getRepository(entity)
+	} catch (e: any) {
+		console.error(`[ModelHandler] getRepository FAILED:`, e.message)
+		console.error(`[ModelHandler] entityMetadatasMap keys:`, [...(database as any).entityMetadatasMap?.keys?.() ?? []].map((k: any) => typeof k === 'function' ? k.name : k))
+		throw e
+	}
 	next()
 }
 

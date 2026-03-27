@@ -17,6 +17,9 @@ import { MdPreview } from 'md-editor-v3'
 import 'md-editor-v3/lib/preview.css'
 import { useAppStore } from '@/stores/app'
 import { CTheme } from '@u-blog/model'
+import { ensureMdEditorConfig } from '@/utils/mdEditorSetup'
+
+ensureMdEditorConfig()
 
 defineOptions({ name: 'MarkdownPreview' })
 
@@ -29,13 +32,13 @@ const previewTheme = computed(() =>
 
 withDefaults(defineProps<{
   content: string
-  /** 代码块是否可折叠 */
+  /** 代码块是否可折叠（默认关闭，由 markdown 语法如 &lt;details&gt; 控制折叠） */
   codeFoldable?: boolean
   /** 自动折叠阈值行数 */
   autoFoldThreshold?: number
 }>(), {
-  codeFoldable: true,
-  autoFoldThreshold: 30,
+  codeFoldable: false,
+  autoFoldThreshold: Infinity,
 })
 </script>
 

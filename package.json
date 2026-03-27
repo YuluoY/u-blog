@@ -4,9 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "setup": "node scripts/setup.js",
     "dev": "node scripts/dev.js",
     "start": "pnpm run dev",
+    "deploy": "node scripts/deploy.mjs",
+    "deploy:frontend": "node scripts/deploy.mjs --only frontend",
+    "deploy:backend": "node scripts/deploy.mjs --only backend",
+    "deploy:admin": "node scripts/deploy.mjs --only admin",
+    "deploy:package": "node scripts/deploy.mjs",
+    "deploy:static": "node scripts/deploy.mjs",
     "typecheck": "pnpm --filter @u-blog/backend exec tsc --noEmit && pnpm --filter ./apps/frontend exec vue-tsc --noEmit",
     "build": "pnpm --filter @u-blog/model run build && pnpm --filter @u-blog/types run build && pnpm --filter @u-blog/utils run build && pnpm --filter @u-blog/helper run build && pnpm --filter @u-blog/composables run build && pnpm --filter @u-blog/ui run build:es && pnpm --filter ./apps/frontend run build",
     "test": "echo \"Error: no test specified\" && exit 1"

@@ -2,9 +2,9 @@
   "name": "@u-blog/backend",
   "version": "0.0.0",
   "description": "",
-  "main": "dist/main.js",
-  "type": "module",
+  "main": "dist/src/main.js",
   "scripts": {
+    "build": "tsc -p tsconfig.json && tsc-alias -p tsconfig.json",
     "dev": "nodemon",
     "start": "pnpm run dev",
     "update-article-md": "tsx scripts/update-article-md.ts",

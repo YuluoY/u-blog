@@ -1,6 +1,7 @@
 <template>
-  <div ref="editorWrapRef" class="write-editor-wrap" :class="{ 'text-indent-on': textIndentEnabled }">
+  <div ref="editorWrapRef" class="write-editor-wrap">
     <MdEditor
+      ref="mdEditorRef"
       v-model="content"
       :theme="theme"
       :code-style-reverse="false"
@@ -11,10 +12,9 @@
       :on-upload-img="onUploadImg"
     >
       <template #defToolbars>
-        <NormalToolbar :title="textIndentEnabled ? '关闭首行缩进' : '开启首行缩进'" @onClick="toggleTextIndent">
+        <NormalToolbar title="对当前行切换首行缩进" @onClick="toggleLineIndent">
           <svg
             class="md-editor-icon"
-            :class="{ 'indent-active': textIndentEnabled }"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -39,18 +39,49 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-import { MdEditor, NormalToolbar, allToolbar, type ToolbarNames } from 'md-editor-v3'
+import { MdEditor, NormalToolbar, allToolbar, type ToolbarNames, type ExposeParam } from 'md-editor-v3'
 import 'md-editor-v3/lib/style.css'
-import { STORAGE_KEYS } from '@/constants/storage'
+import { ensureMdEditorConfig } from '@/utils/mdEditorSetup'
 
-/* ---------- 首行缩进偏好（localStorage 持久化） ---------- */
-const textIndentEnabled = ref(
-  localStorage.getItem(STORAGE_KEYS.TEXT_INDENT_ENABLED) !== '0' // 默认开启
-)
-function toggleTextIndent()
+ensureMdEditorConfig()
+
+const mdEditorRef = ref<ExposeParam>()
+
+/** 全角空格缩进标记（两个 U+3000 IDEOGRAPHIC SPACE） */
+const INDENT = '\u3000\u3000'
+
+/**
+ * 对光标所在行（或选区覆盖的所有行）切换首行缩进。
+ * 已缩进则移除，未缩进则添加两个全角空格。
+ */
+function toggleLineIndent()
 {
-  textIndentEnabled.value = !textIndentEnabled.value
-  localStorage.setItem(STORAGE_KEYS.TEXT_INDENT_ENABLED, textIndentEnabled.value ? '1' : '0')
+  const view = mdEditorRef.value?.getEditorView()
+  if (!view) return
+
+  const state = view.state
+  const { from, to } = state.selection.main
+  const startLine = state.doc.lineAt(from)
+  const endLine = state.doc.lineAt(to)
+
+  const changes: { from: number; to: number; insert: string }[] = []
+  for (let i = startLine.number; i <= endLine.number; i++)
+  {
+    const line = state.doc.line(i)
+    if (line.text.startsWith(INDENT))
+    
+      changes.push({ from: line.from, to: line.from + INDENT.length, insert: '' })
+    
+    else if (line.text.trim())
+    
+      changes.push({ from: line.from, to: line.from, insert: INDENT })
+    
+  }
+
+  if (changes.length)
+  
+    view.dispatch({ changes })
+  
 }
 
 /** 在「=」分隔符前插入自定义工具栏按钮（index 0 = defToolbars 第一个 slot 子节点），并移除内置 save 按钮 */
@@ -196,16 +227,6 @@ defineExpose({
 /* 压低代码块 sticky header 的 z-index，避免穿透 UDrawer 遮罩层（md-editor-v3 默认 10000） */
 .write-editor-wrap :deep(.md-editor-code-head) {
   z-index: 10 !important;
-}
-
-/* 撰写预览区：文章段落首行缩进（仅开启时应用） */
-.write-editor-wrap.text-indent-on :deep(.md-editor-preview > p) {
-  text-indent: 2em;
-}
-
-/* 首行缩进按钮激活态 */
-.write-editor-wrap :deep(.indent-active) {
-  color: var(--u-primary, #007bff);
 }
 
 /* ========== 编辑器选中文本高亮 ========== */
